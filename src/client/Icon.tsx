@@ -1,5 +1,6 @@
-type IconName = 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'focus' | 'restore'
+type IconName = 'clients' | 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'focus' | 'restore'
 const paths: Record<IconName, string> = {
+  clients: 'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 17v-2a5 5 0 0 1 10 0v2M14 4a3 3 0 0 1 0 6M14 12a5 5 0 0 1 4 5',
   history: 'M3 8a7 7 0 1 1 1 7M3 3v5h5M10 6v5l3 2',
   add: 'M10 4v12M4 10h12',
   refresh: 'M16.5 8A6.7 6.7 0 0 0 4 5M3.5 12A6.7 6.7 0 0 0 16 15M16.5 3v5h-5M3.5 17v-5h5',

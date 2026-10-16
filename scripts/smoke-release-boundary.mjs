@@ -68,7 +68,7 @@ export async function smokeReleaseBoundary({ page, browser, sessionId, report })
   assert.equal(runtime.pluginUsesSameReact, true)
   report.runtime = { ...runtime, chromeVersion: browser.version(), nodeVersion: process.versions.node }
   report.checks.push('actual native plugin require(react) is the identical Web seed object returned by the real module system; React.version=18.3.1')
-  const methods = ['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readOverview', 'loadBrowsingState', 'saveBrowsingState']
+  const methods = ['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readClients', 'readOverview', 'loadBrowsingState', 'saveBrowsingState']
   const endpoint = '**/api/redisViewer/*'
   let value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1 }
   const seen = []
@@ -95,7 +95,7 @@ export async function smokeReleaseBoundary({ page, browser, sessionId, report })
     value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1 }
     assert.deepEqual(await invoke('status'), { ok: true, value })
     report.decoderChecks = { methods, malformedRejected: methods.length, contradictoryConnectionTestRejected: true, extraSecretFieldRejected: true, healthyControlBeforeAndAfter: true, hostDispatches: 0 }
-    report.checks.push('real rc.2 browser Remote rejects malformed successful HTTP payloads for all 26 methods as gateway/internal, rejects contradictory test/extra secret fields, and recovers to valid status; test routes make zero Host dispatches')
+    report.checks.push('real rc.2 browser Remote rejects malformed successful HTTP payloads for all 27 methods as gateway/internal, rejects contradictory test/extra secret fields, and recovers to valid status; test routes make zero Host dispatches')
   } finally {
     await page.unroute(endpoint, handler)
     await page.evaluate(() => window.__redisReleaseProbe?.restore())

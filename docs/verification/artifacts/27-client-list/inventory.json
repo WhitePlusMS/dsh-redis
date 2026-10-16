@@ -1,0 +1,173 @@
+{
+  "packageSha256": "26cd754135521aa664261ad1ab92f73654bb8e865a4277cc6ae9f706b098dfb4",
+  "files": [
+    {
+      "name": "model-check-console.log",
+      "source": ".scratch/artifacts/clients-model-check-console.log",
+      "bytes": 6790,
+      "sha256": "23765a738b0df94671951b3b3c911046dcbd76a8c901366921726ab0c7a27db1"
+    },
+    {
+      "name": "clients-ui-typecheck-console.log",
+      "source": ".scratch/artifacts/clients-ui-typecheck-console.log",
+      "bytes": 116,
+      "sha256": "d36b41505b7b25ac79f44bfe796f4fcd72b9b9f59087dc4e55c7e96d4fe8838e"
+    },
+    {
+      "name": "clients-pack-console.log",
+      "source": ".scratch/artifacts/clients-pack-console.log",
+      "bytes": 9118,
+      "sha256": "7539b5fc97c68ac955333705e74ddac6374f306f5e743845850dcd86393d2ff5"
+    },
+    {
+      "name": "clients-install-console.log",
+      "source": ".scratch/artifacts/clients-install-console.log",
+      "bytes": 307,
+      "sha256": "18810a0a2e9b0adc99532f8ceeaf8f99e414ef7ded13cbb7c1dd11f078e47fdf"
+    },
+    {
+      "name": "clients-package-check-console.log",
+      "source": ".scratch/artifacts/clients-package-check-console.log",
+      "bytes": 185,
+      "sha256": "eca1fb7cb5a97669b80a6b1f30dcade96088619f63e1eb47778db50cf5f57bba"
+    },
+    {
+      "name": "clients-native-console.log",
+      "source": ".scratch/artifacts/clients-native-console.log",
+      "bytes": 3286,
+      "sha256": "c98f31208af09273c70ea81074c38af145fe0347744a915fd5e68478b22c27ac"
+    },
+    {
+      "name": "clients-full-ui-console.log",
+      "source": ".scratch/artifacts/clients-full-ui-console.log",
+      "bytes": 10462,
+      "sha256": "530c6a6e71b46fe504d7880767a32d967e962c8620fe7ecd8e5cfaa9d7b2bb57"
+    },
+    {
+      "name": "clients-layout-console.log",
+      "source": ".scratch/artifacts/clients-layout-console.log",
+      "bytes": 3128,
+      "sha256": "c088f8d6ad1121cb17cb310acbdb52e50c213d991a9471ddf117104f9f470914"
+    },
+    {
+      "name": "workbench-release-manifest.json",
+      "source": ".scratch/artifacts/workbench-release-manifest.json",
+      "bytes": 63053,
+      "sha256": "9d951f75911f886b8ce09cb7f65accd9bc1d7fe68f73c507512234d5a6b73f94"
+    },
+    {
+      "name": "native-clients-real-sample.json",
+      "source": ".scratch/artifacts/native-clients-real-sample.json",
+      "bytes": 64490,
+      "sha256": "84dd34b39d1e01f911282439d9d9deb9bc5c7e8fe7402526077ea129ebf154c1"
+    },
+    {
+      "name": "native-clients-table.png",
+      "source": ".scratch/artifacts/native-clients-table.png",
+      "bytes": 118717,
+      "sha256": "ef8be6c690af711f361a6a0e451b098a2bfc5985169cea76d09e054121d4cc24"
+    },
+    {
+      "name": "native-clients.png",
+      "source": ".scratch/artifacts/native-clients.png",
+      "bytes": 97442,
+      "sha256": "830ddf4f18b3a6e33da9c98602bc1d3754683153a9d92d8f573cbd95ee5da8ba"
+    },
+    {
+      "name": "native-clients-smoke.json",
+      "source": ".scratch/artifacts/native-clients-smoke.json",
+      "bytes": 4671,
+      "sha256": "67dd4f7f0041bb1b7d4d774153518600a2d58a163047a14c52a2ffad91b31396"
+    },
+    {
+      "name": "native-clients-smoke.log",
+      "source": ".scratch/artifacts/native-clients-smoke.log",
+      "bytes": 484,
+      "sha256": "a6f87b1e40e549c716f908e07be9aa29d1c43f7ddb58d503cc5db3973c8fb82b"
+    },
+    {
+      "name": "native-ui-release-smoke.json",
+      "source": ".scratch/artifacts/native-ui-release-smoke.json",
+      "bytes": 13421,
+      "sha256": "67d98b5f6f1520841cbb591eb4663d5131f4d5f1905df57363f3c4aeb9d249c3"
+    },
+    {
+      "name": "native-ui-release-smoke.log",
+      "source": ".scratch/artifacts/native-ui-release-smoke.log",
+      "bytes": 403,
+      "sha256": "e9960ed44ee7fe560b07172d85403b85708215e38df4868fbdf2fd89c93c37b7"
+    },
+    {
+      "name": "native-ui-release.png",
+      "source": ".scratch/artifacts/native-ui-release.png",
+      "bytes": 91379,
+      "sha256": "f8fdd88f7be10779bba7c439bd56b19928a516720b6d1ac66966f7e416fce52c"
+    },
+    {
+      "name": "native-workbench-smoke.json",
+      "source": ".scratch/artifacts/native-workbench-smoke.json",
+      "bytes": 16916,
+      "sha256": "8dbebbce3dbcda810b90ea0a2a988bc6b12bfb9a66d40a2f5971e65f52ca7ce7"
+    },
+    {
+      "name": "native-workbench-smoke.log",
+      "source": ".scratch/artifacts/native-workbench-smoke.log",
+      "bytes": 209,
+      "sha256": "83c97db1563744bfba56b69887404f8255afb7996d1f24f46d0f4f36ec9a26ea"
+    },
+    {
+      "name": "native-workbench.png",
+      "source": ".scratch/artifacts/native-workbench.png",
+      "bytes": 99672,
+      "sha256": "9912734bc248bf16144598c1a69fc20d9409111668eaaf48e022eb56cca62d21"
+    },
+    {
+      "name": "native-workbench-loading.png",
+      "source": ".scratch/artifacts/native-workbench-loading.png",
+      "bytes": 92088,
+      "sha256": "dea2b4ac44ab25ff82940cb36a1d35a767555534c960c6a735d8f07aaf90808a"
+    },
+    {
+      "name": "native-workbench-narrow-dark-data.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark-data.png",
+      "bytes": 101637,
+      "sha256": "55f455275d0fd283d8970cc4f83dfa5cccf8f85c0fb3c1df899af4eb7b984872"
+    },
+    {
+      "name": "native-workbench-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark.png",
+      "bytes": 98923,
+      "sha256": "610d2545bdd48d813cd4a2b206eba6dfce6852fef78842e8f6d8278a1633b830"
+    },
+    {
+      "name": "native-workbench-panel-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-panel-narrow-dark.png",
+      "bytes": 34536,
+      "sha256": "39c442d84fbfbedee5519616718c5ee5ebd911fcc160cecdc16020b7e34efe3b"
+    },
+    {
+      "name": "native-workbench-panel-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-light.png",
+      "bytes": 54052,
+      "sha256": "62d71a134e898545d86b5888b37da7345ad160a28aeb5ef20cf221fe33c533a2"
+    },
+    {
+      "name": "native-workbench-panel-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-zh.png",
+      "bytes": 53424,
+      "sha256": "baec0809c2907f55d3d4660e1d06d89eb10adebab455cc6c5b77d6e6d78e0d09"
+    },
+    {
+      "name": "native-workbench-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-wide-light.png",
+      "bytes": 117492,
+      "sha256": "36b6f533107085bf8da0b61bbba10c107bf1072b8e82019b19cc0206138f936a"
+    },
+    {
+      "name": "native-workbench-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-wide-zh.png",
+      "bytes": 117436,
+      "sha256": "d6a2fe1854cb15f5c2c2d277add6846f29af8a261c0518d1c34ddd319b17017a"
+    }
+  ]
+}

@@ -1,3 +1,4 @@
+import { ClientListView, type ClientListActions } from './ClientListView.tsx'
 import { SlowLogView, type SlowLogActions } from './SlowLogView.tsx'
 import { ServerOverview, type OverviewActions } from './ServerOverview.tsx'
 import { useEffect, useRef, useState } from 'react'
@@ -11,7 +12,7 @@ import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { useBrowsingState } from './BrowsingSession.tsx'
 
-export interface ConnectionActions extends ProfileActions, KeyActions, OverviewActions, SlowLogActions {
+export interface ConnectionActions extends ProfileActions, KeyActions, OverviewActions, SlowLogActions, ClientListActions {
   readonly testConnection: (request: ConnectionRequest, signal: AbortSignal) => Promise<RemoteResult<ConnectionTestResult>>
   readonly connect: (request: ConnectionRequest, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly disconnect: (request: ConnectionTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
@@ -110,6 +111,7 @@ export function ConnectionForm(props: Props) {
     <div className="redis-connection-status">
       <span className={connected ? 'redis-connected' : ''} role="status">{connected ? t('connection.connected') : t('ui.disconnected')}{connected && <span className="redis-target"> · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</span>}</span>
       <span className="redis-status-spacer" />
+      {connected && connection.id !== null && <ClientListView key={`clients:${connection.id}:${connection.generation}:${connection.db}`} t={t} readClients={props.readClients} target={{ id: connection.id, generation: connection.generation, db: connection.db }} />}
       {connected && connection.id !== null && <SlowLogView key={`slowlog:${connection.id}:${connection.generation}:${connection.db}`} t={t} readSlowLog={props.readSlowLog} target={{ id: connection.id, generation: connection.generation, db: connection.db }} />}
       {connected && connection.id !== null && <ServerOverview key={`${connection.id}:${connection.generation}:${connection.db}`} t={t} readOverview={props.readOverview} target={{ id: connection.id, generation: connection.generation, db: connection.db }} />}
       {sampledAt !== null && <time title={t('connection.sampledAt')} dateTime={sampledAt.toISOString()}>{sampledAt.toLocaleTimeString()}</time>}

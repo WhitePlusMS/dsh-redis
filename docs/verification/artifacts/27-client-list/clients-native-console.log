@@ -1,0 +1,26 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] installed native CLIENT LIST reads real Redis 8.2.6 with 205 owned extra sockets: 208 returned records, exactly 200 displayed and explicit truncation; fourteen selected fields, local row details/units and close clearing work without implicit or inspection reads
+[smoke check] explicit HTTP response fault cases distinguish missing fields, empty names, unavailable and empty success; the actual browser decoder refuses an imprecise numeric ID and clears the table before rendering
+[smoke check] real Redis ACL -client|list refuses only the diagnostic, clears previous rows/details and permits explicit recovery after permission restoration; no management command is exposed
+[smoke check] native CLIENT LIST Cancel and Close propagate to the real Host, cancel the queued command, discard late rows and require explicit reopening; same-generation recovery leaves B usable
+[smoke check] native CLIENT LIST production ten-second deadline closes only A and clears old rows; manual new-generation reconnect has no replay, old targets dispatch nothing and B survives
+[smoke check] actual CLIENT LIST TCP EOF clears rows and requires explicit reconnect/opening; no automatic reconnect or old snapshot survives
+[smoke check] real CLIENT LIST reply exceeds the 256 KiB post-receive interpretation budget but stays below the RESP cap: UI refuses the whole snapshot, retains A socket, and explicit recovery succeeds after fixture-only name restoration
+[smoke check] real direct Host C receives a declared CLIENT LIST bulk above one MiB and returns oversize with no entries while closing only C; A/B survive, proving the product receive boundary without crediting the acceptance proxy cap
+[smoke check] a real fixture-client exit changes the observed record count and removes its selected details on refresh; all plugin client commands remain LIST, binary-key bytes/absolute expiry stay unchanged and no address is written by product routine logs
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":23,"fixturesStopped":true}

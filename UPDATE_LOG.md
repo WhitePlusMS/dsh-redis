@@ -1109,3 +1109,26 @@
 ### 27 模型里程碑通过与本地提交
 - pnpm check通过27文件277项（新增9模型+1实际loopback拒写形状）；原始日志保存在27-client-list/model-check-console.log。docs/verification/27-client-list.md记录静态/模型范围，未声称真实大列表/UI，27继续进行中。
 - 原始日志结尾空行保留，仅raw指定路径单次git whitespace例外，其余标准check，不改配置/跳过hook。本地小目标提交，不推送。
+
+### 27 原生客户端表格接入（待检查）
+- 新增ClientListView.tsx，复用SnapshotDialog和CollectionTable：主表7列，其他7字段点击地址后在精简元信息区查看；选中动作无网络，刷新清除上一快照详情；缺失null与空名称/用户分开显示。
+- ConnectionForm/index/Icon/locales/styles接入独立客户端图标、双语单位、同次返回数/200条截断/空/不可用、帮助中的接收与解释预算说明。未改既有快照组件或主Key/详情布局。
+- 预检发现styles的同名grid选择器有媒体规则，未写入前收紧到原display:grid规则后一次通过；前次匹配拒绝没有改源文件。立即对真实新UI类型检查，再真实大列表和预算实连。
+
+### 27 真实大列表与双预算专项准备
+- 新增scripts/smoke-client-list.mjs与smoke-dsh独立clients模式：205个夹具自有连接、真实208返回/200展示、行详情无读取、ACL、状态/非法DTO注入、取消/队列/10秒/EOF/代次/B、连接退出与Key源不变。子进程和205连接均finally关闭。
+- 核实官方CLIENT SETNAME无额外名称长度上限（受Redis字符串上限），仅夹具admin设置300KB/1.1MB名称构造真实大回复；256KiB后置预算经UIA验证，1MiB接收通过直连Host C验证，避免代理自身上限误充产品证据。smoke-dsh显式保留夹具directSettings，仅测试使用。
+- 同步真实SDK27方法，脚本语法检查通过；客户端UI严格类型检查通过。产品不提供任何SETNAME/KILL/PAUSE，仅LIST。
+
+### 27 打包前完整检查
+- README新增客户端快照操作、点击详情/200显示与返回数/双预算/无管理写说明；27真实SDK方法表已同步。立即prepack277专项/回归与构建，再固定实际包SHA、只装隔离profile。原26完整提交保留独立证据；本27 UI与真实大列表尚未冒称通过。
+
+### 27 真实客户端列表与双预算通过
+- 同包26cd754原生23项：208返回/200展示，205自有额外连接、字段/详情/单位、真实ACL、取消/队列/10秒/EOF/代次/B、真实连接退出和二进制Key源不变；所有自建进程/Redis/代理/205连接停止。
+- 256KiB后置解释限制经真实UIA大回复验证（保留连接）；1MiB接收限制经直连真实Host C大bulk验证（只关闭C、A/B可用），明确避免把代理上限当产品。测试SETNAME仅自有夹具；未开放产品管理写。
+- docs/verification/27-client-list.md记录真实/注入/版本/TLS/接收与JS堆边界，实际已查看结构化表格截图。完整数据/SDK回归正在执行，27仍进行中。
+
+### 27 完整交付、证据归档与本地提交
+- 同包26cd754：严格prepack277、客户端原生23、全数据/会话/实际27方法SDK87、工作台24全部通过；93打包/84lib/12peers/2依赖与164输入逐文件匹配。客户端取消49ms、超时10112ms，所有自建DSH/Redis/代理/205客户端停止。
+- docs/verification/artifacts/27-client-list保全28原件+inventory，27验收文档记录真实/注入/版本/TLS/预算及旧包专项边界；六摘要和原27五项同步done，01–27done/28–29ready，原29票图不变。README随包已验。
+- 主界面继续Database/RESP分栏，客户端精选表格与按需详情不堆默认工作台。只提交当前27 UI/专项/验收与进度，不含lib、依赖、运行夹具或新28代码；raw日志保留原字节，按明确路径做单次blank-at-eof例外，其余标准diff检查，不改配置/跳过hook。

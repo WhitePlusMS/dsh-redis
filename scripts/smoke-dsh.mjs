@@ -1,3 +1,4 @@
+import { smokeClientList } from './smoke-client-list.mjs'
 import { smokeSlowLog } from './smoke-slowlog.mjs'
 import { smokeServerOverview } from './smoke-server-overview.mjs'
 /** Bounded, keyless native-profile acceptance. Never targets the user's DSH home. */
@@ -25,7 +26,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = process.env.REDIS_SMOKE_SLOWLOG === '1' ? 'native-slowlog' : process.env.REDIS_SMOKE_OVERVIEW === '1' ? 'native-overview' : transferPhase !== undefined ? 'native-profile-transfer-' + transferPhase : process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
+  const artifactPrefix = process.env.REDIS_SMOKE_CLIENTS === '1' ? 'native-clients' : process.env.REDIS_SMOKE_SLOWLOG === '1' ? 'native-slowlog' : process.env.REDIS_SMOKE_OVERVIEW === '1' ? 'native-overview' : transferPhase !== undefined ? 'native-profile-transfer-' + transferPhase : process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -74,7 +75,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
     })
     console.log('[smoke] Native rc.2 profile started on loopback')
     browser = await chromium.launch({ executablePath, headless: true })
-    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' ? 1920 : 1440, height: 960 } })
+    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' ? 1920 : 1440, height: 960 } })
     if (process.env.REDIS_SMOKE_RELEASE === '1') await context.addInitScript(observeReleaseRuntime)
     context.setDefaultTimeout(30_000)
     const origin = new URL(readyUrl).origin
@@ -1185,6 +1186,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
           await details.getByRole('status').filter({ hasText: 'Cuckoo is outside this first release' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
           record('native Bloom preserves serialized source bytes and absolute expiry; deletion and Cuckoo conversion discard old statistics/verdicts rather than invent a negative')
         }
+        if (process.env.REDIS_SMOKE_CLIENTS === '1') await smokeClientList({ page, rpc, fixture, pane, artifacts, report, workspaceId: adopted.workspace.workspaceId })
         if (process.env.REDIS_SMOKE_SLOWLOG === '1') await smokeSlowLog({ page, rpc, fixture, pane, artifacts, report, workspaceId: adopted.workspace.workspaceId })
         if (process.env.REDIS_SMOKE_OVERVIEW === '1') await smokeServerOverview({ page, rpc, fixture, pane, keys, scanAll, artifacts, report, workspaceId: adopted.workspace.workspaceId })
         if (process.env.REDIS_SMOKE_FOCUSED === '1') await smokeFocusedValue({ page, fixture, pane, keys, scanAll, artifacts, report })
@@ -1416,9 +1418,9 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
       for (const phase of phases) {
         // Only this acceptance mode owns a bounded TCP delay proxy. The real
         // fixture/admin and outer shutdown assertions stay unchanged.
-        const proxy = process.env.REDIS_SMOKE_RECOVERY === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' ? await createReadDelayProxy(fixture.settings) : undefined
+        const proxy = process.env.REDIS_SMOKE_RECOVERY === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' ? await createReadDelayProxy(fixture.settings) : undefined
         let report
-        try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, recoveryProxy: proxy }, transfer ? undefined : phase, transfer ? phase : undefined) }
+        try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, directSettings: fixture.settings, recoveryProxy: proxy }, transfer ? undefined : phase, transfer ? phase : undefined) }
         finally { await proxy?.close() }
         if (proxy !== undefined) report.recoveryProxyStopped = proxy.connections.every(value => value.closed)
         report.fixtures = [fixture.metadata]

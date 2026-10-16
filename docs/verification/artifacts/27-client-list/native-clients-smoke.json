@@ -1,0 +1,81 @@
+{
+  "artifactPrefix": "native-clients",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T13:45:54.632Z",
+  "packageSha256": "26cd754135521aa664261ad1ab92f73654bb8e865a4277cc6ae9f706b098dfb4",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "installed native CLIENT LIST reads real Redis 8.2.6 with 205 owned extra sockets: 208 returned records, exactly 200 displayed and explicit truncation; fourteen selected fields, local row details/units and close clearing work without implicit or inspection reads",
+    "explicit HTTP response fault cases distinguish missing fields, empty names, unavailable and empty success; the actual browser decoder refuses an imprecise numeric ID and clears the table before rendering",
+    "real Redis ACL -client|list refuses only the diagnostic, clears previous rows/details and permits explicit recovery after permission restoration; no management command is exposed",
+    "native CLIENT LIST Cancel and Close propagate to the real Host, cancel the queued command, discard late rows and require explicit reopening; same-generation recovery leaves B usable",
+    "native CLIENT LIST production ten-second deadline closes only A and clears old rows; manual new-generation reconnect has no replay, old targets dispatch nothing and B survives",
+    "actual CLIENT LIST TCP EOF clears rows and requires explicit reconnect/opening; no automatic reconnect or old snapshot survives",
+    "real CLIENT LIST reply exceeds the 256 KiB post-receive interpretation budget but stays below the RESP cap: UI refuses the whole snapshot, retains A socket, and explicit recovery succeeds after fixture-only name restoration",
+    "real direct Host C receives a declared CLIENT LIST bulk above one MiB and returns oversize with no entries while closing only C; A/B survive, proving the product receive boundary without crediting the acceptance proxy cap",
+    "a real fixture-client exit changes the observed record count and removes its selected details on refresh; all plugin client commands remain LIST, binary-key bytes/absolute expiry stay unchanged and no address is written by product routine logs",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:7934/api/redisViewer/readClients",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:7934/api/redisViewer/readClients",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "clients": {
+    "realRedisVersion": "8.2.6",
+    "ownedExtraConnections": 205,
+    "cancellationMs": 49,
+    "productionTimeoutMs": 10112,
+    "explicitResponseFaultCases": true,
+    "actualReturned": 208,
+    "displayed": 200,
+    "semanticBudgetBytes": 378676,
+    "receiveBudgetBytes": 1179024,
+    "receiveBudgetDirectHost": true,
+    "proxyErrors": [],
+    "ownedExtraConnectionsStopped": true
+  },
+  "finishedAt": "2026-10-16T13:46:29.778Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "f38a65f7-7006-4835-ab4a-7ebe7f899eed",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

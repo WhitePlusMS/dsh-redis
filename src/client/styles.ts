@@ -58,6 +58,9 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-dialog-heading { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 12px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-dialog-content { min-height:0; overflow:auto; padding:12px; display:flex; flex-direction:column; gap:10px; overscroll-behavior:contain; }
 .dsh-redis .redis-snapshot-dialog { width:min(680px,calc(100% - 24px)); }
+.dsh-redis .redis-clients-dialog [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-client-details { padding-top:8px; border-top:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-client-details h2 { margin-bottom:8px; }
 .dsh-redis .redis-overview-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
 .dsh-redis .redis-overview-card { min-width:0; padding:10px; border:1px solid var(--dsw-alias-border-l2); border-radius:5px; background:var(--redis-panel); }
 .dsh-redis .redis-overview-card > h2 { padding-bottom:8px; }
