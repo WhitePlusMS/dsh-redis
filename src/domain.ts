@@ -65,6 +65,15 @@ export interface SlowLogEntry { readonly id: string; readonly timestampSeconds: 
 export interface SlowLogReadRequest { readonly target: DatabaseTarget; readonly count: number }
 export interface SlowLogReadResult { readonly state: 'page' | 'unavailable' | 'failed'; readonly error: ConnectionErrorCode | null; readonly entries: readonly SlowLogEntry[]; readonly count: number; readonly more: boolean; readonly sampledAt: string }
 
+/** CLIENT LIST is a bounded server snapshot, separate from owned socket IDs. */
+export const CLIENT_LIST_FIELDS = ['id', 'addr', 'name', 'user', 'age', 'idle', 'flags', 'db', 'cmd', 'qbuf', 'omem', 'sub', 'psub', 'ssub'] as const
+export type ClientListField = typeof CLIENT_LIST_FIELDS[number]
+export type ClientListEntry = Readonly<Record<ClientListField, string | null>>
+export const MAX_CLIENT_LIST_BYTES = 256 * 1024
+export const MAX_CLIENT_LIST_ROWS = 200
+export interface ClientListReadRequest { readonly target: DatabaseTarget }
+export interface ClientListReadResult { readonly state: 'page' | 'unavailable' | 'failed'; readonly error: ConnectionErrorCode | null; readonly entries: readonly ClientListEntry[]; readonly total: number; readonly limited: boolean; readonly sampledAt: string }
+
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
 export interface ScanKeysRequest { readonly target: DatabaseTarget; readonly pattern: string; readonly cursor: string | null }

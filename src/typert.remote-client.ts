@@ -1,3 +1,4 @@
+import type { ClientListReadRequest, ClientListReadResult } from './domain.ts'
 import type { SlowLogReadRequest, SlowLogReadResult } from './domain.ts'
 import type { OverviewReadRequest, OverviewReadResult } from './domain.ts'
 import type { SessionBrowsingState } from './domain.ts'
@@ -19,6 +20,7 @@ import type { BloomReadRequest, BloomReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  readClients: (agentId: SessionId, request: ClientListReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ClientListReadResult>>
   readSlowLog: (agentId: SessionId, request: SlowLogReadRequest, signal?: AbortSignal) => Promise<RemoteResult<SlowLogReadResult>>
   readOverview: (agentId: SessionId, request: OverviewReadRequest, signal?: AbortSignal) => Promise<RemoteResult<OverviewReadResult>>
   loadBrowsingState: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>
@@ -48,6 +50,7 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/readClients': RedisViewerRemote['readClients']
     'redisViewer/readSlowLog': RedisViewerRemote['readSlowLog']
     'redisViewer/readOverview': RedisViewerRemote['readOverview']
     'redisViewer/loadBrowsingState': RedisViewerRemote['loadBrowsingState']
@@ -77,6 +80,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/readClients': (request: ClientListReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ClientListReadResult>>
     'agent:redisViewer/readSlowLog': (request: SlowLogReadRequest, signal?: AbortSignal) => Promise<RemoteResult<SlowLogReadResult>>
     'agent:redisViewer/readOverview': (request: OverviewReadRequest, signal?: AbortSignal) => Promise<RemoteResult<OverviewReadResult>>
     'agent:redisViewer/loadBrowsingState': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>

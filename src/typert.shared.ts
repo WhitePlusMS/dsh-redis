@@ -1,3 +1,5 @@
+import { CLIENT_LIST_FIELDS, MAX_CLIENT_LIST_BYTES, MAX_CLIENT_LIST_ROWS, type ClientListEntry, type ClientListReadRequest, type ClientListReadResult } from './domain.ts'
+import { isClientListValue } from './redis-client-list.ts'
 import { MAX_SLOWLOG_ENTRIES, MAX_SLOWLOG_ARGUMENTS, MAX_SLOWLOG_SUMMARY_ARGS, type SlowLogEntry, type SlowLogReadRequest, type SlowLogReadResult } from './domain.ts'
 import { isSlowLogCommand } from './redis-slowlog.ts'
 import { OVERVIEW_FIELDS, type OverviewFields, type OverviewReadRequest, type OverviewReadResult } from './domain.ts'
@@ -560,6 +562,25 @@ export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(valu
   return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+export const clientListReadRequestSchema: TypertSchema<ClientListReadRequest> = { parse(value) {
+  return { target: databaseTargetSchema.parse(objectAt(value, ['target']).target) }
+} }
+export const clientListReadResultSchema: TypertSchema<ClientListReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'entries', 'total', 'limited', 'sampledAt']), state = object.state, error = errorAt(object.error)
+  if ((state !== 'page' && state !== 'unavailable' && state !== 'failed') || (state === 'failed') !== (error !== null) || !Array.isArray(object.entries) || object.entries.length > MAX_CLIENT_LIST_ROWS || typeof object.limited !== 'boolean') throw new TypeError('Redis RPC: invalid client list state')
+  const entries: ClientListEntry[] = object.entries.map((value: unknown) => {
+    const raw = objectAt(value, CLIENT_LIST_FIELDS)
+    return Object.fromEntries(CLIENT_LIST_FIELDS.map(field => {
+      const value = raw[field]
+      if (value !== null && !isClientListValue(field, value)) throw new TypeError('Redis RPC: invalid client field')
+      return [field, value]
+    })) as ClientListEntry
+  })
+  const total = integerAt(object.total, 0, MAX_CLIENT_LIST_BYTES), ids = entries.flatMap(entry => entry.id === null ? [] : [entry.id])
+  if (entries.length !== Math.min(total, MAX_CLIENT_LIST_ROWS) || object.limited !== (total > entries.length) || new Set(ids).size !== ids.length || (state !== 'page' && (total !== 0 || entries.length !== 0 || object.limited))) throw new TypeError('Redis RPC: inconsistent client list coverage')
+  return { state, error, entries, total, limited: object.limited, sampledAt: sampleTimeAt(object.sampledAt) }
+} }
+
 export const slowLogReadRequestSchema: TypertSchema<SlowLogReadRequest> = { parse(value) {
   const object = objectAt(value, ['target', 'count'])
   return { target: databaseTargetSchema.parse(object.target), count: integerAt(object.count, 1, MAX_SLOWLOG_ENTRIES) }
@@ -640,6 +661,7 @@ export const redisDescriptors = [
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
   createRedisInvocation('readSlowLog', 'SlowLogReadRequest', 'SlowLogReadResult', slowLogReadRequestSchema, slowLogReadResultSchema, sessionIdSchema),
+  createRedisInvocation('readClients', 'ClientListReadRequest', 'ClientListReadResult', clientListReadRequestSchema, clientListReadResultSchema, sessionIdSchema),
   createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewReadRequestSchema, overviewReadResultSchema, sessionIdSchema),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),

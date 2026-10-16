@@ -1097,3 +1097,15 @@
 - 同包8245456：prepack267、慢日志22、概览回归21、完整SDK/数据/会话87、布局24全部通过；慢日志取消32ms、超时10092ms，真实与HTTP注入边界在26验收文档分开记录。所有自建DSH/Redis/代理停止。
 - docs/verification/artifacts/26-slowlog-view保全39原件+inventory，包括前置fixture形状失败，当前包89文件/80lib/12peers/2依赖及实际源码SHA可核对。六处当前进度同步01–26done/27–29ready，26五项勾选且图不变。
 - 保留raw日志原始结尾空行；仅明确raw路径单次core.whitespace=-blank-at-eof，其他文件标准diff --check，不改Git配置/跳过hook。本地语义提交，不push。
+
+### 27 开始：客户端连接快照
+- 六处当前进度与27票切进行中、图不变，新增docs/verification/27-client-list.md记录官方协议与预算/字段/只读边界。
+- 接下来新增14字段解析/严格DTO/Host CLIENT LIST；复用可信DatabaseTarget与10秒、RESP1MiB，256KiB后置解释/200行展示并报告实际本次记录数；固定LIST子命令拒绝KILL/PAUSE，不开放管理写或记录地址。先专项/类型，后复用快照弹窗和表格，不堆主界面。
+
+### 27 客户端列表模型与固定LIST（待检查）
+- 新增redis-client-list.ts、host/client-list-reader.ts、tests/client-list.test.ts；更新domain、strict两端Typert/remote-service、Client scope与27方法计数、tsconfig。14字段全部必有nullable槽，精确uint64与有界UTF8文本、缺失/新增/重复、256KiB解释/200行与本次总记录数一致校验。
+- transport仅允许CLIENT LIST一个字面参数，真实loopback测试KILL/PAUSE/过滤/SETNAME等零派发。9项模型专项加1项socket子命令测试，复用可信目标/代次/取消/10秒；无常规地址日志。立即完整类型/构建/测试，UI尚未接入。
+
+### 27 模型里程碑通过与本地提交
+- pnpm check通过27文件277项（新增9模型+1实际loopback拒写形状）；原始日志保存在27-client-list/model-check-console.log。docs/verification/27-client-list.md记录静态/模型范围，未声称真实大列表/UI，27继续进行中。
+- 原始日志结尾空行保留，仅raw指定路径单次git whitespace例外，其余标准check，不改配置/跳过hook。本地小目标提交，不推送。
