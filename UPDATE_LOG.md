@@ -698,3 +698,22 @@
 - 首个提交建立01–16已验收代码/测试/文档/证据基线，包含17号只读调研及3组通过的探针，但不把未完成Bloom产品实现当已交付。17号本批已写入但尚未接入/编译的domain/shared契约与bloom-reader仅保留工作区，暂存快照还原至16号形态；不重置或覆盖工作文件。
 - 提交前从暂存tree导出独立临时目录，使用现有依赖进行严格类型/构建/全部202回归验证；具体结果随后追加。node_modules/lib/运行夹具/本机安装内容均沿用.gitignore排除。
 - 暂存tree独立导出后的Host/Client/tests严格类型、构建与全部202测试通过。完整git diff --cached --check仅提示不可变参考文档原有4处Markdown两空格硬换行和末尾空行；保留原SHA不改写历史参考，该文件之外的暂存检查通过。追加实际验证结果后执行首个本地提交，236文件构成01–16基线；17号未完成产品代码仍留工作区，无push。
+
+
+## 2026-10-16 任务17：Bloom只读单项查询链路
+
+- 16号里程碑已按用户授权本地提交15c4b64fda928d33ebc84da67ed5f7dc5626b171（main，无push）；独立快照202项通过。自动审批审核拒绝临时导出目录递归清理，仅返回blocked by policy，目录保留.scratch/runtime/git-checkpoint-16-9a30381a-b854-48b6-8b56-22b09d3c9298（含指向既有依赖的junction），无服务运行，不改用户依赖或绕过策略。
+- Bloom源探针3组通过，已实证MBbloom--和MBbloomCF区分、BF.INFO不扩展时Expansion rate=null、缺失/错误类型的EXISTS为0、实际never-added-643是假阳性。只做原17票Bloom，不增加Cuckoo或写操作。
+- 新增host/bloom-reader.ts：固定TYPE/PTTL/BF.INFO与按需单项BF.EXISTS，完整Key字节与查询字节，INFO权限/不可用独立于查询；前后TYPE/TTL防缺失或错误类型被0误显示为阴性，固定not found重检、总10秒、Int64文本和统一预算。不枚举/插入/预留过滤器。
+- domain、typert.shared/host/remote-client、remote-service、transport、client/index/KeyDetails/KeyBrowser接入readBloom严格21号RPC。新增client/BloomView.tsx和bloom-query.ts及中英locale：统计自动首读、查询显式单项≤4KiB Text/Base64（空字节有效），结果显示可能性、提交项原字节及独立权限状态，原文计数与null扩展系数；成功结果显式schema校验后渲染。tests/host-typert端点同步。立即类型检查，专项/真实reader/包验收尚未完成，17保持in-progress，完成后按新约定本地提交。
+- Bloom链路首轮三层类型检查通过；新增tests/bloom-view.test.ts 14项，覆盖INFO-only不隐式查询、概率标记与空/二进制项、null不扩展、Cuckoo排除、独立ACL/缺命令、0返回竞态重检、Int64/畸形字段与标记、取消/超时/旧代次、4KiB字节/规范Base64和两端严格schema。立即类型/构建/完整回归，17尚未验收、不提交未完成代码。
+- Bloom真实reader6组一次通过，源字节/绝对过期/写计数不变、最小权限、实际0返回竞争、64KiB Key与4KiB查询项、DB代次等通过，夹具清理true。扩展scripts/smoke-dsh.mjs的BLOOM标记、5类种子、INFO-only不查询/草稿无RPC、Text/Base64/空/最大字节、非扩展null/真实假阳性/Cuckoo排除、真实ACL、删除转型和源不变；缺命令及伪造确定性标记用明确响应故障注入。现在语法检查、完整prepack及原生安装包验收；通过后提交17。
+- Bloom完整prepack已通过严格类型/构建/216回归，包SHA256=a0ac67733e206831ded8d0e4a734883715a9ead0631ee2dfa3b5c79321b9c507按SHA名安装隔离profile；安装lib68文件集合/内容一致。真实reader6组通过，原生全功能正在验收，17仍未完成、未提交。
+
+
+## 2026-10-16 任务17完成：Bloom概率查询安装包验收
+
+- 包a0ac67733e206831ded8d0e4a734883715a9ead0631ee2dfa3b5c79321b9c507完成三层严格类型/构建/216回归；源3组、真实reader6组、原生完整79组通过，安装lib68文件集合/字节一致。真实假阳性截图已查看，概率与统计文案符合实际结果；无Cuckoo/写操作。
+- 新增docs/verification/17-bloom-view.md及四份机器报告/截图，归档与源件SHA相同。记录null扩展来自固定模块实证、缺命令与伪造确定性结论的HTTP注入边界、删除/转型后0不冒充阴性、真实ACL、源DUMP/绝对过期/写计数不变；未宣称所有模块或统一会话恢复已验收。
+- 17号五项勾选done，18号因可信生命周期/现有状态事实核对开始in-progress但未勾选；更新README、baseline、方案8.7、拆分草案、tracker、spec及索引。保留原29票优先级/依赖和固定参考SHA。下一步仅按原18票实施，17本轮归档核对后本地提交，无push。
+- 所有自建DSH/Chrome/Redis已退出，证书/UUID目录清理true；用户业务库、日常profile和已有服务未动。之前Git16临时快照递归清理被自动审核拒绝（blocked by policy），原目录/junction继续保留，不绕过删除策略。

@@ -12,6 +12,7 @@ import { StreamView, type StreamActions } from './StreamView.tsx'
 import { JsonView, type JsonActions } from './JsonView.tsx'
 import { isRedisJsonType } from '../redis-json.ts'
 import { BitmapView } from './BitmapView.tsx'
+import { BloomView, type BloomActions } from './BloomView.tsx'
 import { TimeSeriesView, type TimeSeriesActions } from './TimeSeriesView.tsx'
 import { isTimeSeriesType } from '../redis-timeseries.ts'
 import { HllView, type HllActions } from './HllView.tsx'
@@ -19,7 +20,7 @@ import { NS } from './locales.ts'
 import { stringReadRequestSchema } from '../typert.shared.ts'
 
 export interface StringActions { readonly readString: (request: StringReadRequest, signal: AbortSignal) => Promise<RemoteResult<StringReadResult>> }
-type Props = TimeSeriesActions & StringActions & HllActions & HashActions & ListActions & SetActions & ZSetActions & StreamActions & JsonActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
+type Props = BloomActions & TimeSeriesActions & StringActions & HllActions & HashActions & ListActions & SetActions & ZSetActions & StreamActions & JsonActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
 /** Selection is an explicit read. Offset/count/retry owns a cancellable request;
  * stale replies cannot replace the selected key or any newer byte window.
@@ -53,6 +54,7 @@ export function KeyDetails(props: Props) {
   if (result?.state === 'unsupported' && result.metadata?.type === 'stream') return <StreamView {...props} />
   if (result?.state === 'unsupported' && result.metadata !== null && isRedisJsonType(result.metadata.type)) return <JsonView {...props} />
   if (result?.state === 'unsupported' && result.metadata !== null && isTimeSeriesType(result.metadata.type)) return <TimeSeriesView {...props} />
+  if (result?.state === 'unsupported' && result.metadata?.type === 'MBbloom--') return <BloomView {...props} />
   if (view === 'hll') return <>
     <button type="button" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}>{t('bitmap.back')}</button>
     <HllView {...props} />

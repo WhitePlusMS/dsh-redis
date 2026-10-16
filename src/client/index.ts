@@ -55,6 +55,7 @@ export function apply(ctx: Context): void {
       readStream: async (request, signal) => (await remote()).readStream(sessionId, request, signal),
       readJson: async (request, signal) => (await remote()).readJson(sessionId, request, signal),
       readGeo: async (request, signal) => (await remote()).readGeo(sessionId, request, signal),
+      readBloom: async (request, signal) => (await remote()).readBloom(sessionId, request, signal),
       readTimeSeries: async (request, signal) => (await remote()).readTimeSeries(sessionId, request, signal),
       readHll: async (request, signal) => (await remote()).readHll(sessionId, request, signal),
     }),

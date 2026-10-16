@@ -1,0 +1,34 @@
+{
+  "startedAt": "2026-10-16T07:09:21.071Z",
+  "checks": [
+    "information-only read never queries membership; actual binary/empty keys and items plus complete 64 KiB key/4 KiB item keep exact identities in fixed single-item EXISTS",
+    "actual non-scaling empty filter is negative with null expansion; a known never-inserted false positive stays only maybe-present; Cuckoo is never queried as Bloom and missing is distinct",
+    "serialized source filter, absolute expiry and monitored data-write counters remain unchanged; production transport issues only the four fixed read commands",
+    "minimal read ACL checks items without INFO permission; INFO grant restores statistics, EXISTS refusal gives no verdict while stats stay readable, and BF.ADD remains forbidden",
+    "actual DB generation change rejects old Bloom queries and isolates DB1",
+    "actual deletion/Cuckoo conversion after TYPE, INFO or EXISTS discards verdicts; two real raw EXISTS zeros caused by missing/wrong type are never shown as negative membership"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "8f9bb52d-78b7-413c-b501-dd03f0a555e9",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "bloomVersion": 80212
+    }
+  ],
+  "passed": true,
+  "falsePositiveFixtureItem": "never-added-643",
+  "finishedAt": "2026-10-16T07:09:37.542Z"
+}

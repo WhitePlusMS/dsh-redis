@@ -11,10 +11,11 @@ import type { SetActions } from './SetView.tsx'
 import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
 import type { JsonActions } from './JsonView.tsx'
+import type { BloomActions } from './BloomView.tsx'
 import type { TimeSeriesActions } from './TimeSeriesView.tsx'
 import type { HllActions } from './HllView.tsx'
 
-export interface KeyActions extends TimeSeriesActions, StringActions, HllActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions, JsonActions {
+export interface KeyActions extends BloomActions, TimeSeriesActions, StringActions, HllActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions, JsonActions {
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
 }

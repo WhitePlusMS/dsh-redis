@@ -22,6 +22,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–16 done、17 in-progress、其余12票 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–17 done、18 in-progress、其余11票 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–16 done，17 Bloom in-progress，其余12票 ready-for-agent；16证据见 docs/verification/16-timeseries-view.md：202项回归、真实reader7组、源语义3组及原生73组通过，安装lib66文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–17 done，18 会话浏览状态 in-progress，其余11票 ready-for-agent；17证据见 docs/verification/17-bloom-view.md：216项回归、真实reader6组、源语义3组及原生79组通过，安装lib68文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。

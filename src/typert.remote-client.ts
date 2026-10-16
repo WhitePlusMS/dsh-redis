@@ -12,9 +12,11 @@ import type { StreamReadRequest, StreamReadResult } from './domain.ts'
 import type { JsonReadRequest, JsonReadResult } from './domain.ts'
 import type { GeoReadRequest, GeoReadResult, HllReadRequest, HllReadResult } from './domain.ts'
 import type { TimeSeriesReadRequest, TimeSeriesReadResult } from './domain.ts'
+import type { BloomReadRequest, BloomReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  readBloom: (agentId: SessionId, request: BloomReadRequest, signal?: AbortSignal) => Promise<RemoteResult<BloomReadResult>>
   readTimeSeries: (agentId: SessionId, request: TimeSeriesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<TimeSeriesReadResult>>
   readHll: (agentId: SessionId, request: HllReadRequest, signal?: AbortSignal) => Promise<RemoteResult<HllReadResult>>
   readGeo: (agentId: SessionId, request: GeoReadRequest, signal?: AbortSignal) => Promise<RemoteResult<GeoReadResult>>
@@ -38,6 +40,7 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/readBloom': RedisViewerRemote['readBloom']
     'redisViewer/readTimeSeries': RedisViewerRemote['readTimeSeries']
     'redisViewer/readHll': RedisViewerRemote['readHll']
     'redisViewer/readGeo': RedisViewerRemote['readGeo']
@@ -61,6 +64,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/readBloom': (request: BloomReadRequest, signal?: AbortSignal) => Promise<RemoteResult<BloomReadResult>>
     'agent:redisViewer/readTimeSeries': (request: TimeSeriesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<TimeSeriesReadResult>>
     'agent:redisViewer/readHll': (request: HllReadRequest, signal?: AbortSignal) => Promise<RemoteResult<HllReadResult>>
     'agent:redisViewer/readGeo': (request: GeoReadRequest, signal?: AbortSignal) => Promise<RemoteResult<GeoReadResult>>

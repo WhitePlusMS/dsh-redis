@@ -229,3 +229,18 @@ export interface TimeSeriesReadResult {
   readonly sampledAt: string
 }
 export const MAX_TIMESERIES_SAMPLES = 100
+
+/** One explicit item per query, separate from the information-only first read. */
+export const MAX_BLOOM_ITEM_BYTES = 4096
+export interface BloomInfo { readonly capacity: string; readonly size: string; readonly filters: string; readonly inserted: string; readonly expansion: string | null }
+export interface BloomReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly itemBase64: string | null }
+export interface BloomReadResult {
+  readonly state: 'value' | 'missing' | 'unsupported' | 'changed' | 'unavailable' | 'failed'
+  readonly error: ConnectionErrorCode | null
+  readonly metadata: KeyMetadata | null
+  readonly info: BloomInfo | null
+  readonly infoState: 'available' | 'permission' | 'unavailable' | null
+  readonly itemBase64: string | null
+  readonly membership: 'absent' | 'maybe-present' | null
+  readonly sampledAt: string
+}

@@ -6,7 +6,7 @@
 
 项目根目录：`E:\项目demo\dsh-redis`。
 
-当前阶段：按指定 rc.2 继续完整 29 票；01–16 已验收，17 Bloom 正在推进。
+当前阶段：按指定 rc.2 继续完整 29 票；01–17 已验收，18 会话浏览状态正在推进。
 
 ## 文档入口
 
@@ -30,7 +30,7 @@ String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、H
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–16 done、17 Bloom in-progress，其余 12 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–17 done、18 会话浏览状态 in-progress，其余 11 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 任务执行
 
@@ -38,4 +38,4 @@ String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、H
 
 后续按[开发基线要求](E:/项目demo/dsh-redis/docs/DEVELOPMENT_BASELINE.md)核对指定 rc.2、对应源码/SDK和产物，再继续剩余功能与受影响验收；P2仍为候选。
 
-当前进度：01–16 done，17 Bloom in-progress，其余12票 ready-for-agent；16证据见 docs/verification/16-timeseries-view.md：202项回归、真实reader7组、源语义3组及原生73组通过，安装lib66文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–17 done，18 会话浏览状态 in-progress，其余11票 ready-for-agent；17证据见 docs/verification/17-bloom-view.md：216项回归、真实reader6组、源语义3组及原生79组通过，安装lib68文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。

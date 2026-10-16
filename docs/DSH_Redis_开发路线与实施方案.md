@@ -2,7 +2,7 @@
 
 > 当前执行基线：用户明确选择 `0.2.0-rc.2` 并继续原 29 票实现。宿主、对应源码和配套 SDK 固定该 RC 版，如实标注预发布属性；此前稳定版调查及仅文档检查保留为历史，不作为本次实现的等待条件。
 
-> 更新2026-10-16：按用户指定 rc.2 继续全部 29 票；01–16 已验收，17 Bloom 推进，已有证据保留对应环境与包。
+> 更新2026-10-16：按用户指定 rc.2 继续全部 29 票；01–17 已验收，18 会话浏览状态推进，已有证据保留对应环境与包。
 >
 > 本文规划独立的 DSH Redis 插件。项目根目录已建立在 E:\项目demo\dsh-redis，已有规划文档、29 张独立任务及初始 Host/Client 骨架；实时进度与验证以任务文件和 UPDATE_LOG.md 为准。
 >
@@ -87,7 +87,7 @@ Git Graph 的 HTTP 外网头像逻辑、Git subprocess 注入和模型工具注�
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–16 done、17 Bloom in-progress，其余 12 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–17 done、18 会话浏览状态 in-progress，其余 11 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 #### 稳定正式版要求（以后另行迁移时参考）
 
@@ -434,6 +434,8 @@ HLL 只能提供基数估计，不能列出最初加入的元素。扫描到的 
 
 类型匹配应明确区分 Bloom 和其他 RedisBloom 模块类型。参考 DSH 的 `includes('bloom')` 不能证明所有同模块类型都可以用 BF.INFO。Cuckoo 不纳入本首版。
 
+2026-10-16实证：已完成严格 Bloom 单项链路，TYPE精确MBbloom--，INFO-only与显式≤4KiB Text/Base64项分开；non-scaling的Expansion rate=null按目标80212实测处理。实际never-added-643假阳性仅显示可能存在，缺失/转型导致的EXISTS0经TYPE重检丢弃。216回归、源3/真实6/原生79组通过，完整证据及限制见[17验收](verification/17-bloom-view.md)。会话/取消恢复/布局/发布门禁仍由18–21完成。
+
 ### 8.8 读取预算必须说明在哪一层生效
 
 建议先用可调整的开发默认值：SCAN COUNT 100、集合目标页 100 项、String 字节窗口 64 KiB、单次对外结果约 1 MiB、列表缓存上限 5000 个 Key、读取总超时约 10 秒。它们是实现起点，不是压测结论；编码后 Base64/JSON 大小也计入响应预算。
@@ -583,7 +585,7 @@ String SET 丢 TTL、Hash 删除参数、List 按值删除等旧项目写入问�
 
 既有记录显示独立项目曾在 `0.2.0-rc.2` 实现并验收 01–06。05 的严格类型、构建、53 项回归、真实 Redis 8 组、资源 4 组、原生包 15 组及认证/TLS 回归记录见 docs/verification/05-db-key-browser.md；06 的 String 验收另见 docs/verification/06-string-preview.md。此前真实 Redis 使用官方固定镜像文件与既有 WSL，未作为 Docker 验收。这些记录只证明各自记录的环境和包，不是本轮重跑结果。
 
-07 Hash与08 List已有 RC 验收，各自证据见docs/verification/07-hash-view.md和08-list-view.md。08记录95项回归、真实List6组、原生安装包31组通过，安装lib与构建40文件一致；该证据仅适用于其记录的包。当前01–16已验收，17 Bloom进行中，其余12票ready；各自证据只对应记录的包和环境，当前按指定rc.2继续剩余原任务；29 票范围、粒度与依赖不变，完整首版仍未完成。
+07 Hash与08 List已有 RC 验收，各自证据见docs/verification/07-hash-view.md和08-list-view.md。08记录95项回归、真实List6组、原生安装包31组通过，安装lib与构建40文件一致；该证据仅适用于其记录的包。当前01–17已验收，18 会话浏览状态进行中，其余11票ready；各自证据只对应记录的包和环境，当前按指定rc.2继续剩余原任务；29 票范围、粒度与依赖不变，完整首版仍未完成。
 
 ## 13 来源索引
 
@@ -668,4 +670,4 @@ String SET 丢 TTL、Hash 删除参数、List 按值删除等旧项目写入问�
 
 [R10]: https://redis.io/docs/latest/develop/reference/protocol-spec/
 
-当前进度：01–16 done，17 Bloom in-progress，其余12票 ready-for-agent；16证据见 docs/verification/16-timeseries-view.md：202项回归、真实reader7组、源语义3组及原生73组通过，安装lib66文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–17 done，18 会话浏览状态 in-progress，其余11票 ready-for-agent；17证据见 docs/verification/17-bloom-view.md：216项回归、真实reader6组、源语义3组及原生79组通过，安装lib68文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。

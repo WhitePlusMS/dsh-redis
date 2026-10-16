@@ -18,6 +18,7 @@ import type { GeoReadRequest, GeoReadResult, HllReadRequest, HllReadResult } fro
 import { isGeoPosition } from './redis-geo.ts'
 import { MAX_TIMESERIES_SAMPLES, type TimeSeriesReadRequest, type TimeSeriesReadResult, type TimeSeriesInfo } from './domain.ts'
 import { isTimeSeriesRange, isTimeSeriesTimestamp, isTimeSeriesType, isTimeSeriesValue, withinTimeSeriesRange } from './redis-timeseries.ts'
+import { MAX_BLOOM_ITEM_BYTES, type BloomInfo, type BloomReadRequest, type BloomReadResult } from './domain.ts'
 
 export const TYPERT_PACKAGE = 'dsh-redis'
 
@@ -505,6 +506,32 @@ export const timeSeriesReadResultSchema: TypertSchema<TimeSeriesReadResult> = { 
   return result
 } }
 
+export const bloomReadRequestSchema: TypertSchema<BloomReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target', 'keyBase64', 'itemBase64'])
+  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), itemBase64: object.itemBase64 === null ? null : byteStringAt(object.itemBase64, MAX_BLOOM_ITEM_BYTES) }
+} }
+export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'metadata', 'info', 'infoState', 'itemBase64', 'membership', 'sampledAt'])
+  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata)
+  if (state !== 'value' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'unavailable' && state !== 'failed') throw new TypeError('Redis RPC: invalid Bloom state')
+  if ((state === 'failed') !== (error !== null)) throw new TypeError('Redis RPC: invalid Bloom error')
+  const info: BloomInfo | null = object.info === null ? null : (() => {
+    const item = objectAt(object.info, ['capacity', 'size', 'filters', 'inserted', 'expansion'])
+    return { capacity: unsignedIntegerAt(item.capacity), size: unsignedIntegerAt(item.size), filters: unsignedIntegerAt(item.filters), inserted: unsignedIntegerAt(item.inserted), expansion: item.expansion === null ? null : unsignedIntegerAt(item.expansion) }
+  })()
+  const infoState = object.infoState, membership = object.membership
+  const itemBase64 = object.itemBase64 === null ? null : byteStringAt(object.itemBase64, MAX_BLOOM_ITEM_BYTES)
+  if (infoState !== null && infoState !== 'available' && infoState !== 'permission' && infoState !== 'unavailable') throw new TypeError('Redis RPC: invalid Bloom info state')
+  if ((infoState === 'available') !== (info !== null) || (membership !== null && membership !== 'absent' && membership !== 'maybe-present')) throw new TypeError('Redis RPC: invalid Bloom result')
+  if (state === 'value') {
+    if (metadata?.type !== 'MBbloom--' || metadata.length !== null || infoState === null || (itemBase64 === null) !== (membership === null)) throw new TypeError('Redis RPC: invalid Bloom value')
+  } else {
+    if (info !== null || infoState !== null || membership !== null) throw new TypeError('Redis RPC: non-value contains Bloom data')
+    if (state === 'unsupported' ? metadata === null || metadata.type === 'MBbloom--' || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid Bloom metadata')
+  }
+  return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
+} }
+
 export const redisDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
   createRedisInvocation('testConnection', 'ConnectionRequest', 'ConnectionTestResult', connectionRequestSchema, connectionTestSchema, sessionIdSchema),
@@ -526,4 +553,5 @@ export const redisDescriptors = [
   createRedisInvocation('readGeo', 'GeoReadRequest', 'GeoReadResult', geoReadRequestSchema, geoReadResultSchema, sessionIdSchema),
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllReadRequestSchema, hllReadResultSchema, sessionIdSchema),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
+  createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
 ] as const

@@ -12,6 +12,8 @@ import type { ZSetReadRequest, ZSetReadResult } from './domain.ts'
 import { RedisStreams } from './host/stream-reader.ts'
 import { RedisJson } from './host/json-reader.ts'
 import { RedisGeo } from './host/geo-reader.ts'
+import { RedisBloom } from './host/bloom-reader.ts'
+import type { BloomReadRequest, BloomReadResult } from './domain.ts'
 import { RedisTimeSeries } from './host/timeseries-reader.ts'
 import type { TimeSeriesReadRequest, TimeSeriesReadResult } from './domain.ts'
 import { RedisHll } from './host/hll-reader.ts'
@@ -44,6 +46,7 @@ export class RedisRemoteService extends TypertRemoteService {
   private readonly geo = new RedisGeo(this.connections)
   private readonly hll = new RedisHll(this.connections)
   private readonly timeseries = new RedisTimeSeries(this.connections)
+  private readonly bloom = new RedisBloom(this.connections)
   private readonly profiles: RedisProfiles
   constructor(ctx: Context) {
     super(ctx, 'redisViewer')
@@ -96,6 +99,9 @@ export class RedisRemoteService extends TypertRemoteService {
   }
   async readJson(agent: Agent, request: JsonReadRequest, signal: AbortSignal): Promise<JsonReadResult> {
     return this.json.read(agent.session.id, request, signal)
+  }
+  async readBloom(agent: Agent, request: BloomReadRequest, signal: AbortSignal): Promise<BloomReadResult> {
+    return this.bloom.read(agent.session.id, request, signal)
   }
   async readTimeSeries(agent: Agent, request: TimeSeriesReadRequest, signal: AbortSignal): Promise<TimeSeriesReadResult> {
     return this.timeseries.read(agent.session.id, request, signal)

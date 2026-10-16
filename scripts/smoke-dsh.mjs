@@ -14,7 +14,7 @@ async function smoke(fixture, profilePhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
+  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -1064,6 +1064,98 @@ async function smoke(fixture, profilePhase) {
             report.checks.push('native HLL deletion and conversion to Hash discard prior count and metadata')
           }
         }
+        if (process.env.REDIS_SMOKE_BLOOM === '1') {
+          const buffers = fixture.admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
+          const dump = await buffers.sendCommand(['DUMP', 'bloom:records']), expiry = await fixture.admin.sendCommand(['PEXPIRETIME', 'bloom:records'])
+          const existsCount = async () => Number(/cmdstat_bf\.exists:calls=(\d+)/u.exec(await fixture.admin.info('commandstats'))?.[1] ?? 0)
+          const before = await existsCount()
+          async function selectBloom(name) {
+            assert.equal(await scanAll(name), 1); await keys.locator('.redis-key-list button').click()
+            const details = keys.locator('section[aria-label="Bloom statistics and membership"]'); await details.waitFor()
+            await details.locator('[data-bloom-capacity]').waitFor(); return details
+          }
+          let details = await selectBloom('bloom:records')
+          assert.equal(await existsCount(), before); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          let calls = 0
+          const bloomCalls = request => { if (request.url().endsWith('/api/redisViewer/readBloom')) calls++ }
+          page.on('request', bloomCalls)
+          await details.locator('textarea[name="bloomItem"]').fill('present'); await details.locator('select[name="bloomFormat"]').selectOption('base64')
+          assert.equal(calls, 0); page.off('request', bloomCalls)
+          const queryBloom = async (value, mode = 'text') => {
+            await details.locator('select[name="bloomFormat"]').selectOption(mode); await details.locator('textarea[name="bloomItem"]').fill(value)
+            const response = page.waitForResponse(item => item.url().endsWith('/api/redisViewer/readBloom'))
+            await details.getByRole('button', { name: 'Check possibility', exact: true }).click(); await response
+            await until(async () => await details.getByRole('button', { name: 'Check possibility', exact: true }).isEnabled(), 'native Bloom query complete')
+          }
+          const refreshBloom = async () => {
+            const response = page.waitForResponse(item => item.url().endsWith('/api/redisViewer/readBloom'))
+            await details.getByRole('button', { name: 'Read / refresh statistics', exact: true }).click(); await response
+            await until(async () => await details.getByRole('button', { name: 'Check possibility', exact: true }).isEnabled(), 'native Bloom information complete')
+          }
+          await queryBloom('present')
+          assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'maybe-present')
+          assert((await details.innerText()).includes('false positives cannot prove'))
+          report.checks.push('native Bloom opens from exact MBbloom-- with information only; input/format drafts cause no RPC or EXISTS, and positive membership uses explicit probability semantics')
+          for (const value of ['', '中文😀']) {
+            await queryBloom(value); assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'maybe-present')
+            assert.equal(await details.locator('textarea[readonly]').inputValue(), Buffer.from(value).toString('base64'))
+          }
+          await queryBloom(Buffer.from([254, 0]).toString('base64'), 'base64')
+          assert.equal(await details.locator('textarea[readonly]').inputValue(), Buffer.from([254, 0]).toString('base64'))
+          await queryBloom(Buffer.alloc(4096, 255).toString('base64'), 'base64')
+          assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'maybe-present')
+          assert.equal(await details.locator('textarea[readonly]').inputValue(), Buffer.alloc(4096, 255).toString('base64'))
+          await details.locator('textarea[name="bloomItem"]').fill(Buffer.alloc(4097).toString('base64'))
+          calls = 0; page.on('request', bloomCalls); await details.getByRole('button', { name: 'Check possibility', exact: true }).click()
+          await details.getByRole('alert').filter({ hasText: 'Use at most 4 KiB' }).waitFor(); assert.equal(calls, 0); page.off('request', bloomCalls)
+          await refreshBloom(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          report.checks.push('native Bloom checks empty/UTF-8/binary and exact 4 KiB items, echoes canonical raw bytes; oversized input is rejected without network and statistics refresh clears the old verdict')
+          details = await selectBloom('bloom:fixed'); assert.equal(await details.locator('[data-bloom-expansion]').innerText(), 'Non-scaling')
+          await queryBloom('never-added'); assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'absent')
+          details = await selectBloom('bloom:probability'); await queryBloom(fixture.bloomFalsePositive)
+          assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'maybe-present')
+          assert.notEqual(fixture.bloomFalsePositive, 'only-added')
+          await details.scrollIntoViewIfNeeded(); await page.screenshot({ path: resolve(artifacts, 'native-bloom-probability.png'), fullPage: true })
+          assert.equal(await scanAll('bloom:cuckoo'), 1); await keys.locator('.redis-key-list button').click()
+          await keys.getByRole('status').filter({ hasText: 'This type cannot be viewed as a String.' }).waitFor()
+          assert.equal(await keys.locator('section[aria-label="Bloom statistics and membership"]').count(), 0)
+          report.checks.push('native non-scaling/null expansion and an empty-filter negative differ from a real never-added false positive; Cuckoo remains a distinct unsupported type')
+          details = await selectBloom('bloom:records')
+          await fixture.admin.sendCommand(['ACL', 'SETUSER', 'default', '-bf.info'])
+          try {
+            await queryBloom('present'); await details.locator('[data-bloom-info-status="permission"]').waitFor()
+            assert.equal(await details.locator('[data-bloom-membership]').getAttribute('data-bloom-membership'), 'maybe-present'); assert.equal(await details.locator('[data-bloom-capacity]').count(), 0)
+          } finally { await fixture.admin.sendCommand(['ACL', 'SETUSER', 'default', '+bf.info']) }
+          await fixture.admin.sendCommand(['ACL', 'SETUSER', 'default', '-bf.exists'])
+          try {
+            await queryBloom('present'); await details.getByRole('alert').filter({ hasText: 'not allowed to perform' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          } finally { await fixture.admin.sendCommand(['ACL', 'SETUSER', 'default', '+bf.exists']) }
+          await queryBloom('present'); await details.locator('[data-bloom-capacity]').waitFor()
+          report.checks.push('native actual INFO permission refusal still permits an explicit EXISTS verdict; denied EXISTS clears previous results and explicit recovery succeeds')
+          const bloomEndpoint = '**/api/redisViewer/readBloom'
+          // Explicit response fault injection, not an actual disabled module.
+          await page.route(bloomEndpoint, async route => {
+            const response = await route.fetch(), body = await response.json(); assert(body.result?.ok)
+            Object.assign(body.result.value, { state: 'unavailable', error: null, metadata: null, info: null, infoState: null, membership: null })
+            await route.fulfill({ response, json: body })
+          })
+          await queryBloom('present'); await details.getByRole('status').filter({ hasText: 'required Bloom query command is unavailable' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          await page.unroute(bloomEndpoint)
+          await page.route(bloomEndpoint, async route => {
+            const response = await route.fetch(), body = await response.json(); assert(body.result?.ok)
+            body.result.value.membership = 'present'
+            await route.fulfill({ response, json: body })
+          })
+          await queryBloom('present'); await details.getByRole('alert').filter({ hasText: 'Plugin communication failed' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          await page.unroute(bloomEndpoint); await queryBloom('present'); await details.locator('[data-bloom-membership]').waitFor()
+          report.checks.push('explicit native response fault injection covers unavailable-command UI and rejects a forged certain-present verdict before rendering; the server module remains enabled')
+          assert.deepEqual(await buffers.sendCommand(['DUMP', 'bloom:records']), dump); assert.equal(await fixture.admin.sendCommand(['PEXPIRETIME', 'bloom:records']), expiry)
+          details = await selectBloom('bloom:compact'); await fixture.admin.del('bloom:compact'); await queryBloom('member')
+          await details.getByRole('status').filter({ hasText: 'no longer exists or has expired' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          await fixture.admin.sendCommand(['CF.RESERVE', 'bloom:compact', '100']); await queryBloom('member')
+          await details.getByRole('status').filter({ hasText: 'Cuckoo is outside this first release' }).waitFor(); assert.equal(await details.locator('[data-bloom-membership]').count(), 0)
+          report.checks.push('native Bloom preserves serialized source bytes and absolute expiry; deletion and Cuckoo conversion discard old statistics/verdicts rather than invent a negative')
+        }
       }
       await pane.getByRole('button', { name: 'Disconnect', exact: true }).click()
       await password.waitFor()
@@ -1247,6 +1339,19 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
           const module = (await fixture.admin.sendCommand(['MODULE', 'LIST'])).find(item => item.name === 'timeseries')
           assert.equal(module?.ver, 80210); fixture.metadata.timeSeriesVersion = module.ver
           fixture.expectedKeyCount += 4
+        }
+        if (process.env.REDIS_SMOKE_BLOOM === '1') {
+          for (const value of ['present', '', '中文😀', Buffer.from([254, 0]), Buffer.alloc(4096, 255)]) await fixture.admin.sendCommand(['BF.ADD', 'bloom:records', value])
+          await fixture.admin.pExpire('bloom:records', 300000)
+          await fixture.admin.sendCommand(['BF.RESERVE', 'bloom:fixed', '0.01', '10', 'NONSCALING'])
+          await fixture.admin.sendCommand(['BF.RESERVE', 'bloom:probability', '0.9', '1']); await fixture.admin.sendCommand(['BF.ADD', 'bloom:probability', 'only-added'])
+          const candidates = Array.from({ length: 1000 }, (_, index) => 'never-added-' + index), flags = await fixture.admin.sendCommand(['BF.MEXISTS', 'bloom:probability', ...candidates])
+          fixture.bloomFalsePositive = candidates[flags.indexOf(true)]; assert(fixture.bloomFalsePositive)
+          await fixture.admin.sendCommand(['CF.RESERVE', 'bloom:cuckoo', '100'])
+          await fixture.admin.sendCommand(['BF.ADD', 'bloom:compact', 'member'])
+          const module = (await fixture.admin.sendCommand(['MODULE', 'LIST'])).find(item => item.name === 'bf')
+          assert.equal(module?.ver, 80212); fixture.metadata.bloomVersion = module.ver
+          fixture.expectedKeyCount += 5
         }
       }
       const phases = process.env.REDIS_SMOKE_PROFILES === '1' ? ['save', 'reopen'] : [undefined]

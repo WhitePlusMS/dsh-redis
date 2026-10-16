@@ -4,8 +4,8 @@ import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 
-export type RedisReadCommand = 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'JSON.TYPE' | 'JSON.GET' | 'GEOPOS' | 'PFCOUNT' | 'TS.INFO' | 'TS.RANGE' | 'TS.REVRANGE'
-const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'ZCARD', 'ZRANGE', 'ZSCAN', 'XLEN', 'XRANGE', 'XREVRANGE', 'JSON.TYPE', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'TS.RANGE', 'TS.REVRANGE'])
+export type RedisReadCommand = 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'JSON.TYPE' | 'JSON.GET' | 'GEOPOS' | 'PFCOUNT' | 'TS.INFO' | 'TS.RANGE' | 'TS.REVRANGE' | 'BF.INFO' | 'BF.EXISTS'
+const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'ZCARD', 'ZRANGE', 'ZSCAN', 'XLEN', 'XRANGE', 'XREVRANGE', 'JSON.TYPE', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'TS.RANGE', 'TS.REVRANGE', 'BF.INFO', 'BF.EXISTS'])
 const CONNECT_TIMEOUT = 8000
 const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16

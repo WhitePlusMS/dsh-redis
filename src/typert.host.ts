@@ -7,6 +7,8 @@ import { jsonReadRequestSchema, jsonReadResultSchema } from './typert.shared.ts'
 import { geoReadRequestSchema, geoReadResultSchema, hllReadRequestSchema, hllReadResultSchema } from './typert.shared.ts'
 import { timeSeriesReadRequestSchema, timeSeriesReadResultSchema } from './typert.shared.ts'
 
+import { bloomReadRequestSchema, bloomReadResultSchema } from './typert.shared.ts'
+
 const empty = z.object({}).strict()
 const error = z.enum(['auth', 'network', 'timeout', 'cancelled', 'stale', 'tls-certificate', 'tls-hostname', 'permission', 'oversize', 'protocol', 'busy', 'database', 'type-changed'])
 const host = z.string().min(1).max(253).regex(/^[^\s/\\@?#\0]+$/u)
@@ -56,6 +58,9 @@ const hllValue = z.object({ state: z.enum(['value', 'missing', 'unsupported', 'c
 const timeSeriesRead = z.object({ target: databaseTarget, keyBase64: z.string().max(87384), direction: z.enum(['forward', 'reverse']), start: z.string().max(19), end: z.string().max(19), count: z.number().int().min(1).max(100), cursor: z.string().max(36).nullable() }).strict().transform(value => timeSeriesReadRequestSchema.parse(value))
 const timeSeriesPage = z.object({ state: z.enum(['page', 'missing', 'unsupported', 'changed', 'unavailable', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), direction: z.enum(['forward', 'reverse']), start: z.string().max(19), end: z.string().max(19), samples: z.array(z.object({ timestamp: z.string().max(19), value: z.string().max(128) }).strict()).max(100), info: z.object({ totalSamples: z.string().max(19), firstTimestamp: z.string().max(19), lastTimestamp: z.string().max(19), retentionTime: z.string().max(19) }).strict().nullable(), infoState: z.enum(['available', 'permission', 'unavailable']).nullable(), cursor: z.string().max(36).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => timeSeriesReadResultSchema.parse(value))
 
+const bloomRead = z.object({ target: databaseTarget, keyBase64: z.string().max(87384), itemBase64: z.string().max(5464).nullable() }).strict().transform(value => bloomReadRequestSchema.parse(value))
+const bloomValue = z.object({ state: z.enum(['value', 'missing', 'unsupported', 'changed', 'unavailable', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), info: z.object({ capacity: z.string().max(19), size: z.string().max(19), filters: z.string().max(19), inserted: z.string().max(19), expansion: z.string().max(19).nullable() }).strict().nullable(), infoState: z.enum(['available', 'permission', 'unavailable']).nullable(), itemBase64: z.string().max(5464).nullable(), membership: z.enum(['absent', 'maybe-present']).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => bloomReadResultSchema.parse(value))
+
 /** Host Zod codecs are required by the rc.2 Typert loader. */
 export const redisHostDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', empty,
@@ -79,6 +84,7 @@ export const redisHostDescriptors = [
   createRedisInvocation('readGeo', 'GeoReadRequest', 'GeoReadResult', geoRead, geoPage, z.string().min(1)),
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllRead, hllValue, z.string().min(1)),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesRead, timeSeriesPage, z.string().min(1)),
+  createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomRead, bloomValue, z.string().min(1)),
 ] as const
 export const TYPERT = { package: TYPERT_PACKAGE, face: 'host', schemas: [], invocations: redisHostDescriptors, model: { services: [], events: [], objects: [] } }
 export default TYPERT

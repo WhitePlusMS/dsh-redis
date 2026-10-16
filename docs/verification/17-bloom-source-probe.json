@@ -1,0 +1,240 @@
+{
+  "startedAt": "2026-10-16T01:07:41.750Z",
+  "checks": [
+    "Actual Bloom type MBbloom-- differs from Cuckoo; scaling/non-scaling and binary-key INFO integer fields recorded",
+    "Binary and empty items query exactly; missing and wrong-type INFO/EXISTS behavior recorded without treating a raw zero as sufficient existence proof",
+    "An actual never-added item returns one in a deliberately high-false-positive fixture, proving positive is only possible membership"
+  ],
+  "fixture": {
+    "backend": "wsl-image",
+    "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+    "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+    "owner": "e9d640b6-4623-456e-8f77-a6bc27cc12eb",
+    "container": null,
+    "redisVersion": "8.2.6",
+    "moduleCommands": [
+      "JSON.GET",
+      "TS.RANGE",
+      "BF.INFO"
+    ],
+    "tls": false,
+    "stopped": true,
+    "certificatesRemoved": true,
+    "fixtureRemoved": true
+  },
+  "observations": {
+    "modules": [
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "bf"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80212"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redisbloom.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "timeseries"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80210"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redistimeseries.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "vectorset"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "1"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": ""
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "search"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80212"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redisearch.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "ReJSON"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80209"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/rejson.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ]
+    ],
+    "bf:scaled": {
+      "type": "MBbloom--",
+      "info": [
+        "Capacity",
+        {
+          "integer": "10"
+        },
+        "Size",
+        {
+          "integer": "112"
+        },
+        "Number of filters",
+        {
+          "integer": "1"
+        },
+        "Number of items inserted",
+        {
+          "integer": "0"
+        },
+        "Expansion rate",
+        {
+          "integer": "2"
+        }
+      ]
+    },
+    "bf:fixed": {
+      "type": "MBbloom--",
+      "info": [
+        "Capacity",
+        {
+          "integer": "10"
+        },
+        "Size",
+        {
+          "integer": "112"
+        },
+        "Number of filters",
+        {
+          "integer": "1"
+        },
+        "Number of items inserted",
+        {
+          "integer": "0"
+        },
+        "Expansion rate",
+        null
+      ]
+    },
+    "cf:only": {
+      "type": "MBbloomCF",
+      "info": {
+        "error": "WRONGTYPE Operation against a key holding the wrong kind of value"
+      }
+    },
+    "binary": {
+      "type": "MBbloom--",
+      "info": [
+        "Capacity",
+        {
+          "integer": "100"
+        },
+        "Size",
+        {
+          "integer": "240"
+        },
+        "Number of filters",
+        {
+          "integer": "1"
+        },
+        "Number of items inserted",
+        {
+          "integer": "2"
+        },
+        "Expansion rate",
+        {
+          "integer": "2"
+        }
+      ]
+    },
+    "missingInfo": {
+      "error": "ERR not found"
+    },
+    "missingExists": {
+      "integer": "0"
+    },
+    "cuckooExists": {
+      "integer": "0"
+    },
+    "falsePositive": "never-added-643"
+  },
+  "passed": true,
+  "finishedAt": "2026-10-16T01:07:45.289Z"
+}
