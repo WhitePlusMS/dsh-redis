@@ -4,7 +4,7 @@ import type { PreviewFormat } from '../domain.ts'
 export type { PreviewFormat } from '../domain.ts'
 export interface ValuePreview { readonly text: string; readonly error: 'utf8' | 'json' | 'partial-json' | 'base64' | 'limit' | null; readonly contextBytes: number }
 type Window = Pick<StringReadResult, 'base64' | 'prefix' | 'suffix' | 'offset' | 'complete'>
-const MAX_OUTPUT = 512 * 1024
+export const MAX_PREVIEW_CHARACTERS = 512 * 1024
 class PreviewFailure extends Error { constructor(readonly code: NonNullable<ValuePreview['error']>) { super(code) } }
 const bytes = (base64: string): Uint8Array => Uint8Array.from(atob(base64), character => character.charCodeAt(0))
 const decoder = () => new TextDecoder('utf-8', { fatal: true, ignoreBOM: true })
@@ -33,7 +33,7 @@ export function formatJson(source: string): string {
   try { JSON.parse(source) } catch { throw new PreviewFailure('json') }
   const parts: string[] = []
   let size = 0, depth = 0, previous = ''
-  const push = (text: string) => { if ((size += text.length) > MAX_OUTPUT) throw new PreviewFailure('limit'); parts.push(text) }
+  const push = (text: string) => { if ((size += text.length) > MAX_PREVIEW_CHARACTERS) throw new PreviewFailure('limit'); parts.push(text) }
   const newline = () => { push('\n' + '  '.repeat(depth)) }
   for (let index = 0; index < source.length;) {
     const character = source[index++]
@@ -89,7 +89,7 @@ export function previewValue(value: Window, format: PreviewFormat): ValuePreview
       text = decoded.text; contextBytes = decoded.contextBytes
     }
     if (format === 'json' || format === 'decode-json') text = formatJson(text)
-    if (text.length > MAX_OUTPUT) throw new PreviewFailure('limit')
+    if (text.length > MAX_PREVIEW_CHARACTERS) throw new PreviewFailure('limit')
     return { text, error: null, contextBytes }
   } catch (error) { return { text: '', error: error instanceof PreviewFailure ? error.code : 'base64', contextBytes: 0 } }
 }

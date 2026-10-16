@@ -921,3 +921,16 @@
 - docs/verification/22-key-namespaces.md补完整实现/结果/复现/边界/原件，方案6.9新增入口。22五项勾done，六处当前摘要及22表格同步01–22 done/23–29 ready，原29票/21P0+8P1/依赖不变。此验证小目标按用户要求本地Git提交，不push；仍有七张P1，目标不标完整项目完成。
 
 - 提交前最终审计：29票无缺重号、21P0/8P1、01–22 done/23–29 ready及全部原依赖图完全一致；六当前摘要一致。138源输入SHA/42归档原件SHA逐项匹配，19个实现说明相对链接存在；main分支、暂存区起初为空、git diff --check通过。审计初次解析受原票CRLF空行影响，已改为直接读取Blocked by物理行核实，未改原票行尾或依赖。仅收本票生产/验收/文档与原件，不含lib、依赖、运行资源或23代码。
+
+## 2026-10-16 第23项开始
+
+- 第22项本地提交2548f67后工作区干净；当前23 in-progress、24–29 ready，原图/优先级不变。LUNA只读完整描述共享BytePreview、lossless formatter、各状态归属/预算/测试和固定rc.2公开侧栏API；根模型据实际代码决定，仅做显式原位聚焦，不调用内部宽度/全屏接口。
+- 按prototype的LOGIC规范，在独立prototype/redis-focus-state分支b024bbe保存单文件纯内存状态预览，含聚焦往返/搜索范围/折叠复制、宽度和明暗；主分支不含HTML壳，ignored副本可双击。发出可选偏好但未称用户已确认，不绕过之前file://策略打开。主分支六摘要/23票与表格改开始，验收仍未勾。
+- 生产实现先新增纯已读内容模型：字面搜索不接受正则、命中范围和结构控件有界；JSON只按已验证formatter的字符串/括号原位置建立折叠索引，不JSON.stringify数值；复制继续取完整formatter文本，不能复制折叠省略号或把窗口搜索当完整Redis检索。遵循单一职责/最简和严格类型，不改Host/RPC/Redis预算。
+
+- 第一批内容模型落盘：value-preview.ts将现有512Ki字符常量命名导出为MAX_PREVIEW_CHARACTERS，数值/原formatter行为未改；loaded-content.ts新增区分大小写的字面非重叠搜索（最多保留1000命中、总数仍完整计数、查询256字符且Unicode有效），以及已验证JSON输出的括号/引号结构索引（64深度、512多行控件）与源范围投影；无读取/无JSON重序列化。
+- 新增loaded-content.test.ts六项覆盖字面元字符、Unicode/空/无命中/无效查询/上限、转义括号、重复字段/大整数/指数/-0、父折叠隐藏子节点/展开精确恢复及大量块上限。立即三层严格类型通过；首轮19项中18通过，一项测试把emoji后UTF-16偏移误手算成17，逐字符核实应16（末尾20），仅改测试期望，接着完整check。尚未接UI或声称本票完成。
+
+- 23纯模型完整pnpm check三层严格类型/构建/238回归全部通过；新增docs/verification/23-focused-value-view.md，记录原型分支/未确认偏好、算法及有界语义、6项专项和未接UI/未原生范围，完整输出归档artifacts/23-focused-value-view/model-check-console.log。23票追加阶段证据仍in-progress且不勾验收；按用户小目标约定仅本地提交模型与进度/必要文档，尚不发布新包或声称第23项完成。暂未收到不同偏好，后续按可选预览的原位方式继续。
+
+- 模型提交前git diff --cached --check仅指出原始pnpm输出末尾自带空白行（model-check-console.log:124）。为保留机器原件未裁剪该日志：其他全部文件正常whitespace检查通过；仅对这个日志路径单次允许blank-at-eof、仍检查其他空白问题，不改仓库配置、不跳过hooks/测试。随后本地提交此模型小目标。
