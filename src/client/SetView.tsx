@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -36,7 +37,7 @@ export function SetView(props: Props) {
         {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('set.hint')}</p>
+
     <p role="status">{t('set.loaded')}: <span data-loaded-members>{cache.keys.length}</span> · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {result !== null && <>
       <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
@@ -52,6 +53,6 @@ export function SetView(props: Props) {
       <label>{t('set.identity')}<textarea readOnly rows={2} value={member.base64} spellCheck={false} /></label>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('set.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('set.hint')}</p><p>{t('set.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

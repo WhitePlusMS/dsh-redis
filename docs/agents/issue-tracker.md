@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–21 done、22 in-progress、其余7票 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–19 done、20界面改版/21发布复验 in-progress、22–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–21 done，22 命名空间与虚拟列表 in-progress，其余7票 ready-for-agent；21证据见 docs/verification/21-release-verification.md：226项回归，最终包原生87/17/17/22/18组通过，70个lib和79个包文件、12个Host peer及实际React18.3.1一致。历史报告保留各自检查范围；P0已验收，原29票范围/优先级/依赖不变，完整29票项目尚未完成。
+当前进度：01–19 done；20 Database/RESP工作台界面改版 in-progress，21 新界面发布复验 in-progress，22–29 ready-for-agent。原20/21包的功能证据保留其范围，不能代替用户当前要求的界面验收；当前先落实左导航/Key/右详情与按需帮助，原29票编号/优先级/依赖不变。

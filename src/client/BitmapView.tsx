@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseTarget, RedisKey, StringReadResult } from '../domain.ts'
@@ -56,7 +57,7 @@ export function BitmapView(props: Props) {
         {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setWindow(null) }}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('bitmap.hint')}</p>
+
     {rangeError && <p role="alert" className="redis-error">{t('bitmap.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
@@ -70,6 +71,6 @@ export function BitmapView(props: Props) {
       <p role="status" data-bitmap-coverage data-bitmap-start={window.offset}>{t('bitmap.total')}: {window.totalBits} · {t('bitmap.offset')}: {window.offset} · {t('bitmap.returned')}: <span data-bitmap-count>{window.count}</span></p>
       {window.count === 0 ? <p>{t('bitmap.empty')}</p> : <CollectionTable rows={window.rows} identity={row => row.offset} columns={columns} label={t('bitmap.title')} />}
     </>}
-    <p>{t('bitmap.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('bitmap.hint')}</p><p>{t('bitmap.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

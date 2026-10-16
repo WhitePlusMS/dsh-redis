@@ -5,6 +5,8 @@ import type { ConnectionErrorCode, ConnectionRequest, ConnectionSettings, Connec
 import { ProfileChooser, type ProfileActions } from './ProfileChooser.tsx'
 import { KeyBrowser, type KeyActions } from './KeyBrowser.tsx'
 import { NS } from './locales.ts'
+import { HelpDetails } from './HelpDetails.tsx'
+import { Icon } from './Icon.tsx'
 
 export interface ConnectionActions extends ProfileActions, KeyActions {
   readonly testConnection: (request: ConnectionRequest, signal: AbortSignal) => Promise<RemoteResult<ConnectionTestResult>>
@@ -30,6 +32,8 @@ export function ConnectionForm(props: Props) {
   const [busy, setBusy] = useState(false)
   const sequence = useRef(0)
   const active = useRef<AbortController | null>(null)
+  const databaseInput = useRef<HTMLInputElement | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
 
   function acceptConnection(value: ConnectionView): void {
     setConnection(value)
@@ -37,7 +41,7 @@ export function ConnectionForm(props: Props) {
     setError(value.error)
     if (value.target !== null) { setHost(value.target.host); setPort(String(value.target.port)); setUsername(value.target.username) }
     if (value.target !== null) setTls(value.target.tls)
-    if (value.state === 'connected') setPassword('')
+    if (value.state === 'connected') { setPassword(''); setSettingsOpen(false) }
   }
   async function run<T>(operation: (signal: AbortSignal) => Promise<RemoteResult<T>>, accept: (value: T) => void): Promise<void> {
     active.current?.abort()
@@ -62,25 +66,14 @@ export function ConnectionForm(props: Props) {
   const settings = (): ConnectionSettings => ({ host: host.trim(), port: Number(port), username, tls: tls ? { caPem: caPem.trim() } : null })
   const request = (): ConnectionRequest => ({ ...settings(), password })
   return <div className="redis-connection" data-connected={connected}>
-    <h2>{t('connection.title')}</h2>
-    <details className="redis-connection-settings" open={!connected}>
-      <summary>{t('connection.settings')}</summary>
-      <ProfileChooser {...props} disabled={busy || connected} settings={settings} select={value => {
+    <div className="redis-compact-connection"><button type="button" onClick={() => setSettingsOpen(true)}><Icon name="database" /><span>{connection?.target?.host ?? host}:{connection?.target?.port ?? port}</span></button><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button></div>
+    <ProfileChooser {...props} disabled={busy || connected} settings={settings} connection={connection} open={settingsOpen} onOpen={() => setSettingsOpen(true)} onClose={() => { setSettingsOpen(false); setPassword('') }} onDatabase={() => databaseInput.current?.focus()} select={value => {
         setHost(value?.host ?? '127.0.0.1'); setPort(String(value?.port ?? 6379)); setUsername(value?.username ?? '')
         setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
         setPassword(''); setError(null); setTested(false)
-      }} />
-    </details>
-    {connected ? <>
-      <p className="redis-connected" role="status">{t('connection.connected')} · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</p>
-      <button type="button" disabled={busy} onClick={() => {
-        const id = connection.id
-        if (id === null) return
-        const target = { id, generation: connection.generation }
-        void run(signal => props.disconnect(target, signal), acceptConnection)
-      }}>{t('connection.disconnect')}</button>
-    </> : <form autoComplete="off" onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection) }}>
-      <fieldset disabled={busy}>
+      }}>
+    <form autoComplete="off" onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection) }}>
+      <fieldset disabled={busy || connected}>
         <div className="redis-address">
           <label>{t('connection.host')}<input name="host" required maxLength={253} value={host} onChange={event => setHost(event.target.value)} spellCheck={false} /></label>
           <label>{t('connection.port')}<input name="port" type="number" required min={1} max={65535} step={1} value={port} onChange={event => setPort(event.target.value)} /></label>
@@ -89,7 +82,6 @@ export function ConnectionForm(props: Props) {
         <label>{t('connection.password')}<input name="password" type="password" maxLength={4096} value={password} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label>
         <label className="redis-checkbox"><input name="tls" type="checkbox" checked={tls} onChange={event => setTls(event.target.checked)} />{t('connection.tls')}</label>
         {tls && <label>{t('connection.ca')}<textarea name="caPem" rows={5} maxLength={65536} value={caPem} onChange={event => setCaPem(event.target.value)} spellCheck={false} /></label>}
-        {tls && <p>{t('connection.tlsVerification')}</p>}
         <div className="redis-actions">
           <button type="button" onClick={event => {
             if (!event.currentTarget.form?.reportValidity()) return
@@ -98,15 +90,26 @@ export function ConnectionForm(props: Props) {
           <button type="submit">{t('connection.connect')}</button>
         </div>
       </fieldset>
-    </form>}
-    <div className="redis-actions">
-      <button type="button" disabled={busy} onClick={() => { void run(signal => props.connectionStatus(signal), acceptConnection) }}>{t('connection.refresh')}</button>
-      {sampledAt !== null && <small>{t('connection.sampledAt')} <time dateTime={sampledAt.toISOString()}>{sampledAt.toLocaleTimeString()}</time></small>}
-    </div>
+    </form>
     {busy && <p role="status">{t('connection.busy')}</p>}
     {tested && <p role="status">{t('connection.testPassed')}</p>}
     {error !== null && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}
-    <p>{t('connection.privacy')}</p>
-    {connected && <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} connection={connection} acceptConnection={acceptConnection} />}
+    <HelpDetails label={t('ui.help')}><p>{t('connection.privacy')}</p>{tls && <p>{t('connection.tlsVerification')}</p>}</HelpDetails>
+    </ProfileChooser>
+    {connected ? <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} databaseInput={databaseInput} connection={connection} acceptConnection={acceptConnection} /> : <div className="redis-connect-empty"><Icon name="database" /><button type="button" onClick={() => setSettingsOpen(true)}>{t('ui.chooseConnection')}</button></div>}
+    <div className="redis-connection-status">
+      <span className={connected ? 'redis-connected' : ''} role="status">{connected ? t('connection.connected') : t('ui.disconnected')}{connected && <span className="redis-target"> · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</span>}</span>
+      <span className="redis-status-spacer" />
+      {sampledAt !== null && <time title={t('connection.sampledAt')} dateTime={sampledAt.toISOString()}>{sampledAt.toLocaleTimeString()}</time>}
+      <button type="button" className="redis-icon-button" disabled={busy} title={t('connection.refresh')} aria-label={t('connection.refresh')} onClick={() => { void run(signal => props.connectionStatus(signal), acceptConnection) }}><Icon name="refresh" /></button>
+      {connected && <button type="button" className="redis-icon-button" disabled={busy} title={t('connection.disconnect')} aria-label={t('connection.disconnect')} onClick={() => {
+        const id = connection.id
+        if (id === null) return
+        void run(signal => props.disconnect({ id, generation: connection.generation }, signal), acceptConnection)
+      }}><Icon name="disconnect" /></button>}
+      {busy && <span role="status">{t('connection.busy')}</span>}
+      {tested && !settingsOpen && <span role="status">{t('connection.testPassed')}</span>}
+      {error !== null && !settingsOpen && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}
+    </div>
   </div>
 }

@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -44,6 +45,6 @@ export function HllView(props: Props) {
         <dt>{t('hll.cache')}</dt><dd data-hll-cache>{t(result.cacheValid ? 'hll.valid' : 'hll.invalidCache')}</dd>
       </dl> : result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : <p role="status">{t(result.state === 'invalid' ? 'hll.invalid' : result.state === 'unavailable' ? 'hll.unavailable' : result.state === 'unsupported' ? 'hll.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    <p>{t('hll.hint')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('hll.hint')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

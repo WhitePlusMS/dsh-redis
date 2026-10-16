@@ -10,6 +10,7 @@ import { appendZSetRows, emptyZSetCache, type ZSetCache } from './zset-cache.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 import { GeoView, type GeoActions } from './GeoView.tsx'
+import { HelpDetails } from './HelpDetails.tsx'
 
 export interface ZSetActions extends GeoActions { readonly readZSet: (request: ZSetReadRequest, signal: AbortSignal) => Promise<RemoteResult<ZSetReadResult>> }
 type Props = ZSetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -60,7 +61,6 @@ export function ZSetView(props: Props) {
         {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t(mode === 'range' ? 'zset.rangeHint' : 'zset.scanHint')}</p>
     <p role="status">{t('zset.loaded')}: <span data-loaded-zset>{cache.rows.length}</span>{mode === 'scan' && <> · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</>}</p>
     {rangeError && <p role="alert" className="redis-error">{t('zset.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
@@ -77,6 +77,6 @@ export function ZSetView(props: Props) {
       <label>{t('set.identity')}<textarea readOnly rows={2} value={row.member.base64} spellCheck={false} /></label>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('zset.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t(mode === 'range' ? 'zset.rangeHint' : 'zset.scanHint')}</p><p>{t('zset.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

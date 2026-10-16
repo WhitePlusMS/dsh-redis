@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -58,7 +59,7 @@ export function ListView(props: Props) {
         {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('list.hint')}</p>
+
     {rangeError && <p role="alert" className="redis-error">{t('list.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
@@ -77,6 +78,6 @@ export function ListView(props: Props) {
       <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')} · {row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</p>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('list.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('list.hint')}</p><p>{t('list.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

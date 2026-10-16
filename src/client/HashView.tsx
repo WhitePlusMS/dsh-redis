@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -51,7 +52,7 @@ export function HashView(props: Props) {
         {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('hash.hint')}</p>
+
     <p role="status">{t('hash.loaded')}: <span data-loaded-fields>{cache.rows.length}</span> · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {result !== null && <>
       <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
@@ -67,6 +68,6 @@ export function HashView(props: Props) {
       <label>{t('hash.identity')}<textarea readOnly rows={2} value={selected.field.base64} spellCheck={false} /></label>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('hash.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('hash.hint')}</p><p>{t('hash.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

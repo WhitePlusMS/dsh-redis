@@ -46,7 +46,6 @@ export function BrowsingSession(props: BrowsingActions & { readonly t: Translate
   }, [props.saveBrowsingState])
   if (state === null) return <div role="status">{props.t(loadError ? 'session.loadError' : 'session.loading')}{loadError && <button type="button" onClick={() => setAttempt(value => value + 1)}>{props.t('action.retry')}</button>}</div>
   return <BrowsingContext.Provider value={{ state, update }}>
-    <p>{props.t('session.scope')}</p>
     {saveError && <p className="redis-error" role="alert">{props.t('session.saveError')} <button type="button" onClick={() => update({})}>{props.t('action.retry')}</button></p>}
     {props.children}
   </BrowsingContext.Provider>

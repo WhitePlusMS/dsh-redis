@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -43,7 +44,7 @@ export function JsonView(props: Props) {
         {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('json.hint')}</p>
+
     {pathError && <p role="alert" className="redis-error">{t('json.pathError')}</p>}
     {busy && <p role="status">{t('json.loading')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
@@ -61,6 +62,6 @@ export function JsonView(props: Props) {
         <BytePreview value={{ base64: result.base64, prefix: '', suffix: '', offset: '0', complete: true }} t={t} format={format} onFormatChange={setFormat} />
       </>}
     </>}
-    <p>{t('json.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('json.hint')}</p><p>{t('json.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

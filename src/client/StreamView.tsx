@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -58,7 +59,7 @@ export function StreamView(props: Props) {
         {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('stream.hint')}</p>
+
     <p role="status">{t('stream.loaded')}: <span data-loaded-messages>{cache.messages.length}</span> · {t(`stream.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('stream.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
@@ -70,13 +71,13 @@ export function StreamView(props: Props) {
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'stream.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
     {cache.messages.length === 0 ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} />}
-    {message !== undefined && <div className="redis-stream-fields"><h2>{t('stream.id')} {message.id}</h2><p>{t('stream.pairsHint')}</p><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} /></div>}
+    {message !== undefined && <div className="redis-stream-fields"><h2>{t('stream.id')} {message.id}</h2><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} /></div>}
     {pair !== undefined && cell !== null && window !== null && <div className="redis-cell-preview">
       <h2>{t(cell.part === 'field' ? 'hash.field' : 'hash.value')} · {t('stream.occurrence')} {cell.index}</h2>
       <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')}{cell.part === 'value' && <> · {pair.value.byteLength}/{pair.value.fullByteLength} {t('keys.bytes')}</>}</p>
       {cell.part === 'field' && <label>{t('hash.identity')}<textarea readOnly rows={2} value={pair.field.base64} spellCheck={false} /></label>}
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('stream.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('stream.hint')}</p><p>{t('stream.pairsHint')}</p><p>{t('stream.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

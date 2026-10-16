@@ -1,5 +1,6 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'ui.decode': 'Base64 解码…', 'ui.connections': '我的连接', 'ui.addConnection': '添加连接', 'ui.chooseConnection': '选择或新建连接', 'ui.close': '关闭', 'ui.help': '使用帮助', 'ui.disconnected': '未连接', 'ui.data': '数据', 'ui.metadata': '元信息', 'ui.copy': '复制已读内容', 'ui.copied': '已复制', 'ui.copyError': '复制失败，可选择文本复制',
   'layout.back': '返回 Key 列表', 'layout.selectKey': '从列表选择 Key 查看内容。', 'connection.settings': '连接配置',
   'session.loading': '正在恢复本会话选择…', 'session.loadError': '无法恢复本会话选择，请重试。', 'session.saveError': '本会话选择尚未保存，请重试。',
   'session.scope': '浏览选择按当前Host会话分别保留；只恢复选择，不自动连接或读取。密码与数据值不保存，Host重启后重新选择。',
@@ -108,6 +109,7 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'ui.decode': 'Decode Base64…', 'ui.connections': 'My connections', 'ui.addConnection': 'Add connection', 'ui.chooseConnection': 'Choose or create a connection', 'ui.close': 'Close', 'ui.help': 'Help', 'ui.disconnected': 'Disconnected', 'ui.data': 'Data', 'ui.metadata': 'Metadata', 'ui.copy': 'Copy read content', 'ui.copied': 'Copied', 'ui.copyError': 'Copy failed. Select the text to copy.',
   'layout.back': 'Back to keys', 'layout.selectKey': 'Select a key from the list to inspect its content.', 'connection.settings': 'Connection settings',
   'session.loading': 'Restoring this session selection…', 'session.loadError': 'Cannot restore this session selection. Retry.', 'session.saveError': 'This session selection has not been saved. Retry.',
   'session.scope': 'Selections are kept per current Host session; restore never connects or reads automatically. No passwords or data values are saved. Select again after a Host restart.',

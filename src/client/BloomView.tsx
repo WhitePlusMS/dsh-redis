@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -57,6 +58,6 @@ export function BloomView(props: Props) {
       {result.itemBase64 !== null && <label>{t('bloom.submitted')}<textarea readOnly rows={2} value={result.itemBase64} spellCheck={false} /></label>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'value' && <p role="status">{t(result.state === 'unavailable' || result.state === 'unsupported' ? `bloom.${result.state}` : `value.state.${result.state}`)}</p>}
     </>}
-    <p>{t('bloom.hint')}</p><p>{t('bloom.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('bloom.hint')}</p><p>{t('bloom.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

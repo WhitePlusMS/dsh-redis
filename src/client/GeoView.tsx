@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -60,7 +61,7 @@ export function GeoView(props: Props) {
         {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('geo.hint')}</p>
+
     {rangeError && <p role="alert" className="redis-error">{t('zset.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
@@ -79,6 +80,6 @@ export function GeoView(props: Props) {
       <label>{t('set.identity')}<textarea readOnly rows={2} value={row.member.base64} spellCheck={false} /></label>
       <BytePreview value={{ base64: row.member.base64, offset: '0', prefix: '', suffix: '', complete: true }} t={t} format={format} onFormatChange={setFormat} />
     </div>}
-    <p>{t('geo.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('geo.hint')}</p><p>{t('geo.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

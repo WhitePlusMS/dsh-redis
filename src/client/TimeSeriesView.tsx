@@ -1,3 +1,4 @@
+import { HelpDetails } from './HelpDetails.tsx'
 import { useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -45,7 +46,7 @@ export function TimeSeriesView(props: Props) {
         {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
-    <p>{t('timeseries.hint')}</p>
+
     <p role="status">{t('timeseries.loaded')}: <span data-loaded-samples>{cache.samples.length}</span> · {t(`timeseries.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('timeseries.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
@@ -59,6 +60,6 @@ export function TimeSeriesView(props: Props) {
       {result.info !== null && <dl className="redis-metadata"><dt>{t('timeseries.total')}</dt><dd data-ts-total>{result.info.totalSamples}</dd><dt>{t('timeseries.first')}</dt><dd>{result.info.firstTimestamp}</dd><dt>{t('timeseries.last')}</dt><dd>{result.info.lastTimestamp}</dd><dt>{t('timeseries.retention')}</dt><dd>{result.info.retentionTime}</dd></dl>}
     </>}
     {cache.samples.length > 0 ? <CollectionTable rows={cache.samples} identity={sample => sample.timestamp} columns={columns} label={t('timeseries.title')} /> : result?.state === 'page' && <p>{t('timeseries.empty')}</p>}
-    <p>{t('timeseries.budget')}</p><p>{t('value.live')}</p>
+    <HelpDetails label={t('ui.help')}><p>{t('timeseries.hint')}</p><p>{t('timeseries.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }
