@@ -57,6 +57,14 @@ export interface OverviewReadRequest { readonly target: DatabaseTarget }
 export interface OverviewReadResult { readonly state: 'value' | 'failed'; readonly error: ConnectionErrorCode | null; readonly fields: OverviewFields | null; readonly sampledAt: string }
 export const MAX_INFO_BYTES = 128 * 1024
 
+/** SLOWLOG summaries never contain argument bodies or client addresses/names. */
+export const MAX_SLOWLOG_ENTRIES = 100
+export const MAX_SLOWLOG_ARGUMENTS = 128
+export const MAX_SLOWLOG_SUMMARY_ARGS = 8
+export interface SlowLogEntry { readonly id: string; readonly timestampSeconds: string; readonly durationUs: string; readonly command: string | null; readonly loggedArgumentCount: number; readonly argumentBytes: readonly number[]; readonly originalArgumentCount: string | null }
+export interface SlowLogReadRequest { readonly target: DatabaseTarget; readonly count: number }
+export interface SlowLogReadResult { readonly state: 'page' | 'unavailable' | 'failed'; readonly error: ConnectionErrorCode | null; readonly entries: readonly SlowLogEntry[]; readonly count: number; readonly more: boolean; readonly sampledAt: string }
+
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
 export interface ScanKeysRequest { readonly target: DatabaseTarget; readonly pattern: string; readonly cursor: string | null }

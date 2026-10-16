@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–25 done、26–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–25 done、26 in-progress、27–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–25 done；26–29 ready-for-agent。25完整同包证据见docs/verification/25-server-overview.md。原29票编号/优先级/依赖不变，尚有26–29未完成。
+当前进度：01–25 done；26 in-progress（有界慢日志快照）；27–29 ready-for-agent。25完整同包证据见docs/verification/25-server-overview.md。原29票编号/优先级/依赖不变，26尚未验收。

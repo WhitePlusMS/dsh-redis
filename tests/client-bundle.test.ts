@@ -66,7 +66,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   // Inspect the actual emitted browser contribution, not only TS source schemas.
   // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
   const descriptors = mount.mock.calls[1]?.[0].descriptors
-  expect(descriptors).toHaveLength(25)
+  expect(descriptors).toHaveLength(26)
   for (const descriptor of descriptors ?? []) {
     const codec = descriptor.result
     if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)

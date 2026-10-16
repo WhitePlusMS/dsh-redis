@@ -1,3 +1,5 @@
+import { MAX_SLOWLOG_ENTRIES, MAX_SLOWLOG_ARGUMENTS, MAX_SLOWLOG_SUMMARY_ARGS, type SlowLogEntry, type SlowLogReadRequest, type SlowLogReadResult } from './domain.ts'
+import { isSlowLogCommand } from './redis-slowlog.ts'
 import { OVERVIEW_FIELDS, type OverviewFields, type OverviewReadRequest, type OverviewReadResult } from './domain.ts'
 import { isOverviewValue } from './redis-info.ts'
 import { PREVIEW_FORMATS, PREVIEW_VIEWS, type SessionBrowsingState, type PreviewFormat, type PreviewView } from './domain.ts'
@@ -558,6 +560,30 @@ export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(valu
   return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+export const slowLogReadRequestSchema: TypertSchema<SlowLogReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target', 'count'])
+  return { target: databaseTargetSchema.parse(object.target), count: integerAt(object.count, 1, MAX_SLOWLOG_ENTRIES) }
+} }
+export const slowLogReadResultSchema: TypertSchema<SlowLogReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'entries', 'count', 'more', 'sampledAt']), state = object.state, error = errorAt(object.error)
+  if ((state !== 'page' && state !== 'unavailable' && state !== 'failed') || (state === 'failed') !== (error !== null) || !Array.isArray(object.entries) || typeof object.more !== 'boolean') throw new TypeError('Redis RPC: invalid slow log state')
+  const count = integerAt(object.count, 1, MAX_SLOWLOG_ENTRIES)
+  if (object.entries.length > count) throw new TypeError('Redis RPC: slow log budget exceeded')
+  const entries: SlowLogEntry[] = object.entries.map((value: unknown) => {
+    const entry = objectAt(value, ['id', 'timestampSeconds', 'durationUs', 'command', 'loggedArgumentCount', 'argumentBytes', 'originalArgumentCount'])
+    const command = entry.command
+    if (command !== null && !isSlowLogCommand(command)) throw new TypeError('Redis RPC: invalid command summary')
+    const loggedArgumentCount = integerAt(entry.loggedArgumentCount, 1, MAX_SLOWLOG_ARGUMENTS)
+    if (!Array.isArray(entry.argumentBytes) || entry.argumentBytes.length !== Math.min(MAX_SLOWLOG_SUMMARY_ARGS, loggedArgumentCount - 1)) throw new TypeError('Redis RPC: invalid argument summary')
+    const argumentBytes = entry.argumentBytes.map((value: unknown) => integerAt(value, 0, 1024 * 1024))
+    const originalArgumentCount = entry.originalArgumentCount === null ? null : unsignedIntegerAt(entry.originalArgumentCount)
+    if (originalArgumentCount !== null && BigInt(originalArgumentCount) < BigInt(loggedArgumentCount)) throw new TypeError('Redis RPC: invalid argument total')
+    return { id: unsignedIntegerAt(entry.id), timestampSeconds: unsignedIntegerAt(entry.timestampSeconds), durationUs: unsignedIntegerAt(entry.durationUs), command, loggedArgumentCount, argumentBytes, originalArgumentCount }
+  })
+  if (entries.some((entry, index) => index > 0 && BigInt(entry.id) >= BigInt(entries[index - 1]?.id ?? '0')) || (object.more && entries.length !== count) || (state !== 'page' && (entries.length !== 0 || object.more))) throw new TypeError('Redis RPC: inconsistent slow log page')
+  return { state, error, entries, count, more: object.more, sampledAt: sampleTimeAt(object.sampledAt) }
+} }
+
 export const overviewReadRequestSchema: TypertSchema<OverviewReadRequest> = { parse(value) {
   const object = objectAt(value, ['target'])
   return { target: databaseTargetSchema.parse(object.target) }
@@ -613,6 +639,7 @@ export const redisDescriptors = [
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllReadRequestSchema, hllReadResultSchema, sessionIdSchema),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
+  createRedisInvocation('readSlowLog', 'SlowLogReadRequest', 'SlowLogReadResult', slowLogReadRequestSchema, slowLogReadResultSchema, sessionIdSchema),
   createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewReadRequestSchema, overviewReadResultSchema, sessionIdSchema),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),

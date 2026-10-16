@@ -1062,3 +1062,16 @@
 - 同包01a92d9：prepack258项、INFO原生21、完整SDK/数据/会话87、布局24全部通过；85打包/76lib/12peers/2依赖/153源码输入逐文件核对。概览21及布局24、完整87均processStopped/fixturesStopped=true，INFO代理也停止。
 - docs/verification/artifacts/25-server-overview归档30份原始文件+inventory；docs/verification/25-server-overview.md记录真实/注入/版本/TLS/接收与语义预算边界，实际查看卡片截图。六处当前进度同步01–25 done/26–29 ready，25原五项勾选且依赖不变。
 - 保留原日志结尾空行；只对明确raw日志文件使用单次git core.whitespace=-blank-at-eof检查，其余文件标准diff --check，不修改Git配置/跳过hook。所有自建服务已停止，准备本地语义提交，不push。
+
+### 26 开始：有界慢日志快照
+- 六处当前进度与26任务切至进行中，原依赖/编号/优先级不变；新增docs/verification/26-slowlog-view.md记录官方命令及8.2.6源码、固定GET数量/只传字节摘要/4-6-7段与真实接收预算。
+- 接下来新增严格慢日志DTO/纯命令名验证/Host reader，transport限定SLOWLOG GET和正数最多101，复用现有可信会话/代次/取消/10秒，不开放RESET/CONFIG或命令输入；模型专项后提交小目标。
+
+### 26 模型与Host实现（待检查）
+- 新增 redis-slowlog.ts、host/slowlog-reader.ts、tests/slowlog.test.ts，更新domain、strict两端Typert/remote-service、客户端scope和方法清单（26方法）。
+- 固定GET count+1、最多101原始项/100展示、128已记录参数/前8个长度摘要；整数原文和4/6/7段校验，正文及客户端身份不进入DTO。传输层同时约束INFO无参数/SLOWLOG只GET正数最多101；loopback测试确保RESET/LEN/-1等零派发。
+- 新增8项慢日志模型专项与1项真实socket拒写形状测试。立即执行完整类型/构建/测试；UI尚未接入，26不勾。
+
+### 26 模型里程碑通过并本地提交
+- pnpm check通过26文件267项（新增8项slowlog模型与1项loopback固定诊断形状）；原始日志保存在docs/verification/artifacts/26-slowlog-view/model-check-console.log。
+- docs/verification/26-slowlog-view.md记录通过范围与尚未完成UI/真实Redis边界；状态仍26进行中。原始日志结尾空行保持，仅该raw文件单次git whitespace例外检查，其他文件标准check，不更改Git配置/跳过hook。

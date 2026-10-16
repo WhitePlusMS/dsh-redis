@@ -4,8 +4,8 @@ import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 
-export type RedisReadCommand = 'INFO' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'JSON.TYPE' | 'JSON.GET' | 'GEOPOS' | 'PFCOUNT' | 'TS.INFO' | 'TS.RANGE' | 'TS.REVRANGE' | 'BF.INFO' | 'BF.EXISTS'
-const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['INFO', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'ZCARD', 'ZRANGE', 'ZSCAN', 'XLEN', 'XRANGE', 'XREVRANGE', 'JSON.TYPE', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'TS.RANGE', 'TS.REVRANGE', 'BF.INFO', 'BF.EXISTS'])
+export type RedisReadCommand = 'SLOWLOG' | 'INFO' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'JSON.TYPE' | 'JSON.GET' | 'GEOPOS' | 'PFCOUNT' | 'TS.INFO' | 'TS.RANGE' | 'TS.REVRANGE' | 'BF.INFO' | 'BF.EXISTS'
+const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['SLOWLOG', 'INFO', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'ZCARD', 'ZRANGE', 'ZSCAN', 'XLEN', 'XRANGE', 'XREVRANGE', 'JSON.TYPE', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'TS.RANGE', 'TS.REVRANGE', 'BF.INFO', 'BF.EXISTS'])
 const CONNECT_TIMEOUT = 8000
 const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16
@@ -106,7 +106,7 @@ export class RedisTransport {
     return () => { this.failures.delete(listener) }
   }
   execute(command: RedisReadCommand, arguments_: readonly RedisArgument[], signal: AbortSignal, beforeDispatch: () => void, deadline = Date.now() + READ_TIMEOUT): Promise<RedisReply> {
-    if (!READ_COMMANDS.has(command)) return Promise.reject(new RedisFrameError('protocol'))
+    if (!READ_COMMANDS.has(command) || (command === 'INFO' && arguments_.length !== 0) || (command === 'SLOWLOG' && (arguments_.length !== 2 || arguments_[0] !== 'GET' || typeof arguments_[1] !== 'string' || !/^(?:[1-9]\d?|10[01])$/u.test(arguments_[1])))) return Promise.reject(new RedisFrameError('protocol'))
     return this.request([command, ...arguments_], signal, Math.min(deadline, Date.now() + READ_TIMEOUT), beforeDispatch)
   }
 

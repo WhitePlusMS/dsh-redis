@@ -164,6 +164,15 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'SCAN', 'SCAN'])
     }, socket => { if (++reads === 1) firstSeen.resolve(socket); else socket.write('*2\r\n$1\r\n9\r\n*0\r\n') })
   })
+  it('limits diagnostics to INFO without sections and SLOWLOG GET with a bounded positive count', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [['RESET'], ['LEN'], ['GET', '-1'], ['GET', '102'], ['GET', '01'], ['GET', '2', 'extra'], [Buffer.from('GET'), '2']]) await expect(transport.execute('SLOWLOG', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      await expect(transport.execute('INFO', ['all'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('SLOWLOG', ['GET', '101'], signal(), () => undefined)).toEqual([])
+      expect(commands).toEqual(['PING', 'SLOWLOG'])
+    }, (socket, args) => { expect(args.map(arg => Buffer.isBuffer(arg) ? arg.toString() : arg)).toEqual(['SLOWLOG', 'GET', '101']); socket.write('*0\r\n') })
+  })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {
       const controller = new AbortController(); controller.abort()
