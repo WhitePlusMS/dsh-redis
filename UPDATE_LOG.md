@@ -1027,3 +1027,38 @@
 ### 25 模型里程碑验证与本地提交
 - pnpm check通过：Host/Client/tests严格TS、构建、25文件258项测试；其中overview.test.ts含8项INFO专项。原始日志保全至 docs/verification/artifacts/25-server-overview/model-check-console.log。
 - 文档更新 docs/verification/25-server-overview.md，明确静态/模型已通过、UI与真实Redis尚未完成；原任务图与25进行中状态保持。按照已授权的小目标本地提交，不推送。
+
+### 25 状态原型与UI接入范围
+- 一次性原型保存在 .scratch/artifacts/server-overview.prototype.html，捕获到 prototype/server-overview-state；main仅记录指针，不加入HTML壳。三组引导描述正常/缺字段、关闭迟到、权限/切换连接。
+- 接下来修改 ConnectionForm/index.ts/locales/styles 并新增 ServerOverview.tsx，以独立入口+四组卡片使用既有对话框、图标和DSH主题；原Key分栏保持，复用现有RPC错误文案/AbortSignal，保持职责最简。
+
+### 25 概览UI已接入（待验证）
+- 新增 src/client/ServerOverview.tsx；修改 ConnectionForm.tsx、index.ts、styles.ts、locales.ts。状态栏独立入口、四组16字段卡片、手动刷新/取消/关闭、采样时间与双语单位/缺失文案；使用既有dialog、HelpDetails和Icon。
+- 关闭/取消清空已读指标并abort，组件按id/generation/db重挂隔离晚结果；打开/刷新由按钮触发，不增加mount自动INFO或轮询。Key工作台DOM和默认分栏保持。
+- 预检发现英文词典原本带Record约束，按其真实声明接入；写入前失败的字符串匹配未修改源文件。立即重新执行实际UI类型检查。
+
+### 25 原生验证入口准备
+- 概览dialog使用独立redis-overview-dialog类，styles仅共享原dialog基础规则；避免既有连接配置定位器与新dialog混淆。
+- scripts/smoke-release-boundary.mjs同步25个真实Remote方法；接下来新增固定INFO原生专项并按新模式接入smoke-dsh.mjs，使用隔离真实Redis延迟代理验证，不修改用户实例。
+
+### 25 原生专项静态检查
+- scripts/smoke-server-overview.mjs新增真实8.2.6卡片、显式INFO、ACL拒绝、精确值/缺失/非法响应注入、取消/关闭/队列、10秒、EOF/新代次/B隔离和源数据不变检查；smoke-dsh新增独立overview模式与其拥有的代理。
+- 首次node --check发现测试输出JSON处换行转义写成源码字面换行，立即修正，两个脚本语法检查通过；未运行失败脚本。真实UI类型检查已通过，后续打包前再执行全量严格检查。
+
+### 25 打包前说明
+- README新增概览实际操作入口、16项四组/手动读取/单位/未报告/关闭保位说明。客户端单位细分秒、字节、连接数、Key数、次数与操作/秒，避免次/个混写。
+- scripts/smoke-server-overview.mjs和smoke-dsh.mjs语法通过。立即通过prepack执行完整严格检查并生成唯一SHA包，后续只安装到项目隔离profile。UI与真实Redis尚未宣称通过。
+
+### 25 安装包核对环境修正
+- 新包prepack通过258项，SHA=01a92d9112146dbcab48b4a97ab432c7b0334b1ca83eb6dc7d6b985141d2f68a；仅安装至项目隔离DSH_HOME。
+- 首次verify-release-package未携带其明确要求的REDIS_TEST_PYTHON/DSH_CLI_ENTRY，被脚本前置断言拒绝；原始日志另存overview-package-env-missing-console.log，未作为通过。使用同一完整显式环境重跑；实际INFO原生专项正在独立夹具中执行。
+
+### 25 真实INFO专项通过
+- 当前包01a92d9安装文件逐字节匹配；原生INFO21项通过，真实Redis8.2.6，取消31ms/实际生产超时10101ms，真实ACL/EOF/代次/B隔离/不重放/源数据不变均形成证据。
+- 原始报告保留2条主动取消的readOverview ERR_ABORTED；页面和console错误为空。所有自建进程/夹具/代理停止。实际截图已查看，4组卡片有序、背景工作台分栏保留。
+- docs/verification/25-server-overview.md追加已验证范围和注入/真实版本/预算/TLS边界；同包完整SDK/数据/会话及布局回归仍在执行，25继续进行中。
+
+### 25 完整验收、归档和本地提交
+- 同包01a92d9：prepack258项、INFO原生21、完整SDK/数据/会话87、布局24全部通过；85打包/76lib/12peers/2依赖/153源码输入逐文件核对。概览21及布局24、完整87均processStopped/fixturesStopped=true，INFO代理也停止。
+- docs/verification/artifacts/25-server-overview归档30份原始文件+inventory；docs/verification/25-server-overview.md记录真实/注入/版本/TLS/接收与语义预算边界，实际查看卡片截图。六处当前进度同步01–25 done/26–29 ready，25原五项勾选且依赖不变。
+- 保留原日志结尾空行；只对明确raw日志文件使用单次git core.whitespace=-blank-at-eof检查，其余文件标准diff --check，不修改Git配置/跳过hook。所有自建服务已停止，准备本地语义提交，不push。

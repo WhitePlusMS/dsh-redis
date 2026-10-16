@@ -1,0 +1,24 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native installed INFO reader selects sixteen exact Redis 8.2.6 fields into four cards; no automatic INFO, one no-argument command per explicit opening, and closing preserves the original Key/detail split, raw selection and scroll
+[smoke check] labeled HTTP response fault cases render beyond-53-bit integer text, zero bytes and unreported fields distinctly; actual browser decoder rejects a numeric metric before cards can render
+[smoke check] real isolated Redis ACL -info refuses the fixed diagnostic, clears old cards and exposes only the safe permission message; restoring permission requires explicit refresh
+[smoke check] native cancel and dialog close propagate actual Host cancellation; the queued INFO never dispatches, held real reply drains, late data stays cleared and explicit reopen reads fresh on the same generation while B stays usable
+[smoke check] native INFO uses the production ten-second timeout, clears all old metrics and closes only A; manual status/password/reconnect advances generation without INFO replay, and the prior target dispatches nothing
+[smoke check] actual INFO TCP EOF clears cards without reconnecting; B remains readable and only manual reconnect plus explicit opening obtains a fresh generation snapshot
+[smoke check] native overview preserves selected and binary-key serialized bytes/absolute expiry; snapshots and diagnostics do not edit Redis data or configuration, and the owned proxy reports no protocol errors
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":21,"fixturesStopped":true}

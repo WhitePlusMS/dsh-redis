@@ -1,0 +1,23 @@
+{
+  "state": "value",
+  "error": null,
+  "fields": {
+    "redis_version": "8.2.6",
+    "redis_mode": "standalone",
+    "uptime_in_seconds": "22",
+    "used_memory": "1444056",
+    "used_memory_rss": "27140096",
+    "used_memory_peak": "1457040",
+    "maxmemory": "134217728",
+    "connected_clients": "3",
+    "blocked_clients": "0",
+    "total_connections_received": "5",
+    "total_commands_processed": "308",
+    "instantaneous_ops_per_sec": "19",
+    "keyspace_hits": "32",
+    "keyspace_misses": "0",
+    "expired_keys": "0",
+    "evicted_keys": "0"
+  },
+  "sampledAt": "2026-10-16T13:05:46.974Z"
+}

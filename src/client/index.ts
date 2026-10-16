@@ -53,6 +53,7 @@ export function apply(ctx: Context): void {
       removeProfile: async (request, signal) => (await remote()).removeProfile(sessionId, request, signal),
       selectDatabase: async (request, signal) => (await remote()).selectDatabase(sessionId, request, signal),
       scanKeys: async (request, signal) => (await remote()).scanKeys(sessionId, request, signal),
+      readOverview: async (request, signal) => (await remote()).readOverview(sessionId, request, signal),
       readString: async (request, signal) => (await remote()).readString(sessionId, request, signal),
       scanHash: async (request, signal) => (await remote()).scanHash(sessionId, request, signal),
       readList: async (request, signal) => (await remote()).readList(sessionId, request, signal),
