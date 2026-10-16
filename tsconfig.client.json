@@ -1,5 +1,5 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": { "lib": ["ES2022", "DOM", "DOM.Iterable"], "types": ["react"] },
-  "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/domain.ts", "src/connection-uri.ts", "src/profile-transfer.ts", "src/redis-score.ts", "src/stream-id.ts", "src/redis-json.ts", "src/redis-geo.ts", "src/redis-timeseries.ts", "src/typert.shared.ts", "src/typert.remote-client.ts"]
+  "include": ["src/client/**/*.ts", "src/client/**/*.tsx", "src/domain.ts", "src/connection-uri.ts", "src/profile-transfer.ts", "src/redis-info.ts", "src/redis-score.ts", "src/stream-id.ts", "src/redis-json.ts", "src/redis-geo.ts", "src/redis-timeseries.ts", "src/typert.shared.ts", "src/typert.remote-client.ts"]
 }

@@ -1,3 +1,5 @@
+import { RedisOverview } from './host/overview-reader.ts'
+import type { OverviewReadRequest, OverviewReadResult } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
 import { RedisConnections } from './host/connection-service.ts'
@@ -37,6 +39,7 @@ import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus 
 /** Typert supplies the trusted Agent; clients cannot select an arbitrary owner. */
 export class RedisRemoteService extends TypertRemoteService {
   private readonly connections = new RedisConnections()
+  private readonly overview = new RedisOverview(this.connections)
   private readonly keys = new RedisKeys(this.connections)
   private readonly strings = new RedisStrings(this.connections)
   private readonly hashes = new RedisHashes(this.connections)
@@ -115,6 +118,7 @@ export class RedisRemoteService extends TypertRemoteService {
   async readGeo(agent: Agent, request: GeoReadRequest, signal: AbortSignal): Promise<GeoReadResult> {
     return this.geo.read(agent.session.id, request, signal)
   }
+  async readOverview(agent: Agent, request: OverviewReadRequest, signal: AbortSignal): Promise<OverviewReadResult> { return this.overview.read(agent.session.id, request, signal) }
   async connectionStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     return this.connections.status(agent.session.id)

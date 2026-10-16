@@ -1,3 +1,5 @@
+import { OVERVIEW_FIELDS } from './domain.ts'
+import { overviewReadRequestSchema, overviewReadResultSchema } from './typert.shared.ts'
 import { z } from 'zod'
 import { PREVIEW_FORMATS } from './domain.ts'
 import { browsingStateSchema } from './typert.shared.ts'
@@ -66,6 +68,9 @@ const timeSeriesPage = z.object({ state: z.enum(['page', 'missing', 'unsupported
 const bloomRead = z.object({ target: databaseTarget, keyBase64: z.string().max(87384), itemBase64: z.string().max(5464).nullable() }).strict().transform(value => bloomReadRequestSchema.parse(value))
 const bloomValue = z.object({ state: z.enum(['value', 'missing', 'unsupported', 'changed', 'unavailable', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), info: z.object({ capacity: z.string().max(19), size: z.string().max(19), filters: z.string().max(19), inserted: z.string().max(19), expansion: z.string().max(19).nullable() }).strict().nullable(), infoState: z.enum(['available', 'permission', 'unavailable']).nullable(), itemBase64: z.string().max(5464).nullable(), membership: z.enum(['absent', 'maybe-present']).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => bloomReadResultSchema.parse(value))
 
+const overviewRead = z.object({ target: databaseTarget }).strict().transform(value => overviewReadRequestSchema.parse(value))
+const overviewValue = z.object({ state: z.enum(['value', 'failed']), error: error.nullable(), fields: z.object(Object.fromEntries(OVERVIEW_FIELDS.map(field => [field, z.string().max(64).nullable()]))).strict().nullable(), sampledAt: z.string().max(24) }).strict().transform(value => overviewReadResultSchema.parse(value))
+
 const previewFormat = z.enum(PREVIEW_FORMATS)
 const browsingState = z.object({ profileId: profileId.nullable(), db: z.number().int().min(0).max(65535), pattern: z.string().max(256), keyBase64: z.string().max(87384).nullable(), formats: z.object({ string: previewFormat, hash: previewFormat, list: previewFormat, set: previewFormat, zset: previewFormat, stream: previewFormat, geo: previewFormat, json: previewFormat }).strict(), stringOffset: z.string().max(19), stringCount: z.number().int().min(1).max(65536) }).strict().transform(value => browsingStateSchema.parse(value))
 
@@ -94,6 +99,7 @@ export const redisHostDescriptors = [
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllRead, hllValue, z.string().min(1)),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesRead, timeSeriesPage, z.string().min(1)),
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomRead, bloomValue, z.string().min(1)),
+  createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewRead, overviewValue, z.string().min(1)),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', empty, browsingState, z.string().min(1)),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingState, browsingState, z.string().min(1)),
 ] as const

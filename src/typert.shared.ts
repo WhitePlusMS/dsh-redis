@@ -1,3 +1,5 @@
+import { OVERVIEW_FIELDS, type OverviewFields, type OverviewReadRequest, type OverviewReadResult } from './domain.ts'
+import { isOverviewValue } from './redis-info.ts'
 import { PREVIEW_FORMATS, PREVIEW_VIEWS, type SessionBrowsingState, type PreviewFormat, type PreviewView } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
@@ -556,6 +558,24 @@ export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(valu
   return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+export const overviewReadRequestSchema: TypertSchema<OverviewReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target'])
+  return { target: databaseTargetSchema.parse(object.target) }
+} }
+export const overviewReadResultSchema: TypertSchema<OverviewReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'fields', 'sampledAt']), state = object.state, error = errorAt(object.error)
+  if ((state !== 'value' && state !== 'failed') || (state === 'value') !== (error === null) || (state === 'value') !== (object.fields !== null)) throw new TypeError('Redis RPC: invalid overview state')
+  const fields: OverviewFields | null = object.fields === null ? null : (() => {
+    const raw = objectAt(object.fields, OVERVIEW_FIELDS)
+    return Object.fromEntries(OVERVIEW_FIELDS.map(field => {
+      const value = raw[field]
+      if (value !== null && !isOverviewValue(field, value)) throw new TypeError('Redis RPC: invalid overview field')
+      return [field, value]
+    })) as OverviewFields
+  })()
+  return { state, error, fields, sampledAt: sampleTimeAt(object.sampledAt) }
+} }
+
 /** Explicit allowlist excludes values, credentials, connection identities and sessionId. */
 export const browsingStateSchema: TypertSchema<SessionBrowsingState> = { parse(value) {
   const object = objectAt(value, ['profileId', 'db', 'pattern', 'keyBase64', 'formats', 'stringOffset', 'stringCount'])
@@ -593,6 +613,7 @@ export const redisDescriptors = [
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllReadRequestSchema, hllReadResultSchema, sessionIdSchema),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
+  createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewReadRequestSchema, overviewReadResultSchema, sessionIdSchema),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),
 ] as const

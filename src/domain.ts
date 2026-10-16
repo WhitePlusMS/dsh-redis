@@ -49,6 +49,14 @@ export const PROFILE_DOCUMENT_FORMAT = 'dsh-redis-connections' as const
 export interface ProfileDocument { readonly format: typeof PROFILE_DOCUMENT_FORMAT; readonly version: 1; readonly profiles: readonly PortableConnection[] }
 export const MAX_PROFILE_DOCUMENT_BYTES = 256 * 1024
 
+/** Selected INFO fields are exact text; counters must not pass through Number. */
+export const OVERVIEW_FIELDS = ['redis_version', 'redis_mode', 'uptime_in_seconds', 'used_memory', 'used_memory_rss', 'used_memory_peak', 'maxmemory', 'connected_clients', 'blocked_clients', 'total_connections_received', 'total_commands_processed', 'instantaneous_ops_per_sec', 'keyspace_hits', 'keyspace_misses', 'expired_keys', 'evicted_keys'] as const
+export type OverviewField = typeof OVERVIEW_FIELDS[number]
+export type OverviewFields = Readonly<Record<OverviewField, string | null>>
+export interface OverviewReadRequest { readonly target: DatabaseTarget }
+export interface OverviewReadResult { readonly state: 'value' | 'failed'; readonly error: ConnectionErrorCode | null; readonly fields: OverviewFields | null; readonly sampledAt: string }
+export const MAX_INFO_BYTES = 128 * 1024
+
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
 export interface ScanKeysRequest { readonly target: DatabaseTarget; readonly pattern: string; readonly cursor: string | null }

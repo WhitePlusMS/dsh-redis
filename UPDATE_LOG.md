@@ -1012,3 +1012,18 @@
 - 24最终提交审计：29票/21P0+8P1/全部原依赖和24done/5ready一致，六处摘要同步；148源输入、43归档原件SHA逐项匹配，35个相对文档链接有效，不可变参考SHA保持e138f420…。main、原暂存区为空，已跟踪diff whitespace通过；只收24 UI/原生专项/随包说明/最终证据与进度，不含依赖/lib/夹具/原型或25实现。
 
 - 暂存whitespace仅发现原始profiles-ui-check-console.log第126行pnpm末尾空白行；原字节证据不裁剪。其余文件正常cached检查通过，仅该路径单次允许blank-at-eof且仍检查其他空白问题，不改配置或跳hooks。
+
+## 2026-10-16 任务25开始：服务器概览手动快照
+
+- 24已完整本地提交6927426，main干净；25依原票06开始，六摘要/25表格同步01–24done/25in-progress/26–29ready，五项仍空，原29票图/优先级不变。
+- LUNA只读提供现有连接/代次/transport白名单/ReadContext/1MiB帧及真实INFO依赖事实，根模型完整阅读相关实现并核Redis官方字段文档。docs/verification/25-server-overview.md记录最简方向：固定无参数INFO，Host只挑16字段、缺失null/精确uint64文本/明确单位和Host采样时间；128KiB解释预算不冒充网络接收或堆限制。
+- 下一步纯解析/DTO/Host及必要专项，随后独立概览卡片入口，保持默认左右和只在显式打开/刷新时读取；无通用命令、section输入、服务器配置写入、持续轮询或图表。尚无源码/真实包通过声明。
+
+### 25 固定 INFO 模型与 Host 读取（待检查）
+- 修改 src/domain.ts、redis-info.ts、host/overview-reader.ts、host/redis-transport.ts、typert.shared.ts、typert.host.ts、typert.remote-client.ts、remote-service.ts：新增16项有界快照、uint64精确文本、严格两端契约及固定无参数INFO；复用会话/DB/代次和10秒截止。
+- 修改 tsconfig.client.json、tests/host-typert.test.ts、tests/client-bundle.test.ts，新增 tests/overview.test.ts：同步25方法与解析/权限/预算/取消/晚结果专项。主界面尚未接入，25仍进行中。
+- 原因/影响：提供独立服务器概览的数据基础，不增加任意命令、写入或自动轮询；128KiB是语义预算，RESP接收上限仍为已有1MiB。立即进行类型检查。
+
+### 25 模型里程碑验证与本地提交
+- pnpm check通过：Host/Client/tests严格TS、构建、25文件258项测试；其中overview.test.ts含8项INFO专项。原始日志保全至 docs/verification/artifacts/25-server-overview/model-check-console.log。
+- 文档更新 docs/verification/25-server-overview.md，明确静态/模型已通过、UI与真实Redis尚未完成；原任务图与25进行中状态保持。按照已授权的小目标本地提交，不推送。

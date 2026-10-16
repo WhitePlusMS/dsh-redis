@@ -30,7 +30,7 @@ describe('strict rc.2 sidebar protocol', () => {
   })
   it('keeps matching endpoints and trusted Agent lookup, without command or write methods', () => {
     expect(redisDescriptors.map(value => value.id)).toEqual(redisHostDescriptors.map(value => value.id))
-    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'loadBrowsingState', 'saveBrowsingState'])
+    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readOverview', 'loadBrowsingState', 'saveBrowsingState'])
     expect(redisDescriptors[0].parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
     expect(redisDescriptors[0].cancellation).toEqual({ parameter: 'signal' })
   })
