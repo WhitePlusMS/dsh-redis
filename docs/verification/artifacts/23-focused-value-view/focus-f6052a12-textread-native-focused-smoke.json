@@ -1,0 +1,66 @@
+{
+  "artifactPrefix": "native-focused",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T11:48:30.228Z",
+  "packageSha256": "f6052a121f4cc68cfb0a3942819e0d7eb03ed04952013f5a825cc0517ea18d73",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native binary-key JSON focus/restore preserves exact identity, formatted number tokens, loaded find state, match navigation and virtual-list scroll position without Redis commands; Ctrl+F and Escape stay local",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "focused": {
+    "geometry": [
+      {
+        "label": "900px focused JSON",
+        "overflow": 0,
+        "documentTop": 0,
+        "focused": "true",
+        "catalog": false,
+        "detailWidth": 899,
+        "previewWidth": 883
+      }
+    ],
+    "clipboard": "Controlled API substitute records exact writeText arguments; OS clipboard permissions are not asserted",
+    "passed": false,
+    "listPosition": 2805
+  },
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n  '{\\n' +\n    '  \"id\": 9007199254740993,\\n' +\n    '  \"n\": 1e400,\\n' +\n    '  \"n\": -0,\\n' +\n+   '  \"nested\": {\\n' +\n-   '  \"nested\": \\n' +\n-   '{\\n' +\n    '    \"city\": \"北京\",\\n' +\n+   '    \"tags\": [\\n' +\n-   '    \"tags\": \\n' +\n-   '[\\n' +\n    '      \"redis\",\\n' +\n    '      \"redis\"\\n' +\n    '    ],\\n' +\n    '    \"quoted\": \"} [\"\\n' +\n    '  }\\n' +\n",
+  "errorStack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n  '{\\n' +\n    '  \"id\": 9007199254740993,\\n' +\n    '  \"n\": 1e400,\\n' +\n    '  \"n\": -0,\\n' +\n+   '  \"nested\": {\\n' +\n-   '  \"nested\": \\n' +\n-   '{\\n' +\n    '    \"city\": \"北京\",\\n' +\n+   '    \"tags\": [\\n' +\n-   '    \"tags\": \\n' +\n-   '[\\n' +\n    '      \"redis\",\\n' +\n    '      \"redis\"\\n' +\n    '    ],\\n' +\n    '    \"quoted\": \"} [\"\\n' +\n    '  }\\n' +\n\n    at file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-focused-value.mjs:84:14\n    at async noRead (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-focused-value.mjs:25:73)\n    at async smokeFocusedValue (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-focused-value.mjs:79:5)\n    at async smoke (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1184:54)\n    at async withRedisFixture.tls (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1413:24)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1255:5",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nsession-state-bece1e0d-3f60-4abc-9cb2-4eb877a5e43e\nsession-state-caa8860f-0977-4a34-a4a9-15c192fa7e04\nsession-state-13f73de6-3cba-47e8-8250-cd2dad488a41\nsession-state-3675eb14-1bf4-4981-97c7-bca5bc694daf\nsession-state-1d00db98-c982-4f56-ad71-69515645183e\nsession-state-97c1b089-11cd-4528-a764-2b5bece37e86\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nWorkspace Write\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\nMy connections\n127.0.0.1:10337\nDB 0\nSessions 6a0fb5e9-22fe-4d3e-9cb3-7225433dd2ad\n127.0.0.1:13424\nSessions ab6db273-33cd-4082-9ac8-a257d86f97e2\n127.0.0.1:14124\nSessions a65acc7c-8356-4b6d-87f5-d9c6758a0950\n127.0.0.1:9610\nSessions 980a90db-3daa-4dfe-9e2d-beb06582c81e\n127.0.0.1:2940\nConnection settings\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 236 · Scan complete\n\nStatus checked at 7:48:49 PM\n\"focus:partial\"\n13\n\"native:38\"\n9\n\"native:184\"\n10\n\"native:143\"\n10\n\"native:224\"\n10\n\"native:37\"\n9\n\"native:202\"\n10\n\"native:57\"\n9\n\"native:215\"\n10\n\"native:58\"\n9\n\"native:119\"\n10\n\"native:208\"\n10\n\"native:76\"\n9\n\"native:70\"\n9\n\"native:185\"\n10\n\"native:151\"\n10\n\"native:71\"\n9\n0x666f6375733a62696e6172793aff0080\n16\n\"native:45\"\n9\n\"native:98\"\n9\n\"native:75\"\n9\n\"native:116\"\n10\n\"native:180\"\n10\n\"native:160\"\n10\n\"native:93\"\n9\n\"native:128\"\n10\n\"native:187\"\n10\n\"native:186\"\n10\n\"native:109\"\n10\n\"native:6\"\n8\n\"native:156\"\n10\n\"native:225\"\n10\n\"native:89\"\n9\n0x666f6375733a62696e6172793aff0080\nData\nMetadata\nKey details · 0x666f6375733a62696e6172793aff0080\nView as Bitmap\nView as HyperLogLog\nStart byte\nWindow bytes\n256\n4096\n16384\n65536\nRead / refresh\nNext window\nStatus checked at 7:48:50 PM\nTYPE\nstring\nTTL (ms)\nNo expiration\n\nComplete value · Start byte 0 · 107 bytes\n\nText\nJSON\nHex\nBase64\nDecode Base64…\nDecode Base64 text to Text\nDecode Base64 text to JSON\nCopied\n{ … 11 lines }\nConnected · 127.0.0.1:10337\n7:48:49 PM\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T11:48:52.650Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "9cdf7c3e-775a-4a90-a383-277f31aaf6dc",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

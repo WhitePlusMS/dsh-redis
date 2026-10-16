@@ -1,5 +1,7 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'content.preview': '已读内容预览', 'content.focus': '聚焦详情', 'content.restore': '返回 Key 导航', 'content.find': '查找已读内容', 'content.query': '查找当前已读文本', 'content.scope': '仅已读内容 · 区分大小写', 'content.previous': '上一处命中', 'content.next': '下一处命中', 'content.close': '关闭查找',
+  'content.collapse': '折叠全部 JSON', 'content.expand': '展开全部 JSON', 'content.collapseBlock': '折叠 JSON 块，起始行', 'content.expandBlock': '展开 JSON 块，起始行', 'content.lines': '行', 'content.foldLimit': '最多提供前 512 个折叠控件，其余内容仍保留。', 'content.matchLimit': '仅高亮并导航前', 'content.invalidQuery': '查找词无效或超过范围。',
   'namespace.view': 'Key 导航', 'namespace.tree': '命名空间树', 'namespace.list': '平铺列表', 'namespace.locate': '定位已选 Key', 'namespace.settings': '命名空间设置',
   'namespace.separator': '分隔符', 'namespace.apply': '应用分隔符', 'namespace.loaded': '组内已加载 Key', 'namespace.invalid': '分隔符须为 1–16 字节的有效 UTF-8 文本。',
   'namespace.hint': '仅分组已加载 Key，数字为组内已加载数量；次序按首次扫描返回。最多展开 16 层，更深路径保留在叶名称。展开、切换和定位不读取 Redis；使用方向键浏览，Enter 查看。',
@@ -112,6 +114,8 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'content.preview': 'Loaded content preview', 'content.focus': 'Focus details', 'content.restore': 'Restore key navigation', 'content.find': 'Find in loaded content', 'content.query': 'Find in loaded text', 'content.scope': 'Loaded content only · case sensitive', 'content.previous': 'Previous match', 'content.next': 'Next match', 'content.close': 'Close find',
+  'content.collapse': 'Collapse all JSON', 'content.expand': 'Expand all JSON', 'content.collapseBlock': 'Collapse JSON block at line', 'content.expandBlock': 'Expand JSON block at line', 'content.lines': 'lines', 'content.foldLimit': 'Only the first 512 fold controls are available; all other content remains.', 'content.matchLimit': 'Highlight and navigate first', 'content.invalidQuery': 'Find text is invalid or exceeds the limit.',
   'namespace.view': 'Key navigation', 'namespace.tree': 'Namespace tree', 'namespace.list': 'Flat key list', 'namespace.locate': 'Locate selected key', 'namespace.settings': 'Namespace settings',
   'namespace.separator': 'Separator', 'namespace.apply': 'Apply separator', 'namespace.loaded': 'Loaded keys in group', 'namespace.invalid': 'Use valid UTF-8 text of 1–16 bytes as the separator.',
   'namespace.hint': 'Groups cover loaded keys only; counts describe loaded keys, in first-seen scan order. At most 16 group levels; deeper paths remain in leaf names. Expanding, switching and locating never read Redis. Navigate with arrows; Enter opens a key.',

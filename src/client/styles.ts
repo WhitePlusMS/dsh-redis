@@ -39,7 +39,12 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-profile-entry[aria-pressed=true] { background:var(--redis-selected); }
 .dsh-redis .redis-database-entry { width:100%; justify-content:flex-start; padding-left:27px; border:0; background:transparent; min-height:28px; }
 .dsh-redis .redis-navigation-settings { justify-content:flex-start; border:0; border-top:1px solid var(--dsw-alias-border-l2); border-radius:0; padding:5px 9px; background:transparent; color:var(--dsw-alias-label-secondary); }
-.dsh-redis .redis-compact-connection { display:none; }
+.dsh-redis .redis-compact-connection { display:none; grid-area:compact; align-items:center; justify-content:space-between; gap:5px; border-bottom:1px solid var(--dsw-alias-border-l2); padding:2px 6px; background:var(--redis-panel); }
+.dsh-redis .redis-compact-connection > button:first-child { min-width:0; border:0; justify-content:start; background:transparent; }
+.dsh-redis .redis-compact-connection span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.dsh-redis .redis-connection:has(.redis-keys[data-focused=true]) { grid-template-columns:minmax(0,1fr); grid-template-rows:32px minmax(0,1fr) auto; grid-template-areas:"compact" "browser" "status"; }
+.dsh-redis .redis-connection:has(.redis-keys[data-focused=true]) .redis-profile-navigation { display:none; }
+.dsh-redis .redis-connection:has(.redis-keys[data-focused=true]) .redis-compact-connection { display:flex; }
 .dsh-redis .redis-connection-status { grid-area:status; display:flex; align-items:center; flex-wrap:wrap; gap:5px; min-height:28px; padding:2px 7px; border-top:1px solid var(--dsw-alias-border-l2); color:var(--dsw-alias-label-secondary); font-size:10px; background:var(--redis-panel); }
 .dsh-redis .redis-status-spacer { flex:1; }
 .dsh-redis .redis-connection-status > p { flex-basis:100%; padding:3px 0; }
@@ -81,6 +86,9 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-key-list [aria-selected=true] { background:var(--redis-selected); }
 .dsh-redis .redis-key-list:focus-visible [data-active=true] { outline:1px solid var(--dsw-alias-label-primary); outline-offset:-1px; }
 .dsh-redis .redis-key-detail { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
+.dsh-redis .redis-keys[data-focused=true] { grid-template-columns:minmax(0,1fr); }
+.dsh-redis .redis-keys[data-focused=true] .redis-key-catalog { display:none; }
+.dsh-redis .redis-focus-button { margin-left:auto; flex-shrink:0; }
 .dsh-redis .redis-inspector-heading { display:flex; align-items:center; gap:6px; padding:6px 9px; min-height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-inspector-heading strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 11px/1.4 Consolas,monospace; }
 .dsh-redis .redis-inspector-tabs { display:flex; gap:7px; padding:0 7px; height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
@@ -112,6 +120,16 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-format-toolbar .redis-copy-button { margin-left:auto; }
 .dsh-redis .redis-format-toolbar small { font-size:10px; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-value { flex:1 1 200px; min-height:100px; white-space:pre; overflow:auto; overscroll-behavior:contain; max-width:100%; margin:0; padding:8px; border:0; border-radius:0; font:12px/1.65 Consolas,"SFMono-Regular",monospace; }
+.dsh-redis .redis-byte-preview { display:flex; flex-direction:column; flex:1 1 200px; min-height:160px; min-width:0; gap:5px; overflow:hidden; }
+.dsh-redis .redis-content-search { display:flex; align-items:center; flex-wrap:wrap; gap:3px; flex-shrink:0; }
+.dsh-redis .redis-content-search input { flex:1 1 90px; width:90px; min-height:25px; font-size:11px; }
+.dsh-redis .redis-content-search small { font-size:10px; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-content-scope { flex-basis:100%; }
+.dsh-redis .redis-value mark { background:color-mix(in srgb,#e3bd38 50%,var(--dsw-alias-bg-base)); color:inherit; }
+.dsh-redis .redis-value [data-search-current=true] { outline:1px solid var(--dsw-alias-label-primary); }
+.dsh-redis .redis-value .redis-json-toggle { display:inline-flex; vertical-align:middle; padding:0; width:14px; min-height:16px; height:16px; border:0; background:transparent; }
+.dsh-redis .redis-json-summary { color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-cell-preview .redis-byte-preview { flex:none; }
 .dsh-redis .redis-collection-table { flex:1 1 180px; min-height:100px; max-height:58dvh; overflow:auto; overscroll-behavior:contain; min-width:0; border-top:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-collection-table table { border-collapse:collapse; width:100%; min-width:320px; table-layout:auto; }
 .dsh-redis .redis-collection-table th, .dsh-redis .redis-collection-table td { text-align:left; padding:6px 8px; border-bottom:1px solid var(--dsw-alias-border-l2); vertical-align:top; overflow-wrap:anywhere; font-size:11px; }
@@ -131,9 +149,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 @container redis-sidebar (max-width:760px) {
   .dsh-redis .redis-connection { grid-template-columns:minmax(0,1fr); grid-template-rows:32px minmax(0,1fr) auto; grid-template-areas:"compact" "browser" "status"; }
   .dsh-redis .redis-profile-navigation { display:none; }
-  .dsh-redis .redis-compact-connection { grid-area:compact; display:flex; align-items:center; justify-content:space-between; gap:5px; border-bottom:1px solid var(--dsw-alias-border-l2); padding:2px 6px; background:var(--redis-panel); }
-  .dsh-redis .redis-compact-connection > button:first-child { min-width:0; border:0; justify-content:start; background:transparent; }
-  .dsh-redis .redis-compact-connection span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .dsh-redis .redis-compact-connection { display:flex; }
   .dsh-redis .redis-keys { grid-template-columns:170px minmax(0,1fr); }
   .dsh-redis .redis-inspector[data-view=metadata] .redis-metadata { grid-template-columns:minmax(0,1fr); }
   .dsh-redis .redis-inspector[data-view=metadata] .redis-metadata dd { margin-bottom:7px; }

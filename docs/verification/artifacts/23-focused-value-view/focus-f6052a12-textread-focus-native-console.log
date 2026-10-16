@@ -1,0 +1,34 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native binary-key JSON focus/restore preserves exact identity, formatted number tokens, loaded find state, match navigation and virtual-list scroll position without Redis commands; Ctrl+F and Escape stay local
+[smoke] Expected values to be strictly equal:
++ actual - expected
+
+  '{\n' +
+    '  "id": 9007199254740993,\n' +
+    '  "n": 1e400,\n' +
+    '  "n": -0,\n' +
++   '  "nested": {\n' +
+-   '  "nested": \n' +
+-   '{\n' +
+    '    "city": "北京",\n' +
++   '    "tags": [\n' +
+-   '    "tags": \n' +
+-   '[\n' +
+    '      "redis",\n' +
+    '      "redis"\n' +
+    '    ],\n' +
+    '    "quoted": "} ["\n' +
+    '  }\n' +
+
+[smoke] Test process stopped: true
+{"passed":false,"checks":12,"fixturesStopped":true}

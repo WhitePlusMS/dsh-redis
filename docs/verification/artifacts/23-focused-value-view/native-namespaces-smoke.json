@@ -1,0 +1,103 @@
+{
+  "artifactPrefix": "native-namespaces",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T11:59:36.206Z",
+  "packageSha256": "f6052a121f4cc68cfb0a3942819e0d7eb03ed04952013f5a825cc0517ea18d73",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native namespace groups show only the current loaded count and More available; expansion and keyboard navigation issue no Redis commands",
+    "real SCAN continuation incrementally updates existing groups without rereading the selected value or moving the viewport anchor",
+    "native 5105-key fixture stops at the 5000-key cache limit with an incomplete label; End reaches row 4999 with bounded DOM and Locate expands the exact selected byte path without reading",
+    "actual DSH sidebar handle shows namespace/Key/data workbench at 900px and a bounded persistent Key/detail split with visible loaded group counts at 340px",
+    "real 512-key fixture with 4KiB names reaches the encoded 2MiB cache boundary before the row cap; no false complete count or reusable cursor is shown",
+    "native binary, empty-key, repeated/empty segments, leaf/folder collisions and UTF-8 prefixes retain full identity; separator edits, invalid draft and MATCH edits do not read or reuse old selections",
+    "selected loaded keys are observations: external deletion/type changes clear value bytes on explicit refresh, and a forged target generation is rejected before Redis dispatch",
+    "native explicitly connected restricted ACL user receives a fixed SCAN permission error with no rows/cursor; manual normal reconnect starts empty without replay",
+    "actual native SCAN cancellation drops the old page/cursor and does not replay after the held real reply drains; only explicit refresh starts another scan",
+    "actual production ten-second SCAN timeout clears rows and cursor, closes the uncertain generation and requires password/manual reconnect; reconnect sends AUTH/PING only",
+    "proxy-observed plugin commands stay within the fixed readonly SCAN/String/auth set; watched binary/empty/ordinary source DUMPs and absolute expiries remain unchanged; 2MiB means DTO cache, not a JS heap claim",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:8241/api/redisViewer/scanKeys",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "namespaces": {
+    "cacheRowLimit": 5000,
+    "cacheEncodedBytes": 2097152,
+    "maxDepth": 16,
+    "rowHeight": 30,
+    "windows": [
+      {
+        "total": 5000,
+        "mounted": 25,
+        "height": 562,
+        "top": 149438
+      }
+    ],
+    "noPresentationRedis": true,
+    "rowLimitScanPages": 58,
+    "narrowGeometry": {
+      "overflow": 0,
+      "keys": 128,
+      "detail": 211,
+      "groupCounts": true
+    },
+    "encodedByteLimit": {
+      "count": 368,
+      "pages": 43
+    },
+    "productionTimeoutMs": 10125,
+    "pluginCommands": {
+      "SCAN": 341,
+      "TYPE": 12,
+      "PTTL": 11,
+      "STRLEN": 8,
+      "GETRANGE": 4,
+      "LLEN": 2,
+      "LRANGE": 1,
+      "AUTH": 3,
+      "PING": 3
+    }
+  },
+  "finishedAt": "2026-10-16T12:00:32.828Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "162db05d-ad94-4f4d-a13d-d11c2005462b",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

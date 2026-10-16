@@ -1,0 +1,109 @@
+{
+  "artifactPrefix": "native-focused",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T11:50:30.684Z",
+  "packageSha256": "f6052a121f4cc68cfb0a3942819e0d7eb03ed04952013f5a825cc0517ea18d73",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native binary-key JSON focus/restore preserves exact identity, formatted number tokens, loaded find state, match navigation and virtual-list scroll position without Redis commands; Ctrl+F and Escape stay local",
+    "native JSON folds restore exact source text and copy passes the complete unfolded preview to a controlled Clipboard API; refusal and late completion are visible/isolated without claiming OS clipboard access",
+    "actual native 340px focused preview/search stays bounded and two-stage Escape closes find then restores the split; 900px focus and return use the same reader DOM",
+    "native partial String search excludes the unread tail and explicitly reports loaded-only scope; repeated loaded matches retain exactly 1000 highlights with the full loaded count, without whole-Redis search",
+    "native 1200-object JSON retains all original text while bounding fold controls at 512; root collapse mounts one control and full expansion restores the final object",
+    "native selected Hash cell uses the same focused/searchable lossless JSON preview and retains its selected field on restore without another HSCAN",
+    "all focus fixtures preserve source DUMP bytes and absolute expiry; display-only operations are measured against real proxy command counts",
+    "native Cancel read reaches the actual Host signal: active postchecks and cancelled queued read are not dispatched; old reply drains, explicit retry uses the same generation and B stays readable",
+    "native production ten-second timeout clears old bytes, only closes A, and status refresh plus explicit password/reconnect creates a new generation without replay; remembered key requires an explicit read",
+    "native actual TCP EOF clears old bytes and leaves the other trusted session usable; manual reconnect advances generation and explicitly rereads fresh original binary-key data",
+    "native recovery preserves binary key identity, serialized source bytes and absolute expiry; held packets represent a delayed real reply, without claiming server computation stopped",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:4075/api/redisViewer/readString",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:4075/api/redisViewer/readString",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "focused": {
+    "geometry": [
+      {
+        "label": "900px focused JSON",
+        "overflow": 0,
+        "documentTop": 0,
+        "focused": "true",
+        "catalog": false,
+        "detailWidth": 899,
+        "previewWidth": 883
+      },
+      {
+        "label": "340px focused search",
+        "overflow": 0,
+        "documentTop": 0,
+        "focused": "true",
+        "catalog": false,
+        "detailWidth": 339,
+        "previewWidth": 327
+      },
+      {
+        "label": "340px restored split",
+        "overflow": 0,
+        "documentTop": 0,
+        "focused": "false",
+        "catalog": true,
+        "detailWidth": 211,
+        "previewWidth": 199
+      }
+    ],
+    "clipboard": "Controlled API substitute records exact writeText arguments; OS clipboard permissions are not asserted",
+    "passed": true,
+    "listPosition": 1122
+  },
+  "recovery": {
+    "cancellationReachedHost": true,
+    "proxyErrors": [],
+    "cancelObservedMs": 45,
+    "productionTimeoutMs": 10151
+  },
+  "finishedAt": "2026-10-16T11:51:09.232Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "c87132ce-5432-4af8-80c8-00df210191cb",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

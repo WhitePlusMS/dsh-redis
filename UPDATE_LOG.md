@@ -934,3 +934,32 @@
 - 23纯模型完整pnpm check三层严格类型/构建/238回归全部通过；新增docs/verification/23-focused-value-view.md，记录原型分支/未确认偏好、算法及有界语义、6项专项和未接UI/未原生范围，完整输出归档artifacts/23-focused-value-view/model-check-console.log。23票追加阶段证据仍in-progress且不勾验收；按用户小目标约定仅本地提交模型与进度/必要文档，尚不发布新包或声称第23项完成。暂未收到不同偏好，后续按可选预览的原位方式继续。
 
 - 模型提交前git diff --cached --check仅指出原始pnpm输出末尾自带空白行（model-check-console.log:124）。为保留机器原件未裁剪该日志：其他全部文件正常whitespace检查通过；仅对这个日志路径单次允许blank-at-eof、仍检查其他空白问题，不改仓库配置、不跳过hooks/测试。随后本地提交此模型小目标。
+
+- 23界面首批：BytePreview复用纯模型，新增按需查找/局部Ctrl(Cmd)+F、F3/Enter与Esc、前1000范围高亮/完整总数限额提示、前512 JSON块SVG按钮/全折叠展开；原文本片段按源offset渲染，复制始终完整preview.text，按异步序号防迟到回写。搜索命中只滚动pre自身，不用scrollIntoView移动DSH祖先；不增加Redis请求。
+- KeyBrowser仅新增本地focused和列表位置ref；显式按钮临时隐藏目录而不卸载详情/读取器，退出恢复scrollTop和目录焦点，Esc在查找未处理时才退出。Icon/locales/styles补紧凑图标、双语、预览容器/高亮和显示状态，默认左右不变，不调用宿主私有宽度或全屏。接着立即三层类型检查；原生和包验证尚未进行，不勾23票。
+
+- UI接入后二次完整check三层类型/构建/238回归通过。新增smoke-focused-value.mjs独占原生专项与FOCUSED入口/1920视口/真实只读代理，准备核对同DOM聚焦/列表返回、局部快捷键、已读范围/1000高亮、512折叠、原数值token和Hash单元格、源DUMP/expiry及零额外命令。复制使用明确受控Clipboard API替身记录完整writeText参数/拒绝/迟到，不访问用户剪贴板，也不把此结果声称为OS权限验收；结束恢复该页面原描述符。尚未运行、未标本票done。
+
+- 生产原位聚焦补齐现有compact连接入口的复用：styles.ts将既有窄栏入口样式移至共同规则，聚焦时只在插件.redis-connection内按:has状态切同一compact网格并隐藏连接/Key导航，保留设置/状态与返回；默认宽窄规则不变，不复制连接控制器或调用宿主接口。README补当前已读搜索/快捷键/折叠预算和复制语义，需随新包验证。新原生脚本核对真实HashView后选择data-hash-value而非字段名，JSON种子改为直接可验证字面串而无替换修补；尚未运行。立即严格类型后打新候选，先前预打包不作为此版本验收。
+
+- 聚焦候选f6052a121f4cc68cfb0a3942819e0d7eb03ed04952013f5a825cc0517ea18d73严格prepack三层类型/构建/238回归通过并仅隔离web profile安装，未替换日常DSH。当前FOCUSED+RECOVERY合并实测：先新显示控件/Hash共享，再既有真实active/queued取消、10秒/EOF和独立B恢复；新增种子只在独占管理员socket执行且累计更新本轮expectedKeyCount。尚未记通过，23仍in-progress。
+
+- f6052a12首轮原生12组后复制断言失败，false原件保留focus-f6052a12-textread-*；所有本轮进程/代理/Redis/目录清理true，browser三类错误为空。聚焦往返、原Key/列表位置/搜索状态及无命令已通过。真实diff显示copy实际传formatter完整原文，而测试以pre.innerText取源，被内嵌SVG折叠按钮的布局换行影响（nested后多换行）。仅把正文原字符核对改textContent，仍在折叠后对比完整未折叠源并验拒绝/迟到，未改产品/包、未裁剪内容或放宽数值断言；同包重新实测。
+
+- 同一f6052a12包修正正文取值方式后聚焦+完整原生恢复25组全部通过：虚拟列表位置/二进制Key/格式与搜索保留、局部Ctrl+F/Enter/Shift/Esc、逐块/整体折叠、完整writeText参数/拒绝/迟到隔离、未读尾词不命中、1000高亮/完整总数、1200对象512控件/原文末项与Hash值复用及源DUMP/expiry保持。真实active/queued取消、10秒/EOF、手动新代次/无重放和可信B独立均通过。浏览器page/console为空；2条预期取消ERR_ABORTED保留；DSH/Chrome/代理/Redis/目录正常回收，聚焦截图已查看。继续同包原12类型/会话与实际SDK/React、工作台中英明暗回归，23仍in-progress。
+
+- docs/verification/23-focused-value-view.md同步实际UI职责/同DOM聚焦/快捷键与搜索范围（只BytePreview文字、不假装统计/整集合搜索）、f605同包25组/45ms取消/10151ms截止/1122列表位置及真实宽窄几何，明确受控Clipboard API范围与innerText阶段false，不提前标done。全12类型/双会话/SDK回归正在执行。
+
+- 同一f6052a12候选原12类型/双会话/实际SDK decoder和React完整87组全部通过，原严格协议/权限/消失变型/只读/预算/格式/归属与恢复状态断言均保留。page/console错误为空，1条预期会话取消ERR_ABORTED；所有本轮DSH/Chrome/Redis/目录/专属会话配置正常回收。现执行原工作台24组，然后第22项大列表回归，不借用旧包结果，23仍in-progress。
+
+## 2026-10-16 任务23完成：原位聚焦、已读搜索与JSON折叠
+
+- 同一f6052a121f4cc68cfb0a3942819e0d7eb03ed04952013f5a825cc0517ea18d73包工作台24组/22几何样本及命名空间25组完成，连同聚焦+恢复25组、全12类/双会话/实际SDK与React87组和严格类型/构建/238回归全部通过。各套共享基础检查，不相加冒称独立场景。实际中英宽栏/深色窄栏截图已查看，默认左右工作台保留。
+- 包验证79文件/70lib集合与字节、12Host peer、2生产依赖和141源输入SHA逐项相符。原始41份文件及证据清单按字节/SHA归档至docs/verification/artifacts/23-focused-value-view，含模型原始日志及同包innerText取值阶段false；不覆盖历史22原件。
+- docs/verification/23-focused-value-view.md改为完整功能/状态所有权/搜索算法/源范围折叠/复制/聚焦与快捷键、实际预算/同包结果/复现/未验证范围，明确搜索只BytePreview已读文本、复制替身不等于OS权限、2MiB不是JS堆、新包未重跑TLS冷重启。实际GETRANGE取消45ms/10151ms截止与EOF、SCAN10125ms截止分别保留收据。
+- 23票五项据范围勾done；六个当前进度入口及23表格同步01–23 done/24–29 ready，方案新增6.10。遵循最简、同一状态所有权及严格类型，不新增Host/RPC/依赖/Redis命令，原29票编号/P0P1/依赖和固定参考SHA保留。生产README已随同包验证，本次收口不改随包代码或README。
+- 四套page/console错误为空，预期取消ERR_ABORTED按原报告保留；DSH/Chrome/代理/独占Redis/本轮owner目录均清理true，用户服务/业务库/日常profile/C盘和曾被拒绝清理的旧目录不动。没有npm开发服务或网页端GPT评审。按用户每个小目标本地提交约定核对后提交23；项目仍有六张P1，不标整体目标完成。
+
+- 提交前审计：29票无缺重号、21P0/8P1、23done/6ready、全部原Blocked by图一致；六当前摘要同步。141源输入/41归档原件SHA逐项匹配，22个相对文档链接存在，不可变研究SHA保持e138f420…。main分支，原暂存区为空，已跟踪变更git diff --check通过；本次只收23生产/原生脚本/证据和进度文档，不含依赖/lib/夹具/原型或24实现。
+
+- 暂存空白检查仅发现原始focus-ui-check-console.log第124行的pnpm末尾空白行；为保留证据字节不裁剪日志。其他文件使用正常cached whitespace检查；仅此日志路径单次允许blank-at-eof、仍查其他空白问题，不改仓库配置或跳hooks。

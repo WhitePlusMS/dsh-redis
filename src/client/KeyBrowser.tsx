@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState, type RefObject } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ConnectionErrorCode, ConnectionView, DatabaseTarget, ScanKeysRequest, ScanKeysResult, RedisKey } from '../domain.ts'
@@ -42,6 +42,9 @@ export function KeyBrowser(props: Props) {
   })
   const [opened, setOpened] = useState(false)
   const [detailTab, setDetailTab] = useState<'data' | 'metadata'>('data')
+  const [focused, setFocused] = useState(false)
+  const catalog = useRef<HTMLDivElement>(null), detail = useRef<HTMLDivElement>(null)
+  const catalogPosition = useRef(0), returnToCatalog = useRef(false)
   const [sampledAt, setSampledAt] = useState<string | null>(null)
   const [error, setError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [busy, setBusy] = useState(false)
@@ -54,9 +57,22 @@ export function KeyBrowser(props: Props) {
   function clear(): void {
     ++sequence.current; active.current?.abort(); setBusy(false)
     setDetailTab('data')
+    setFocused(false)
     setCache(emptyKeyCache()); setCursor(null); setProgress('idle'); setSelected(null); setOpened(false); setError(null); setSampledAt(null)
   }
   useEffect(() => () => { ++sequence.current; active.current?.abort() }, [])
+  useLayoutEffect(() => {
+    if (focused) (detail.current?.querySelector<HTMLElement>('[data-value-preview]') ?? detail.current)?.focus({ preventScroll: true })
+    else if (returnToCatalog.current) {
+      const list = catalog.current?.querySelector<HTMLElement>('.redis-key-list')
+      if (list !== null && list !== undefined) { list.scrollTop = catalogPosition.current; list.focus({ preventScroll: true }) }
+      returnToCatalog.current = false
+    }
+  }, [focused])
+  function toggleFocus(): void {
+    if (!focused) { catalogPosition.current = catalog.current?.querySelector('.redis-key-list')?.scrollTop ?? 0; returnToCatalog.current = true }
+    setFocused(!focused)
+  }
   async function run<T>(operation: (signal: AbortSignal) => Promise<RemoteResult<T>>, accept: (value: T) => void): Promise<void> {
     active.current?.abort()
     const controller = new AbortController(), current = ++sequence.current
@@ -80,8 +96,10 @@ export function KeyBrowser(props: Props) {
       setProgress(next.limited ? 'limited' : value.cursor === null ? 'complete' : 'more')
     })
   }
-  return <section className="redis-keys" aria-label={t('keys.title')}>
-    <div className="redis-key-catalog">
+  return <section className="redis-keys" data-focused={focused} aria-label={t('keys.title')} onKeyDown={event => {
+    if (event.key === 'Escape' && focused && !event.defaultPrevented) { event.preventDefault(); setFocused(false) }
+  }}>
+    <div ref={catalog} className="redis-key-catalog">
       <h2>{t('keys.title')} · DB {connection.db}</h2>
       <form className="redis-db" onSubmit={event => {
         event.preventDefault(); clear()
@@ -111,9 +129,9 @@ export function KeyBrowser(props: Props) {
         setSelected(key); setOpened(true); setDetailTab('data')
       }} />
     </div>
-    <div className="redis-key-detail">
+    <div ref={detail} className="redis-key-detail" tabIndex={-1}>
       {selected !== null ? <>
-        <div className="redis-inspector-heading"><Icon name="key" /><strong title={selected.label}>{selected.label}</strong></div>
+        <div className="redis-inspector-heading"><Icon name="key" /><strong title={selected.label}>{selected.label}</strong><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>
         <div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
           <button type="button" role="tab" aria-selected={detailTab === 'data'} onClick={() => setDetailTab('data')}>{t('ui.data')}</button>
           <button type="button" role="tab" aria-selected={detailTab === 'metadata'} onClick={() => setDetailTab('metadata')}>{t('ui.metadata')}</button>

@@ -1,4 +1,4 @@
-type IconName = 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen'
+type IconName = 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'focus' | 'restore'
 const paths: Record<IconName, string> = {
   add: 'M10 4v12M4 10h12',
   refresh: 'M16.5 8A6.7 6.7 0 0 0 4 5M3.5 12A6.7 6.7 0 0 0 16 15M16.5 3v5h-5M3.5 17v-5h5',
@@ -14,6 +14,14 @@ const paths: Record<IconName, string> = {
   locate: 'M10 2v3M10 15v3M2 10h3M15 10h3M10 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4',
   folder: 'M2 5h6l2 2h8v9H2V5Z',
   folderOpen: 'M2 15V5h6l2 2h7v2M2 16l3-7h14l-3 7H2Z',
+  search: 'M14 14l4 4M9 3a6 6 0 1 0 0 12A6 6 0 0 0 9 3Z',
+  collapse: 'M4 4h12M4 16h12M7 7l3 3 3-3M7 13l3-3 3 3',
+  expand: 'M4 4h12M4 16h12M7 9l3-3 3 3M7 11l3 3 3-3',
+  up: 'm5 12 5-5 5 5',
+  down: 'm5 8 5 5 5-5',
+  right: 'm8 5 5 5-5 5',
+  focus: 'M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4',
+  restore: 'M3 7h4V3M13 3v4h4M17 13h-4v4M7 17v-4H3',
 }
 
 /** Local inline icons keep the native browser bundle free of new runtime peers. */

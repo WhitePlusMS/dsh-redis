@@ -1,0 +1,28 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native binary-key JSON focus/restore preserves exact identity, formatted number tokens, loaded find state, match navigation and virtual-list scroll position without Redis commands; Ctrl+F and Escape stay local
+[smoke check] native JSON folds restore exact source text and copy passes the complete unfolded preview to a controlled Clipboard API; refusal and late completion are visible/isolated without claiming OS clipboard access
+[smoke check] actual native 340px focused preview/search stays bounded and two-stage Escape closes find then restores the split; 900px focus and return use the same reader DOM
+[smoke check] native partial String search excludes the unread tail and explicitly reports loaded-only scope; repeated loaded matches retain exactly 1000 highlights with the full loaded count, without whole-Redis search
+[smoke check] native 1200-object JSON retains all original text while bounding fold controls at 512; root collapse mounts one control and full expansion restores the final object
+[smoke check] native selected Hash cell uses the same focused/searchable lossless JSON preview and retains its selected field on restore without another HSCAN
+[smoke check] all focus fixtures preserve source DUMP bytes and absolute expiry; display-only operations are measured against real proxy command counts
+[smoke check] native Cancel read reaches the actual Host signal: active postchecks and cancelled queued read are not dispatched; old reply drains, explicit retry uses the same generation and B stays readable
+[smoke check] native production ten-second timeout clears old bytes, only closes A, and status refresh plus explicit password/reconnect creates a new generation without replay; remembered key requires an explicit read
+[smoke check] native actual TCP EOF clears old bytes and leaves the other trusted session usable; manual reconnect advances generation and explicitly rereads fresh original binary-key data
+[smoke check] native recovery preserves binary key identity, serialized source bytes and absolute expiry; held packets represent a delayed real reply, without claiming server computation stopped
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":25,"fixturesStopped":true}
