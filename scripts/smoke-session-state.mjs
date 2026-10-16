@@ -155,7 +155,16 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     await rpc('redisViewer/disconnect', { agentId: a, request: { id: aTarget.id, generation: aTarget.generation } })
     await until(async () => await fixture.clients() === baseline + 1, 'only A disconnected')
     assert.deepEqual(await status(b), bTarget)
-    await details.getByRole('button', { name: 'Read / refresh', exact: true }).click(); await details.locator('[data-value-coverage]').waitFor()
+    // The prior preview can still be mounted when click resolves. Wait for this
+    // explicit read's Host postchecks before sampling the no-restore counters.
+    const [bReread] = await Promise.all([
+      page.waitForResponse(response => response.url().endsWith('/api/redisViewer/readString') && response.request().postDataJSON().payload.args.agentId === b),
+      details.getByRole('button', { name: 'Read / refresh', exact: true }).click(),
+    ])
+    const bRereadBody = await bReread.json()
+    assert.equal(bRereadBody.result?.ok, true); assert.equal(bRereadBody.result.value.base64, 'OQ==')
+    await until(async () => await details.locator('time').getAttribute('datetime') === bRereadBody.result.value.sampledAt, 'explicit B reread rendered before restore counter baseline')
+    await details.locator('[data-value-coverage]').waitFor()
     assert.equal(await details.locator('[data-value-preview]').innerText(), 'OQ==')
     report.checks.push('native gateway refuses forged state ownership/secrets; releasing A socket leaves B connected and readable, with both choices unchanged')
 

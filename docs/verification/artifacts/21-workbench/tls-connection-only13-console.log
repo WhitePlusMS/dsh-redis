@@ -1,0 +1,32 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native TLS form rejects wrong CA without a socket and accepts a corrected CA
+[smoke check] native save/update/delete ordinary and TLS profiles; no password on disk or automatic Redis connection
+[smoke check] native gateway rejects a password inside saved settings without echoing it
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] cold DSH restart reloads saved TLS settings; choosing restores fields without password or network
+[smoke check] native TLS form rejects wrong CA without a socket and accepts a corrected CA
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] owned saved fixture removed after cold-restart verification; no secret on disk
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"phase":"save","passed":true,"checks":13,"fixturesStopped":true}
+{"phase":"reopen","passed":true,"checks":13,"fixturesStopped":true}

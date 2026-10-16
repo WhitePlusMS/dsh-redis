@@ -22,7 +22,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–20 done、21发布复验 in-progress、22–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–21 done、新界面包复验完成、22–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 共同验收约束
 
@@ -37,4 +37,4 @@
 
 P2 的拓扑、SSH/mTLS、额外 codec、持续观察和 AI 仍为候选，不在本次任务文件内。
 
-当前进度：01–20 done；Database/RESP工作台改版已完成真实24组布局检查，21 新界面发布复验 in-progress，22–29 ready-for-agent。最终布局包509aa7b06132ab0fa3123bafca18f75f43df10ac019c00cfbffdcfc950373e43与旧20/21报告分别记录，原29票编号/优先级/依赖不变。
+当前进度：01–21 done；Database/RESP工作台改版及同一新版安装包复验完成（226回归，原生87/17/17/24/18组）。22–29 ready-for-agent，原29票编号/优先级/依赖不变；新版证据见docs/verification/20-database-workbench.md与21-workbench-release.md，旧包记录保留各自范围。

@@ -1,0 +1,91 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native complete String Text/JSON/Hex/Base64 preserve large integer and exponent tokens
+[smoke check] native explicit Base64 decoding succeeds; invalid raw UTF-8 and Base64 display fixed errors
+[smoke check] native large String remains partial, refuses partial JSON, and reads the last single-byte window
+[smoke check] native UTF-8 crossing uses explicit context, exact Hex offset and strict integer range feedback
+[smoke check] native Hash routes to its own viewer; empty String and disappeared key are distinct and discard prior preview
+[smoke check] native Hash routes automatically on key selection and explicitly continues to 235 unique raw-identity rows
+[smoke check] native binary field byte preview keeps exact Hex/Base64 identity, and empty field/value remain selectable
+[smoke check] native Hash JSON and explicit Base64 decode reuse the lossless formatter with large integer/exponent tokens
+[smoke check] native long Hash cell reports its full length and 64 KiB partial coverage, refusing complete JSON formatting
+[smoke check] native server field MATCH has explicit completion and clears previous rows/preview for changed or empty patterns
+[smoke check] native Hash refresh discards all prior cells when the key disappears or becomes another type
+[smoke check] native List opens its own viewer with 100 original-index rows; duplicate values occupy separate positions
+[smoke check] native List binary/empty/JSON/encoded cells reuse exact byte previews and lossless JSON tokens
+[smoke check] native List caps a long element, rejects partial JSON, and advances 0/100/200 without retaining old cell selection
+[smoke check] native List distinguishes exact EOF, validates signed-integer input and refreshes shifted positions after an insertion
+[smoke check] native List refresh discards rows for disappeared or wrong-type keys
+[smoke check] native Set routes on selection and explicitly continues to 235 complete raw-identity members without a global-sort claim
+[smoke check] native Set binary/empty/JSON/explicit Base64 decode preserve member bytes and large-number tokens
+[smoke check] native Set MATCH changes clear rows without auto-reading; explicit scans show 111 matching members or an empty completed result
+[smoke check] native Set refresh discards members when the key disappears or changes type
+[smoke check] native ZSet rank table keeps binary/empty members, exact high-precision/infinity score text and lossless JSON/decoded previews
+[smoke check] native ZSet rank intervals advance 0/100/200, replace old rows and clear selected preview, with 35 final members
+[smoke check] native ZSet unordered scan has no rank column, continues 235 unique members and completes MATCH111/0 independently from rank pagination
+[smoke check] native ZSet mode switch restores a rank interval; exact EOF and invalid integer are distinct, and refresh reflects insertion
+[smoke check] native ZSet oversized member refuses without truncation or disconnect; another key recovers, and missing/wrong-type refresh removes old rows
+[smoke check] native Stream selection preserves seven ordered field occurrences, repeated names with different values, binary field/value and empty pairs
+[smoke check] native Stream JSON/explicit decode preserve original numeric tokens; long message values report 64 KiB partial coverage and refuse complete JSON formatting
+[smoke check] native Stream forward and reverse continuation load 235 distinct IDs in opposite order and discard old field selection on direction change
+[smoke check] native Stream draft bounds/count do not auto-query; inclusive single-message pages have exact boundaries, invalid bounds retain prior data, and Pending/group progress are unchanged
+[smoke check] native Stream displays both unsigned-64-bit ID components exactly, including maximum ID and values beyond JavaScript safe integers
+[smoke check] native Stream explicit read sees appends; oversized fields refuse without disconnect, empty existing Stream is complete, and deletion/type changes clear messages
+[smoke check] native RedisJSON routes separately from String, retaining the server root match array, large integer/UTF-8 and exact Text/JSON/Hex/Base64 bytes
+[smoke check] native JSONPath drafts do not query; explicit slices return three matches and a narrowed integer path preserves its exact original token
+[smoke check] native JSON null/empty/no-match and server/client syntax errors stay distinct, old bytes clear on new results, source bytes and absolute expiry stay unchanged
+[smoke check] native oversized JSON root refuses without partial output or fake pagination; a smaller path succeeds on the same connected socket
+[smoke check] native empty JSON document differs from missing key; deletion and conversion to ordinary String remove old JSON content
+[smoke check] native ordinary binary String stays in String until explicit Bitmap selection; bit-zero is highest-bit-first and the 2 MiB total is exact
+[smoke check] native next interval is exact, draft bit range does not query, and an unaligned 4096-bit window renders 128 bounded rows with correct bits
+[smoke check] native last bit clips, at/past EOF gives no fabricated zero rows, maximum integer offset stays exact, invalid input preserves the prior range and source bytes/expiry remain unchanged
+[smoke check] native return to String reads fresh data; empty String, deletion and conversion to Hash do not retain old bitmap rows
+[smoke check] native ZSet requires explicit GEO selection; 235 exact member identities retain ascending ranks, score and quantized coordinate text across 100/100/35 intervals
+[smoke check] native binary/empty/JSON/encoded GEO members retain complete byte identity and lossless shared previews
+[smoke check] native GEO range drafts do not query; exact EOF, maximum integer offset and invalid input remain distinct
+[smoke check] native nil-position UI branch uses explicit response fault injection; missing position does not classify or discard the entire ZSet
+[smoke check] native GEO permission refusal clears prior rows; manual recovery and return to fresh ZSet succeed without changing source bytes/absolute expiry
+[smoke check] native ordinary ZSet scores stay an explicit interpretation; combined request oversize refuses intact identities and reducing count recovers on the same connection
+[smoke check] native GEO deletion and conversion to String discard all prior coordinates
+[smoke check] native TimeSeries routes from real TSDB-TYPE and loads 235 exact timestamps in both directions across bounded pages; total series count stays separate
+[smoke check] native TimeSeries drafts do not query; inclusive one-row reverse pages, rejected Stream-exclusive syntax and an empty submitted range remain distinct
+[smoke check] native TimeSeries retains signed-64 maximum and beyond-53-bit timestamp/value text, with exact one-row continuations through zero and no underflow/overflow
+[smoke check] native actual ACL refusal of TS.INFO keeps samples readable; denied REVRANGE clears old samples and explicit recovery restores metadata
+[smoke check] explicit native response fault injection covers unavailable-command UI and strict rejection of overflowing timestamp text; original server remains module-enabled
+[smoke check] native TimeSeries preserves source bytes and absolute expiry, distinguishes an empty existing series, and clears rows on deletion/type conversion
+[smoke check] native String remains raw until manual HLL interpretation; sparse count and invalid source cache show explicit approximate/non-enumerable semantics
+[smoke check] native dense/sparse and valid/invalid caches, including zero estimate, refresh without changing source bytes or expiry
+[smoke check] native denied PFCOUNT clears old count, explicit recovery succeeds, and Back to String reads the original complete bytes
+[smoke check] native ordinary String and a fake sparse body fail format validation without fabricating a zero count or hiding the raw String entry
+[smoke check] native HLL deletion and conversion to Hash discard prior count and metadata
+[smoke check] native Bloom opens from exact MBbloom-- with information only; input/format drafts cause no RPC or EXISTS, and positive membership uses explicit probability semantics
+[smoke check] native Bloom checks empty/UTF-8/binary and exact 4 KiB items, echoes canonical raw bytes; oversized input is rejected without network and statistics refresh clears the old verdict
+[smoke check] native non-scaling/null expansion and an empty-filter negative differ from a real never-added false positive; Cuckoo remains a distinct unsupported type
+[smoke check] native actual INFO permission refusal still permits an explicit EXISTS verdict; denied EXISTS clears previous results and explicit recovery succeeds
+[smoke check] explicit native response fault injection covers unavailable-command UI and rejects a forged certain-present verdict before rendering; the server module remains enabled
+[smoke check] native Bloom preserves serialized source bytes and absolute expiry; deletion and Cuckoo conversion discard old statistics/verdicts rather than invent a negative
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForRequest: Timeout 30000ms exceeded while waiting for event "request"
+    at activeOwner (E:\项目demo\dsh-redis\scripts\smoke-session-state.mjs:14:26)
+    at smokeSessionState (E:\项目demo\dsh-redis\scripts\smoke-session-state.mjs:96:24)
+    at async smoke (E:\项目demo\dsh-redis\scripts\smoke-dsh.mjs:1181:55)
+    at async withRedisFixture.tls (E:\项目demo\dsh-redis\scripts\smoke-dsh.mjs:1408:24)
+    at async withWslRedisFixture (E:\项目demo\dsh-redis\scripts\wsl-redis-fixture.mjs:87:19)
+    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1250:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.1
