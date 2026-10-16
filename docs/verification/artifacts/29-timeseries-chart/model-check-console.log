@@ -1,0 +1,131 @@
+$ pnpm typecheck && pnpm test
+$ tsc -p tsconfig.host.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+$ pnpm build && vitest run
+$ node scripts/build.mjs
+[build] standalone Host and Client artifacts written to lib/
+
+ RUN  v3.2.4 E:/项目demo/dsh-redis
+
+ ✓ tests/hll-view.test.ts (12 tests) 807ms
+   ✓ Readonly HLL estimates > refuses malformed header/count replies and enforces the actual request encoder budget  752ms
+ ✓ tests/hash-view.test.ts (16 tests) 388ms
+ ✓ tests/redis-transport.test.ts (12 tests) 266ms
+ ✓ tests/profile-store.test.ts (12 tests) 198ms
+ ✓ tests/stream-view.test.ts (17 tests) 193ms
+ ✓ tests/zset-view.test.ts (15 tests) 183ms
+ ✓ tests/set-view.test.ts (15 tests) 178ms
+ ✓ tests/bloom-view.test.ts (14 tests) 161ms
+ ✓ tests/geo-view.test.ts (14 tests) 130ms
+ ✓ tests/bitmap-view.test.ts (7 tests) 124ms
+ ✓ tests/list-view.test.ts (13 tests) 115ms
+ ✓ tests/json-view.test.ts (13 tests) 100ms
+ ✓ tests/timeseries-view.test.ts (14 tests) 96ms
+ ✓ tests/key-namespaces.test.ts (6 tests) 73ms
+stdout | tests/key-browser.test.ts > DB and scan identity > changes generation before SELECT, keeps sessions isolated and rejects old/wrong-DB targets
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > changes generation before SELECT, keeps sessions isolated and rejects old/wrong-DB targets
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > retains the prior DB after explicit Redis permission/range refusals
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > retains the prior DB after explicit Redis permission/range refusals
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > discards an uncertain cancelled SELECT without closing another session
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > discards an uncertain cancelled SELECT without closing another session
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > rejects an old reply when the DB generation changes while it is in flight
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > continues empty pages with exact uint64 cursors and preserves binary/empty key identities
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > rejects replay, changed MATCH, session and DB tokens without destroying a valid next page
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > discards a late page after a newer scan starts, without deleting the new cursor
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > refuses oversized identities/amplified output and malformed scan replies without partial pages
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > refuses oversized identities/amplified output and malformed scan replies without partial pages
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > refuses oversized identities/amplified output and malformed scan replies without partial pages
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > refuses oversized identities/amplified output and malformed scan replies without partial pages
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > refuses oversized identities/amplified output and malformed scan replies without partial pages
+[dsh-redis] Redis connected
+
+stdout | tests/key-browser.test.ts > DB and scan identity > returns fixed permission/cancel errors and never dispatches a pre-cancelled scan
+[dsh-redis] Redis connected
+
+ ✓ tests/key-browser.test.ts (12 tests) 61ms
+stdout | tests/string-preview.test.ts > bounded String reads > uses a byte range with one shared operation deadline and exact binary key/TTL
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > caps a large value, keeps exact window/context bytes and distinguishes EOF from empty values
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > separates missing, expired and other types without issuing GETRANGE for them
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > separates missing, expired and other types without issuing GETRANGE for them
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > separates missing, expired and other types without issuing GETRANGE for them
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > discards bytes when the type/length changes during a range read
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > discards bytes when the type/length changes during a range read
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > discards bytes when the type/length changes during a range read
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > maps wrong-type and denied commands to fixed non-data results
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > maps wrong-type and denied commands to fixed non-data results
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > does not dispatch a pre-cancelled request
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > bounded String reads > enforces a ten-second total operation budget even while a command is hanging
+[dsh-redis] Redis connected
+
+stdout | tests/string-preview.test.ts > lossless byte previews > completes every UTF-8 split with context and keeps Hex/Base64 exactly on the requested bytes
+[dsh-redis] Redis connected
+
+ ✓ tests/string-preview.test.ts (13 tests) 44ms
+ ✓ tests/client-list.test.ts (9 tests) 37ms
+ ✓ tests/slowlog.test.ts (8 tests) 38ms
+ ✓ tests/client-bundle.test.ts (1 test) 33ms
+ ✓ tests/overview.test.ts (8 tests) 31ms
+ ✓ tests/host-typert.test.ts (10 tests) 24ms
+ ✓ tests/resp.test.ts (7 tests) 19ms
+ ✓ tests/browsing-state.test.ts (6 tests) 16ms
+ ✓ tests/loaded-content.test.ts (6 tests) 15ms
+ ✓ tests/connection-service.test.ts (10 tests) 18ms
+ ✓ tests/auto-refresh.test.ts (9 tests) 14ms
+ ✓ tests/timeseries-chart.test.ts (10 tests) 59ms
+ ✓ tests/profile-transfer.test.ts (4 tests) 7ms
+ ✓ tests/connection-uri.test.ts (3 tests) 5ms
+
+ Test Files  29 passed (29)
+      Tests  296 passed (296)
+   Start at  22:51:31
+   Duration  14.87s (transform 654ms, setup 0ms, collect 2.85s, tests 3.43s, environment 5ms, prepare 2.63s)
+

@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–28 done、29 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–28 done、29 in-progress；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–28 done；29 ready-for-agent。28完整同包证据见docs/verification/28-key-auto-refresh.md。原29票编号/优先级/依赖不变。
+当前进度：01–28 done；29 in-progress（已读TimeSeries样本曲线）。28完整证据见docs/verification/28-key-auto-refresh.md；29进行中记录见docs/verification/29-timeseries-chart.md，原29票图不变，29尚未验收。
