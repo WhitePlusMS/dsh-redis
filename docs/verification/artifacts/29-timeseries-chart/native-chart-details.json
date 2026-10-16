@@ -1,0 +1,38 @@
+{
+  "redisVersion": "8.2.6",
+  "timeSeriesVersion": 80210,
+  "drawingBudget": 512,
+  "geometry": [
+    {
+      "label": "900px light English chart",
+      "width": 899,
+      "rootOverflow": 0,
+      "keysOverflow": 0,
+      "viewportInside": true,
+      "chartOwnOverflow": 0,
+      "documentOverflow": 0
+    },
+    {
+      "label": "340px dark English chart",
+      "width": 339,
+      "rootOverflow": 0,
+      "keysOverflow": 0,
+      "viewportInside": true,
+      "chartOwnOverflow": 121,
+      "documentOverflow": 0
+    },
+    {
+      "label": "900px dark Chinese chart",
+      "width": 899,
+      "rootOverflow": 0,
+      "keysOverflow": 0,
+      "viewportInside": true,
+      "chartOwnOverflow": 0,
+      "documentOverflow": 0
+    }
+  ],
+  "explicitHttpFault": true,
+  "cancelMs": 44,
+  "timeoutAfterHeldMs": 10037,
+  "proxyErrors": []
+}

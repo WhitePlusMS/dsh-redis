@@ -1,0 +1,197 @@
+{
+  "packageSha256": "b21a919b4ac93768fc22fdf47ecd8c6fd609687f9b216bb277ad8e6369ceb737",
+  "files": [
+    {
+      "name": "model-check-console.log",
+      "source": "model milestone 5f95bf8",
+      "bytes": 6889,
+      "sha256": "b08bc3c596b40d5c8e1b585ef71fc8ca294266e9b408e76dfff6d9ad64bbfc7a"
+    },
+    {
+      "name": "chart-ui-typecheck-console.log",
+      "source": ".scratch/artifacts/chart-ui-typecheck-console.log",
+      "bytes": 116,
+      "sha256": "d36b41505b7b25ac79f44bfe796f4fcd72b9b9f59087dc4e55c7e96d4fe8838e"
+    },
+    {
+      "name": "chart-pack-console.log",
+      "source": ".scratch/artifacts/chart-pack-console.log",
+      "bytes": 9216,
+      "sha256": "78e55892a2c217cca247ddfe3565ed210979fa60c10fafb1b251604ca243f2fc"
+    },
+    {
+      "name": "chart-install-console.log",
+      "source": ".scratch/artifacts/chart-install-console.log",
+      "bytes": 304,
+      "sha256": "079e76ab3c9a91ba05bdcb1031b84b86e9b98e3a2f0ca828931f9968cc541ac9"
+    },
+    {
+      "name": "chart-release-verify-console.log",
+      "source": ".scratch/artifacts/chart-release-verify-console.log",
+      "bytes": 185,
+      "sha256": "a5fa5232fac615120ebb084a3d41f8073bbd088d9f05c8b7087f470f65e689fe"
+    },
+    {
+      "name": "chart-native-console.log",
+      "source": ".scratch/artifacts/chart-native-console.log",
+      "bytes": 2959,
+      "sha256": "0b6b0fdfc3cd51b74cfae63ed579c374a019b53d74551758f6e7fbd2b463e21e"
+    },
+    {
+      "name": "chart-full-regression-console.log",
+      "source": ".scratch/artifacts/chart-full-regression-console.log",
+      "bytes": 10462,
+      "sha256": "530c6a6e71b46fe504d7880767a32d967e962c8620fe7ecd8e5cfaa9d7b2bb57"
+    },
+    {
+      "name": "chart-layout-regression-console.log",
+      "source": ".scratch/artifacts/chart-layout-regression-console.log",
+      "bytes": 3128,
+      "sha256": "c088f8d6ad1121cb17cb310acbdb52e50c213d991a9471ddf117104f9f470914"
+    },
+    {
+      "name": "workbench-release-manifest.json",
+      "source": ".scratch/artifacts/workbench-release-manifest.json",
+      "bytes": 64368,
+      "sha256": "67d1bfe8a523e18cd23c1139869ae0eccb4dda3b5852baba6219f5d914f78f6c"
+    },
+    {
+      "name": "native-chart-details.json",
+      "source": ".scratch/artifacts/native-chart-details.json",
+      "bytes": 845,
+      "sha256": "8784580e0c0d04b0a76fab3588cc3938aec623abe6ef83fa7b97c84045a66bd0"
+    },
+    {
+      "name": "native-chart-smoke.json",
+      "source": ".scratch/artifacts/native-chart-smoke.json",
+      "bytes": 4804,
+      "sha256": "f1846b7efcd73a321d3f726c1db18abfcc34d20d5d8a3d8ace849bbf416130a1"
+    },
+    {
+      "name": "native-chart-smoke.log",
+      "source": ".scratch/artifacts/native-chart-smoke.log",
+      "bytes": 329,
+      "sha256": "7841d76d053794864d6f7e8dc1690b7c30201ae20c354374c36e309f0fd267a4"
+    },
+    {
+      "name": "native-chart.png",
+      "source": ".scratch/artifacts/native-chart.png",
+      "bytes": 106144,
+      "sha256": "f237195a33c43da7f7359ac92d6775fb510aa4b328e82375f9204498ff8bd577"
+    },
+    {
+      "name": "native-chart-panel-wide-light.png",
+      "source": ".scratch/artifacts/native-chart-panel-wide-light.png",
+      "bytes": 98641,
+      "sha256": "f49401410f0ea0948a7fdf72bc27a551f0f6a8bb1ac79033b5437da0e514dd00"
+    },
+    {
+      "name": "native-chart-panel-narrow-dark.png",
+      "source": ".scratch/artifacts/native-chart-panel-narrow-dark.png",
+      "bytes": 51812,
+      "sha256": "3526a5971cee64cebdb94fcd4471e9e2efbe9a646d05e849a95564469da03c76"
+    },
+    {
+      "name": "native-chart-panel-wide-zh-dark.png",
+      "source": ".scratch/artifacts/native-chart-panel-wide-zh-dark.png",
+      "bytes": 102429,
+      "sha256": "6efcb93454b785e758ca5632af2a4d53233dbcff28bd0896f015c55bd294c920"
+    },
+    {
+      "name": "native-chart-wide-zh-dark.png",
+      "source": ".scratch/artifacts/native-chart-wide-zh-dark.png",
+      "bytes": 173824,
+      "sha256": "8967d57dff0e170ff7a6e9830bbf2e4908664d74ec6eabb2ae615ac2c504675d"
+    },
+    {
+      "name": "native-ui-release-smoke.json",
+      "source": ".scratch/artifacts/native-ui-release-smoke.json",
+      "bytes": 13421,
+      "sha256": "1fcbcd5fbe7069ebc053500aba3c99f273581750ceefe86afd9576af8f1b3a98"
+    },
+    {
+      "name": "native-ui-release-smoke.log",
+      "source": ".scratch/artifacts/native-ui-release-smoke.log",
+      "bytes": 403,
+      "sha256": "0c715ca26d2899282f5b0dccf712b609d123c92dbad4f7d5dab896c37e4fa861"
+    },
+    {
+      "name": "native-ui-release.png",
+      "source": ".scratch/artifacts/native-ui-release.png",
+      "bytes": 100967,
+      "sha256": "79d10e1f56902255c36f088757b34c912815e3efcb1bb7dcd6589017414da5b1"
+    },
+    {
+      "name": "native-sessions-b.png",
+      "source": ".scratch/artifacts/native-sessions-b.png",
+      "bytes": 105327,
+      "sha256": "0e6b43fdde514aeca082ba8f31c83992b20a8bbaee9f7cf6488d146aaad07613"
+    },
+    {
+      "name": "native-workbench-smoke.json",
+      "source": ".scratch/artifacts/native-workbench-smoke.json",
+      "bytes": 16916,
+      "sha256": "aba355d8f166f07880affc31eb94f324c87901821300ffeab2b9f7afbf736a9c"
+    },
+    {
+      "name": "native-workbench-smoke.log",
+      "source": ".scratch/artifacts/native-workbench-smoke.log",
+      "bytes": 208,
+      "sha256": "4e6af6744851347f6e69a491587e802e030309bf56a8a9a45c1fa649b9c89f20"
+    },
+    {
+      "name": "native-workbench.png",
+      "source": ".scratch/artifacts/native-workbench.png",
+      "bytes": 105987,
+      "sha256": "85524956f823effd40d7d49c0ac8944bf39ccced30c93a5e24fd0dd5bcddc96b"
+    },
+    {
+      "name": "native-workbench-loading.png",
+      "source": ".scratch/artifacts/native-workbench-loading.png",
+      "bytes": 99184,
+      "sha256": "c1e83619058c1bb177f20d4c9ca28860640e3e848024f6bfc7cb83f4774ea76f"
+    },
+    {
+      "name": "native-workbench-narrow-dark-data.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark-data.png",
+      "bytes": 108193,
+      "sha256": "4d74aee9ebbe3b3e9b05080f952cdcb95fa6fc9c60a995794e327efbb6db4d21"
+    },
+    {
+      "name": "native-workbench-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark.png",
+      "bytes": 105501,
+      "sha256": "575e11c39d9c882989a1d0cbfa8b99b6900724b122a9fdb5a24713ba0cbdb11e"
+    },
+    {
+      "name": "native-workbench-panel-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-panel-narrow-dark.png",
+      "bytes": 34930,
+      "sha256": "7bd9b692cbf52f32ee621f08f0ff5526ec4b12bad405e201dab65459108d3d52"
+    },
+    {
+      "name": "native-workbench-panel-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-light.png",
+      "bytes": 53738,
+      "sha256": "eaaf66ee8c1fd34b6aa56e566bb5f4197aad538f3563252880b4f1681c693b7a"
+    },
+    {
+      "name": "native-workbench-panel-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-zh.png",
+      "bytes": 53523,
+      "sha256": "5f4dc90de5b6f22a9998008a68b52dcf8f338322f41236b649c4f5fd57ec3fec"
+    },
+    {
+      "name": "native-workbench-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-wide-light.png",
+      "bytes": 123997,
+      "sha256": "cd552c4eff2b3f5f141f9f9f45d91f71fdf37d7082fad0058735202c80dc99fd"
+    },
+    {
+      "name": "native-workbench-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-wide-zh.png",
+      "bytes": 123909,
+      "sha256": "8dc5ed923746a3911a71c735c1e4d2e6e998ee803fada185ce924fb0cacfcf29"
+    }
+  ]
+}

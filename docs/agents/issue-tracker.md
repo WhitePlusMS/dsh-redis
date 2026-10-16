@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–28 done、29 in-progress；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–29 全部 done；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–28 done；29 in-progress（已读TimeSeries样本曲线）。28完整证据见docs/verification/28-key-auto-refresh.md；29进行中记录见docs/verification/29-timeseries-chart.md，原29票图不变，29尚未验收。
+当前进度：原01–29全部done（21张P0、8张P1），140项验收已逐票核对；原29票编号、优先级与依赖不变。最终同包296项严格检查、曲线原生21组、完整数据/会话/SDK87组、工作台24组全部通过；包SHA与32份原件见docs/verification/29-timeseries-chart.md。仅项目隔离rc.2 profile验收，用户日常DSH未自动更新插件；P2仍为候选。

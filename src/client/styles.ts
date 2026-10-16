@@ -164,6 +164,19 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-collection-table small { color:var(--dsw-alias-label-secondary); font-size:9px; }
 .dsh-redis .redis-collection-table [data-column=member] { min-width:120px; }
 .dsh-redis .redis-collection-table :is([data-column=longitude],[data-column=latitude],[data-column=timestamp],[data-column=score],[data-column=id],[data-column=rank],[data-column=index]), .dsh-redis .redis-timeseries [data-column=value] { white-space:nowrap; }
+.dsh-redis .redis-data-views [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-ts-chart { display:flex; flex-direction:column; gap:7px; min-width:0; }
+.dsh-redis .redis-chart-viewport { overflow:auto; min-width:0; max-width:100%; overscroll-behavior:contain; }
+.dsh-redis .redis-chart-viewport svg { display:block; width:100%; min-width:320px; height:auto; color:var(--dsw-alias-label-primary); }
+.dsh-redis .redis-chart-grid { fill:none; stroke:var(--dsw-alias-border-l2); stroke-width:1; vector-effect:non-scaling-stroke; }
+.dsh-redis .redis-chart-line { fill:none; stroke:currentColor; stroke-width:1.5; vector-effect:non-scaling-stroke; }
+.dsh-redis .redis-chart-dot { fill:var(--dsw-alias-bg-base); stroke:currentColor; stroke-width:1; vector-effect:non-scaling-stroke; cursor:crosshair; }
+.dsh-redis .redis-chart-dot[data-chart-selected=true] { fill:currentColor; }
+.dsh-redis .redis-chart-stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(160px,100%),1fr)); gap:6px; }
+.dsh-redis .redis-chart-stats dl { margin:0; min-width:0; }
+.dsh-redis .redis-chart-stats dt { color:var(--dsw-alias-label-secondary); font-size:10px; }
+.dsh-redis .redis-chart-stats dd { margin:2px 0 0; font:11px/1.45 Consolas,monospace; overflow-wrap:anywhere; }
+.dsh-redis .redis-chart-point { padding-top:6px; border-top:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-cell-preview { display:flex; flex-direction:column; gap:6px; min-width:0; padding-top:7px; border-top:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-cell-preview .redis-value { max-height:220px; min-height:80px; }
 .dsh-redis .redis-help { min-width:0; flex-shrink:0; font-size:11px; }

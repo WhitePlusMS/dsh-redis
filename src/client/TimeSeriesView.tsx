@@ -8,13 +8,15 @@ import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendTimeSeriesSamples, emptyTimeSeriesCache, type TimeSeriesCache } from './timeseries-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { NS } from './locales.ts'
+import { TimeSeriesChart } from './TimeSeriesChart.tsx'
 
 export interface TimeSeriesActions { readonly readTimeSeries: (request: TimeSeriesReadRequest, signal: AbortSignal) => Promise<RemoteResult<TimeSeriesReadResult>> }
 type Props = TimeSeriesActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
-/** Bounded raw samples; charting and aggregation are separate capabilities. */
+/** Bounded raw samples and a local chart share the same cache and read lifecycle. */
 export function TimeSeriesView(props: Props) {
   const { t } = props
+  const [view, setView] = useState<'table' | 'chart'>('table')
   const [direction, setDirection] = useState<'forward' | 'reverse'>('forward')
   const [start, setStart] = useState('-'), [end, setEnd] = useState('+'), [count, setCount] = useState(MAX_TIMESERIES_SAMPLES)
   const [range, setRange] = useState({ start: '-', end: '+', count: MAX_TIMESERIES_SAMPLES, attempt: 0 }), [rangeError, setRangeError] = useState(false)
@@ -59,7 +61,8 @@ export function TimeSeriesView(props: Props) {
       {result.infoState !== null && result.infoState !== 'available' && <p role="status" data-ts-info-status={result.infoState}>{t(`timeseries.info.${result.infoState}`)}</p>}
       {result.info !== null && <dl className="redis-metadata"><dt>{t('timeseries.total')}</dt><dd data-ts-total>{result.info.totalSamples}</dd><dt>{t('timeseries.first')}</dt><dd>{result.info.firstTimestamp}</dd><dt>{t('timeseries.last')}</dt><dd>{result.info.lastTimestamp}</dd><dt>{t('timeseries.retention')}</dt><dd>{result.info.retentionTime}</dd></dl>}
     </>}
-    {cache.samples.length > 0 ? <CollectionTable rows={cache.samples} identity={sample => sample.timestamp} columns={columns} label={t('timeseries.title')} /> : result?.state === 'page' && <p>{t('timeseries.empty')}</p>}
-    <HelpDetails label={t('ui.help')}><p>{t('timeseries.hint')}</p><p>{t('timeseries.budget')}</p><p>{t('value.live')}</p></HelpDetails>
+    <div className="redis-actions redis-data-views" role="group" aria-label={t('chart.title')}><button type="button" aria-pressed={view === 'table'} onClick={() => setView('table')}>{t('chart.table')}</button><button type="button" aria-pressed={view === 'chart'} onClick={() => setView('chart')}>{t('chart.view')}</button></div>
+    {view === 'chart' ? <TimeSeriesChart samples={cache.samples} t={t} /> : cache.samples.length > 0 ? <CollectionTable rows={cache.samples} identity={sample => sample.timestamp} columns={columns} label={t('timeseries.title')} /> : result?.state === 'page' && <p>{t('timeseries.empty')}</p>}
+    <HelpDetails label={t('ui.help')}><p>{t('timeseries.hint')}</p><p>{t('timeseries.budget')}</p><p>{t('chart.hint')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

@@ -1,0 +1,100 @@
+{
+  "artifactPrefix": "native-chart",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T15:07:57.885Z",
+  "packageSha256": "b21a919b4ac93768fc22fdf47ecd8c6fd609687f9b216bb277ad8e6369ceb737",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "real TimeSeries 80210 chart preserves raw binary Key identity and exact 53-bit/Int64-adjacent timestamps; local table/chart/keyboard inspection makes zero extra reads, UTC is explicit and finite double extremes do not overflow",
+    "600 real loaded samples remain in the table while only 512 read-prefix points are drawn, with 88 explicitly not drawn; reverse reads choose the latest prefix then plot ascending, empty ranges/series invent no zero curve and constant zero series stays finite",
+    "one real automatic TimeSeries refresh keeps chart mode, replaces 200 loaded points with the bounded first 100 and removes a selected point absent from the fresh data",
+    "actual chart refresh clears old points while loading; Cancel reaches the real Host using the HTTP delivery barrier, late drainage cannot restore a graph, explicit retry is fresh and B remains readable",
+    "actual TS.INFO permission refusal preserves readable samples; TS.RANGE denial, deletion and type change clear graphs, while an explicitly forged numeric timestamp is refused by the actual strict browser decoder before plotting",
+    "production ten-second TimeSeries deadline clears the graph and closes only A; explicit reconnect advances generation with AUTH/PING only, old targets dispatch nothing and B survives",
+    "real narrow/wide, Light/Dark and English/Chinese chart controls preserve the Database/RESP workbench without extra data reads or document overflow; immutable source values/absolute expiries stay unchanged and only readonly TS commands traverse the plugin proxy",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:7866/api/redisViewer/readTimeSeries",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "chart": {
+    "redisVersion": "8.2.6",
+    "timeSeriesVersion": 80210,
+    "drawingBudget": 512,
+    "geometry": [
+      {
+        "label": "900px light English chart",
+        "width": 899,
+        "rootOverflow": 0,
+        "keysOverflow": 0,
+        "viewportInside": true,
+        "chartOwnOverflow": 0,
+        "documentOverflow": 0
+      },
+      {
+        "label": "340px dark English chart",
+        "width": 339,
+        "rootOverflow": 0,
+        "keysOverflow": 0,
+        "viewportInside": true,
+        "chartOwnOverflow": 121,
+        "documentOverflow": 0
+      },
+      {
+        "label": "900px dark Chinese chart",
+        "width": 899,
+        "rootOverflow": 0,
+        "keysOverflow": 0,
+        "viewportInside": true,
+        "chartOwnOverflow": 0,
+        "documentOverflow": 0
+      }
+    ],
+    "explicitHttpFault": true,
+    "cancelMs": 44,
+    "timeoutAfterHeldMs": 10037,
+    "proxyErrors": []
+  },
+  "finishedAt": "2026-10-16T15:08:44.036Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "9a03ad44-33c6-42ac-9cc8-5567ae148683",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "timeSeriesVersion": 80210
+    }
+  ],
+  "fixturesStopped": true
+}

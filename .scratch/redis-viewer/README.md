@@ -6,7 +6,7 @@
 
 ## 当前起点
 
-用户最新要求界面贴近DSH Database/RESP，默认左导航、Key与右侧详情、收起长说明。01–28 done；新版工作台、命名空间、聚焦/已读搜索/JSON折叠、连接资料整理、服务器概览、有界慢日志、客户端快照及当前Key受控自动刷新已按对应同包实际证据验收，29 in-progress。原功能证据保留对应包，不等于用户认可视觉。界面原型见prototype/database-redis-workbench分支955b860，版本仍固定rc.2。
+按用户要求采用Database/RESP工作台：宽栏为连接/DB、Key导航、数据详情三栏；窄栏持续保留Key与详情左右分栏，长说明默认折叠。原01–29全部done，新增已读TimeSeries曲线也已验收。最终同包296项严格检查、曲线21组、完整数据/会话/SDK87组和工作台24组通过；逐票证据保留各自包，最新包和真实中文/窄宽截图见29验收文档。实际布局通过不等于用户已认可视觉，版本固定rc.2；仅项目隔离profile安装验证。
 
 ## 当前版本与源码约定
 
@@ -15,7 +15,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–28 done、29 in-progress。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–29 全部 done。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 任务清单
 
@@ -49,7 +49,7 @@
 | 26 | P1 | [查看有界的慢日志快照](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/26-slowlog-view.md) | 07 | done |
 | 27 | P1 | [查看有界的客户端连接快照](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/27-client-list.md) | 07 | done |
 | 28 | P1 | [受控自动刷新当前选中 Key](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/28-key-auto-refresh.md) | 19 | done |
-| 29 | P1 | [把已读取的 TimeSeries 样本显示为曲线](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/29-timeseries-chart.md) | 16 | in-progress |
+| 29 | P1 | [把已读取的 TimeSeries 样本显示为曲线](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/29-timeseries-chart.md) | 16 | done |
 
 ## 执行前沿与里程碑
 
@@ -75,4 +75,4 @@
 - [开发路线](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
 - [已确认的拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
 
-当前进度：01–28 done；29 in-progress（已读TimeSeries样本曲线）。28完整证据见docs/verification/28-key-auto-refresh.md；29进行中记录见docs/verification/29-timeseries-chart.md，原29票图不变，29尚未验收。
+当前进度：原01–29全部done（21张P0、8张P1），140项验收已逐票核对；原29票编号、优先级与依赖不变。最终同包296项严格检查、曲线原生21组、完整数据/会话/SDK87组、工作台24组全部通过；包SHA与32份原件见docs/verification/29-timeseries-chart.md。仅项目隔离rc.2 profile验收，用户日常DSH未自动更新插件；P2仍为候选。
