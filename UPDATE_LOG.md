@@ -1132,3 +1132,13 @@
 - 同包26cd754：严格prepack277、客户端原生23、全数据/会话/实际27方法SDK87、工作台24全部通过；93打包/84lib/12peers/2依赖与164输入逐文件匹配。客户端取消49ms、超时10112ms，所有自建DSH/Redis/代理/205客户端停止。
 - docs/verification/artifacts/27-client-list保全28原件+inventory，27验收文档记录真实/注入/版本/TLS/预算及旧包专项边界；六摘要和原27五项同步done，01–27done/28–29ready，原29票图不变。README随包已验。
 - 主界面继续Database/RESP分栏，客户端精选表格与按需详情不堆默认工作台。只提交当前27 UI/专项/验收与进度，不含lib、依赖、运行夹具或新28代码；raw日志保留原字节，按明确路径做单次blank-at-eof例外，其余标准diff检查，不改配置/跳过hook。
+
+### 28 开始：当前Key受控自动刷新
+- 27已本地提交44d0043，六处摘要/原28切进行中，29ready且原图不变。已完整核对独立reader和集合hook、固定rc.2原生useTabInfo，直接复用visible/signal，避免DOM轮询判断。
+- 状态原型保存prototype/key-auto-refresh-state/355df0c，双击副本.scratch/artifacts/key-auto-refresh.prototype.html，HTML不进main；新增src/client/auto-refresh.ts纯one-shot调度器与9项行为测试，后续UI复用。默认关闭/5秒、最小1秒、完成后计时、owner防迟到、停用后已排队effect拒发。
+- 原型生成时Node REPL的CJS typescript动态导入返回空namespace，转为本机Node正式require；cmd经execFile传入组合命令和where在该REPL环境拒绝，未写生产文件/动真实index，改用已核路径Git结构化argv与专用GIT_INDEX_FILE成功捕获。原型不连接DB/不运行浏览器、不写测试。
+- 当前只调度模型，无新Host命令、UI或真实Redis通过声明；立即严格类型/构建/专项检查。
+
+### 28 调度模型通过与本地提交
+- 完整pnpm check通过28文件286项，新9项调度行为均通过，原始日志保全28-key-auto-refresh/model-check-console.log。没有新增Host方法或持久状态，28仍进行中。
+- 原型分支与模型状态推演指针已记录，未声称用户验收；仅调度/测试/阶段记录与进度作为小目标本地提交，不推送。

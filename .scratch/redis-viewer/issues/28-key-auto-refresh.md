@@ -4,7 +4,7 @@
 
 **Blocked by:** 19 取消读取并从超时或断线中恢复
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 **Priority:** P1
 
@@ -13,3 +13,9 @@
 - [ ] 验证最小间隔、慢请求、断线、退出与资源释放，不引入持续订阅。
 - [ ] 验证本票读取的只读命令、字节身份、目标代次、权限/消失/类型变化、取消/超时和实际结果边界；输出截断不冒充驱动接收内存受限。
 - [ ] 交付所需的严格类型契约、Host 行为和界面；完成适当类型检查与专项验证，实际证据、未验证范围及改动原因和影响记入更新说明。
+
+## Comments
+
+2026-10-16：27完整提交44d0043后开始，依赖19已done。只针对当前已打开Key，默认关闭、手动开启；复用原reader与原生slot useTabInfo可见性，不增加Host RPC。最小1秒、默认5秒，完成后再等待，失败/隐藏/取消/Key或查看器切换停用，恢复不重连/不重放；游标集合重读首个有界页，Bloom自动仅统计。
+
+状态原型：prototype/key-auto-refresh-state分支355df0c14a319cbdb58b9a29cd4d62e6d6701c5a，src/client/prototypes/key-auto-refresh.prototype.html；本机双击副本E:/项目demo/dsh-redis/.scratch/artifacts/key-auto-refresh.prototype.html。四个引导和自由操作覆盖正常、慢请求隐藏、换owner迟到、失败取消；根模型以该状态推演提取单一调度模块，不等于用户已确认界面/状态。HTML壳不进main。
