@@ -1,0 +1,83 @@
+{
+  "version": "8.2.6",
+  "readers": [
+    {
+      "method": "readString",
+      "interpretation": null,
+      "startsAfterEnableMs": 1050,
+      "betweenRequestsMs": 1024
+    },
+    {
+      "method": "scanHash",
+      "interpretation": null,
+      "startsAfterEnableMs": 1053,
+      "betweenRequestsMs": 1024
+    },
+    {
+      "method": "readList",
+      "interpretation": null,
+      "startsAfterEnableMs": 1071,
+      "betweenRequestsMs": 1023
+    },
+    {
+      "method": "scanSet",
+      "interpretation": null,
+      "startsAfterEnableMs": 1049,
+      "betweenRequestsMs": 1024
+    },
+    {
+      "method": "readZSet",
+      "interpretation": null,
+      "startsAfterEnableMs": 1055,
+      "betweenRequestsMs": 1028
+    },
+    {
+      "method": "readStream",
+      "interpretation": null,
+      "startsAfterEnableMs": 1062,
+      "betweenRequestsMs": 1025
+    },
+    {
+      "method": "readJson",
+      "interpretation": null,
+      "startsAfterEnableMs": 1048,
+      "betweenRequestsMs": 1024
+    },
+    {
+      "method": "readString",
+      "interpretation": "Bitmap",
+      "startsAfterEnableMs": 1055,
+      "betweenRequestsMs": 1025
+    },
+    {
+      "method": "readGeo",
+      "interpretation": "GEO",
+      "startsAfterEnableMs": 1073,
+      "betweenRequestsMs": 1013
+    },
+    {
+      "method": "readHll",
+      "interpretation": "HyperLogLog",
+      "startsAfterEnableMs": 1042,
+      "betweenRequestsMs": 1020
+    },
+    {
+      "method": "readTimeSeries",
+      "interpretation": null,
+      "startsAfterEnableMs": 1044,
+      "betweenRequestsMs": 1024
+    },
+    {
+      "method": "readBloom",
+      "interpretation": null,
+      "startsAfterEnableMs": 1054,
+      "betweenRequestsMs": 1024
+    }
+  ],
+  "minimumIntervalMs": 1000,
+  "realPanelAndSessionVisibility": true,
+  "documentBackgroundEvent": "model and registered handler only; no OS minimize claim",
+  "cancellationMs": 27,
+  "productionTimeoutAfterHeldMs": 10058,
+  "proxyErrors": []
+}

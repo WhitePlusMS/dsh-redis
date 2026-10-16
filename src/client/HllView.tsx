@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -16,7 +17,10 @@ export function HllView(props: Props) {
   const [attempt, setAttempt] = useState(0), [result, setResult] = useState<HllReadResult | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setAttempt(value => value + 1), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
     void props.readHll({ target: props.target, keyBase64: props.selected.base64 }, controller.signal).then(response => {
@@ -31,7 +35,7 @@ export function HllView(props: Props) {
     <h2>{t('hll.title')} · <span>{props.selected.label}</span></h2>
     <div className="redis-actions">
       <button type="button" disabled={busy} onClick={() => setAttempt(attempt + 1)}>{t('value.refresh')}</button>
-      {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}
+      {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
     </div>
     {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}

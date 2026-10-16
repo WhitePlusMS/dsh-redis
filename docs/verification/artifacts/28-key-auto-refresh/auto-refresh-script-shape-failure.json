@@ -1,0 +1,132 @@
+{
+  "artifactPrefix": "native-auto-refresh",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T14:20:36.206Z",
+  "packageSha256": "f6f9e2e230b10fce2ed64e49267cfc9865abc19d421e35c66d9ab252ee45486f",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native current-Key auto control is off by default; one-second minimum and fixed 1/5/10/30-second choices cause no read until explicitly enabled",
+    "all twelve native viewers refresh through existing strict RPCs with raw Key/target identity; one-second waiting follows settlement, committed String/List/JSON queries and formats survive drafts, collection cursors restart bounded first pages and Bloom sends item=null only",
+    "Hash MATCH draft clearing stops auto immediately without submitting the draft",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "autoRefresh": {
+    "version": "8.2.6",
+    "readers": [
+      {
+        "method": "readString",
+        "interpretation": null,
+        "startsAfterEnableMs": 1067,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "scanHash",
+        "interpretation": null,
+        "startsAfterEnableMs": 1052,
+        "betweenRequestsMs": 1025
+      },
+      {
+        "method": "readList",
+        "interpretation": null,
+        "startsAfterEnableMs": 1078,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "scanSet",
+        "interpretation": null,
+        "startsAfterEnableMs": 1059,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "readZSet",
+        "interpretation": null,
+        "startsAfterEnableMs": 1051,
+        "betweenRequestsMs": 1026
+      },
+      {
+        "method": "readStream",
+        "interpretation": null,
+        "startsAfterEnableMs": 1053,
+        "betweenRequestsMs": 1020
+      },
+      {
+        "method": "readJson",
+        "interpretation": null,
+        "startsAfterEnableMs": 1064,
+        "betweenRequestsMs": 1025
+      },
+      {
+        "method": "readString",
+        "interpretation": "Bitmap",
+        "startsAfterEnableMs": 1058,
+        "betweenRequestsMs": 1015
+      },
+      {
+        "method": "readZSet",
+        "interpretation": "GEO",
+        "startsAfterEnableMs": 1055,
+        "betweenRequestsMs": 1017
+      },
+      {
+        "method": "readString",
+        "interpretation": "HyperLogLog",
+        "startsAfterEnableMs": 1059,
+        "betweenRequestsMs": 1019
+      },
+      {
+        "method": "readTimeSeries",
+        "interpretation": null,
+        "startsAfterEnableMs": 1045,
+        "betweenRequestsMs": 1022
+      },
+      {
+        "method": "readBloom",
+        "interpretation": null,
+        "startsAfterEnableMs": 1047,
+        "betweenRequestsMs": 1022
+      }
+    ],
+    "minimumIntervalMs": 1000,
+    "realPanelAndSessionVisibility": true,
+    "documentBackgroundEvent": "model and registered handler only; no OS minimize claim"
+  },
+  "error": "(intermediate value) is not iterable",
+  "errorStack": "TypeError: (intermediate value) is not iterable\n    at smokeAutoRefresh (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-auto-refresh.mjs:125:65)\n    at async smoke (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1190:59)\n    at async withRedisFixture.tls (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1426:24)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1265:5",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nauto-session-f5f12b0f-8755-4ccf-ac6f-e17fc805e33c\nsession-state-b9b11d31-79fc-4415-841f-b5b30bd16bbd\nsession-state-9a03dd3c-9c27-4013-a757-26c034a26959\nsession-state-0bed886b-18d9-4802-b074-f6f2d305a707\nsession-state-af0b36ca-83d2-44fd-906a-4704e3bd20fd\nsession-state-865ac2da-9909-46a0-8c33-58564b30bc06\nsession-state-bece1e0d-3f60-4abc-9cb2-4eb877a5e43e\nsession-state-caa8860f-0977-4a34-a4a9-15c192fa7e04\nsession-state-13f73de6-3cba-47e8-8250-cd2dad488a41\nsession-state-3675eb14-1bf4-4981-97c7-bca5bc694daf\nsession-state-1d00db98-c982-4f56-ad71-69515645183e\nsession-state-97c1b089-11cd-4528-a764-2b5bece37e86\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nWorkspace Write\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\nMy connections\n127.0.0.1:7589\nDB 0\nSessions 6a0fb5e9-22fe-4d3e-9cb3-7225433dd2ad\n127.0.0.1:13424\nSessions ab6db273-33cd-4082-9ac8-a257d86f97e2\n127.0.0.1:14124\nSessions a65acc7c-8356-4b6d-87f5-d9c6758a0950\n127.0.0.1:9610\nSessions 980a90db-3daa-4dfe-9e2d-beb06582c81e\n127.0.0.1:2940\nConnection settings\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 247 · Scan complete\n\nStatus checked at 10:20:57 PM\n\"native:96\"\n9\n\"auto:change\"\n11\n\"native:144\"\n10\n\"native:50\"\n9\n\"native:157\"\n10\n\"native:71\"\n9\n\"native:221\"\n10\n\"测试:key\"\n10\n\"native:55\"\n9\n\"native:90\"\n9\n\"auto:bloom\"\n10\n\"native:189\"\n10\n\"native:46\"\n9\n\"native:33\"\n9\n\"native:43\"\n9\n\"native:141\"\n10\n\"native:13\"\n9\n\"native:4\"\n8\n\"native:68\"\n9\n\"native:60\"\n9\n\"native:29\"\n9\n\"native:148\"\n10\n\"native:174\"\n10\n\"auto:bitmap\"\n11\n\"auto:large\"\n10\n\"native:194\"\n10\n\"native:134\"\n10\n\"native:117\"\n10\n\"native:197\"\n10\n\"auto:geo\"\n8\n\"native:132\"\n10\n\"native:5\"\n8\n\"auto:large\"\nData\nMetadata\nAuto refresh\n1 s\n5 s\n10 s\n30 s\nOn · waiting\nLast success 10:21:33 PM\nKey details · \"auto:large\"\nView as Bitmap\nView as HyperLogLog\nStart byte\nWindow bytes\n256\n4096\n16384\n65536\nRead / refresh\nNext window\nStatus checked at 10:21:33 PM\nTYPE\nstring\nTTL (ms)\n843093\n\nPartial byte preview (not the whole value) · Start byte 0 · 65536 bytes\n\nText\nJSON\nHex\nBase64\nDecode Base64…\nDecode Base64 text to Text\nDecode Base64 text to JSON\n00000000  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000010  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000020  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000030  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000040  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000050  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000060  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000070  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000080  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000090  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000A0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000B0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000C0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000D0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000E0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000000F0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000100  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000110  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000120  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000130  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000140  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000150  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000160  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000170  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000180  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000190  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001A0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001B0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001C0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001D0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001E0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000001F0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000200  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000210  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000220  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000230  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000240  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000250  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000260  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000270  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000280  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000290  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002A0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002B0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002C0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002D0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002E0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000002F0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000300  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000310  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000320  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000330  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000340  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000350  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000360  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000370  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000380  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n00000390  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000003A0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000003B0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000003C0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000003D0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n000003E0  61 61 61 61 61 61 61 61 61 61 61 61 61 61 61 61\n",
+  "finishedAt": "2026-10-16T14:21:34.866Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "f5f12b0f-8755-4ccf-ac6f-e17fc805e33c",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

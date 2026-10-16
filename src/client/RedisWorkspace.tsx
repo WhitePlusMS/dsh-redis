@@ -7,6 +7,7 @@ import { BrowsingSession, type BrowsingActions } from './BrowsingSession.tsx'
 import { ConnectionForm, type ConnectionActions } from './ConnectionForm.tsx'
 import { NS } from './locales.ts'
 import { HelpDetails } from './HelpDetails.tsx'
+import { RefreshVisibility } from './AutoRefresh.tsx'
 
 export interface RedisWorkspaceInjected extends ConnectionActions, BrowsingActions {
   readonly sessionKey: string
@@ -19,6 +20,7 @@ export function RedisWorkspace(props: Props) {
   const [attempt, setAttempt] = useState(0)
   const [phase, setPhase] = useState<'loading' | 'ready' | 'error'>('loading')
   const t = props.t
+  const { tab } = props.useTabInfo()
   useEffect(() => {
     const controller = new AbortController()
     setPhase('loading')
@@ -29,7 +31,7 @@ export function RedisWorkspace(props: Props) {
   }, [props.status, attempt])
   return <section className="dsh-redis" aria-label={t('view.title')}>
     <header className="redis-workspace-heading"><h2>{t('view.title')}</h2><span className="redis-badge">{t('badge.readOnly')}</span><HelpDetails label={t('ui.help')}><p>{t('keys.hint')}</p><p>{t('session.scope')}</p></HelpDetails></header>
-    {phase === 'ready' ? <BrowsingSession key={props.sessionKey} {...props}><ConnectionForm {...props} /></BrowsingSession> : <div className="redis-empty">
+    {phase === 'ready' ? <RefreshVisibility.Provider value={tab}><BrowsingSession key={props.sessionKey} {...props}><ConnectionForm {...props} /></BrowsingSession></RefreshVisibility.Provider> : <div className="redis-empty">
       <h2>{t('empty.title')}</h2><p>{t('empty.description')}</p>
       {phase === 'error' && <button type="button" onClick={() => setAttempt(value => value + 1)}>{t('action.retry')}</button>}
     </div>}

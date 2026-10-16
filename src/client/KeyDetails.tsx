@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -38,7 +39,10 @@ export function KeyDetails(props: Props) {
   const [rangeError, setRangeError] = useState(false)
   const [view, setView] = useState<'string' | 'bitmap' | 'hll'>('string')
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: view === 'string' && result?.state !== 'unsupported', busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
     void props.readString({ target: props.target, keyBase64: props.selected.base64, offset: request.offset, count: request.count }, controller.signal).then(response => {
@@ -88,7 +92,7 @@ export function KeyDetails(props: Props) {
           if (result?.nextOffset === null || result?.nextOffset === undefined) return
           setOffset(result.nextOffset); browsing.update({ stringOffset: result.nextOffset, stringCount: count }); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
         }}>{t('value.next')}</button>
-        {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
       </div>
     </form>
     {rangeError && <p role="alert" className="redis-error">{t('value.error.range')}</p>}

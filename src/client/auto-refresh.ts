@@ -63,7 +63,8 @@ export class AutoRefreshClock {
     const automatic = this.pendingOwner === owner
     this.pendingOwner = null
     // An Off/hide action can commit before the queued React read effect.
-    if (automatic && (!this.snapshot.enabled || !this.visible())) { this.stop('hidden'); return false }
+    if (automatic && !this.snapshot.enabled) return false
+    if (automatic && !this.visible()) { this.stop('hidden'); return false }
     this.clearTimer(); this.change({ busy: true, ready: false })
     return true
   }

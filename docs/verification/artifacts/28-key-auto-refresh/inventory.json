@@ -1,0 +1,318 @@
+{
+  "packageSha256": "4cc78d01a745a6ba96824962fa8e8d511f857ffacbf2e1234384d8b47abd1233",
+  "checkpointPackageSha256": "f6f9e2e230b10fce2ed64e49267cfc9865abc19d421e35c66d9ab252ee45486f",
+  "files": [
+    {
+      "name": "model-check-console.log",
+      "source": ".scratch/artifacts/auto-refresh-model-check-console.log",
+      "bytes": 6838,
+      "sha256": "560e43d1e7044a42ec82ba08de8f460bfefaa1723ff93039909c2b789d8c507d"
+    },
+    {
+      "name": "auto-refresh-ui-typecheck-console.log",
+      "source": ".scratch/artifacts/auto-refresh-ui-typecheck-console.log",
+      "bytes": 116,
+      "sha256": "d36b41505b7b25ac79f44bfe796f4fcd72b9b9f59087dc4e55c7e96d4fe8838e"
+    },
+    {
+      "name": "auto-refresh-ui-optional-type-failure.log",
+      "source": ".scratch/artifacts/auto-refresh-ui-optional-type-failure.log",
+      "bytes": 708,
+      "sha256": "8626e3739639a2fc90853441d0ea466ec7e3f7c65b8a4d244996357c40f30c76"
+    },
+    {
+      "name": "auto-refresh-pack-console.log",
+      "source": ".scratch/artifacts/auto-refresh-pack-console.log",
+      "bytes": 9165,
+      "sha256": "64dd3a49c9974977e28234356f06bf0251ea243421da6cb3ddbfc925fe1fa94c"
+    },
+    {
+      "name": "auto-refresh-install-console.log",
+      "source": ".scratch/artifacts/auto-refresh-install-console.log",
+      "bytes": 307,
+      "sha256": "a34d964de7e147268e0638c8640608d212fc0174a3bffdc6d05cf2b51c6a39ea"
+    },
+    {
+      "name": "auto-refresh-package-check-console.log",
+      "source": ".scratch/artifacts/auto-refresh-package-check-console.log",
+      "bytes": 185,
+      "sha256": "992f98547aa4a47c5b08a8663f15f9fc336cebd262fb575605d08b6865dff25f"
+    },
+    {
+      "name": "auto-refresh-native-console.log",
+      "source": ".scratch/artifacts/auto-refresh-native-console.log",
+      "bytes": 3516,
+      "sha256": "96db11399f8dc966ad0e17cc9fcbe0ec8f3b0a31dd05f691bc70f5a9af75453c"
+    },
+    {
+      "name": "auto-refresh-full-ui-console.log",
+      "source": ".scratch/artifacts/auto-refresh-full-ui-console.log",
+      "bytes": 10462,
+      "sha256": "530c6a6e71b46fe504d7880767a32d967e962c8620fe7ecd8e5cfaa9d7b2bb57"
+    },
+    {
+      "name": "auto-refresh-layout-console.log",
+      "source": ".scratch/artifacts/auto-refresh-layout-console.log",
+      "bytes": 3128,
+      "sha256": "c088f8d6ad1121cb17cb310acbdb52e50c213d991a9471ddf117104f9f470914"
+    },
+    {
+      "name": "workbench-release-manifest.json",
+      "source": ".scratch/artifacts/workbench-release-manifest.json",
+      "bytes": 63702,
+      "sha256": "6290eefe1ad1babb331b71deb37777873daaad2f7ea79dfbef4fd0a01ccd205b"
+    },
+    {
+      "name": "native-auto-refresh-smoke.json",
+      "source": ".scratch/artifacts/native-auto-refresh-smoke.json",
+      "bytes": 6738,
+      "sha256": "ad20a7cafec30be976067b462bf401e3217eff15a926808b8abad61fcc9b63fa"
+    },
+    {
+      "name": "native-auto-refresh-smoke.log",
+      "source": ".scratch/artifacts/native-auto-refresh-smoke.log",
+      "bytes": 391,
+      "sha256": "4ff96b853a9cb08bdcf66516b9d27a88ebac6878d08989129e8aabc6b256eeb0"
+    },
+    {
+      "name": "native-auto-refresh.png",
+      "source": ".scratch/artifacts/native-auto-refresh.png",
+      "bytes": 106792,
+      "sha256": "0bf8ffcbd19b17ef04314ee1d19f83b5c1c759149cd37781aa85f1d077822543"
+    },
+    {
+      "name": "native-auto-refresh-timings.json",
+      "source": ".scratch/artifacts/native-auto-refresh-timings.json",
+      "bytes": 1968,
+      "sha256": "2b5bea5acd1caa17935168a6f7421c30d923829d46c8721aef075c5b45a46301"
+    },
+    {
+      "name": "native-auto-refresh-narrow.png",
+      "source": ".scratch/artifacts/native-auto-refresh-narrow.png",
+      "bytes": 119788,
+      "sha256": "1fdb6d50ef0bee331bdb0827c94dcd0768f2b4fedef653bf5bf609e601aa9e35"
+    },
+    {
+      "name": "native-auto-refresh-wide.png",
+      "source": ".scratch/artifacts/native-auto-refresh-wide.png",
+      "bytes": 140117,
+      "sha256": "0418fb7a17e988a8d195aecc9c86cfc7564c7b7a9b8ff8d84f76294268df054a"
+    },
+    {
+      "name": "native-ui-release-smoke.json",
+      "source": ".scratch/artifacts/native-ui-release-smoke.json",
+      "bytes": 13421,
+      "sha256": "48932e7b570d17e4522331005fc645021c245a13dec4d21553619f8e4d0d94c6"
+    },
+    {
+      "name": "native-ui-release-smoke.log",
+      "source": ".scratch/artifacts/native-ui-release-smoke.log",
+      "bytes": 403,
+      "sha256": "37d1a8d2618c6dd2059c130f67be0ba6b67d8dd0cb4f3046e9e9530e12b0e887"
+    },
+    {
+      "name": "native-ui-release.png",
+      "source": ".scratch/artifacts/native-ui-release.png",
+      "bytes": 101817,
+      "sha256": "7095e0bc1ae876d512c8f2b4ab26d46d7349a4a1759534cedd90f91509b893af"
+    },
+    {
+      "name": "native-workbench-smoke.json",
+      "source": ".scratch/artifacts/native-workbench-smoke.json",
+      "bytes": 16916,
+      "sha256": "391ea467ba7acb161085a970e671d67070750abd1741974c956f72ca17b0dfb3"
+    },
+    {
+      "name": "native-workbench-smoke.log",
+      "source": ".scratch/artifacts/native-workbench-smoke.log",
+      "bytes": 208,
+      "sha256": "31322d4a1737eee1adc3b8b249fc50c86f00de0d5747bc501c8cccec170fe7ef"
+    },
+    {
+      "name": "native-workbench.png",
+      "source": ".scratch/artifacts/native-workbench.png",
+      "bytes": 106238,
+      "sha256": "95ef009316ed09627d230e0430b7a37a37dea37a12111c4547ab63ed71c223ab"
+    },
+    {
+      "name": "native-workbench-loading.png",
+      "source": ".scratch/artifacts/native-workbench-loading.png",
+      "bytes": 99399,
+      "sha256": "3f4cac0090a4682a7bfd40d26e95b1747076f58e6f5725324ca0d667c9f5a7ca"
+    },
+    {
+      "name": "native-workbench-narrow-dark-data.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark-data.png",
+      "bytes": 107386,
+      "sha256": "0f24a3105a08dcb1ec86898351132a8749c841fda4117054b75dc49f8fbdd23e"
+    },
+    {
+      "name": "native-workbench-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark.png",
+      "bytes": 106003,
+      "sha256": "baf04d851c5674b3aff2f162a0fc01c64d0354ab8da69b3a01a4a4c2e4eb2ad5"
+    },
+    {
+      "name": "native-workbench-panel-narrow-dark.png",
+      "source": ".scratch/artifacts/native-workbench-panel-narrow-dark.png",
+      "bytes": 34331,
+      "sha256": "04c6beec8c72594eab249f7819dd1cc61ad3fca7d2ab4af0992af2e89b437af4"
+    },
+    {
+      "name": "native-workbench-panel-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-light.png",
+      "bytes": 54111,
+      "sha256": "a271431a074500262f857db676cc6d7107ecd8be5a1c5d4f7e31e074efba8ac4"
+    },
+    {
+      "name": "native-workbench-panel-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-zh.png",
+      "bytes": 53898,
+      "sha256": "e568e37a628e5302d8650e33795bfaae28fceb4e688d91fbe9f6021c4cee5d88"
+    },
+    {
+      "name": "native-workbench-wide-light.png",
+      "source": ".scratch/artifacts/native-workbench-wide-light.png",
+      "bytes": 124342,
+      "sha256": "8a01945e60f594dfa2485cef42fa980a45d50fd310c8b8ff9dec71899a7b9016"
+    },
+    {
+      "name": "native-workbench-wide-zh.png",
+      "source": ".scratch/artifacts/native-workbench-wide-zh.png",
+      "bytes": 124285,
+      "sha256": "fe4cf95a7995ed0ce2b08330a9eb3c779b2b65183418a8f4c146694396a1367e"
+    },
+    {
+      "name": "auto-refresh-script-shape-failure.json",
+      "source": ".scratch/artifacts/auto-refresh-script-shape-failure.json",
+      "bytes": 11437,
+      "sha256": "8b431bbc69b0fbfb4bb87adda92a5b9fe0305f508f3213da385a3b1d8ea30fe5"
+    },
+    {
+      "name": "auto-refresh-script-shape-failure.log",
+      "source": ".scratch/artifacts/auto-refresh-script-shape-failure.log",
+      "bytes": 174,
+      "sha256": "fd6e457fc7404c3b7824370a18ed9244731775ec5d8127a9a5f81d45fe3bea66"
+    },
+    {
+      "name": "auto-refresh-script-shape-failure.png",
+      "source": ".scratch/artifacts/auto-refresh-script-shape-failure.png",
+      "bytes": 166521,
+      "sha256": "956ef03b34c5e4f9aadc5aebae928e974000273c980923276beec1ee201d6e2a"
+    },
+    {
+      "name": "auto-refresh-script-shape-failure-console.log",
+      "source": ".scratch/artifacts/auto-refresh-script-shape-failure-console.log",
+      "bytes": 1600,
+      "sha256": "bc6d434800a399adf1dae0849bca1de7c7cae6487fceef87d6739bbacdf9e7b1"
+    },
+    {
+      "name": "auto-refresh-cancel-release-failure.json",
+      "source": ".scratch/artifacts/auto-refresh-cancel-release-failure.json",
+      "bytes": 8129,
+      "sha256": "7e3d9bc58a3e82f184db2828b21ebaa590876baa0f8c32e30d7f8aa7b3825db6"
+    },
+    {
+      "name": "auto-refresh-cancel-release-failure.log",
+      "source": ".scratch/artifacts/auto-refresh-cancel-release-failure.log",
+      "bytes": 174,
+      "sha256": "084146588abcaf1ce275cab60035b06431b2aec52070eb19f0c425e04ada7474"
+    },
+    {
+      "name": "auto-refresh-cancel-release-failure.png",
+      "source": ".scratch/artifacts/auto-refresh-cancel-release-failure.png",
+      "bytes": 128140,
+      "sha256": "1c30c6dd774830352eee51bdfcec48c05afadfb90de37d8093de1045479c11bc"
+    },
+    {
+      "name": "auto-refresh-cancel-release-failure-console.log",
+      "source": ".scratch/artifacts/auto-refresh-cancel-release-failure-console.log",
+      "bytes": 1936,
+      "sha256": "4428503c196429463c9670c527500f14417140db95ff53b433e94ac441896105"
+    },
+    {
+      "name": "auto-refresh-last-tab-reopen-failure.json",
+      "source": ".scratch/artifacts/auto-refresh-last-tab-reopen-failure.json",
+      "bytes": 9853,
+      "sha256": "7ced627ec1f444003edd44e42894e1f0ad8082490428c192c302323d741a0cc7"
+    },
+    {
+      "name": "auto-refresh-last-tab-reopen-failure.log",
+      "source": ".scratch/artifacts/auto-refresh-last-tab-reopen-failure.log",
+      "bytes": 298,
+      "sha256": "0021c938d028ef6d52b61751820c59bfd213ccf2d52ca6431192853d59345fc0"
+    },
+    {
+      "name": "auto-refresh-last-tab-reopen-failure.png",
+      "source": ".scratch/artifacts/auto-refresh-last-tab-reopen-failure.png",
+      "bytes": 70910,
+      "sha256": "8e4135355c0d1540d20f2cdfe7f0b5d4783f3840d1779c833ec04bd86d37e7ec"
+    },
+    {
+      "name": "auto-refresh-last-tab-reopen-failure-console.log",
+      "source": ".scratch/artifacts/auto-refresh-last-tab-reopen-failure-console.log",
+      "bytes": 3811,
+      "sha256": "112b80723e1b32377b2fbb563d665b300a9a48e23a0c0cccf547aa4033be2590"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-native-auto-refresh-smoke.json",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-native-auto-refresh-smoke.json",
+      "bytes": 6738,
+      "sha256": "bd80545ee7625f2660f806c6e9a60ccecc03ddd50d39efa3dc26981d4816dad0"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-native-auto-refresh-smoke.log",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-native-auto-refresh-smoke.log",
+      "bytes": 391,
+      "sha256": "c16e5deb62f85e8a6e44aaa450ef6b568caf6b49ad95aef1c6e54e5578d59290"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-native-auto-refresh-timings.json",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-native-auto-refresh-timings.json",
+      "bytes": 1968,
+      "sha256": "29ee29d236e929837ffd9a9c2bcef5b86abe3324dd54861c0bca9250a2ec1db6"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-native-ui-release-smoke.json",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-native-ui-release-smoke.json",
+      "bytes": 13420,
+      "sha256": "630302721eaba6701f20ad924ef2100a3bc0ddcd3ade480af4172ea715151bde"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-native-workbench-smoke.json",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-native-workbench-smoke.json",
+      "bytes": 16916,
+      "sha256": "32b796dfbe47f973914471437508aa98237315c51cb48ffe634f508817908cf0"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-workbench-release-manifest.json",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-workbench-release-manifest.json",
+      "bytes": 63702,
+      "sha256": "9ca2d7aea475c927600307cc77936ffd673c70b5a86a8f7ab4ea661408d830ea"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-auto-refresh-pack-console.log",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-auto-refresh-pack-console.log",
+      "bytes": 9165,
+      "sha256": "1d023b6fabea699d2e6909d3f770f156848d64d66190dd80f2c2db853cf84524"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-auto-refresh-native-console.log",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-auto-refresh-native-console.log",
+      "bytes": 3516,
+      "sha256": "96db11399f8dc966ad0e17cc9fcbe0ec8f3b0a31dd05f691bc70f5a9af75453c"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-auto-refresh-full-ui-console.log",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-auto-refresh-full-ui-console.log",
+      "bytes": 10462,
+      "sha256": "530c6a6e71b46fe504d7880767a32d967e962c8620fe7ecd8e5cfaa9d7b2bb57"
+    },
+    {
+      "name": "checkpoint-f6f9e2e-auto-refresh-layout-console.log",
+      "source": ".scratch/artifacts/checkpoint-f6f9e2e-auto-refresh-layout-console.log",
+      "bytes": 3128,
+      "sha256": "c088f8d6ad1121cb17cb310acbdb52e50c213d991a9471ddf117104f9f470914"
+    }
+  ]
+}

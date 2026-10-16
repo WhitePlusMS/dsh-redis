@@ -22,7 +22,7 @@ export function ZSetView(props: Props) {
   const [mode, setMode] = useState<'range' | 'scan'>('range'), [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [range, setRange] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 }), [pattern, setPattern] = useState('*')
   const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('zset'), [rangeError, setRangeError] = useState(false)
-  const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range]), empty: emptyZSetCache,
+  const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ active: !geo, target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range]), empty: emptyZSetCache,
     append: (previous, page) => appendZSetRows(page.mode === 'range' ? emptyZSetCache() : previous, page.entries),
     load: (cursor, signal) => props.readZSet(mode === 'range' ? { target: props.target, keyBase64: props.selected.base64, mode, offset: range.offset, count: range.count } : { target: props.target, keyBase64: props.selected.base64, mode, pattern, cursor }, signal),
   })

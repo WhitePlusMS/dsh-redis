@@ -1,0 +1,17 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native current-Key auto control is off by default; one-second minimum and fixed 1/5/10/30-second choices cause no read until explicitly enabled
+[smoke check] all twelve native viewers refresh through existing strict RPCs with raw Key/target identity; one-second waiting follows settlement, committed String/List/JSON queries and formats survive drafts, collection cursors restart bounded first pages and Bloom sends item=null only
+[smoke check] Hash MATCH draft clearing stops auto immediately without submitting the draft
+[smoke] (intermediate value) is not iterable
+[smoke] Test process stopped: true
+{"passed":false,"checks":14,"fixturesStopped":true}

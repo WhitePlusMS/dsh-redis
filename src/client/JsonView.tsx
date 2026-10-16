@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -20,7 +21,10 @@ export function JsonView(props: Props) {
   const [result, setResult] = useState<JsonReadResult | null>(null), [format, setFormat] = useBrowsingFormat('json')
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [pathError, setPathError] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
     void props.readJson({ target: props.target, keyBase64: props.selected.base64, path: request.path }, controller.signal).then(response => {
@@ -41,7 +45,7 @@ export function JsonView(props: Props) {
       <label>{t('json.path')}<input name="jsonPath" required maxLength={1024} value={path} onChange={event => setPath(event.target.value)} /></label>
       <div className="redis-actions">
         <button type="submit">{t('value.refresh')}</button>
-        {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
       </div>
     </form>
 

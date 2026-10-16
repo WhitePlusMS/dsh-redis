@@ -56,7 +56,7 @@ describe('current Key auto refresh lifecycle', () => {
   })
   it('Off between a tick and the React effect denies that queued automatic read', () => {
     const f = fixture(); f.clock.report(f.owner, false, sample(), false); f.clock.enable(); vi.advanceTimersByTime(5000)
-    f.clock.stop(); expect(f.clock.begin(f.owner)).toBe(false); expect(f.cancel).toHaveBeenCalledOnce()
+    f.clock.stop(); expect(f.clock.begin(f.owner)).toBe(false); expect(f.cancel).toHaveBeenCalledOnce(); expect(f.clock.getSnapshot().reason).toBe('off')
     expect(f.clock.begin(f.owner)).toBe(true) // the next explicitly requested read is permitted
   })
   it('failure, disappearance or type change stop without reconnect/replay and keep only last success time', () => {

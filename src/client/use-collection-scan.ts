@@ -1,13 +1,16 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ConnectionErrorCode, DatabaseTarget } from '../domain.ts'
 
 interface ScanPage {
+  readonly sampledAt: string
   readonly state: 'unavailable' | 'page' | 'missing' | 'unsupported' | 'changed' | 'failed'
   readonly error: ConnectionErrorCode | null
   readonly cursor: string | null
 }
 interface Options<Cache, Page> {
+  readonly active?: boolean
   readonly target: DatabaseTarget
   readonly keyBase64: string
   readonly queryKey?: string
@@ -25,12 +28,14 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
   const [error, setError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [progress, setProgress] = useState<'idle' | 'more' | 'complete' | 'limited'>('idle')
   const active = useRef<AbortController | null>(null), sequence = useRef(0)
+  const auto = useAutoRefreshReader({ active: options.active !== false, busy, result, failed: error !== null && error !== 'cancelled', refresh: () => { void scan(false) }, cancel })
   function stop(): void { ++sequence.current; active.current?.abort() }
   function clear(): void {
-    stop(); setBusy(false); setCache(options.empty()); setResult(null); setCursor(null); setError(null); setProgress('idle')
+    auto.reset(); stop(); setBusy(false); setCache(options.empty()); setResult(null); setCursor(null); setError(null); setProgress('idle')
   }
-  function cancel(): void { stop(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }
+  function cancel(): void { auto.reset('cancelled'); stop(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }
   async function scan(more: boolean): Promise<void> {
+    if (!auto.begin()) return
     active.current?.abort()
     const controller = new AbortController(), current = ++sequence.current, previous = more ? cache : options.empty()
     active.current = controller; setBusy(true); setError(null)

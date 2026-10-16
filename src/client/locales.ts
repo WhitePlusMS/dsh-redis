@@ -1,5 +1,14 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  "auto.title": "自动刷新",
+  "auto.interval": "自动刷新间隔",
+  "auto.last": "上次成功",
+  "auto.waiting": "已开启 · 等待下一轮",
+  "auto.reading": "已开启 · 读取中",
+  "auto.hidden": "已停止：面板或页面隐藏",
+  "auto.failed": "已停止：读取未成功",
+  "auto.cancelled": "已停止：已取消",
+  "auto.hint": "默认关闭，手动开启当前Key；最小1秒，读取完成后才等待下一轮，不叠加请求。切换Key/DB/会话/查看方式、隐藏、取消或失败后停止，恢复可见不自动开启或重连。重读已提交的字节/索引范围；Hash/Set/ZSet扫描、Stream/TimeSeries只重读当前查询首个有界页，不自动追完游标；Bloom仅刷新统计，不重放成员判断。草稿不自动提交，时间来自本机。",
   "clients.title": "客户端连接快照",
   "clients.inspect": "查看客户端",
   "clients.details": "选中客户端详情",
@@ -190,6 +199,15 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  "auto.title": "Auto refresh",
+  "auto.interval": "Auto refresh interval",
+  "auto.last": "Last success",
+  "auto.waiting": "On · waiting",
+  "auto.reading": "On · reading",
+  "auto.hidden": "Stopped: panel or page hidden",
+  "auto.failed": "Stopped: read did not succeed",
+  "auto.cancelled": "Stopped: cancelled",
+  "auto.hint": "Off by default. Enable for this Key; wait at least one second after each completed read, with no overlapping polling. Key/DB/Session/view changes, hiding, cancellation or failure stop it. Showing again never enables or reconnects. Reread the submitted byte/index window; scans and Stream/TimeSeries restart the first bounded page without draining cursors. Bloom refreshes statistics only, never repeats item checks. Drafts are not submitted. Times use this computer.",
   "clients.title": "Client connection snapshot",
   "clients.inspect": "Inspect client",
   "clients.details": "Selected client details",

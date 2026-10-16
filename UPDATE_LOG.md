@@ -1142,3 +1142,52 @@
 ### 28 调度模型通过与本地提交
 - 完整pnpm check通过28文件286项，新9项调度行为均通过，原始日志保全28-key-auto-refresh/model-check-console.log。没有新增Host方法或持久状态，28仍进行中。
 - 原型分支与模型状态推演指针已记录，未声称用户验收；仅调度/测试/阶段记录与进度作为小目标本地提交，不推送。
+
+### 28 接入当前查看器与原生可见性（待检查）
+- 新增AutoRefresh.tsx：原生tab.visible/signal和document.visibilitychange，按Key独立时钟、小工具栏、双语帮助/成功时间；RedisWorkspace正式props.useTabInfo，KeyBrowser按原始Key挂边界。styles只加工具栏，窄栏图标/间隔/帮助一行，长规则折叠，不改变原Database/RESP分栏。
+- KeyDetails/Bitmap/Hll/Json/List/Geo/Bloom注册原有已提交请求和取消；use-collection-scan统一其余集合，ZSet进入GEO禁用父源；所有开始同步清等待，关闭后排队的自动effect必须许可才发请求。Bloom自动item=null仅统计，原成员判断不重放。
+- 首次大型编辑脚本被JS解析前置拒绝，未写文件；其后那次typecheck仅验证旧模型，未算UI通过。已拆为预检Map/正式写入两步，全部唯一上下文匹配后一次落盘。无新Host RPC、持久配置或依赖。立即检查真实新UI严格TS。
+
+- 28真实UI首次严格TS发现exactOptionalPropertyTypes拒绝active:boolean|undefined；已保留auto-refresh-ui-optional-type-failure.log，调用处明确options.active!==false，不放宽类型/兼容分支。立即重跑三层TS。
+
+### 28 真实原生专项准备
+- 新增scripts/smoke-auto-refresh.mjs，smoke-dsh接入独立AUTO_REFRESH模式/自有12类种子/延迟代理。覆盖12 reader、最小间隔/已提交参数/首个有界页/Bloom不重放、真实慢回复不叠加、Off/原生panel与A-B切换/DB/ACL/消失/变型/JSON预算/10秒/EOF/新代次/关闭tab/源DUMP与expiry。所有种子、写入准备、B workspace与admin只属于本轮隔离fixture，外层finally仍关原生DSH/代理/Redis。
+- 浏览器页面隐藏只记录handler/模型覆盖，不冒称OS最小化已测；真实面板/会话/关闭使用rc.2实际DOM按钮。UI三层严格TS已通过，脚本先node语法检查再打包，不提前声称原生通过。
+
+### 28 打包前说明与脚本核对
+- README补当前Key开关/5秒默认/1秒最小/完成后等待、已提交范围/首个有界页/Bloom统计/隐藏失败停止及不持久化规则。源码未加新Host方法。
+- 根据实际英文词典核对Bitmap/GEO/HLL与List下一页按钮，修正尚未运行的测试定位；第一种查看器复用刚完成的显式选择，避免同Key再次点击本来就不重读而等待错误响应。timings用真实换行结尾。node语法通过后prepack完整检查，实际原生尚未宣称通过。
+
+- 28候选f6f9e2e（136502字节）prepack286项通过。第一次隔离安装引用同条cmd中的DSH_CLI_ENTRY被当成字面路径，Node前置MODULE_NOT_FOUND，无安装动作；改为已验证CLI绝对路径后安装成功，未改日常DSH。下一步该唯一包做原生自动刷新和逐文件核对。
+
+### 28 首轮原生脚本返回形状修正
+- f6f9e2e真实原生前14组/12 reader两轮已通过，实测两次请求间隔1015–1026ms；随后测试把单个Playwright Response错误数组解构而中止，不是产品失败，所有自建DSH/Redis/代理/B资源已停止。四个原始失败文件保留auto-refresh-script-shape-failure*。
+- 只修改smoke-auto-refresh：直接接单Response；settled在auto开启时等待真实On·waiting，而非仍可点击的停止开关，避免慢读期间提前采样。脚本node语法后同包重跑，更新当前测试源码SHA清单；不把前14组算最终验收，产品包未变化。
+
+### 28 取消与放行时序核对
+- 第二轮前16组通过（含12 reader、64KiB部分值、真实慢回复无重叠），Off后立即释放包时断言A的postchecks=0失败（实为3），原始四文件保留auto-refresh-cancel-release-failure*，passed=false且所有自建资源停止。
+- 停止修补并完整核对rc.2 connection/client/rpc.ts37–57、rpc-host.ts261及项目ReadContext/Connections/transport118–154：浏览器用fetch AbortSignal，没有独立远程取消ACK；Host调用有guard，active取消停止等待但排空真实回复至截止，不直接关闭socket。立即release可能先于HTTP中止到Host，不是停止Redis计算的承诺。
+- 测试保持回复被扣留，等待真实readString requestfailed并完成B的真实Host读取后再release，沿用已验证19的交付顺序；仍断言A零后置命令/B可用/晚结果不重启，不放宽产品或取消断言。报告reader改记实际readGeo/readHll，visibility标记仅在真实步骤完成后置true。产品包仍f6f9e2e，同包继续专项。
+
+### 28 最后标签关闭后的原生界面核对
+- 第三轮前22组及真实取消交付/面板/会话/DB/ACL/消失/变型/预算/超时/EOF均通过；最后关闭Redis唯一tab后试图点击旧隐藏pane的New tab而超时，原始四文件保留auto-refresh-last-tab-reopen-failure*，所有自建资源已停。已实际查看失败截图，整个右栏确实收起。
+- 重新核对真实界面状态，测试现在先点可见expand、等当前open，再只定位可见guide/New tab；未修改产品/增加兼容或隐藏断言。仍保持同包f6f9e2e，完整专项重跑；不同子场景的脚本错误均原样保留，不冒充通过。
+
+### 28 真实自动刷新专项通过
+- 同包f6f9e2e原生26组完整通过，含12 reader两轮、真实慢包>两间隔仅1请求、完成后等待、Off取消/B交付、原生panel/A-B/DB/tab生命周期、真实ACL/消失/变型/JSON预算、10秒/EOF/手动重连新代次与源DUMP/expiry。前述三次测试问题保留独立失败原件，最终报告不混入旧通过。
+- page/console错误为空，预期取消请求单列；本轮自建DSH/Redis/代理/B全部停止。接下来同包完整12类/会话/27方法SDK与工作台回归，28仍进行中。
+
+### 28 最终状态显示核对
+- f6f9e2e已全通过286/自动26/完整87/布局24，作为checkpoint原始报告和console/manifest另存10件。最后源审查发现：自动失败的clock保留成功时间但UI只在enabled显示；停用后queued begin被统一写成hidden。
+- 仅AutoRefresh.tsx让failed/hidden/cancelled继续显示保留的上次成功时间，默认关闭仍不增加文字；auto-refresh.ts在明确停用时拒发并保留原停止原因。原9项测试加强Off原因断言，真实ACL专项加强成功时间可见与精确原时间不变。职责/连接/命令/时序不改，重新prepack/最终新包验收，不拿f6旧包报告当新通过。
+
+- 28验收文档补实际文件职责、one-shot/pendingOwner/许可、各类型已提交查询规则、无新Host/依赖、HTTP无取消ACK及三次失败与真实/未测边界。最终4cc78d0（136510字节）严格prepack286和逐文件安装核对通过；f6旧包标为checkpoint，最终原生重跑中，未提前勾done。
+
+### 29 独立内存原型准备（28最终完整回归期间）
+- 不修改随包src/scripts/tests：仅.scratch/artifacts/timeseries-chart.prototype.html和临时纯模块，捕获prototype/timeseries-chart-state/d66eebd625a91822f0fd7072da53687609f768bf。基于已读精确DTO推演BigInt时间差、double先归一避免溢出、前512读取顺序/升序绘制/未绘制数、异常整幅拒画与UTC Date边界，三个引导和自由操作。无服务/Redis/浏览器/原型测试，HTML不进main。
+- 原型是根模型的状态/数值设计资料，不代表用户认可视觉；29正式实现尚未开始，28最终新包26已通过、87运行中。
+
+### 28 完整交付、归档和本地提交
+- 最终4cc78d01（136510字节）：286严格测试、自动原生26、完整SDK/12类型/双会话87、工作台24全部通过；93打包/84lib/12peers/2依赖/168输入逐文件匹配。实际12轮间隔1013–1028ms、取消27ms、截止10058ms，失败保留原成功时间验证通过。
+- 52份原件+inventory保全28-key-auto-refresh，含三轮失败和f6 checkpoint，最终新包报告明确隔开；实际已查看窄宽结构。三报告page/console为空、自动3/完整1预期取消、布局0请求错误，所有自建DSH/Redis/代理/B均停止。
+- 六摘要和原28五项同步01–28done/29ready；无新Host API、依赖、自动重连或持久状态。只提交当前28实现/说明/专项/证据，不提交29源码（曲线原型已单独捕获throwaway分支）。保持raw日志原字节，仅指定日志路径单次blank-at-eof例外；其余标准check，无push/改Git配置/跳过hook。

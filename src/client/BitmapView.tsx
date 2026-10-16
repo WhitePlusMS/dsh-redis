@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -19,7 +20,10 @@ export function BitmapView(props: Props) {
   const [result, setResult] = useState<StringReadResult | null>(null), [window, setWindow] = useState<BitmapWindow | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setWindow(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setWindow(null); setRpcError(false); setCancelled(false)
     const bytes = bitmapByteRange(request)
@@ -54,7 +58,7 @@ export function BitmapView(props: Props) {
           if (window?.nextOffset === null || window === null) return
           setOffset(window.nextOffset); setRequest({ offset: window.nextOffset, count, attempt: request.attempt + 1 })
         }}>{t('bitmap.next')}</button>
-        {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setWindow(null) }}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
       </div>
     </form>
 

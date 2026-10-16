@@ -1,0 +1,157 @@
+{
+  "artifactPrefix": "native-auto-refresh",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T14:38:21.434Z",
+  "packageSha256": "4cc78d01a745a6ba96824962fa8e8d511f857ffacbf2e1234384d8b47abd1233",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native current-Key auto control is off by default; one-second minimum and fixed 1/5/10/30-second choices cause no read until explicitly enabled",
+    "all twelve native viewers refresh through existing strict RPCs with raw Key/target identity; one-second waiting follows settlement, committed String/List/JSON queries and formats survive drafts, collection cursors restart bounded first pages and Bloom sends item=null only",
+    "Hash MATCH draft clearing stops auto immediately without submitting the draft",
+    "automatic large String remains a 64 KiB partial window; refreshing does not drain the value or relax Host budgets",
+    "a real Redis reply held longer than two intervals produces one in-flight RPC, no overlapping timer or catch-up burst; the next read starts at least one minimum interval after release",
+    "turning auto Off aborts the actual Host read, clears prior bytes and suppresses pending postchecks; late reply drainage never rearms it and B remains readable",
+    "real native panel collapse cancels/stops automatic reading; expanding again performs no replay or reconnect",
+    "real A/B session selection stops old A timer/read; B socket stays usable and switching back does not resume, reconnect or overwrite with late A data",
+    "explicit DB selection removes the old Key timer; old database-generation targets dispatch no Redis command and returning requires a fresh explicit selection",
+    "actual Redis ACL refusal, disappeared Key, String-to-Hash change and oversized RedisJSON stop automatic reads and discard old output; manual recovery stays off and original strict/bounded Host results remain intact",
+    "automatic ten-second deadline and real TCP EOF clear values and stop the timer; only explicit password/reconnect creates a new generation with AUTH/PING and no replay, old targets are rejected and B survives",
+    "real native tab close/reopen releases its timer without automatic Redis work; narrow/wide toolbar remains in the workbench, all immutable fixture values/absolute expiries remain unchanged and proxy has no protocol errors",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:9730/api/redisViewer/readString",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:9730/api/redisViewer/readString",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:9730/api/redisViewer/readString",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "autoRefresh": {
+    "version": "8.2.6",
+    "readers": [
+      {
+        "method": "readString",
+        "interpretation": null,
+        "startsAfterEnableMs": 1050,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "scanHash",
+        "interpretation": null,
+        "startsAfterEnableMs": 1053,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "readList",
+        "interpretation": null,
+        "startsAfterEnableMs": 1071,
+        "betweenRequestsMs": 1023
+      },
+      {
+        "method": "scanSet",
+        "interpretation": null,
+        "startsAfterEnableMs": 1049,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "readZSet",
+        "interpretation": null,
+        "startsAfterEnableMs": 1055,
+        "betweenRequestsMs": 1028
+      },
+      {
+        "method": "readStream",
+        "interpretation": null,
+        "startsAfterEnableMs": 1062,
+        "betweenRequestsMs": 1025
+      },
+      {
+        "method": "readJson",
+        "interpretation": null,
+        "startsAfterEnableMs": 1048,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "readString",
+        "interpretation": "Bitmap",
+        "startsAfterEnableMs": 1055,
+        "betweenRequestsMs": 1025
+      },
+      {
+        "method": "readGeo",
+        "interpretation": "GEO",
+        "startsAfterEnableMs": 1073,
+        "betweenRequestsMs": 1013
+      },
+      {
+        "method": "readHll",
+        "interpretation": "HyperLogLog",
+        "startsAfterEnableMs": 1042,
+        "betweenRequestsMs": 1020
+      },
+      {
+        "method": "readTimeSeries",
+        "interpretation": null,
+        "startsAfterEnableMs": 1044,
+        "betweenRequestsMs": 1024
+      },
+      {
+        "method": "readBloom",
+        "interpretation": null,
+        "startsAfterEnableMs": 1054,
+        "betweenRequestsMs": 1024
+      }
+    ],
+    "minimumIntervalMs": 1000,
+    "realPanelAndSessionVisibility": true,
+    "documentBackgroundEvent": "model and registered handler only; no OS minimize claim",
+    "cancellationMs": 27,
+    "productionTimeoutAfterHeldMs": 10058,
+    "proxyErrors": []
+  },
+  "finishedAt": "2026-10-16T14:40:04.438Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "0945613d-f934-4381-a486-2d352a7989ba",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

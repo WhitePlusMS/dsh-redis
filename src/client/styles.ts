@@ -113,6 +113,13 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-inspector-tabs { display:flex; gap:7px; padding:0 7px; height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-inspector-tabs button { border:0; border-radius:0; border-bottom:2px solid transparent; padding:4px 9px; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-inspector-tabs [aria-selected=true] { color:var(--dsw-alias-label-primary); border-bottom-color:var(--dsw-alias-label-primary); }
+.dsh-redis .redis-auto-refresh { display:flex; align-items:center; flex-wrap:wrap; gap:3px; min-width:0; padding:4px 6px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; position:relative; }
+.dsh-redis .redis-auto-refresh > button { padding:3px 5px; }
+.dsh-redis .redis-auto-refresh [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-auto-refresh select { width:auto; max-width:100%; min-height:25px; padding:2px; font-size:10px; }
+.dsh-redis .redis-auto-refresh > small { flex-basis:100%; font-size:9px; color:var(--dsw-alias-label-secondary); overflow-wrap:anywhere; }
+.dsh-redis .redis-auto-refresh .redis-help-content { position:absolute; z-index:5; top:30px; right:0; width:min(310px,100%); max-height:50dvh; overflow:auto; }
+@container redis-sidebar (max-width:480px) { .dsh-redis .redis-auto-refresh > button > span { display:none; } }
 .dsh-redis .redis-inspector { flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; }
 .dsh-redis .redis-key-identity { padding:9px; flex-shrink:0; }
 .dsh-redis .redis-details { position:relative; display:flex; flex-direction:column; flex:1; gap:6px; min-height:100%; min-width:0; padding:8px; overflow:auto; overscroll-behavior:contain; }

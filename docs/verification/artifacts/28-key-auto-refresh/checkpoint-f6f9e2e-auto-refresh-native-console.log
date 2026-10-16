@@ -1,0 +1,29 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native current-Key auto control is off by default; one-second minimum and fixed 1/5/10/30-second choices cause no read until explicitly enabled
+[smoke check] all twelve native viewers refresh through existing strict RPCs with raw Key/target identity; one-second waiting follows settlement, committed String/List/JSON queries and formats survive drafts, collection cursors restart bounded first pages and Bloom sends item=null only
+[smoke check] Hash MATCH draft clearing stops auto immediately without submitting the draft
+[smoke check] automatic large String remains a 64 KiB partial window; refreshing does not drain the value or relax Host budgets
+[smoke check] a real Redis reply held longer than two intervals produces one in-flight RPC, no overlapping timer or catch-up burst; the next read starts at least one minimum interval after release
+[smoke check] turning auto Off aborts the actual Host read, clears prior bytes and suppresses pending postchecks; late reply drainage never rearms it and B remains readable
+[smoke check] real native panel collapse cancels/stops automatic reading; expanding again performs no replay or reconnect
+[smoke check] real A/B session selection stops old A timer/read; B socket stays usable and switching back does not resume, reconnect or overwrite with late A data
+[smoke check] explicit DB selection removes the old Key timer; old database-generation targets dispatch no Redis command and returning requires a fresh explicit selection
+[smoke check] actual Redis ACL refusal, disappeared Key, String-to-Hash change and oversized RedisJSON stop automatic reads and discard old output; manual recovery stays off and original strict/bounded Host results remain intact
+[smoke check] automatic ten-second deadline and real TCP EOF clear values and stop the timer; only explicit password/reconnect creates a new generation with AUTH/PING and no replay, old targets are rejected and B survives
+[smoke check] real native tab close/reopen releases its timer without automatic Redis work; narrow/wide toolbar remains in the workbench, all immutable fixture values/absolute expiries remain unchanged and proxy has no protocol errors
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":26,"fixturesStopped":true}

@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -18,7 +19,10 @@ export function BloomView(props: Props) {
   const [result, setResult] = useState<BloomReadResult | null>(null), [busy, setBusy] = useState(false)
   const [rpcError, setRpcError] = useState(false), [inputError, setInputError] = useState(false), [cancelled, setCancelled] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError || (result !== null && result.state === 'value' && result.infoState !== 'available'), refresh: () => setRequest(value => ({ itemBase64: null, attempt: value.attempt + 1 })), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
     void props.readBloom({ target: props.target, keyBase64: props.selected.base64, itemBase64: request.itemBase64 }, controller.signal).then(response => {
@@ -41,7 +45,7 @@ export function BloomView(props: Props) {
     }}>
       <label>{t('bloom.format')}<select name="bloomFormat" value={mode} onChange={event => setMode(event.target.value === 'base64' ? 'base64' : 'text')}><option value="text">Text (UTF-8)</option><option value="base64">Base64</option></select></label>
       <label>{t('bloom.item')}<textarea name="bloomItem" maxLength={5464} rows={3} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
-      <div className="redis-actions"><button type="submit" disabled={busy}>{t('bloom.query')}</button>{busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}</div>
+      <div className="redis-actions"><button type="submit" disabled={busy}>{t('bloom.query')}</button>{busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}</div>
     </form>
     {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}

@@ -8,6 +8,7 @@ import { appendKeys, emptyKeyCache } from './key-cache.ts'
 import { NS } from './locales.ts'
 import { KeyDetails, type StringActions } from './KeyDetails.tsx'
 import { Icon } from './Icon.tsx'
+import { KeyAutoRefresh } from './AutoRefresh.tsx'
 import { KeyCatalog } from './KeyCatalog.tsx'
 import type { HashActions } from './HashView.tsx'
 import type { ListActions } from './ListView.tsx'
@@ -143,7 +144,7 @@ export function KeyBrowser(props: Props) {
         </>}
         <div className="redis-inspector" data-view={detailTab} role="tabpanel" aria-label={t(detailTab === 'data' ? 'ui.data' : 'ui.metadata')}>
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
-          {opened && <KeyDetails key={selected.base64} {...props} target={target()} selected={selected} />}
+          {opened && <KeyAutoRefresh key={selected.base64} t={t}><KeyDetails {...props} target={target()} selected={selected} /></KeyAutoRefresh>}
         </div>
       </> : <p className="redis-empty">{t('layout.selectKey')}</p>}
     </div>

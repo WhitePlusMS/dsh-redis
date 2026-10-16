@@ -1,3 +1,4 @@
+import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -22,7 +23,10 @@ export function GeoView(props: Props) {
   const [result, setResult] = useState<GeoReadResult | null>(null), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('geo')
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }
   useEffect(() => {
+    if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
     setBusy(true); setResult(null); setSelected(null); setRpcError(false); setCancelled(false)
     void props.readGeo({ target: props.target, keyBase64: props.selected.base64, offset: request.offset, count: request.count }, controller.signal).then(response => {
@@ -58,7 +62,7 @@ export function GeoView(props: Props) {
           if (result?.nextOffset === null || result?.nextOffset === undefined) return
           setOffset(result.nextOffset); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
         }}>{t('list.next')}</button>
-        {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
       </div>
     </form>
 
