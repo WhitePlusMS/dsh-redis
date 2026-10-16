@@ -67,10 +67,10 @@ export function KeyDetails(props: Props) {
   </>
   return <section className="redis-details" aria-label={t('value.title')}>
     <h2>{t('value.title')} · <span>{props.selected.label}</span></h2>
-    {result?.state === 'value' && <>
+    {result?.state === 'value' && <div className="redis-actions">
       <button type="button" onClick={() => setView('bitmap')}>{t('bitmap.open')}</button>
       <button type="button" onClick={() => setView('hll')}>{t('hll.open')}</button>
-    </>}
+    </div>}
     <form onSubmit={event => {
       event.preventDefault()
       try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); browsing.update({ stringOffset: offset, stringCount: count }); setRequest({ offset, count, attempt: request.attempt + 1 }) }

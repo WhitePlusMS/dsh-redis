@@ -1,0 +1,58 @@
+{
+  "artifactPrefix": "native-workbench",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T10:16:44.245Z",
+  "packageSha256": "77ea3a0988142bd212831a3538db29ebcc40dcab5957304902169fa9f5b68670",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "layout": {
+    "pattern": "Database three panes; compact connection entry below 760px with persistent Key/detail split",
+    "widths": [
+      {
+        "requested": 340,
+        "actual": 340
+      }
+    ],
+    "themes": [],
+    "viewers": []
+  },
+  "error": "Expected values to be strictly equal:\n\nfalse !== true\n",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nWorkspace Write\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\n127.0.0.1:6877\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 244 · This scan is complete. Refresh when data changes.\n\nStatus checked at 6:17:03 PM\n\"native:53\"\n\"layout:long:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\"…\n\"native:118\"\n\"native:52\"\n\"native:143\"\n\"native:54\"\n\"native:13\"\n\"native:3\"\n\"native:156\"\n\"native:179\"\n\"native:50\"\n\"native:61\"\n\"native:1\"\n\"native:189\"\n\"native:219\"\n\"native:165\"\n\"native:17\"\n\"native:221\"\n\"native:85\"\n\"native:111\"\n\"native:100\"\n\"native:43\"\n\"native:89\"\n\"native:0\"\n\"native:122\"\n\"native:229\"\n\"native:58\"\n\"native:31\"\n\"native:34\"\n\"native:109\"\n\"layout:list\"\n\"native:84\"\n\"native:153\"\n\"native:172\"\n\"native:175\"\n\"native:133\"\n\"native:26\"\n\"native:168\"\n\"native:182\"\n\"native:132\"\n\"native:136\"\n\"native:97\"\n\"native:223\"\n\"native:117\"\n\"native:23\"\n\"native:38\"\n\"native:107\"\n\"native:51\"\n\"native:224\"\n\"native:79\"\n\"native:161\"\n\"native:4\"\n\"native:188\"\n\"native:6\"\n\"native:2\"\n\"native:123\"\n\"native:62\"\n\"layout:geo\"\n\"native:218\"\n\"native:216\"\n\"native:213\"\n\"native:207\"\n\"native:128\"\n\"native:162\"\n\"native:204\"\n\"layout:zset\"\n\"native:227\"\n\"native:71\"\n\"native:196\"\n\"native:121\"\n\"native:21\"\n\"native:126\"\n\"native:14\"\n\"native:18\"\n\"native:103\"\n\"native:217\"\n\"layout:ts\"\n\"native:44\"\n\"native:92\"\n\"native:169\"\n\"native:5\"\n\"native:83\"\n\"native:81\"\n\"native:64\"\n\"native:192\"\n\"layout:set\"\n\"native:134\"\n\"native:75\"\n\"native:138\"\n\"native:214\"\n\"native:177\"\n\"native:9\"\n\"native:170\"\n\"native:25\"\n\"native:22\"\n\"native:90\"\n\"native:120\"\n\"native:155\"\n\"native:110\"\n\"native:30\"\n\"native:102\"\n\"native:119\"\n\"native:27\"\n\"native:15\"\n\"layout:stream\"\n\"native:69\"\n\"native:183\"\n\"native:105\"\n\"native:186\"\n\"native:39\"\n\"native:78\"\n\"native:94\"\n\"native:203\"\n\"native:171\"\n\"native:135\"\n\"native:228\"\n\"native:200\"\n\"native:160\"\n\"native:130\"\n\"native:222\"\n\"native:211\"\n\"native:91\"\n\"native:148\"\n\"native:32\"\n\"native:150\"\n\"native:184\"\n\"native:181\"\n\"native:88\"\n\"native:157\"\n\"native:113\"\n\"native:212\"\n\"native:154\"\n\"native:158\"\n\"native:187\"\n\"native:104\"\n\"native:166\"\n\"native:65\"\n\"native:76\"\n\"native:201\"\n\"native:215\"\n\"native:72\"\n\"native:151\"\n\"native:28\"\n\"native:77\"\n\"native:114\"\n\"native:12\"\n\"native:202\"\n\"native:142\"\n\"native:159\"\n\"native:124\"\n\"native:131\"\n\"native:205\"\n\"native:41\"\n\"layout:hash\"\n\"native:209\"\n\"native:197\"\n\"native:180\"\n\"native:163\"\n\"native:139\"\n\"native:129\"\n\"native:96\"\n\"native:190\"\n\"native:82\"\n\"layout:json\"\n\"native:57\"\n\"native:45\"\n\"native:226\"\n\"native:49\"\n\"native:63\"\n\"native:20\"\n\"native:93\"\n\"native:56\"\n\"native:95\"\n\"native:55\"\n\"native:208\"\n\"native:140\"\n\"native:47\"\n\"native:99\"\n\"native:108\"\n\"native:7\"\n\"native:174\"\n\"native:152\"\n\"native:37\"\n\"native:42\"\n\"native:167\"\n\"native:33\"\n\"native:141\"\n\"native:68\"\n\"native:185\"\n\"native:98\"\n\"native:178\"\n\"native:137\"\n\"native:70\"\n\"native:74\"\n\"native:210\"\n\"native:195\"\n\"native:35\"\n\"native:176\"\n\"native:206\"\n\"native:16\"\n\"native:19\"\n\"native:67\"\n\"native:199\"\n\"native:144\"\n\"native:29\"\n\"native:127\"\n\"native:147\"\n\"native:112\"\n\"native:59\"\n\"native:40\"\n\"native:48\"\n\"native:198\"\n\"layout:bitmap\"\n\"native:66\"\n\"native:87\"\n0xff000d0a80\n\"native:164\"\n\"native:46\"\n\"layout:hll\"\n\"native:73\"\n\"native:116\"\n\"native:80\"\n\"native:145\"\n\"native:149\"\n\"native:10\"\n\"native:225\"\n\"native:194\"\n\"native:191\"\n\"native:173\"\n\"native:106\"\n\"native:11\"\n\"native:125\"\n\"native:86\"\n\"native:220\"\n\"native:8\"\n\"native:101\"\n\"测试:key\"\n\"native:115\"\n\"native:146\"\n\"native:60\"\n\"native:36\"\n\"layout:bloom\"\n\"native:193\"\n\"native:24\"\n\"native:140\"\nData\nMetadata\nKey details · \"native:140\"\nView as Bitmap\nView as HyperLogLog\nStart byte\nWindow bytes\n256\n4096\n16384\n65536\nRead / refresh\nNext window\nStatus checked at 6:17:03 PM\nTYPE\nstring\nTTL (ms)\nNo expiration\n\nComplete value · Start byte 0 · 3 bytes\n\nText\nJSON\nHex\nBase64\nDecode Base64…\nDecode Base64 text to Text\nDecode Base64 text to JSON\n140\nConnected\n6:17:03 PM\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T10:17:05.618Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "c30bc856-d6f8-4708-9aac-d5536f9f05f9",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

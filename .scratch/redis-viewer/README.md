@@ -2,11 +2,11 @@
 
 > 当前执行基线：用户明确选择 `0.2.0-rc.2` 并继续原 29 票实现。宿主、对应源码和配套 SDK 固定该 RC 版，如实标注预发布属性；此前稳定版调查及仅文档检查保留为历史，不作为本次实现的等待条件。
 
-> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；旧包功能证据已记录；按用户反馈重做20界面并复验21，按实际证据更新完成状态。
+> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；20工作台改版真实布局已通过；继续复验21新包，按实际证据更新完成状态。
 
 ## 当前起点
 
-用户最新要求界面贴近DSH Database/RESP，默认左导航、Key与右侧详情、收起长说明。01–19 done；20按此要求改版、21等待新版复验，22–29 ready。原功能证据保留对应包，不等于用户认可视觉。界面原型见prototype/database-redis-workbench分支955b860，版本仍固定rc.2。
+用户最新要求界面贴近DSH Database/RESP，默认左导航、Key与右侧详情、收起长说明。01–20 done；20新工作台真实布局已通过、21新版发布复验中，22–29 ready。原功能证据保留对应包，不等于用户认可视觉。界面原型见prototype/database-redis-workbench分支955b860，版本仍固定rc.2。
 
 ## 当前版本与源码约定
 
@@ -15,7 +15,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–19 done、20界面改版/21发布复验 in-progress、22–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–20 done、21发布复验 in-progress、22–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 任务清单
 
@@ -40,7 +40,7 @@
 | 17 | P0 | [查看 Bloom 信息和成员存在性](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/17-bloom-view.md) | 06 | done |
 | 18 | P0 | [按 DSH 会话恢复各自的浏览状态](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/18-session-browsing-state.md) | 04、06 | done |
 | 19 | P0 | [取消读取并从超时或断线中恢复](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/19-read-cancellation-recovery.md) | 18 | done |
-| 20 | P0 | [在窄宽侧栏和两种主题下完成查看](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/20-sidebar-layout-themes.md) | 07 | in-progress |
+| 20 | P0 | [在窄宽侧栏和两种主题下完成查看](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/20-sidebar-layout-themes.md) | 07 | done |
 | 21 | P0 | [从安装包完成只读首版的真实验收](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/21-release-verification.md) | 08、09、11、12、13、14、15、16、17、19、20 | in-progress |
 | 22 | P1 | [按命名空间浏览大量 Key](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/22-key-namespaces.md) | 06 | ready-for-agent |
 | 23 | P1 | [聚焦详情并搜索、折叠已读内容](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/23-focused-value-view.md) | 20 | ready-for-agent |
@@ -75,4 +75,4 @@
 - [开发路线](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
 - [已确认的拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
 
-当前进度：01–19 done；20 Database/RESP工作台界面改版 in-progress，21 新界面发布复验 in-progress，22–29 ready-for-agent。原20/21包的功能证据保留其范围，不能代替用户当前要求的界面验收；当前先落实左导航/Key/右详情与按需帮助，原29票编号/优先级/依赖不变。
+当前进度：01–20 done；Database/RESP工作台改版已完成真实24组布局检查，21 新界面发布复验 in-progress，22–29 ready-for-agent。最终布局包509aa7b06132ab0fa3123bafca18f75f43df10ac019c00cfbffdcfc950373e43与旧20/21报告分别记录，原29票编号/优先级/依赖不变。

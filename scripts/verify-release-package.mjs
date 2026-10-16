@@ -84,8 +84,8 @@ const report = {
   packOmittedDevelopmentFields: ['packageManager', 'scripts.prepack'],
   installedPackageRoot: await realpath(installed), installedAllPackageFilesMatch: true,
   actualCli, hostPeers, dependencies,
-  browserReact: 'See actual runtime identity/version in native-release-smoke.json',
+  browserReact: 'See actual runtime identity/version in native-ui-release-smoke.json',
   pnpmLockSha256: sha256(await readFile(resolve(root, 'pnpm-lock.yaml'))),
 }
-await writeFile(resolve(root, '.scratch/artifacts/release-manifest.json'), JSON.stringify(report, null, 2) + '\n')
+await writeFile(resolve(root, '.scratch/artifacts/workbench-release-manifest.json'), JSON.stringify(report, null, 2) + '\n')
 console.log(JSON.stringify({ packageSha256: report.packageSha256, libFiles: lib.length, packedFiles: archiveInfo.files.length, hostPeers: hostPeers.length, dependencies: dependencies.length, installedAllPackageFilesMatch: true }))

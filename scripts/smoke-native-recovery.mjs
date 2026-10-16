@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { RESP_TYPES } from 'redis'
 import { until } from './redis-fixture.mjs'
+import { openConnectionSettings, chooseValueFormat } from './native-view-controls.mjs'
 
 export async function smokeNativeRecovery({ page, rpc, fixture, pane, keys, scanAll, artifacts, report, workspaceId }) {
   const proxy = fixture.recoveryProxy
@@ -40,11 +41,12 @@ export async function smokeNativeRecovery({ page, rpc, fixture, pane, keys, scan
     const body = await response.json(); assert.equal(body.result?.ok, true)
     assert.equal(body.result.value.state, 'value'); assert.equal(body.result.value.base64, Buffer.from('binary-key-value').toString('base64'))
     await details.locator('[data-value-coverage]').waitFor()
-    await details.locator('select[name="valueFormat"]').selectOption('text')
+    await chooseValueFormat(details, 'text')
     await until(async () => await details.locator('[data-value-preview]').innerText() === 'binary-key-value', 'native fresh bytes rendered')
   }
   async function reconnect(previous) {
     await refreshStatus.click()
+    await openConnectionSettings(pane)
     const password = pane.locator('input[name="password"]')
     await password.waitFor(); assert.equal(await password.inputValue(), '')
     assert.equal(await pane.locator('.redis-connected').count(), 0)

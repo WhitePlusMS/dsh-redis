@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { until } from './redis-fixture.mjs'
+import { openConnectionSettings, chooseValueFormat, readValueFormat, assertSelectedIdentity } from './native-view-controls.mjs'
 
 export async function smokeSessionState({ page, context, origin, rpc, fixture, pane, keys, scanAll, artifacts, report, baseline, workspaceTitle }) {
   const profileId = await pane.locator('select[name="profile"]').inputValue()
@@ -10,9 +11,11 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
   const identity = Buffer.concat([Buffer.from('session:a:'), Buffer.from([0, 255, 128])]).toString('base64')
   await fixture.admin.select(1); await fixture.admin.set(Buffer.from(identity, 'base64'), 'session-a-value'); await fixture.admin.select(0)
   async function activeOwner() {
-    const request = page.waitForRequest(value => value.url().endsWith('/api/redisViewer/connectionStatus'))
-    await pane.getByRole('button', { name: 'Refresh status', exact: true }).click()
-    return (await request).postDataJSON().payload.args.agentId
+    const [request] = await Promise.all([
+      page.waitForRequest(value => value.url().endsWith('/api/redisViewer/connectionStatus')),
+      pane.getByRole('button', { name: 'Refresh status', exact: true }).click(),
+    ])
+    return request.postDataJSON().payload.args.agentId
   }
   const a = await activeOwner()
   const readState = owner => rpc('redisViewer/loadBrowsingState', { agentId: owner, request: {} })
@@ -53,15 +56,13 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     assert.deepEqual(await status(owner), target)
     assert.deepEqual(counters(await fixture.admin.info('commandstats')), before, 'Switching/restoring must issue no Redis command')
   }
-  const back = keys.getByRole('button', { name: 'Back to keys', exact: true })
-  if (await back.isVisible()) await back.click()
   await keys.locator('input[name="db"]').fill('1'); await keys.getByRole('button', { name: 'Select DB', exact: true }).click()
   await keys.getByRole('heading').filter({ hasText: 'DB 1' }).waitFor()
   assert.equal(await scanAll('session:a:*'), 1)
   await keys.locator('[data-key-base64="' + identity + '"]').click()
   let details = keys.locator('.redis-details').filter({ has: page.locator('input[name="byteOffset"]') })
   await details.locator('[data-value-coverage]').waitFor()
-  await details.locator('select[name="valueFormat"]').selectOption('hex')
+  await chooseValueFormat(details, 'hex')
   await details.locator('input[name="byteOffset"]').fill('1'); await details.locator('select[name="byteCount"]').selectOption('256')
   await details.getByRole('button', { name: 'Read / refresh', exact: true }).click()
   await details.locator('[data-value-coverage]').filter({ hasText: 'Start byte 1' }).waitFor()
@@ -94,6 +95,7 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     const before = counters(await fixture.admin.info('commandstats'))
     await openSession(b)
     assert.equal(await activeOwner(), b)
+    await openConnectionSettings(pane)
     assert.equal(await pane.locator('select[name="profile"]').inputValue(), '')
     assert.equal(await pane.locator('input[name="password"]').inputValue(), '')
     assert.equal(await fixture.clients(), baseline + 1, 'New session does not borrow or create A socket')
@@ -108,13 +110,13 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     await until(async () => await fixture.clients() === baseline + 2, 'two explicitly connected session sockets')
     assert.equal(await scanAll('native:9'), 1); await keys.locator('.redis-key-list button').click()
     details = keys.locator('.redis-details'); await details.locator('[data-value-coverage]').waitFor()
-    await details.locator('select[name="valueFormat"]').selectOption('base64')
+    await chooseValueFormat(details, 'base64')
     await until(async () => (await readState(b)).formats.string === 'base64', 'B format saved')
     const bState = await readState(b), bTarget = await status(b)
     assert.equal(bState.db, 0); assert.equal(bState.pattern, 'native:9'); assert.equal(bState.keyBase64, Buffer.from('native:9').toString('base64'))
     release(); await until(() => released, 'held old A response released'); await page.unroute(endpoint)
     assert.equal(await details.locator('[data-value-preview]').innerText(), 'OQ==')
-    assert.equal(await details.locator('select[name="valueFormat"]').inputValue(), 'base64')
+    assert.equal(await readValueFormat(details), 'base64')
     assert(!(await pane.innerText()).includes('session-a-value'))
     assert.deepEqual(await readState(a), aState)
     report.checks.push('explicit HTTP delay of a real A read completes across the switch; its stale UI result cannot overwrite B value, format or A saved selection (not a slow Redis transport claim)')
@@ -123,26 +125,26 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
       assert.equal(await pane.locator('select[name="profile"]').inputValue(), profileId)
       assert.equal(await keys.locator('input[name="db"]').inputValue(), '1')
       assert.equal(await keys.locator('input[name="pattern"]').inputValue(), 'session:a:*')
-      assert.equal(await keys.locator('textarea[readonly]').inputValue(), identity)
+      await assertSelectedIdentity(keys, identity)
       assert.equal(await keys.locator('[data-loaded-keys]').innerText(), '0')
       assert.equal(await keys.locator('[data-value-preview]').count(), 0)
       await keys.getByRole('button', { name: 'Read selected key', exact: true }).waitFor()
     })
     await keys.getByRole('button', { name: 'Read selected key', exact: true }).click()
     details = keys.locator('.redis-details'); await details.locator('[data-value-coverage]').filter({ hasText: 'Start byte 1' }).waitFor()
-    assert.equal(await details.locator('select[name="valueFormat"]').inputValue(), 'hex')
+    assert.equal(await readValueFormat(details), 'hex')
     assert((await details.locator('[data-value-preview]').innerText()).startsWith('00000001  65 73'))
     assert.equal((await status(a)).id, aTarget.id)
     report.checks.push('native switch back to A restores profile, DB, MATCH and exact binary key without Redis work, values, cache or cursor; explicit read restores Hex and byte window on its original socket')
     await noRedisRestore(b, async () => {
       assert.equal(await keys.locator('input[name="db"]').inputValue(), '0')
       assert.equal(await keys.locator('input[name="pattern"]').inputValue(), 'native:9')
-      assert.equal(await keys.locator('textarea[readonly]').inputValue(), bState.keyBase64)
+      await assertSelectedIdentity(keys, bState.keyBase64)
       assert.equal(await keys.locator('[data-value-preview]').count(), 0)
     })
     await keys.getByRole('button', { name: 'Read selected key', exact: true }).click()
     details = keys.locator('.redis-details'); await details.locator('[data-value-coverage]').waitFor()
-    assert.equal(await details.locator('select[name="valueFormat"]').inputValue(), 'base64')
+    assert.equal(await readValueFormat(details), 'base64')
     assert.equal(await details.locator('[data-value-preview]').innerText(), 'OQ==')
     await page.screenshot({ path: resolve(artifacts, 'native-sessions-b.png'), fullPage: true })
     report.checks.push('native B restores its own DB0, MATCH, key and Base64 independently, without displaying A result')
@@ -163,13 +165,13 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
       assert.equal(await pane.locator('input[name="password"]').inputValue(), '')
       assert.equal(await pane.locator('.redis-connected').count(), 0)
     })
+    await openConnectionSettings(pane)
     await pane.locator('input[name="password"]').fill(fixture.settings.password)
     await pane.getByRole('button', { name: 'Connect', exact: true }).click(); await pane.locator('.redis-connected').waitFor()
     await keys.getByRole('button', { name: 'Read selected key', exact: true }).waitFor()
     assert.equal(await keys.locator('input[name="db"]').inputValue(), '1')
     assert.equal(await keys.getByRole('button', { name: 'Read selected key', exact: true }).isEnabled(), false)
     assert.equal(await keys.locator('[data-value-preview]').count(), 0)
-    if (await back.isVisible()) await back.click()
     await keys.getByRole('button', { name: 'Select DB', exact: true }).click(); await keys.getByRole('heading').filter({ hasText: 'DB 1' }).waitFor()
     await keys.getByRole('button', { name: 'Read selected key', exact: true }).click(); await keys.locator('[data-value-coverage]').waitFor()
     const aAgain = await status(a)

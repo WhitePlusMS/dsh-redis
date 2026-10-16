@@ -835,3 +835,35 @@
 - 第二批共享界面/各类型改造后三层严格类型通过：KeyBrowser移除被新要求替代的窄栏往返状态/Back按钮，所有宽度保留Key与右详情并列；新增Data/Metadata页签，切换仅改变显示不卸载读取器，完整Base64身份放元信息。BytePreview沿用原无损formatter/格式会话状态，常用四格式改按钮、显式Base64解码选择和用户点击复制已读内容；复制错误/迟到完成有界处理，不新增Redis请求。
 - 12类查看器的hint/budget/live说明迁入共享HelpDetails，读取错误/范围/部分结果不收起。styles.ts替换旧单页CSS为Database三栏：连接导航164px、Key导航210px、右侧数据；760px以下压缩连接导航为配置入口，480px以下Key栏128px，仍左右；数据/元信息各自有界滚动，类型/TTL紧凑显示、完整元信息在页签，格式/表格/状态栏复用主题token。全程Host/DTO/只读命令/预算未改，未添加依赖；随后再查类型/226回归和当前实际原生界面。
 - styles/全部12类型说明收起和未保存连接DB导航补齐后，完整pnpm check三层严格类型/构建/226回归通过，git diff --check通过。README按新连接弹窗、左右导航、格式与元信息操作更新，20/21历史验收文档显式加重开边界，不篡改原始包报告。当前UI结构实现作为一个可审阅小目标本地提交，原生安装与视觉验收尚未完成；接着适配实际新控件的验收步骤，不保留旧隐藏select/Back等兼容实现来迎合旧测试。
+
+- 新工作台验收迁移首批：新增scripts/native-view-controls.mjs集中操作真实设置dialog、四格式按钮/显式解码与Metadata原字节身份；smoke-dsh/session-state/native-recovery改走这些可见入口，移除旧Back与valueFormat选择器，不添加产品兼容控件。已连接会话切换不弹设置，断开才显式打开，不放宽原无Redis自动命令、值/格式/窗口、源字节与恢复断言。新版报告另用native-ui-release/native-ui-profiles/native-ui-recovery/native-workbench前缀，保留旧包原报告。布局验收继续按本次左右分栏标准改写，尚未原生运行。
+
+- 新布局专项改为真实DSH Database/RESP验收：340px仍左右显示Key/数据且键盘焦点/列表位置不变，Data/Metadata/格式/帮助/同Key点击不重读，设置dialog按需打开且已连接字段锁定/密码为空；900px显示连接/DB、Key、数据三块。继续12类、300/340/900真实手柄、明暗、长Key/时间戳/局部表格滚动、加载/错误/空态和源DUMP/过期不变。截图新前缀native-workbench，不将旧往返界面检查冒充本次标准。首次rg引号被cmd拆分未得完整检索，改结构化Node子进程检查；产品未改。
+- 首次验收脚本语法核对调用在REPL的process全局不可用处停止，前述文件已落盘，未运行服务；改用PATH中的Node结构化参数后五个mjs均通过语法检查。
+
+- 新包77ea3a0完整prepack三层类型/构建/226回归通过并仅隔离安装。首轮原生11组含关闭后基线通过，布局在选Key后先点击Text格式、再断言焦点仍在Key的测试顺序错误处失败；实际截图已查看，Key/数据持续并列。原失败JSON/console/截图保留workbench-first-*，page/console/request错误为空，进程/夹具清理true。将焦点断言移到键盘选中后、格式点击前，新增脱敏有界errorStack诊断；未为验收改产品。
+
+- 第二轮同包真实布局14组含关闭后基线通过；340px长Key加载中新增Cancel使form内flex:0 0 auto按钮组无法缩小，工具栏越界断言失败。原报告/console/截图保留workbench-loading-*，自建进程/夹具清理true且浏览器错误为空。完整复核KeyDetails与共享CSS后最小修正actions允许收缩、max-width:100%和内部换行；String两种特殊解释按钮共用redis-actions，不再各占整行。专项失败时也记录几何/越界按钮，不把恢复后的截图当作加载现场。仅改客户端布局，不改Host/DTO/预算，立即严格类型检查。
+- 布局专项同时直接截取真实插件pane和完整DSH窗口，避免完整聊天窗口使侧栏缩小难以审阅；这是实际HTTP应用截图，不裁剪/代替原型file://受限打开，也不修改像素。新产品修正后三层严格类型通过，完整prepack进行中。
+
+- 修正包47057faa完整226项/prepack通过并隔离安装，真实布局15组含关闭后基线通过，覆盖至TimeSeries且所有已跑几何无越界；随后旧“边界必须上下排列”断言与当前196px详情可容纳两95px等宽输入的实际截图不符而失败。保留workbench-boundaries-*。检查改为等宽且至少90px、随可用宽度换行并记录坐标，不为旧预期改生产；所有资源正常回收。LUNA只读定位发现GEO/HLL提示现在在HelpDetails、TS.INFO在Metadata；完整类型脚本改从用户可见帮助/元信息入口验证原文案/数值，不读隐藏文案或删除原断言。
+- 本次独立包核查继续逐字节比较实际tarball/安装全部79项及lib完整70集合、Host实际peer与源输入SHA；报告写入workbench-release-manifest.json，并指向本次native-ui-release实际浏览器React证据，避免覆盖或误链接旧UI发布记录。只调整验收报告位置，不改产品包。
+
+- 47057faa新布局专项23组全通过，真实900px三块/300px深色数据pane截图均已查看，12种源值/绝对过期不变且进程/夹具清理true。人工复核仍见完成态重复“数据变化请刷新”等静态句子占窄栏多行，按用户减少文字要求进一步压缩中英keys/Stream/TimeSeries idle/more/complete为短状态；错误、缓存超限、部分读取范围及HLL/Bloom语义保留可见，详细刷新/空页说明仍在帮助。脚本相应核对短完成态，读取断言不减。此更改影响随包locale，须新包重验，不将47057faa已通过当作最终包。
+- 中英Key帮助同步补空页/手动刷新说明，常态主栏仅显示短状态；47057faa的23组通过报告/console另存workbench-47057faa-*，后续新包报告不覆盖其包身份。
+- 最终紧凑文案包509aa7b0严格三层类型/构建/226回归通过，仅安装本项目隔离web profile。会话验收的自建Sessions配置增加到既有finally按当前owner限定的清理集合，正常或失败退出后都只回收本轮测试资料；不清理先前UUID目录/历史配置、不碰用户日常资料。当前最终包布局复验运行中。
+
+## 2026-10-16 Database/RESP工作台新版20完成
+
+- 最终包509aa7b06132ab0fa3123bafca18f75f43df10ac019c00cfbffdcfc950373e43严格三层类型/构建/226回归及真实布局23组全通过；实际900px三块、340/300px始终Key/数据左右，21个几何采样无横向越界、所有帮助默认收起，位置2484px与焦点/无重读、设置dialog、12类、明暗、局部数字表格/时间戳、加载/错误/空态和12源DUMP/绝对过期不变已验。真实pane和完整窗口截图均已查看，所有本轮资源正常退出/回收。
+- 新增docs/verification/20-database-workbench.md及原始成功/失败/阶段报告、console与真实截图；归档逐项核对源件SHA。旧往返UI报告保留为历史，本次没有声称新的可选A/B已获用户确认，也未用原型代替真实安装应用。20按新版标准四项勾选done，六个进度入口同步01–20 done/21 in-progress/22–29 ready，原29票图和参考SHA不变。
+- 真实12类/双会话/实际decoder与React的21新包复验仍执行中，不以布局通过冒称全部发布验收；当前Verified UI小目标按用户约定本地提交，无push。
+
+- 21最终包全类型运行在12种查看及真实decoder/React已通过后，会话脚本openSession(B)预先打开modal，caller又按旧顺序读取后台状态，导致未处理waitForRequest超时进程退出、未写最终报告。原console和native-ui-release-interrupted.json明确false保留，不能当整轮通过。只读CIM确认本轮DSH/专属Chrome已不存在，精确UUID97c1b089的Linux PID269也已不存在；核对绝对realpath和非符号链接后只回收该UUID目录及同owner Sessions资料，先前拒绝清理的目录未动。
+- 会话验收顺序改为仅在实际操作连接字段时打开modal，状态判断时保持工作台可见；activeOwner用Promise.all绑定事件与点击，防等待异常逃过finally。产品无需补丁，包509aa7b0不变。按固定rc.2 LanguageRow/官方e2e真实代码增加Settings→General→English/中文菜单切换和中文三栏截图，验证本地化数据/元信息页签及切换不重读，再恢复English；不注入语言store或改日常profile。随后以同包分项复验。
+
+- 20同包509aa7b0补原生中文菜单验收后24组全部通过，22个几何样本有界；中文三块JSON、数据/元信息页签和大整数原文保留且切换无Redis重读，随后恢复English。中文真实pane/完整DSH截图已查看并按源SHA归档，之前同包英文23组JSON/console另存。20文档/票和六个当前摘要更新为24组，21完整功能复验在修正顺序后重新执行，尚未宣称整轮通过。
+
+- 21第二轮完整报告明确83组后false，12类型/SDK边界及A/B状态隔离、迟到响应、独立读取均已通过；最后断开A重连时漏显式打开设置，password.fill不可见而超时。本轮finally完整退出/回收true，原报告/console/截图保留native-ui-session-modal-*。停止重复全类型追跑，逐行重新审视全部185行会话脚本：B字段编辑从既有一次打开入口开始，A重连必须明确再打开。此前批处理String.replace只改首个匹配导致漏项；改为精确文件补丁，删B冗余调用并补A，不新增抽象或修改产品。下一步只用小夹具验证完整会话流程，再复跑最终全门禁。
+
+- 最终包会话小夹具21组全部通过，包括A/B切换无自动Redis、独立DB/二进制Key/格式/窗口、旧响应隔离、伪造归属拒绝、A断线手动DB恢复和B不受影响；本轮进程/夹具/资料正常回收，浏览器错误范围随后随21原件归档。独立包核查79项/70lib/12Host peer/2生产依赖全部一致，包仍509aa7b0。原29票/P0=21/P1=8/全部依赖和参考研究SHA核对不变，git diff --check通过。

@@ -88,7 +88,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-details > form { display:flex; align-items:end; flex-wrap:wrap; gap:6px; padding-bottom:6px; border-bottom:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-details > form > .redis-address { display:contents; }
 .dsh-redis .redis-details > form label { flex:1 1 95px; }
-.dsh-redis .redis-details > form .redis-actions { flex:0 0 auto; }
+.dsh-redis .redis-details > form .redis-actions { flex:0 1 auto; min-width:0; max-width:100%; }
 .dsh-redis .redis-details > label { max-width:190px; }
 .dsh-redis .redis-details > small { order:8; color:var(--dsw-alias-label-secondary); font-size:10px; }
 .dsh-redis .redis-metadata { display:grid; grid-template-columns:minmax(100px,1fr) minmax(0,2fr); gap:6px 12px; margin:0; font-size:11px; }
