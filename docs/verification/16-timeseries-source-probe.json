@@ -1,0 +1,316 @@
+{
+  "startedAt": "2026-10-16T00:51:12.142Z",
+  "checks": [
+    "Actual TYPE TSDB-TYPE; integer RESP2 timestamps through signed-64 max remain exact; sample values are simple strings",
+    "Both directions use lower then upper inclusive bounds; empty range and empty series return empty arrays",
+    "Actual range parser rejects Stream-exclusive syntax, negative timestamp and signed-64 overflow; metadata and NaN/inf behavior recorded without assumptions"
+  ],
+  "fixture": {
+    "backend": "wsl-image",
+    "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+    "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+    "owner": "00ef4355-ee46-40bd-ad7e-81043f252e20",
+    "container": null,
+    "redisVersion": "8.2.6",
+    "moduleCommands": [
+      "JSON.GET",
+      "TS.RANGE",
+      "BF.INFO"
+    ],
+    "tls": false,
+    "stopped": true,
+    "certificatesRemoved": true,
+    "fixtureRemoved": true
+  },
+  "observations": {
+    "modules": [
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "vectorset"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "1"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": ""
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "timeseries"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80210"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redistimeseries.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "search"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80212"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redisearch.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "bf"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80212"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/redisbloom.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ],
+      [
+        {
+          "bulk": "name"
+        },
+        {
+          "bulk": "ReJSON"
+        },
+        {
+          "bulk": "ver"
+        },
+        {
+          "integer": "80209"
+        },
+        {
+          "bulk": "path"
+        },
+        {
+          "bulk": "/mnt/e/项目demo/dsh-redis/.scratch/runtime/redis-image-f4a7260ec5f0/root/usr/local/lib/redis/modules/rejson.so"
+        },
+        {
+          "bulk": "args"
+        },
+        []
+      ]
+    ],
+    "add:0": {
+      "integer": "0"
+    },
+    "add:1": {
+      "integer": "1"
+    },
+    "add:9007199254740993": {
+      "integer": "9007199254740993"
+    },
+    "add:9223372036854775806": {
+      "integer": "9223372036854775806"
+    },
+    "add:9223372036854775807": {
+      "integer": "9223372036854775807"
+    },
+    "rawRange": [
+      [
+        {
+          "integer": "0"
+        },
+        "1.2345678901234567"
+      ],
+      [
+        {
+          "integer": "1"
+        },
+        "1.2345678901234567"
+      ],
+      [
+        {
+          "integer": "9007199254740993"
+        },
+        "1.2345678901234567"
+      ],
+      [
+        {
+          "integer": "9223372036854775806"
+        },
+        "1.2345678901234567"
+      ],
+      [
+        {
+          "integer": "9223372036854775807"
+        },
+        "1.2345678901234567"
+      ]
+    ],
+    "exclusive": {
+      "error": "ERR TSDB: wrong fromTimestamp"
+    },
+    "overflow": {
+      "error": "ERR TSDB: wrong toTimestamp"
+    },
+    "negative": {
+      "error": "ERR TSDB: wrong fromTimestamp"
+    },
+    "reversed": [],
+    "nan": {
+      "error": "ERR TSDB: invalid value"
+    },
+    "inf": {
+      "error": "ERR TSDB: invalid value"
+    },
+    "info": [
+      "totalSamples",
+      {
+        "integer": "5"
+      },
+      "memoryUsage",
+      {
+        "integer": "4856"
+      },
+      "firstTimestamp",
+      {
+        "integer": "0"
+      },
+      "lastTimestamp",
+      {
+        "integer": "9223372036854775807"
+      },
+      "retentionTime",
+      {
+        "integer": "0"
+      },
+      "chunkCount",
+      {
+        "integer": "1"
+      },
+      "chunkSize",
+      {
+        "integer": "4096"
+      },
+      "chunkType",
+      "compressed",
+      "duplicatePolicy",
+      "block",
+      "labels",
+      [],
+      "sourceKey",
+      null,
+      "rules",
+      [],
+      "ignoreMaxTimeDiff",
+      {
+        "integer": "0"
+      },
+      "ignoreMaxValDiff",
+      {
+        "bulk": "0"
+      }
+    ],
+    "emptyInfo": [
+      "totalSamples",
+      {
+        "integer": "0"
+      },
+      "memoryUsage",
+      {
+        "integer": "4856"
+      },
+      "firstTimestamp",
+      {
+        "integer": "0"
+      },
+      "lastTimestamp",
+      {
+        "integer": "0"
+      },
+      "retentionTime",
+      {
+        "integer": "0"
+      },
+      "chunkCount",
+      {
+        "integer": "1"
+      },
+      "chunkSize",
+      {
+        "integer": "4096"
+      },
+      "chunkType",
+      "compressed",
+      "duplicatePolicy",
+      "block",
+      "labels",
+      [],
+      "sourceKey",
+      null,
+      "rules",
+      [],
+      "ignoreMaxTimeDiff",
+      {
+        "integer": "0"
+      },
+      "ignoreMaxValDiff",
+      {
+        "bulk": "0"
+      }
+    ],
+    "wrongTypeInfo": {
+      "error": "ERR WRONGTYPE Operation against a key holding the wrong kind of value"
+    },
+    "missingInfo": {
+      "error": "ERR TSDB: the key does not exist"
+    }
+  },
+  "passed": true,
+  "finishedAt": "2026-10-16T00:51:14.341Z"
+}

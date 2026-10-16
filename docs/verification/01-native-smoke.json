@@ -1,0 +1,14 @@
+{
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T15:54:21.854Z",
+  "packageSha256": "e328834128252400813d8b33ae8246c7ef783bf8665ec2b9f1b0934a42e57062",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T15:54:36.664Z"
+}

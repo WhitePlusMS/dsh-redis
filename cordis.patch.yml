@@ -1,0 +1,4 @@
+# Independent Host plugin; Client entry is discovered from the package manifest.
+- insert:
+    - id: ui-redis
+      name: dsh-redis

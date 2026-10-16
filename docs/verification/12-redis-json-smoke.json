@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-10-15T20:25:01.800Z",
+  "checks": [
+    "RedisJSON 80209 actual ReJSON-RL, binary key and complete raw root/path match arrays preserve large integer and UTF-8 bytes exactly",
+    "actual null, empty array, slices and multi-match paths differ from absent path/key, ordinary String and invalid JSONPath",
+    "serialized source bytes, absolute expiry and JSON/core write command counters remain unchanged during reads",
+    "minimal read ACL succeeds; independent JSON.GET/JSON.TYPE denial stays permission and JSON.SET is forbidden",
+    "64 KiB boundary succeeds; 65,537-byte/4097-match/large-root results refuse whole; narrow path recovers; 2 MiB wire refusal closes only owned socket and manual reconnect works",
+    "actual DB selection invalidates the old generation and isolates JSON reads in DB1",
+    "actual reply-to-metadata races discard detected document type change, deletion and changed path cardinality; no atomic snapshot claim",
+    "explicit Host fault injection of an actual server unknown-command refusal maps unavailable; not claimed as a no-module-server acceptance"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "ca452b30-ce51-4bbc-9c46-e7759ed4264b",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "redisJsonVersion": 80209,
+  "passed": true,
+  "finishedAt": "2026-10-15T20:25:04.003Z"
+}

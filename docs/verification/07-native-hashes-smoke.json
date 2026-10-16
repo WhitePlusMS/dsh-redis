@@ -1,0 +1,57 @@
+{
+  "artifactPrefix": "native-hashes",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T18:41:09.375Z",
+  "packageSha256": "b40053d5f87ac494bd44bd42d331660410f27c22fc11d3d65f0f4c0c3839d558",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native TLS form rejects wrong CA without a socket and accepts a corrected CA",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native complete String Text/JSON/Hex/Base64 preserve large integer and exponent tokens",
+    "native explicit Base64 decoding succeeds; invalid raw UTF-8 and Base64 display fixed errors",
+    "native large String remains partial, refuses partial JSON, and reads the last single-byte window",
+    "native UTF-8 crossing uses explicit context, exact Hex offset and strict integer range feedback",
+    "native Hash routes to its own viewer; empty String and disappeared key are distinct and discard prior preview",
+    "native Hash routes automatically on key selection and explicitly continues to 235 unique raw-identity rows",
+    "native binary field byte preview keeps exact Hex/Base64 identity, and empty field/value remain selectable",
+    "native Hash JSON and explicit Base64 decode reuse the lossless formatter with large integer/exponent tokens",
+    "native long Hash cell reports its full length and 64 KiB partial coverage, refusing complete JSON formatting",
+    "native server field MATCH has explicit completion and clears previous rows/preview for changed or empty patterns",
+    "native Hash refresh discards all prior cells when the key disappears or becomes another type",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T18:41:32.075Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "9313f574-3172-4e16-8cde-97d643d0c3aa",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

@@ -1,0 +1,43 @@
+{
+  "startedAt": "2026-10-15T17:43:02.602Z",
+  "checks": [
+    {
+      "mode": "bulk",
+      "declared": "512 MiB bulk",
+      "elapsedMs": 4,
+      "rssBaselineBytes": 59658240,
+      "rssPeakBytes": 60739584,
+      "rssGrowthBytes": 1081344,
+      "socketClosed": true
+    },
+    {
+      "mode": "array",
+      "declared": "1 billion array elements",
+      "elapsedMs": 4,
+      "rssBaselineBytes": 60039168,
+      "rssPeakBytes": 60583936,
+      "rssGrowthBytes": 544768,
+      "socketClosed": true
+    },
+    {
+      "mode": "cumulative",
+      "declared": "two 600 KiB bulks",
+      "elapsedMs": 5,
+      "rssBaselineBytes": 59613184,
+      "rssPeakBytes": 62435328,
+      "rssGrowthBytes": 2822144,
+      "socketClosed": true
+    },
+    {
+      "mode": "stalled",
+      "declared": "no read reply",
+      "elapsedMs": 10013,
+      "rssBaselineBytes": 59863040,
+      "rssPeakBytes": 60391424,
+      "rssGrowthBytes": 528384,
+      "socketClosed": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T17:43:14.740Z"
+}

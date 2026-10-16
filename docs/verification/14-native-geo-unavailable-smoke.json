@@ -1,0 +1,47 @@
+{
+  "artifactPrefix": "native-geo-unavailable",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T00:16:28.483Z",
+  "packageSha256": "5daea558886be622c7ea145dd53534eaa0ca5fb0dcff5078b401bcff29654089",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "actual fixture disables GEOPOS; native unavailable state contains no old rows and original ZSet remains readable",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-16T00:16:47.514Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "1181d3c6-7fae-47fa-8fba-732594b3f23d",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "geoposDisabled": true
+    }
+  ],
+  "fixturesStopped": true
+}

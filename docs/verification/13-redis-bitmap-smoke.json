@@ -1,0 +1,34 @@
+{
+  "startedAt": "2026-10-15T20:36:31.977Z",
+  "checks": [
+    "actual binary String key, highest-bit-first order and byte-boundary windows agree with independent BITFIELD_RO GET u1 oracle",
+    "2 MiB source expands only a 4096-bit window, 513 payload bytes plus at most six context bytes; next interval is exact and uses only existing fixed String reads",
+    "last bit clips precisely, empty String and at/past EOF stay empty without zero padding, and maximum accepted integer offset remains exact",
+    "source serialized bytes, absolute expiry and String/bitmap write counters remain unchanged",
+    "minimal existing String-read ACL suffices; SETBIT is forbidden and GETRANGE denial remains a fixed permission state",
+    "DB generation changes reject stale windows and isolate DB1",
+    "actual range-to-metadata length/type/deletion races discard old bitmap bytes; same-length mutations remain non-atomic"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "155189fa-b040-4fa7-8bc4-d6f3debda68c",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "maxReceivedRangeBytes": 519,
+  "passed": true,
+  "finishedAt": "2026-10-15T20:36:33.307Z"
+}

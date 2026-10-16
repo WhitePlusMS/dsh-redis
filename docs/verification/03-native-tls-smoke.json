@@ -1,0 +1,37 @@
+{
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T16:46:46.268Z",
+  "packageSha256": "1a34e7660d23eb274fb4eabb8e85992ee36860edbf109bcf794627b8e5182b86",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "native TLS form rejects wrong CA without a socket and accepts a corrected CA",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T16:47:03.607Z",
+  "fixtures": [
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "bed015f4-949a-4fcb-87ef-967dfa13e230",
+      "container": "1d1e748ddf65fd025dbbcda26a5cde3369f2e833b2e7a74c2e69ad99e23999ba",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

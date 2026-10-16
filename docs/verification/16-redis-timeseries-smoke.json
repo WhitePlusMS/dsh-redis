@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-16T01:03:02.393Z",
+  "checks": [
+    "actual binary key, timestamp zero, beyond-53-bit and signed-64 max timestamps and raw double text remain exact in both directions; fixed read commands and numeric +/-1 continuation observed",
+    "235 samples paginate in three bounded pages without repeats; inclusive same/bounded/empty ranges, empty series/key and complete 64 KiB raw key identity work",
+    "serialized series bytes, absolute expiry and all monitored data-write counters remain unchanged after reads",
+    "minimal read ACL reads samples without TS.INFO; granting INFO restores metadata, denying RANGE keeps REVRANGE working, and TS.ADD stays forbidden",
+    "actual 2 MiB TS.INFO label frame is refused by the receive budget and closes only its owned socket; explicit reconnect recovers",
+    "real SELECT changes generation, rejects old targets and isolates DB1",
+    "actual deletion/type changes after first TYPE or after RANGE classify TSDB-specific errors and discard stale samples"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "528623ff-ee2a-4ec4-9f70-78cfabe567f1",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-16T01:03:05.667Z"
+}

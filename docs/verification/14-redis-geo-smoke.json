@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-15T20:53:39.387Z",
+  "checks": [
+    "actual binary/empty members retain full raw identity, rank, score and exact quantized coordinate text from an independent RESP2 oracle",
+    "235-member rank0/100/200 ranges and exact EOF preserve ranks without duplicates; ordinary negative/fraction/infinity ZSet scores also decode without a Geo-type claim",
+    "source serialized bytes, absolute expiry and GEO/ZSet write command counters remain unchanged",
+    "minimal fixed read ACL succeeds; GEOPOS denial is permission, GEOADD is forbidden and original ZSet ranges still work",
+    "96 KiB combined-argument and 65,537-byte identity refusals keep the socket healthy; smaller count recovers; 2 MiB receive refusal closes only owned socket and manual reconnect works",
+    "actual DB generation changes reject old coordinate results and isolate DB1",
+    "actual metadata/type/deletion races discard rows; equal-cardinality member replacement yields a distinct nil position without pretending an atomic snapshot",
+    "actual owned server with built-in GEOPOS disabled returns unavailable while the same ZSet remains readable; no synthetic refusal is used"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "1ad16ff7-b39e-49c7-bf29-3de1064b15cf",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    },
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "43defd06-2908-4697-8a97-d4c9fa39978f",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "geoposDisabled": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T20:53:42.964Z"
+}

@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-15T18:11:59.616Z",
+  "checks": [
+    {
+      "mode": "bulk",
+      "declared": "512 MiB bulk",
+      "elapsedMs": 4,
+      "rssBaselineBytes": 59527168,
+      "rssPeakBytes": 60588032,
+      "rssGrowthBytes": 1060864,
+      "socketClosed": true
+    },
+    {
+      "mode": "array",
+      "declared": "1 billion array elements",
+      "elapsedMs": 3,
+      "rssBaselineBytes": 60129280,
+      "rssPeakBytes": 60944384,
+      "rssGrowthBytes": 815104,
+      "socketClosed": true
+    },
+    {
+      "mode": "cumulative",
+      "declared": "two 600 KiB bulks",
+      "elapsedMs": 5,
+      "rssBaselineBytes": 59858944,
+      "rssPeakBytes": 62132224,
+      "rssGrowthBytes": 2273280,
+      "socketClosed": true
+    },
+    {
+      "mode": "stalled",
+      "declared": "no read reply",
+      "elapsedMs": 10001,
+      "rssBaselineBytes": 60178432,
+      "rssPeakBytes": 60923904,
+      "rssGrowthBytes": 745472,
+      "socketClosed": true
+    },
+    {
+      "mode": "operation-deadline",
+      "declared": "no read reply",
+      "elapsedMs": 209,
+      "rssBaselineBytes": 60063744,
+      "rssPeakBytes": 60727296,
+      "rssGrowthBytes": 663552,
+      "socketClosed": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T18:12:11.898Z"
+}

@@ -1,0 +1,35 @@
+{
+  "startedAt": "2026-10-15T17:55:50.677Z",
+  "checks": [
+    "real incremental SCAN returns all 352 fixture keys, including binary and empty identities",
+    "SELECT affects only its trusted session; other session stays in DB0 and stale targets fail",
+    "out-of-range SELECT keeps prior DB; unmatched pattern is an explicit empty result",
+    "manual DB browsing works with SCAN/SELECT but no CONFIG/INFO permission",
+    "SELECT/SCAN ACL refusals are permission errors, never missing keys or silently empty DBs",
+    "fixture raw bytes, absolute expiration and DB size unchanged after viewer reads",
+    "real oversized key identity is refused without advancing a partial cursor or closing a healthy socket",
+    "real reply beyond receive budget closes only its owned socket before allocating the bulk"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "34b4a1d2-442e-4d53-9014-6d1c810e7dfe",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "pages": 4,
+  "finishedAt": "2026-10-15T17:55:52.404Z"
+}

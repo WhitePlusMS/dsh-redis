@@ -1,0 +1,51 @@
+{
+  "startedAt": "2026-10-16T00:28:54.426Z",
+  "checks": [
+    "actual sparse/dense, valid/invalid cache and empty/binary keys preserve exact source bytes, absolute expiry and write counters; fixed duplicate raw inputs and at-most-16-byte headers observed",
+    "ordinary/fake/corrupted sparse and 2 MiB fake strings are invalid without transferring full values; missing and non-String remain distinct",
+    "actual 64 KiB raw key duplicated request exceeds the transport budget without truncation or disconnect; a normal key immediately recovers",
+    "minimal fixed read ACL counts; denied PFCOUNT is permission, PFADD remains forbidden and original String bytes remain readable",
+    "actual DB generation change rejects old HLL results and isolates DB1",
+    "actual type/deletion/length and concurrent single-input cache update races discard HLL estimates rather than claim a snapshot",
+    "actual owned server disables PFCOUNT; production reader reports unavailable with no single-input fallback and String remains readable"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "b51b21a2-f02b-460c-abe7-678b03816d06",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    },
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "b94724b4-545a-4cb6-b2c0-7a4997933e11",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "pfcountDisabled": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-16T00:28:58.291Z"
+}

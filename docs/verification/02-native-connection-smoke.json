@@ -1,0 +1,34 @@
+{
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T16:36:57.359Z",
+  "packageSha256": "2f7970d70cc201d6cd47412a081ec740f0b8ad55157e6fe2b26547e4c2dc9a63",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T16:37:12.790Z",
+  "fixtures": [
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "43baf353-9d50-4fad-8cfc-ac1706c267a7",
+      "container": "716579ce08bab6904ce5526f1246c90179a73e69e5b8e3508a79a708905c511b",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "stopped": true
+    }
+  ],
+  "fixturesStopped": true
+}

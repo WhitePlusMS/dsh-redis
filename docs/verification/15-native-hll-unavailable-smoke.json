@@ -1,0 +1,47 @@
+{
+  "artifactPrefix": "native-hll-unavailable",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T00:35:55.520Z",
+  "packageSha256": "b082b065ff4d0689a2c3238159b0f7802b4d8941ef84626853c3016e512aed5f",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "actual fixture disables PFCOUNT; native HLL unavailable has no estimate and returns to original String without a single-input fallback",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-16T00:36:20.944Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "d2673359-0fce-42e0-b09c-d8aa5f77187c",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "pfcountDisabled": true
+    }
+  ],
+  "fixturesStopped": true
+}

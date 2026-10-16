@@ -1,0 +1,61 @@
+{
+  "startedAt": "2026-10-16T00:13:18.174Z",
+  "checks": [
+    {
+      "case": "hll:sparse invalid-cache repeated inputs",
+      "encoding": 1,
+      "length": 284,
+      "estimate": "100",
+      "sourceBytesAndAbsoluteExpiryUnchanged": true
+    },
+    {
+      "case": "hll:sparse valid-cache repeated inputs",
+      "estimate": "100",
+      "controlSingleInputDidChangeCache": true,
+      "repeatedInputsSourceUnchanged": true
+    },
+    {
+      "case": "hll:dense invalid-cache repeated inputs",
+      "encoding": 0,
+      "length": 12304,
+      "estimate": "10025",
+      "sourceBytesAndAbsoluteExpiryUnchanged": true
+    },
+    {
+      "case": "hll:dense valid-cache repeated inputs",
+      "estimate": "10025",
+      "controlSingleInputDidChangeCache": true,
+      "repeatedInputsSourceUnchanged": true
+    },
+    {
+      "case": "fake header and incomplete sparse body",
+      "serverRejectsBoth": true
+    },
+    {
+      "case": "missing repeated input",
+      "returnsZero": true,
+      "doesNotCreateKey": true
+    }
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "eb37e57c-c43f-4723-8d8e-475b59e65fcb",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-16T00:13:19.375Z"
+}

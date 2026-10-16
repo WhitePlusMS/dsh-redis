@@ -1,0 +1,41 @@
+{
+  "artifactPrefix": "native-profiles-save",
+  "profilePhase": "save",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T17:01:53.674Z",
+  "packageSha256": "8a533c2685d5070ac490aa2da5f5c3e4e895b9f3c317d447e31d1f9d8c0d91eb",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "native TLS form rejects wrong CA without a socket and accepts a corrected CA",
+    "native save/update/delete ordinary and TLS profiles; no password on disk or automatic Redis connection",
+    "native gateway rejects a password inside saved settings without echoing it",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T17:02:31.140Z",
+  "fixtures": [
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "5eccb437-b208-46ec-b694-ee5c35eac13c",
+      "container": "e9e1f30644e5fd02a66a3385b36316cffc47893473473583a9a843d03558c9c9",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

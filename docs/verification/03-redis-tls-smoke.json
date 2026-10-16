@@ -1,0 +1,42 @@
+{
+  "startedAt": "2026-10-15T16:44:41.066Z",
+  "checks": [
+    "trusted private CA chain and IP subjectAltName accepted; test socket released",
+    "persistent TLS connect, public TLS marker and manual disconnect without credentials",
+    "wrong, untrusted and malformed CA fail closed with certificate error; no sockets remain",
+    "empty CA uses Node default trust store, including NODE_EXTRA_CA_CERTS; no verification bypass",
+    "trusted CA with a different DNS identity is rejected for the IP target; no retained socket"
+  ],
+  "fixtures": [
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "a09b8323-5410-421c-97f8-21f76a3afb57",
+      "container": "87f64347c40c8a486640fab8f523a0d10fdbd7b04df9e31b998ff66987ab2026",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true
+    },
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "8952c2da-5a67-453b-b707-755b9178df98",
+      "container": "ceb49db030f30c94dd6e8edab9144b318d080853e6daa83a02ddf1dd9ddfe55b",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T16:44:46.159Z"
+}

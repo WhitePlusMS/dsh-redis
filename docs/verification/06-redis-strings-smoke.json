@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-15T18:11:59.619Z",
+  "checks": [
+    "real binary key, millisecond TTL, exact full bytes and an empty String",
+    "every real UTF-8 split keeps exact requested bytes and bounded three-byte context",
+    "4 MiB String stays in 64 KiB windows; EOF, missing and Hash are distinct",
+    "viewer uses GETRANGE without GET or SET; original serialized bytes and absolute expiration stay unchanged",
+    "range-only ACL succeeds without GET; denied GETRANGE is a fixed permission error without data",
+    "real expiration and a prior DB generation do not return stale value bytes",
+    "controlled admin changes between actual Redis replies discard wrong-type, missing and changed-length windows"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "2f93fbea-6b94-4b2f-aa2d-9c4f25630dab",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T18:12:01.225Z"
+}

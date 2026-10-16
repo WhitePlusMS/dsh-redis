@@ -1,0 +1,46 @@
+{
+  "artifactPrefix": "native-keys",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-15T17:56:38.355Z",
+  "packageSha256": "9846fc6806ce39408aa71e520b9fb1cfdebc9e79e57ffd8e38183c3ceb293e5f",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native TLS form rejects wrong CA without a socket and accepts a corrected CA",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "finishedAt": "2026-10-15T17:56:55.353Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "0927feef-ae9f-4097-9151-a465d264e269",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

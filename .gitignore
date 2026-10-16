@@ -1,0 +1,11 @@
+node_modules/
+lib/
+*.tsbuildinfo
+*.tgz
+coverage/
+.scratch/upstream/
+.scratch/runtime/
+.scratch/artifacts/
+.env
+.env.*
+!.env.example

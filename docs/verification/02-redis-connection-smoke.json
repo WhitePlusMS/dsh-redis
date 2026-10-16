@@ -1,0 +1,41 @@
+{
+  "startedAt": "2026-10-15T16:33:20.084Z",
+  "checks": [
+    "password authentication and temporary test socket cleanup",
+    "wrong password classification and failed socket cleanup",
+    "named ACL authentication, including an explicitly empty password",
+    "persistent connect, local status, manual disconnect and no reconnect",
+    "session isolation, disposal and server-side close without reconnect",
+    "server without a password",
+    "real hanging socket timeout and explicit cancellation release resources",
+    "unreachable loopback endpoint is a network failure"
+  ],
+  "fixtures": [
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "8923828a-22af-4cd0-9743-6cb0f2b87f6e",
+      "container": "9ef1bcb2455ac9faacf304637eac4289ede0193dbb54ef565663d73f36d0df00",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "stopped": true
+    },
+    {
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "owner": "165fcde0-280a-4583-b387-91e697b76ed9",
+      "container": "6402c2f0a882ef48c62c2b1e4cf7d2d858b7ad51bd9614657694b1bbcae1475d",
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "stopped": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-15T16:33:31.902Z"
+}
