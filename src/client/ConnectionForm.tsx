@@ -7,6 +7,7 @@ import { KeyBrowser, type KeyActions } from './KeyBrowser.tsx'
 import { NS } from './locales.ts'
 import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
+import { useBrowsingState } from './BrowsingSession.tsx'
 
 export interface ConnectionActions extends ProfileActions, KeyActions {
   readonly testConnection: (request: ConnectionRequest, signal: AbortSignal) => Promise<RemoteResult<ConnectionTestResult>>
@@ -19,6 +20,7 @@ type Props = ConnectionActions & { readonly t: TranslateNS<typeof NS> }
 /** Form credentials are never persisted; successful authentication clears the password input. */
 export function ConnectionForm(props: Props) {
   const { t } = props
+  const browsing = useBrowsingState()
   const [host, setHost] = useState('127.0.0.1')
   const [port, setPort] = useState('6379')
   const [username, setUsername] = useState('')
@@ -67,7 +69,13 @@ export function ConnectionForm(props: Props) {
   const request = (): ConnectionRequest => ({ ...settings(), password })
   return <div className="redis-connection" data-connected={connected}>
     <div className="redis-compact-connection"><button type="button" onClick={() => setSettingsOpen(true)}><Icon name="database" /><span>{connection?.target?.host ?? host}:{connection?.target?.port ?? port}</span></button><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button></div>
-    <ProfileChooser {...props} disabled={busy || connected} settings={settings} connection={connection} open={settingsOpen} onOpen={() => setSettingsOpen(true)} onClose={() => { setSettingsOpen(false); setPassword('') }} onDatabase={() => databaseInput.current?.focus()} select={value => {
+    <ProfileChooser {...props} disabled={busy || connected} settings={settings} connection={connection} open={settingsOpen} onOpen={() => setSettingsOpen(true)} onClose={() => { setSettingsOpen(false); setPassword('') }} onDatabase={() => databaseInput.current?.focus()} applyUri={({ request, db }) => {
+        setHost(request.host); setPort(String(request.port)); setUsername(request.username); setPassword(request.password)
+        setTls(request.tls !== null); setCaPem(request.tls?.caPem ?? '')
+        setError(null); setTested(false)
+        // DB remains a preference draft until the existing explicit Select DB action.
+        browsing.update({ db, keyBase64: null })
+      }} select={value => {
         setHost(value?.host ?? '127.0.0.1'); setPort(String(value?.port ?? 6379)); setUsername(value?.username ?? '')
         setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
         setPassword(''); setError(null); setTested(false)

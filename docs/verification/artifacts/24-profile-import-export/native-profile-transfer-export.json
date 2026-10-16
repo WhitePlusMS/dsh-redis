@@ -1,0 +1,62 @@
+{
+  "format": "dsh-redis-connections",
+  "version": 1,
+  "profiles": [
+    {
+      "name": "Sessions 6a0fb5e9-22fe-4d3e-9cb3-7225433dd2ad",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 13424,
+        "username": "",
+        "tls": true
+      }
+    },
+    {
+      "name": "Sessions ab6db273-33cd-4082-9ac8-a257d86f97e2",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 14124,
+        "username": "",
+        "tls": true
+      }
+    },
+    {
+      "name": "Sessions a65acc7c-8356-4b6d-87f5-d9c6758a0950",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 9610,
+        "username": "",
+        "tls": true
+      }
+    },
+    {
+      "name": "Sessions 980a90db-3daa-4dfe-9e2d-beb06582c81e",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 2940,
+        "username": "",
+        "tls": true
+      }
+    },
+    {
+      "name": "Transfer renamed d4ed6a69-8963-4603-84a0-1f0162f5b12a",
+      "group": "Development d4ed6a69-8963-4603-84a0-1f0162f5b12a",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 1642,
+        "username": "default",
+        "tls": false
+      }
+    },
+    {
+      "name": "Transfer TLS d4ed6a69-8963-4603-84a0-1f0162f5b12a",
+      "group": "Development d4ed6a69-8963-4603-84a0-1f0162f5b12a",
+      "settings": {
+        "host": "127.0.0.1",
+        "port": 1642,
+        "username": "default",
+        "tls": true
+      }
+    }
+  ]
+}

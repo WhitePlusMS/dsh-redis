@@ -30,6 +30,8 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-connection { flex:1; min-height:0; min-width:0; display:grid; grid-template-columns:164px minmax(0,1fr); grid-template-rows:minmax(0,1fr) auto; grid-template-areas:"connections browser" "status status"; overflow:hidden; }
 .dsh-redis .redis-profile-navigation { grid-area:connections; min-height:0; min-width:0; display:flex; flex-direction:column; background:var(--redis-panel); border-right:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-navigation-heading { display:flex; align-items:center; justify-content:space-between; gap:4px; min-height:34px; padding:3px 6px 3px 9px; color:var(--dsw-alias-label-secondary); font-size:11px; }
+.dsh-redis .redis-profile-group-title { display:flex; align-items:center; gap:5px; padding:8px 7px 4px; color:var(--dsw-alias-label-secondary); font-size:10px; min-width:0; }
+.dsh-redis .redis-profile-group-title span { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .dsh-redis .redis-profile-list { flex:1; min-height:0; overflow:auto; padding:0 4px; overscroll-behavior:contain; }
 .dsh-redis .redis-profile-entry { width:100%; min-width:0; min-height:37px; justify-content:flex-start; border:0; background:transparent; text-align:left; padding:5px 7px; }
 .dsh-redis .redis-profile-entry > span { display:flex; flex-direction:column; min-width:0; gap:2px; }
@@ -59,6 +61,11 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis label { display:flex; flex-direction:column; gap:4px; min-width:0; font-size:11px; color:var(--dsw-alias-label-secondary); }
 .dsh-redis input, .dsh-redis textarea, .dsh-redis select { min-width:0; width:100%; min-height:27px; padding:4px 6px; border:1px solid var(--dsw-alias-border-l2); border-radius:4px; color:var(--dsw-alias-label-primary); background:var(--dsw-alias-bg-base); font:inherit; }
 .dsh-redis textarea { resize:vertical; }
+.dsh-redis .redis-profile-tools { min-width:0; padding-bottom:8px; border-bottom:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-profile-tools > summary { cursor:pointer; font-size:11px; padding:3px 0; }
+.dsh-redis .redis-profile-tools[open] { display:flex; flex-direction:column; gap:8px; }
+.dsh-redis .redis-import-preview { max-height:320px; overflow:auto; overscroll-behavior:contain; display:flex; flex-direction:column; gap:8px; }
+.dsh-redis .redis-import-row { padding:8px; border:1px solid var(--dsw-alias-border-l2); border-radius:4px; }
 .dsh-redis .redis-profiles { padding-bottom:10px; border-bottom:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-checkbox { flex-direction:row; align-items:center; }
 .dsh-redis .redis-checkbox input { width:auto; min-height:0; }

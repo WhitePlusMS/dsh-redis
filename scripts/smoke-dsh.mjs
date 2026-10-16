@@ -14,15 +14,16 @@ import { smokeNativeRecovery } from './smoke-native-recovery.mjs'
 import { smokeSidebarLayout } from './smoke-sidebar-layout.mjs'
 import { smokeKeyNamespaces } from './smoke-key-namespaces.mjs'
 import { smokeFocusedValue } from './smoke-focused-value.mjs'
+import { smokeProfileTransfer, transferProfileNames } from './smoke-profile-transfer.mjs'
 import { observeReleaseRuntime, smokeReleaseBoundary } from './smoke-release-boundary.mjs'
 import { RESP_TYPES } from 'redis'
 import { openConnectionSettings, chooseValueFormat, assertSelectedIdentity, withOpenHelp, readMetadataText, findLoadedKey } from './native-view-controls.mjs'
 
-async function smoke(fixture, profilePhase) {
+async function smoke(fixture, profilePhase, transferPhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
+  const artifactPrefix = transferPhase !== undefined ? 'native-profile-transfer-' + transferPhase : process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -49,7 +50,7 @@ async function smoke(fixture, profilePhase) {
   let browser
   let page
   const pageErrors = [], browserConsoleErrors = [], browserRequestFailures = []
-  const report = { artifactPrefix, profilePhase, baseline: manifest.version, startedAt: new Date().toISOString(), packageSha256: createHash('sha256').update(await readFile(resolve(artifacts, 'dsh-redis-0.1.0.tgz'))).digest('hex'), checks: [], passed: false, processStopped: false }
+  const report = { artifactPrefix, profilePhase, transferPhase, baseline: manifest.version, startedAt: new Date().toISOString(), packageSha256: createHash('sha256').update(await readFile(resolve(artifacts, 'dsh-redis-0.1.0.tgz'))).digest('hex'), checks: [], passed: false, processStopped: false }
   const record = (...checks) => { report.checks.push(...checks); console.log('[smoke check] ' + checks.join(' | ')) }
   const redact = text => {
     const safe = text.replace(/([?&]token=)[^\s&]+/g, '$1[redacted]')
@@ -71,7 +72,7 @@ async function smoke(fixture, profilePhase) {
     })
     console.log('[smoke] Native rc.2 profile started on loopback')
     browser = await chromium.launch({ executablePath, headless: true })
-    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' ? 1920 : 1440, height: 960 } })
+    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' ? 1920 : 1440, height: 960 } })
     if (process.env.REDIS_SMOKE_RELEASE === '1') await context.addInitScript(observeReleaseRuntime)
     context.setDefaultTimeout(30_000)
     const origin = new URL(readyUrl).origin
@@ -142,6 +143,7 @@ async function smoke(fixture, profilePhase) {
       const storedFile = resolve(home, 'profiles/web/data/dsh-redis/connections.json')
       const savedName = 'TLS fixture ' + fixture.metadata.owner
       const renamedName = 'Renamed ' + savedName
+      if (transferPhase !== undefined) await smokeProfileTransfer({ page, context, origin, rpc, fixture, pane, artifacts, home, report, phase: transferPhase, baseline })
       if (profilePhase === 'reopen') {
         await selector.locator('option').filter({ hasText: renamedName }).waitFor({ state: 'attached' })
         assert.equal(await selector.inputValue(), '', 'Reopening must not auto-select or connect')
@@ -1404,13 +1406,15 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
           fixture.expectedKeyCount += 5
         }
       }
-      const phases = process.env.REDIS_SMOKE_PROFILES === '1' ? ['save', 'reopen'] : [undefined]
+      const transfer = process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1'
+      assert(!transfer || process.env.REDIS_SMOKE_PROFILES !== '1', 'Run the separate profile transfer and TLS profile gates independently')
+      const phases = transfer || process.env.REDIS_SMOKE_PROFILES === '1' ? ['save', 'reopen'] : [undefined]
       for (const phase of phases) {
         // Only this acceptance mode owns a bounded TCP delay proxy. The real
         // fixture/admin and outer shutdown assertions stay unchanged.
         const proxy = process.env.REDIS_SMOKE_RECOVERY === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' ? await createReadDelayProxy(fixture.settings) : undefined
         let report
-        try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, recoveryProxy: proxy }, phase) }
+        try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, recoveryProxy: proxy }, transfer ? undefined : phase, transfer ? phase : undefined) }
         finally { await proxy?.close() }
         if (proxy !== undefined) report.recoveryProxyStopped = proxy.connections.every(value => value.closed)
         report.fixtures = [fixture.metadata]
@@ -1422,10 +1426,10 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
       }
     }, { tls: process.env.REDIS_SMOKE_TLS === '1', disableGeoPos: process.env.REDIS_SMOKE_GEO_DISABLED === '1', disableHllCount: process.env.REDIS_SMOKE_HLL_DISABLED === '1' })
   } finally {
-    if ((process.env.REDIS_SMOKE_PROFILES === '1' || process.env.REDIS_SMOKE_SESSIONS === '1') && reports.every(report => report.processStopped)) {
+    if ((process.env.REDIS_SMOKE_PROFILES === '1' || process.env.REDIS_SMOKE_SESSIONS === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1') && reports.every(report => report.processStopped)) {
       const store = new RedisProfiles(resolve(import.meta.dirname, '../.scratch/runtime/dsh-home/profiles/web'))
       const stored = await store.list(new AbortController().signal)
-      const ownedNames = new Set(owners.flatMap(owner => ['TLS fixture ' + owner, 'Renamed TLS fixture ' + owner, 'Plain fixture ' + owner, 'Sessions ' + owner]))
+      const ownedNames = new Set(owners.flatMap(owner => ['TLS fixture ' + owner, 'Renamed TLS fixture ' + owner, 'Plain fixture ' + owner, 'Sessions ' + owner, ...(process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' ? Object.values(transferProfileNames(owner)) : [])]))
       for (const profile of stored.profiles) if (ownedNames.has(profile.name)) await store.remove({ id: profile.id }, new AbortController().signal)
     }
     for (const report of reports) {

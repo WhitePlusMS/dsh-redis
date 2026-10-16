@@ -981,3 +981,34 @@
 - 两份模型原始输出按字节归档docs/verification/artifacts/24-profile-import-export，实施说明和24票comment记录模型范围/未完成UI与实际重开。24仍in-progress、四项不勾；此模型+Host小目标核对后按用户约定本地提交，不push/改写历史。
 
 - 模型提交审计：原29票/全部依赖/优先级保持，01–23done/24in-progress/25–29ready和六处当前摘要一致，未勾24验收。正常cached空白检查只报原始model-check-console.log第126行pnpm末尾空白行，保留原字节；其余文件正常检查通过，仅该日志路径单次允许blank-at-eof，不改配置或绕过hooks。
+
+- 24界面首批：ProfileChooser增加可选分组输入、按组导航/下拉，保存仍复用稳定id；run明确refresh/follow/keep三种选择行为，导入只更新同一资料列表且保留现有表单/选择，不触发连接。新增ConnectionUri只在按需入口持有密文输入，提交立即清原URI，固定错误，choose新建后仅填ConnectionForm与会话DB草稿，关闭设置清秘密。
+- 新增ProfileTransfer：File.size与UTF-8双重256KiB上限、严格解析后仅存无秘密预览；每行可改名/分组/跳过，冲突/空选择/容量时禁提交，Host仍整批复验。下载仅显式白名单JSON，经Blob/object URL触发后回收；关闭设置/迟到文件读取用序号隔离。locales双语和styles只增加设置内折叠入口/分组/有界预览，默认主工作台不堆文字。立即三层类型检查；当前未打包或原生验证。
+
+- 24 UI首次TypeScript被英文翻译中单引号未转义阻断，立即以不含内嵌单引号的等义文案修复，原失败输出保留profiles-ui-first-typecheck-console.log。同步移除未用导入，UI容量判断复用MAX_PROFILES而非重复数字；没有归因缓存、放宽类型或改变已验证Host模型。继续立即三层类型检查。
+
+- 修正翻译后，编译暴露client composite显式include未列两个新共享模块（TS6307）；完整核对三端tsconfig，host/tests已有正确模式，仅将src/connection-uri.ts与src/profile-transfer.ts追加client既有显式清单，不扩大通配/关闭严格项。原失败输出保留profiles-ui-scope-typecheck-console.log。两类错误是语法和编译范围，未继续修补产品状态逻辑；同时固定配置错误提示明确同组重名需刷新。随后完整check。
+
+- 24 UI完整三层类型/构建/250回归通过。新增scripts/smoke-profile-transfer.mjs：真实上传/Blob下载、URI固定错误/DB草稿、改名/跳过冲突、导入保持原选择及密码草稿、坏文档/Host整批拒绝/容量、冷Host重启重选和显式URI连接/DB1读取；独立DB0/DB1源DUMP与绝对过期对照。它在既有独占生命周期内运行，Host停后按本轮精确owner名称清资料，旧owner不动。
+- 初次主脚本注入在匹配到两处profilePhase=reopen时前置校验停止，主脚本未写；改为明确renamedName后的唯一上下文再集成，避免误改收尾分支。PROFILE_TRANSFER分开save/reopen两个新DSH进程，生产界面/包未为验收修改。随后先mjs语法、prepack、隔离安装再实测，尚无新原生通过声明。
+
+- 打包前完整核对随包README，补分组/URI草稿/无秘密JSON格式与256KiB/50条、冲突改名跳过/不覆盖/手动TLS CA与连接操作；因此前一预打包不作为最终候选。ProfileTransfer改用有界arrayBuffer和fatal UTF-8解码，拒绝损坏文件静默替换地址，关闭/迟到仍用同一序号守卫。
+- 原生专项加入真实损坏UTF-8文件和明确标注的受控File.arrayBuffer延迟，关闭重开后释放验证旧预览丢弃，并finally恢复API；不冒称OS慢磁盘测试。通过实际UI状态响应取浏览器可信Agent，而非API另建会话，后续状态/坏导入校验均用该owner。待完整prepack和新SHA包实测，尚无通过声明。
+
+- 最终资料功能候选37b335ddb15a12056c1eb3885c83cd879b971af49b66797fc26027831af7e5e0（117420字节）严格prepack三层类型/构建/250回归通过，按SHA路径仅安装项目隔离web profile，未换日常DSH。启动PROFILE_TRANSFER+KEYS两轮真实save/reopen，尚未记通过；保存/导入操作只在隔离配置，Redis只做独占只读查看，finally清理本轮进程/owner资料。
+
+- 37b335dd真实PROFILE_TRANSFER两轮首次18/17组全部通过：真实Blob文件下载白名单、上传预览/改名/跳过、型/秘密/容量/损坏UTF-8拒绝、Host整批冲突不改原文件、导入保留当前选择和密码草稿；受控文件延迟关闭后旧预览丢弃。冷DSH重启五条分组/导入id与本地CA保留，导入TLS空CA、选择零Redis命令/连接；URI手动连接DB0，DB1仅草稿，显式Select/扫描才读真实值，DB0/DB1源DUMP/expiry不变。
+- 两轮page/console/request错误均为空，所有自建DSH/Chrome/Redis/本轮目录停止，精确owner的五条测试资料清除。继续同包全类型/双会话/24方法SDK、工作台及既有TLS冷重启门禁，24仍未勾完成。
+
+- 同一37b335dd包全12类型/双会话/实际SDK与React87组全部通过，坏成功HTTP结果的实际严格decoder覆盖24个方法（含新importProfiles），源权限/消失/变型/预算等原断言保留。page/console为空，1条预期会话取消ERR_ABORTED；本轮资源清理true。包验证81文件/72lib集合字节、12Host peer、2依赖和148源输入SHA一致。现运行中英明暗工作台24组，随后既有TLS配置两轮，24未提前完成。
+
+## 2026-10-16 任务24完成：连接资料分组、URI和无秘密导入导出
+
+- 同包37b335dd最终250回归、资料18/17两轮、全12类/双会话/实际24方法SDK与React87、工作台24/22几何样本和真实TLS配置冷重启17/17均通过；当前包81文件/72lib、12Host peer、2依赖、148源输入一致，实际预览/分组/中文工作台截图已查看。
+- 43份原始文件及清单归档docs/verification/artifacts/24-profile-import-export，按源字节/SHA核对，包含实际下载JSON、模型原件及UI两次编译错误原件；完整doc记录格式/职责/URI解析/文件fatal UTF-8与序号/冲突精确比较/队列原子写/对象URL、实际结果/复现/边界。不把受控File API延迟当OS慢磁盘或原22/23旧包证据合并为本包通过。Node22文档页浏览工具不可达，沿用已阅Node官方基础URL文档，补WHATWG Encoding正式fatal解码规范与实际损坏文件依据，不冒称已读不可达页面。
+- 24四项勾done，六当前摘要/24表格同步01–24done/25–29ready；方案新增6.11和当前24RPC说明，原第21项有日期的23方法历史原样保留。原29票图/优先级/参考SHA不变，README已在当前包验证，收口不改随包源码。
+- 六原生报告page/console为空，只有全类型1条预期会话取消ERR_ABORTED；所有本轮DSH/Chrome/Redis/证书/owner目录及五条资料/TLS专项配置正常清理。原清理拒绝项/旧owner、用户业务库/服务/日常profile/C盘不动，无开发服务或网页端GPT评审。按每小目标本地提交约定核对后提交24；完整目标还余五张P1，不提前标完成。
+
+- 24最终提交审计：29票/21P0+8P1/全部原依赖和24done/5ready一致，六处摘要同步；148源输入、43归档原件SHA逐项匹配，35个相对文档链接有效，不可变参考SHA保持e138f420…。main、原暂存区为空，已跟踪diff whitespace通过；只收24 UI/原生专项/随包说明/最终证据与进度，不含依赖/lib/夹具/原型或25实现。
+
+- 暂存whitespace仅发现原始profiles-ui-check-console.log第126行pnpm末尾空白行；原字节证据不裁剪。其余文件正常cached检查通过，仅该路径单次允许blank-at-eof且仍检查其他空白问题，不改配置或跳hooks。

@@ -1,0 +1,9 @@
+$ tsc -p tsconfig.host.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+src/client/ConnectionUri.tsx(3,82): error TS6307: File 'E:/项目demo/dsh-redis/src/connection-uri.ts' is not listed within the file list of project 'E:/项目demo/dsh-redis/tsconfig.client.json'. Projects must list all files or use an 'include' pattern.
+  The file is in the program because:
+    Imported via '../connection-uri.ts' from file 'E:/项目demo/dsh-redis/src/client/ConnectionUri.tsx'
+    Imported via '../connection-uri.ts' from file 'E:/项目demo/dsh-redis/src/client/ProfileChooser.tsx'
+  File is ECMAScript module because 'E:/项目demo/dsh-redis/package.json' has field "type" with value "module"
+src/client/ProfileTransfer.tsx(5,85): error TS6307: File 'E:/项目demo/dsh-redis/src/profile-transfer.ts' is not listed within the file list of project 'E:/项目demo/dsh-redis/tsconfig.client.json'. Projects must list all files or use an 'include' pattern.
+  File is ECMAScript module because 'E:/项目demo/dsh-redis/package.json' has field "type" with value "module"
+[ELIFECYCLE] Command failed with exit code 2.

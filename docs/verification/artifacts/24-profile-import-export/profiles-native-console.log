@@ -1,0 +1,46 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native URI validation is fixed and secret-free; applying fills only the existing form and DB draft, saving/renaming/grouping retains identity and creates no Redis connection
+[smoke check] native Blob download contains only whitelisted non-secret fields; import preview blocks same-group names, explicit rename/skip adds a complete batch, TLS imports omit CA, and existing selection/password draft are preserved
+[smoke check] native invalid/secret/unknown-version/oversized files and Host secret/conflicting batches leave saved bytes unchanged; capacity disables commit; closing settings clears URI/password and drops preview without Redis work
+[smoke check] profile transfer and explicit verification preserve watched DB0/DB1 source DUMPs and absolute expiries
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] actual cold DSH restart reloads all five grouped/imported identities; selection restores public fields with an empty password, imported TLS has no CA, local CA stays local, and no Redis socket is opened
+[smoke check] native URI connect starts DB0 with the saved DB1 only as a draft; no automatic SELECT/SCAN, then explicit Select DB/scan reads the real DB1 value and manual disconnect clears credentials
+[smoke check] profile transfer and explicit verification preserve watched DB0/DB1 source DUMPs and absolute expiries
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+[dsh-redis] Connection profile removed
+[dsh-redis] Connection profile removed
+[dsh-redis] Connection profile removed
+[dsh-redis] Connection profile removed
+[dsh-redis] Connection profile removed
+{"passed":true,"checks":18,"fixturesStopped":true}
+{"passed":true,"checks":17,"fixturesStopped":true}

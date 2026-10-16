@@ -1,0 +1,98 @@
+$ tsc -p tsconfig.host.json --noEmit && tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.tests.json --noEmit
+src/client/locales.ts(203,73): error TS1005: ',' expected.
+src/client/locales.ts(203,75): error TS1005: ',' expected.
+src/client/locales.ts(203,78): error TS1005: ',' expected.
+src/client/locales.ts(203,86): error TS1005: ',' expected.
+src/client/locales.ts(203,91): error TS1005: ',' expected.
+src/client/locales.ts(203,102): error TS1005: ',' expected.
+src/client/locales.ts(203,107): error TS1005: ',' expected.
+src/client/locales.ts(203,111): error TS1005: ';' expected.
+src/client/locales.ts(203,120): error TS1005: ';' expected.
+src/client/locales.ts(203,128): error TS1003: Identifier expected.
+src/client/locales.ts(203,132): error TS1005: ';' expected.
+src/client/locales.ts(203,148): error TS1005: ';' expected.
+src/client/locales.ts(203,152): error TS1005: ';' expected.
+src/client/locales.ts(203,157): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,163): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,167): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,197): error TS1005: ';' expected.
+src/client/locales.ts(203,203): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,218): error TS1005: ';' expected.
+src/client/locales.ts(203,231): error TS1005: ';' expected.
+src/client/locales.ts(203,235): error TS1005: ';' expected.
+src/client/locales.ts(203,239): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,246): error TS1434: Unexpected keyword or identifier.
+src/client/locales.ts(203,257): error TS1005: ';' expected.
+src/client/locales.ts(203,280): error TS1005: ';' expected.
+src/client/locales.ts(203,294): error TS1003: Identifier expected.
+src/client/locales.ts(203,296): error TS1002: Unterminated string literal.
+src/client/locales.ts(204,21): error TS1005: ';' expected.
+src/client/locales.ts(204,96): error TS1005: ';' expected.
+src/client/locales.ts(205,19): error TS1005: ';' expected.
+src/client/locales.ts(205,54): error TS1005: ';' expected.
+src/client/locales.ts(205,88): error TS1005: ';' expected.
+src/client/locales.ts(206,17): error TS1005: ';' expected.
+src/client/locales.ts(206,51): error TS1005: ';' expected.
+src/client/locales.ts(206,87): error TS1005: ';' expected.
+src/client/locales.ts(206,123): error TS1005: ';' expected.
+src/client/locales.ts(207,20): error TS1005: ';' expected.
+src/client/locales.ts(208,18): error TS1005: ';' expected.
+src/client/locales.ts(209,21): error TS1005: ';' expected.
+src/client/locales.ts(209,65): error TS1005: ';' expected.
+src/client/locales.ts(209,92): error TS1005: ';' expected.
+src/client/locales.ts(210,24): error TS1005: ';' expected.
+src/client/locales.ts(210,70): error TS1005: ';' expected.
+src/client/locales.ts(211,20): error TS1005: ';' expected.
+src/client/locales.ts(211,61): error TS1005: ';' expected.
+src/client/locales.ts(211,97): error TS1005: ';' expected.
+src/client/locales.ts(212,25): error TS1005: ';' expected.
+src/client/locales.ts(212,57): error TS1005: ';' expected.
+src/client/locales.ts(213,23): error TS1005: ';' expected.
+src/client/locales.ts(213,65): error TS1005: ';' expected.
+src/client/locales.ts(214,19): error TS1005: ';' expected.
+src/client/locales.ts(214,50): error TS1005: ';' expected.
+src/client/locales.ts(215,31): error TS1005: ';' expected.
+src/client/locales.ts(216,37): error TS1005: ';' expected.
+src/client/locales.ts(217,34): error TS1005: ';' expected.
+src/client/locales.ts(218,26): error TS1005: ';' expected.
+src/client/locales.ts(219,23): error TS1005: ';' expected.
+src/client/locales.ts(220,26): error TS1005: ';' expected.
+src/client/locales.ts(221,29): error TS1005: ';' expected.
+src/client/locales.ts(222,29): error TS1005: ';' expected.
+src/client/locales.ts(223,31): error TS1005: ';' expected.
+src/client/locales.ts(223,160): error TS1005: ';' expected.
+src/client/locales.ts(224,25): error TS1005: ';' expected.
+src/client/locales.ts(225,32): error TS1005: ';' expected.
+src/client/locales.ts(226,30): error TS1005: ';' expected.
+src/client/locales.ts(227,30): error TS1005: ';' expected.
+src/client/locales.ts(228,26): error TS1005: ';' expected.
+src/client/locales.ts(229,30): error TS1005: ';' expected.
+src/client/locales.ts(230,34): error TS1005: ';' expected.
+src/client/locales.ts(231,15): error TS1005: ';' expected.
+src/client/locales.ts(231,47): error TS1005: ';' expected.
+src/client/locales.ts(231,82): error TS1005: ';' expected.
+src/client/locales.ts(232,17): error TS1005: ';' expected.
+src/client/locales.ts(232,51): error TS1005: ';' expected.
+src/client/locales.ts(232,82): error TS1005: ';' expected.
+src/client/locales.ts(232,114): error TS1005: ';' expected.
+src/client/locales.ts(233,14): error TS1005: ';' expected.
+src/client/locales.ts(234,16): error TS1005: ';' expected.
+src/client/locales.ts(234,44): error TS1005: ';' expected.
+src/client/locales.ts(234,81): error TS1005: ';' expected.
+src/client/locales.ts(235,18): error TS1005: ';' expected.
+src/client/locales.ts(235,51): error TS1005: ';' expected.
+src/client/locales.ts(236,15): error TS1005: ';' expected.
+src/client/locales.ts(236,51): error TS1005: ';' expected.
+src/client/locales.ts(236,108): error TS1005: ';' expected.
+src/client/locales.ts(237,15): error TS1005: ';' expected.
+src/client/locales.ts(237,45): error TS1005: ';' expected.
+src/client/locales.ts(238,19): error TS1005: ';' expected.
+src/client/locales.ts(238,65): error TS1005: ';' expected.
+src/client/locales.ts(238,95): error TS1005: ';' expected.
+src/client/locales.ts(239,17): error TS1005: ';' expected.
+src/client/locales.ts(239,41): error TS1005: ';' expected.
+src/client/locales.ts(239,83): error TS1005: ';' expected.
+src/client/locales.ts(240,19): error TS1005: ';' expected.
+src/client/locales.ts(240,44): error TS1005: ';' expected.
+src/client/locales.ts(241,1): error TS1109: Expression expected.
+[ELIFECYCLE] Command failed with exit code 2.
