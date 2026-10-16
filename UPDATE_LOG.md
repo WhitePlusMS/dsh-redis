@@ -754,3 +754,29 @@
 - 新增docs/verification/18-session-browsing-state.md及八份原始报告/截图/console归档，均与原件SHA相同；B截图已查看。保留同包完整类型运行77组但整轮false、未处理waiter、7组环境失连及5组页面启动失败；没有将失败改为通过、假造新截图或宣称21门禁已完。19/20边界明确，状态只保留当前Host生命周期，不新增磁盘/浏览器秘密保存。
 - 18四项勾选done，19按题目和既有取消/队列事实核对进入in-progress，仍5项未勾选；同步七个进度入口与方案6.2、tracker加入每验证小目标本地提交约定，原29票图/优先级与固定参考SHA保留。18完成核对后本地提交，无push。
 - 最终成功轮资源正常清理true；早期异常两对目录6a0fb5e9/ab6db273及Git16快照仍保留，清理被自动审核拒绝后未绕过。最后仅只读验证原Linux PID286/298不存在，当前无这些自建Redis运行；没有启停用户已有服务、日常profile或清理C盘。
+
+
+## 2026-10-16 任务19首批：取消语义与传输边界验证
+
+- 开始前核对main=1ef57e4且工作区干净，18 done/19 in-progress。完整读Host transport/connection/read context与既有单测、String/UI取消路径，复用现有16项队列和10秒共享截止/回复排空，不重复造生产调度器。
+- 修改client/locales.ts中英timeout/cancelled提示：停止等待不承诺Redis已停止执行；超时/取消后先刷新连接状态，断开则手动重连再缩小范围重试。仅解释实际恢复步骤，无写命令、自动重连或UI实现细节入口。
+- tests/redis-transport.test.ts新增3项有意义的loopback协议验证：排队截止过期不派发且socket可复用；active硬截止只通知一次、不派发后继；取消后分片回复必须全部排空才派发下一命令。短deadline用于单元验证，不能冒充真实生产10秒已测。
+- 新增scripts/read-delay-proxy.mjs，仅测试用Node loopback代理，复用生产RESP解码及请求/接收预算，转发真实Redis且可扣留一条实际回复；分别记录连接/固定命令和Key原字节身份、不保存AUTH参数/密码，所有socket/server由自身close回收。不发DEBUG/EVAL/全局CLIENT PAUSE，不把延迟网络回复称作停止服务器计算。先语法/类型/构建/回归，随后真实双会话验证，19尚未完成不提交。
+
+- 首批三层类型/构建/完整225回归通过，transport新增3项均通过。新增scripts/smoke-redis-recovery.mjs：真实Redis经代理执行生产String reader与transport，覆盖取消排空/下一响应身份、active+15队列、短排队截止、SELECT前generation及派发guard、实际固定10秒硬截止、取消已执行SELECT的DB不确定性、真实TCP EOF/手动重连不重放、另一会话读取、源字节/绝对过期/写计数和64KiB Key。代理注释明确只是不记录AUTH诊断，不声称认证内存里没有秘密。mjs语法检查后运行，尚无真实通过声明。
+
+- 首轮真实恢复脚本完成1组，实际取消等待1ms且B可继续读取。第2组在取消满队列后、刚release代理旧回复就立即新读，state=failed导致预期value失败；夹具清理true。此时具体错误码未记录，不直接判为产品缺陷。脚本现记录首次state/error，只允许busy作为尚在排空的中间状态，有限轮询等待Host实际消费旧帧和清队列后再检查；其他错误仍失败，生产不新增自动重试。
+- 首次尝试写入上述诊断时PowerShell尚未启动即退出-1073741523，整条命令未执行；随后cmd只读git status确认仍只有首批5个变更。使用apply_patch完成本次脚本/日志更新，继续轻量命令验证，不把失败命令当作已执行。
+
+- 真实恢复复验8组全部通过：实际取消1ms返回，生产总截止约10041ms；取消满队列后首次重试确为busy，旧帧消费完后恢复。手动重连仅AUTH/PING、无旧读取重放；A超时/EOF/取消不影响B，源DUMP/绝对过期/写计数不变，64KiB Key身份完整，夹具及目录清理true。保留首轮失败报告recovery-first-attempt-smoke.json，不将有限验收轮询写入生产。
+- 据实补充中英busy提示：取消后旧回复仍可能待排空，等待、刷新状态再手动重试。没有修改已验证的生产队列或增加自动重试；立即严格类型检查，随后以测试专用代理补原生侧栏取消/真实10秒超时/EOF与另一可信会话独立性验收。
+- busy提示修改后三层严格类型通过。新增scripts/smoke-native-recovery.mjs，在真实DSH浏览器主动取消active及queued String读取，并用真实代理命令轨迹检查Host没有执行已取消后检/排队读取；实际10秒超时和TCP EOF后走刷新状态、密码重输、手动重连及显式已选Key读取，独立可信B会话同时可读。smoke-dsh.mjs只增加RECOVERY开关/独立报告和owned plain loopback代理的finally，不更改默认验收路径。先语法检查、完整prepack与隔离安装后运行，尚未宣称原生通过。
+
+## 2026-10-16 任务19完成：真实取消、硬截止与手动恢复
+
+- 完整prepack严格三层类型/构建/225回归通过；包4318a096b047621717654659810e4559f2740ea04373a598616d135e97cc6563按SHA路径仅安装隔离profile，lib70完整集合/字节一致。原有peer缺项提醒保留待21核查，没有盲目另装共享runtime。
+- 原生18组全部通过：UI active/queued取消实际传至Host，释放旧回复后只执行第三次显式读取；取消约31ms、生产固定截止约10100ms。A超时/实际TCP EOF后刷新状态/重输密码/手动重连新generation，只有AUTH/PING、不重放旧读取；显式已选Key读取后原值正确，B可信会话保持自己的目标并可读。
+- 新增docs/verification/19-read-cancellation-recovery.md及真实成功/首轮失败/原生报告和两张截图归档，均核对源件SHA；截图已查看，当前滚动未同时显示全部值区域，值以原生机器断言为证、20继续布局。明确plain真实网络回复延迟不等于Redis计算中止，也不冒称全类型/TLS慢请求和21门禁已完成。
+- 19五项勾选done；20据原票/共享容器/rc.2布局事实核对开始in-progress，四项仍未勾选；同步七个进度入口和方案6.4，保留29票原图/优先级/依赖及不可变参考SHA。归档核对后提交19本地Git，无push。
+- 本票自建DSH/Chrome/Redis及代理全部退出，Host socket回管理连接基线，证书/UUID目录清理true；原生page/console errors为空，只有预期两条readString ERR_ABORTED。用户服务、业务库、日常profile/C盘未动；此前18两对目录和16快照仍按清理拒绝记录保留，没有绕过策略。
+- 归档后复核29票数量/P0=21/P1=8、全部原依赖图和参考SHA不变，当前19 done/20 in-progress/其余9 ready，七个摘要一致，git diff --check通过。提交范围仅19产品提示/传输专项/真实及原生验收脚本、原始证据和必要进度文档，不含依赖、lib、运行夹具或未来20产品代码。

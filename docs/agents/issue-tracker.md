@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–18 done、19 in-progress、其余10票 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–19 done、20 in-progress、其余9票 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–18 done，19 取消与断线恢复 in-progress，其余10票 ready-for-agent；18证据见 docs/verification/18-session-browsing-state.md：222项回归与双会话原生21组通过，安装lib70文件一致。完整类型77组失败记录与各环境失败单独保留，21发布门禁仍需完整重验；29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–19 done，20 布局与主题适配 in-progress，其余9票 ready-for-agent；19证据见 docs/verification/19-read-cancellation-recovery.md：225项回归、真实恢复8组与原生18组通过，安装lib70文件一致。18历史完整类型77组失败及各失败报告继续保留，21发布门禁仍需完整重验；29票范围/优先级/依赖不变，完整首版尚未完成。

@@ -9,13 +9,15 @@ import { chromium } from 'playwright-core'
 import { until, withRedisFixture } from './redis-fixture.mjs'
 import { RedisProfiles } from '../lib/host/profile-store.js'
 import { smokeSessionState } from './smoke-session-state.mjs'
+import { createReadDelayProxy } from './read-delay-proxy.mjs'
+import { smokeNativeRecovery } from './smoke-native-recovery.mjs'
 import { RESP_TYPES } from 'redis'
 
 async function smoke(fixture, profilePhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
+  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -1169,6 +1171,7 @@ async function smoke(fixture, profilePhase) {
           record('native Bloom preserves serialized source bytes and absolute expiry; deletion and Cuckoo conversion discard old statistics/verdicts rather than invent a negative')
         }
         if (process.env.REDIS_SMOKE_SESSIONS === '1') await smokeSessionState({ page, context, origin, rpc, fixture, pane, keys, scanAll, artifacts, report, baseline, workspaceTitle: adopted.workspace.title })
+        if (process.env.REDIS_SMOKE_RECOVERY === '1') await smokeNativeRecovery({ page, rpc, fixture, pane, keys, scanAll, artifacts, report, workspaceId: adopted.workspace.workspaceId })
       }
       await pane.getByRole('button', { name: 'Disconnect', exact: true }).click()
       await password.waitFor()
@@ -1369,7 +1372,13 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
       }
       const phases = process.env.REDIS_SMOKE_PROFILES === '1' ? ['save', 'reopen'] : [undefined]
       for (const phase of phases) {
-        const report = await smoke(fixture, phase)
+        // Only this acceptance mode owns a bounded TCP delay proxy. The real
+        // fixture/admin and outer shutdown assertions stay unchanged.
+        const proxy = process.env.REDIS_SMOKE_RECOVERY === '1' ? await createReadDelayProxy(fixture.settings) : undefined
+        let report
+        try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, recoveryProxy: proxy }, phase) }
+        finally { await proxy?.close() }
+        if (proxy !== undefined) report.recoveryProxyStopped = proxy.connections.every(value => value.closed)
         report.fixtures = [fixture.metadata]
         reports.push(report)
         assert(report.processStopped, 'Own DSH process must be stopped')

@@ -1,0 +1,29 @@
+{
+  "startedAt": "2026-10-16T08:11:15.756Z",
+  "checks": [
+    "actual binary GETRANGE cancellation returns promptly while its bounded reply drains; same-session successor waits, receives its own value, and B remains readable on an independent socket"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "bc969892-7664-46d0-8807-8ee73e618889",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": false,
+  "cancelObservedMs": 1,
+  "error": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n\n'failed' !== 'value'\n\n    at file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-redis-recovery.mjs:58:14\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-redis-recovery.mjs:16:3",
+  "finishedAt": "2026-10-16T08:11:31.782Z"
+}

@@ -117,6 +117,53 @@ describe('bounded Redis socket transport', () => {
       expect(await transport.execute('SCAN', ['0'], signal(), () => undefined)).toEqual([Buffer.from('0'), []])
     }, socket => { socket.write(++reads === 1 ? '-NOPERM fixture denied\r\n' : SCAN_EMPTY) })
   })
+  it('expires a queued deadline without sending it, leaving the active socket reusable', async () => {
+    const firstSeen = deferred<Socket>()
+    let reads = 0
+    await withPeer(async (transport, commands) => {
+      const first = transport.execute('SCAN', ['0'], signal(), () => undefined)
+      const peer = await firstSeen.promise
+      const queued = transport.execute('SCAN', ['0'], signal(), () => undefined, Date.now() + 60)
+      await expect(queued).rejects.toMatchObject({ code: 'timeout' })
+      expect(commands).toEqual(['PING', 'SCAN'])
+      peer.write(SCAN_EMPTY); await first
+      expect(await transport.execute('SCAN', ['0'], signal(), () => undefined)).toEqual([Buffer.from('0'), []])
+      expect(commands).toEqual(['PING', 'SCAN', 'SCAN'])
+    }, socket => { if (++reads === 1) firstSeen.resolve(socket); else socket.write(SCAN_EMPTY) })
+  })
+  it('announces a stalled active deadline once and never dispatches its queued successor', async () => {
+    const firstSeen = deferred<Socket>()
+    await withPeer(async (transport, commands) => {
+      const failure = deferred<Error>(), failures: Error[] = []
+      transport.onFailure(error => { failures.push(error); failure.resolve(error) })
+      const first = transport.execute('SCAN', ['0'], signal(), () => undefined, Date.now() + 100)
+      const firstRejected = expect(first).rejects.toMatchObject({ code: 'timeout' })
+      await firstSeen.promise
+      const queued = transport.execute('SCAN', ['0'], signal(), () => undefined)
+      const queuedRejected = expect(queued).rejects.toMatchObject({ code: 'timeout' })
+      await Promise.all([firstRejected, queuedRejected])
+      expect(await failure.promise).toMatchObject({ code: 'timeout' })
+      expect(failures).toHaveLength(1); expect(commands).toEqual(['PING', 'SCAN'])
+      await expect(transport.execute('SCAN', ['0'], signal(), () => undefined)).rejects.toMatchObject({ code: 'timeout' })
+    }, socket => { firstSeen.resolve(socket) })
+  })
+  it('drains every fragment after cancellation before the next command gets a reply', async () => {
+    const firstSeen = deferred<Socket>()
+    let reads = 0
+    await withPeer(async (transport, commands) => {
+      const controller = new AbortController()
+      const first = transport.execute('SCAN', ['0'], controller.signal, () => undefined)
+      const rejected = expect(first).rejects.toMatchObject({ code: 'cancelled' })
+      const peer = await firstSeen.promise; controller.abort(); await rejected
+      const second = transport.execute('SCAN', ['0'], signal(), () => undefined)
+      peer.write('*2\r\n$1\r\n0\r\n')
+      await new Promise<void>(resolve => setImmediate(resolve))
+      expect(commands).toEqual(['PING', 'SCAN'])
+      peer.write('*0\r\n')
+      expect(await second).toEqual([Buffer.from('9'), []])
+      expect(commands).toEqual(['PING', 'SCAN', 'SCAN'])
+    }, socket => { if (++reads === 1) firstSeen.resolve(socket); else socket.write('*2\r\n$1\r\n9\r\n*0\r\n') })
+  })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {
       const controller = new AbortController(); controller.abort()
