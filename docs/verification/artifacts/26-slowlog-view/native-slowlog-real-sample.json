@@ -1,0 +1,126 @@
+{
+  "state": "page",
+  "error": null,
+  "entries": [
+    {
+      "id": "122",
+      "timestampSeconds": "1792157052",
+      "durationUs": "98",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        151
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "121",
+      "timestampSeconds": "1792157052",
+      "durationUs": "9",
+      "command": "MGET",
+      "loggedArgumentCount": 32,
+      "argumentBytes": [
+        58,
+        58,
+        58,
+        58,
+        58,
+        58,
+        58,
+        58
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "120",
+      "timestampSeconds": "1792157052",
+      "durationUs": "0",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "119",
+      "timestampSeconds": "1792157052",
+      "durationUs": "0",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "118",
+      "timestampSeconds": "1792157052",
+      "durationUs": "1",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "117",
+      "timestampSeconds": "1792157052",
+      "durationUs": "1",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "116",
+      "timestampSeconds": "1792157052",
+      "durationUs": "0",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "115",
+      "timestampSeconds": "1792157052",
+      "durationUs": "1",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "114",
+      "timestampSeconds": "1792157052",
+      "durationUs": "1",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    },
+    {
+      "id": "113",
+      "timestampSeconds": "1792157052",
+      "durationUs": "1",
+      "command": "ECHO",
+      "loggedArgumentCount": 2,
+      "argumentBytes": [
+        56
+      ],
+      "originalArgumentCount": null
+    }
+  ],
+  "count": 10,
+  "more": true,
+  "sampledAt": "2026-10-16T13:24:12.838Z"
+}

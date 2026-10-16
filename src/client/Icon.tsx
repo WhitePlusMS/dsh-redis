@@ -1,5 +1,6 @@
-type IconName = 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'focus' | 'restore'
+type IconName = 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'database' | 'key' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'folder' | 'folderOpen' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'focus' | 'restore'
 const paths: Record<IconName, string> = {
+  history: 'M3 8a7 7 0 1 1 1 7M3 3v5h5M10 6v5l3 2',
   add: 'M10 4v12M4 10h12',
   refresh: 'M16.5 8A6.7 6.7 0 0 0 4 5M3.5 12A6.7 6.7 0 0 0 16 15M16.5 3v5h-5M3.5 17v-5h5',
   disconnect: 'M7 3v5M13 3v5M5 8h10v2a5 5 0 0 1-10 0V8M10 15v3',

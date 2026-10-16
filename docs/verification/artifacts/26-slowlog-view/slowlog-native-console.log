@@ -1,0 +1,25 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke check] installed native slowlog renders the real Redis 8.2.6 six-field newest-first sample with exact IDs/Unix seconds/microseconds; secret and large parameter bodies/client addresses never enter DTO/table, and summary bytes explicitly describe server-truncated fragments
+[smoke check] native count drafts cause no RPC; explicit GET count+1 bounds real 1/10/100-row slices, reports another entry accurately and leaves the frozen server log unchanged; no RESET/LEN subcommand is dispatched
+[smoke check] real ACL refusal of SLOWLOG GET clears prior rows and displays the safe permission state; restoring permission requires an explicit refresh
+[smoke check] labeled HTTP fault cases reject a forged numeric duration in the actual browser decoder and distinguish unavailable command from permission/empty without presenting injected values as real Redis data
+[smoke check] native shared snapshot Cancel/Close reaches actual SLOWLOG Host cancellation, drops the queued read and all late rows, then explicit reopen reads fresh on the same generation with B unaffected
+[smoke check] native SLOWLOG production deadline clears rows and closes only A; manual reconnect advances generation without replay, stale targets dispatch nothing and B remains usable
+[smoke check] actual SLOWLOG TCP EOF clears rows and requires manual recovery; a fixture-admin reset then proves genuine empty success differs from unavailable/permission (the plugin exposes no reset action)
+[smoke check] native slowlog leaves binary-key bytes and absolute expiry unchanged; every plugin diagnostic is bounded GET, while seed/reset/config actions belong only to the owned fixture admin
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":22,"fixturesStopped":true}

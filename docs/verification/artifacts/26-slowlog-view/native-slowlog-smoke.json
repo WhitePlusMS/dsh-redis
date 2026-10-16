@@ -1,0 +1,75 @@
+{
+  "artifactPrefix": "native-slowlog",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T13:23:55.836Z",
+  "packageSha256": "8245456e7f55c18717a03c7421495d5a6d7dc49c0cfaddeff5f963b6e24990e6",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "installed native slowlog renders the real Redis 8.2.6 six-field newest-first sample with exact IDs/Unix seconds/microseconds; secret and large parameter bodies/client addresses never enter DTO/table, and summary bytes explicitly describe server-truncated fragments",
+    "native count drafts cause no RPC; explicit GET count+1 bounds real 1/10/100-row slices, reports another entry accurately and leaves the frozen server log unchanged; no RESET/LEN subcommand is dispatched",
+    "real ACL refusal of SLOWLOG GET clears prior rows and displays the safe permission state; restoring permission requires an explicit refresh",
+    "labeled HTTP fault cases reject a forged numeric duration in the actual browser decoder and distinguish unavailable command from permission/empty without presenting injected values as real Redis data",
+    "native shared snapshot Cancel/Close reaches actual SLOWLOG Host cancellation, drops the queued read and all late rows, then explicit reopen reads fresh on the same generation with B unaffected",
+    "native SLOWLOG production deadline clears rows and closes only A; manual reconnect advances generation without replay, stale targets dispatch nothing and B remains usable",
+    "actual SLOWLOG TCP EOF clears rows and requires manual recovery; a fixture-admin reset then proves genuine empty success differs from unavailable/permission (the plugin exposes no reset action)",
+    "native slowlog leaves binary-key bytes and absolute expiry unchanged; every plugin diagnostic is bounded GET, while seed/reset/config actions belong only to the owned fixture admin",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:6410/api/redisViewer/readSlowLog",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:6410/api/redisViewer/readSlowLog",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "slowlog": {
+    "realRedisVersion": "8.2.6",
+    "wireShape": 6,
+    "displayedMaximum": 100,
+    "cancellationMs": 32,
+    "productionTimeoutMs": 10092,
+    "responseFaultCases": true,
+    "proxyErrors": []
+  },
+  "finishedAt": "2026-10-16T13:24:26.422Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "ffc2bf38-940f-42b7-9c72-b89eb84e2b3d",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

@@ -1,0 +1,95 @@
+{
+  "artifactPrefix": "native-overview",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T13:25:02.236Z",
+  "packageSha256": "8245456e7f55c18717a03c7421495d5a6d7dc49c0cfaddeff5f963b6e24990e6",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native installed INFO reader selects sixteen exact Redis 8.2.6 fields into four cards; no automatic INFO, one no-argument command per explicit opening, and closing preserves the original Key/detail split, raw selection and scroll",
+    "labeled HTTP response fault cases render beyond-53-bit integer text, zero bytes and unreported fields distinctly; actual browser decoder rejects a numeric metric before cards can render",
+    "real isolated Redis ACL -info refuses the fixed diagnostic, clears old cards and exposes only the safe permission message; restoring permission requires explicit refresh",
+    "native cancel and dialog close propagate actual Host cancellation; the queued INFO never dispatches, held real reply drains, late data stays cleared and explicit reopen reads fresh on the same generation while B stays usable",
+    "native INFO uses the production ten-second timeout, clears all old metrics and closes only A; manual status/password/reconnect advances generation without INFO replay, and the prior target dispatches nothing",
+    "actual INFO TCP EOF clears cards without reconnecting; B remains readable and only manual reconnect plus explicit opening obtains a fresh generation snapshot",
+    "native overview preserves selected and binary-key serialized bytes/absolute expiry; snapshots and diagnostics do not edit Redis data or configuration, and the owned proxy reports no protocol errors",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:14895/api/redisViewer/readOverview",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:14895/api/redisViewer/readOverview",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "overview": {
+    "realRedisVersion": "8.2.6",
+    "cancellationMs": 41,
+    "productionTimeoutMs": 10084,
+    "explicitResponseFaultInjection": true,
+    "snapshot": {
+      "state": "value",
+      "error": null,
+      "fields": {
+        "redis_version": "8.2.6",
+        "redis_mode": "standalone",
+        "uptime_in_seconds": "42",
+        "used_memory": "1443912",
+        "used_memory_rss": "27090944",
+        "used_memory_peak": "1461064",
+        "maxmemory": "134217728",
+        "connected_clients": "3",
+        "blocked_clients": "0",
+        "total_connections_received": "5",
+        "total_commands_processed": "308",
+        "instantaneous_ops_per_sec": "14",
+        "keyspace_hits": "32",
+        "keyspace_misses": "0",
+        "expired_keys": "0",
+        "evicted_keys": "0"
+      },
+      "sampledAt": "2026-10-16T13:25:41.091Z"
+    },
+    "proxyErrors": []
+  },
+  "finishedAt": "2026-10-16T13:25:54.822Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "8e23ac3c-7b98-4040-88a7-a7b44864f6c2",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

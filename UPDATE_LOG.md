@@ -1075,3 +1075,25 @@
 ### 26 模型里程碑通过并本地提交
 - pnpm check通过26文件267项（新增8项slowlog模型与1项loopback固定诊断形状）；原始日志保存在docs/verification/artifacts/26-slowlog-view/model-check-console.log。
 - docs/verification/26-slowlog-view.md记录通过范围与尚未完成UI/真实Redis边界；状态仍26进行中。原始日志结尾空行保持，仅该raw文件单次git whitespace例外检查，其他文件标准check，不更改Git配置/跳过hook。
+
+### 26 慢日志UI与共用快照生命周期（待检查）
+- 新增SnapshotDialog.tsx，抽取25已有显式打开/刷新/取消/关闭/晚结果控制；ServerOverview.tsx保留字段分组/单位展示，通过共用组件呈现。避免两套读取规则，原25交互/数据边界保持；后续重跑25原生专项。
+- 新增SlowLogView.tsx，使用现有CollectionTable、数量1/10/25/50/100、精确ID/秒/微秒、受限参数长度与空/更多/完整/不可用状态；本机时间只作辅助，精确Unix秒仍显示，超Date范围明确未报告。
+- ConnectionForm/index/Icon/locales/styles接入独立history入口与共用dialog主题，不挤主Key/详情分栏。立即类型检查；真实Redis和原生UI尚未验收。
+
+### 26 原生专项与打包前检查
+- scripts/smoke-slowlog.mjs及smoke-dsh新增慢日志模式，明确自建fixture admin准备/恢复配置、种子/清空与插件GET边界。验证真实6段/1-10-100条/长参数隐藏、日志不变、ACL、非法DTO注入、取消/队列/10秒/EOF/代次/B/空与Key源不变。脚本node --check通过。
+- README追加当前慢日志操作；smoke-release-boundary方法清单同步26。UI类型检查通过，立即prepack完整检查后固定SHA并隔离安装；新增共用SnapshotDialog的影响将以同包概览原生回归覆盖。
+
+### 26 真实夹具返回形状修正
+- 首次native-slowlog在自建admin的CONFIG GET数组假设处前置失败；产品尚未打开慢日志，报告passed=false且所有进程/夹具停止。原始JSON/log/console/失败截图另存fixture-shape-failure文件，未算验收。
+- 已完整读取实际wsl-redis-fixture与已安装@redis/client6.2.1 CONFIG_GET/generic-transformers：正式configGet转换器默认返回键对象。smoke-slowlog改用该正式SDK方法获取配置并按精确键恢复，不加数组/Map兼容分支，不改产品代码。脚本重新静态检查后用同一个8245456包重跑；包源码清单会按实际新测试脚本hash重建。
+
+### 26 真实慢日志专项通过
+- 同包8245456：慢日志原生22项通过，真实8.2.6六段、1/10/100条、长/敏感参数仅摘要，ACL/取消/10秒/EOF/代次/B/空与源数据不变。actual截图已查看，是可滚动结构表格，背景工作台保留。
+- DEFAULT_RESP=3及CONFIG GET正式对象映射已由实际SDK代码核实；前次失败原件保留，修正仅涉及测试脚本，同包重跑。当前各自建进程/夹具/代理全部停止。文档追加真实/注入/旧形状/接收预算边界；25共用dialog回归正在执行，26仍进行中。
+
+### 26 完整交付、归档与本地提交
+- 同包8245456：prepack267、慢日志22、概览回归21、完整SDK/数据/会话87、布局24全部通过；慢日志取消32ms、超时10092ms，真实与HTTP注入边界在26验收文档分开记录。所有自建DSH/Redis/代理停止。
+- docs/verification/artifacts/26-slowlog-view保全39原件+inventory，包括前置fixture形状失败，当前包89文件/80lib/12peers/2依赖及实际源码SHA可核对。六处当前进度同步01–26done/27–29ready，26五项勾选且图不变。
+- 保留raw日志原始结尾空行；仅明确raw路径单次core.whitespace=-blank-at-eof，其他文件标准diff --check，不改Git配置/跳过hook。本地语义提交，不push。

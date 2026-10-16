@@ -1,0 +1,49 @@
+{
+  "artifactPrefix": "native-slowlog",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T13:21:33.959Z",
+  "packageSha256": "8245456e7f55c18717a03c7421495d5a6d7dc49c0cfaddeff5f963b6e24990e6",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "error": "The expression evaluated to a falsy value:\n\n  assert(Array.isArray(oldThreshold) && Array.isArray(oldLength))\n",
+  "errorStack": "AssertionError [ERR_ASSERTION]: The expression evaluated to a falsy value:\n\n  assert(Array.isArray(oldThreshold) && Array.isArray(oldLength))\n\n    at smokeSlowLog (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-slowlog.mjs:24:3)\n    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)\n    at async smoke (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1188:54)\n    at async withRedisFixture.tls (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1421:24)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1261:5",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nsession-state-0bed886b-18d9-4802-b074-f6f2d305a707\nsession-state-af0b36ca-83d2-44fd-906a-4704e3bd20fd\nsession-state-865ac2da-9909-46a0-8c33-58564b30bc06\nsession-state-bece1e0d-3f60-4abc-9cb2-4eb877a5e43e\nsession-state-caa8860f-0977-4a34-a4a9-15c192fa7e04\nsession-state-13f73de6-3cba-47e8-8250-cd2dad488a41\nsession-state-3675eb14-1bf4-4981-97c7-bca5bc694daf\nsession-state-1d00db98-c982-4f56-ad71-69515645183e\nsession-state-97c1b089-11cd-4528-a764-2b5bece37e86\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nWorkspace Write\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\nMy connections\n127.0.0.1:1626\nDB 0\nSessions 6a0fb5e9-22fe-4d3e-9cb3-7225433dd2ad\n127.0.0.1:13424\nSessions ab6db273-33cd-4082-9ac8-a257d86f97e2\n127.0.0.1:14124\nSessions a65acc7c-8356-4b6d-87f5-d9c6758a0950\n127.0.0.1:9610\nSessions 980a90db-3daa-4dfe-9e2d-beb06582c81e\n127.0.0.1:2940\nConnection settings\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 0 · Scan incomplete\n\nNo keys loaded.\n\nSelect a key from the list to inspect its content.\n\nConnected · 127.0.0.1:1626\n9:21:50 PM\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T13:21:52.012Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "13fe24a4-8558-46cb-abca-2471e8c796e1",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}
