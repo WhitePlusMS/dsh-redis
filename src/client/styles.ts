@@ -68,12 +68,18 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
 .dsh-redis .redis-key-catalog .redis-db { display:flex; flex-direction:row; align-items:end; }
 .dsh-redis .redis-db label { flex:1; }
 .dsh-redis .redis-key-catalog > p[role=status] { font-size:10px; }
-.dsh-redis .redis-key-list { display:flex; flex-direction:column; flex:1; gap:1px; min-height:60px; overflow:auto; overscroll-behavior:contain; }
-.dsh-redis .redis-key-list button { width:100%; min-height:29px; gap:5px; padding:4px; text-align:left; justify-content:flex-start; min-width:0; flex-shrink:0; border:0; border-radius:2px; background:transparent; }
+.dsh-redis .redis-namespace-tools { display:flex; align-items:center; gap:1px; position:relative; flex-shrink:0; }
+.dsh-redis .redis-namespace-tools [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-namespace-tools .redis-help { margin-left:auto; }
+.dsh-redis .redis-namespace-tools .redis-help-content { position:absolute; z-index:4; top:29px; left:0; width:min(240px,calc(100cqw - 14px)); max-height:55dvh; overflow:auto; }
+.dsh-redis .redis-key-list { flex:1; min-height:60px; overflow:auto; overscroll-behavior:contain; overflow-anchor:none; }
+.dsh-redis .redis-key-spacer { position:relative; min-width:0; }
+.dsh-redis .redis-key-list button { position:absolute; left:0; width:100%; height:30px; min-height:30px; gap:5px; padding:4px; text-align:left; justify-content:flex-start; min-width:0; border:0; border-radius:2px; background:transparent; }
 .dsh-redis .redis-key-list button:hover { background:var(--redis-selected); }
 .dsh-redis .redis-key-list span { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; font-size:11px; }
 .dsh-redis .redis-key-list small { flex-shrink:0; color:var(--dsw-alias-label-secondary); font-size:9px; }
-.dsh-redis .redis-key-list [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-key-list [aria-selected=true] { background:var(--redis-selected); }
+.dsh-redis .redis-key-list:focus-visible [data-active=true] { outline:1px solid var(--dsw-alias-label-primary); outline-offset:-1px; }
 .dsh-redis .redis-key-detail { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
 .dsh-redis .redis-inspector-heading { display:flex; align-items:center; gap:6px; padding:6px 9px; min-height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-inspector-heading strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 11px/1.4 Consolas,monospace; }
@@ -138,6 +144,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; }
   .dsh-redis .redis-key-catalog .redis-db { flex-wrap:wrap; align-items:stretch; }
   .dsh-redis .redis-key-catalog .redis-db label { flex-basis:100%; }
   .dsh-redis .redis-key-list small { display:none; }
+  .dsh-redis .redis-key-list [data-namespace-count] { display:block; }
   .dsh-redis .redis-key-list span { font-size:10px; }
   .dsh-redis .redis-key-catalog .redis-actions { gap:3px; }
   .dsh-redis .redis-key-catalog button { font-size:10px; padding:3px; }

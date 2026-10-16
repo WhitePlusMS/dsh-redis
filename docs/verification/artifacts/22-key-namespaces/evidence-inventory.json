@@ -1,0 +1,259 @@
+{
+  "createdAt": "2026-10-16T11:23:08.460Z",
+  "packageSha256": "563388a2e6803e188328defc0414a14fa0b728623c5681191678735dc21519fb",
+  "sourceParentCommit": "e05bec047336157c7f66d89d655e6b0e0ae05bac",
+  "files": [
+    {
+      "file": "namespaces-563388a2-keyboard-namespaces-layout-console.log",
+      "bytes": 1123,
+      "sha256": "3b91e3abaa555640a1c40a66035602dedceb0eca715fccabf4a71e686e332e47",
+      "source": ".scratch/artifacts/namespaces-563388a2-keyboard-namespaces-layout-console.log"
+    },
+    {
+      "file": "namespaces-563388a2-keyboard-native-workbench-failure.png",
+      "bytes": 99970,
+      "sha256": "51dce26b98b0911a9092c741044bda71c6c3f5197e7b710812caa3348f0edb45",
+      "source": ".scratch/artifacts/namespaces-563388a2-keyboard-native-workbench-failure.png"
+    },
+    {
+      "file": "namespaces-563388a2-keyboard-native-workbench-smoke.json",
+      "bytes": 4720,
+      "sha256": "34564afa5101ce19fe8c4045371fa55614eb88da94f6902b8fe656274ac23176",
+      "source": ".scratch/artifacts/namespaces-563388a2-keyboard-native-workbench-smoke.json"
+    },
+    {
+      "file": "namespaces-563388a2-keyboard-native-workbench-smoke.log",
+      "bytes": 115,
+      "sha256": "2d3be10e679d053b044cef18f0e03aa4660ff3d1712e890f4712cfcfe590086c",
+      "source": ".scratch/artifacts/namespaces-563388a2-keyboard-native-workbench-smoke.log"
+    },
+    {
+      "file": "namespaces-563388a2-located-namespaces-native-console.log",
+      "bytes": 3311,
+      "sha256": "5ab252e95ad675bcece38fd7a39efa959bdcd39fddf2092f0bd3223ad1b8e429",
+      "source": ".scratch/artifacts/namespaces-563388a2-located-namespaces-native-console.log"
+    },
+    {
+      "file": "namespaces-563388a2-located-native-namespaces-narrow.png",
+      "bytes": 36702,
+      "sha256": "5825f77c297137f3f1a45eced4866f32a4173d7ca21e27fce21a9b5c8ea49103",
+      "source": ".scratch/artifacts/namespaces-563388a2-located-native-namespaces-narrow.png"
+    },
+    {
+      "file": "namespaces-563388a2-located-native-namespaces-smoke.json",
+      "bytes": 4897,
+      "sha256": "5a9e19cc21b02a2bcd6a4dfd1f9c0670f59c1679aaa9c293a60f6c55325c80b3",
+      "source": ".scratch/artifacts/namespaces-563388a2-located-native-namespaces-smoke.json"
+    },
+    {
+      "file": "namespaces-563388a2-located-native-namespaces-smoke.log",
+      "bytes": 388,
+      "sha256": "5f8d952007e082a377d39cafa733da67820bd18b8cf19bee7d3b9f9a5c0157c1",
+      "source": ".scratch/artifacts/namespaces-563388a2-located-native-namespaces-smoke.log"
+    },
+    {
+      "file": "namespaces-563388a2-located-native-namespaces-wide.png",
+      "bytes": 61561,
+      "sha256": "015b5697802f21a2365c1d7b0970a3cd31866098808696a0f8b1546cac00ff62",
+      "source": ".scratch/artifacts/namespaces-563388a2-located-native-namespaces-wide.png"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-namespaces-install-console.log",
+      "bytes": 307,
+      "sha256": "79f2a6151a52ebf61a30a8a44efedf87f603c55e0547316c3f8248076a4b6eea",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-namespaces-install-console.log"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-namespaces-native-console.log",
+      "bytes": 1558,
+      "sha256": "e4025c600275149b986efab4688161dfeaffaa781daaf706d9b252c494e59769",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-namespaces-native-console.log"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-namespaces-pack-console.log",
+      "bytes": 8476,
+      "sha256": "01f966ca83c58d514000e277e5196822942a363a0655f33ca387bbc5c34faf28",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-namespaces-pack-console.log"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-native-namespaces-failure.png",
+      "bytes": 93688,
+      "sha256": "3a57e6efa0e119046f7e883902c5aef73ae2061170c90973b79d8558201529e5",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-native-namespaces-failure.png"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-native-namespaces-smoke.json",
+      "bytes": 5255,
+      "sha256": "e87c688cc15aa56daff2a41408a7fdaa8a7ebfd9d6667326c8779f1f8c78f06a",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-native-namespaces-smoke.json"
+    },
+    {
+      "file": "namespaces-e7db52a6-first-native-namespaces-smoke.log",
+      "bytes": 115,
+      "sha256": "52b343b0ef1549ed36d627e23b3418702eafbfe01ceeaae4bddf67f643734fe8",
+      "source": ".scratch/artifacts/namespaces-e7db52a6-first-native-namespaces-smoke.log"
+    },
+    {
+      "file": "namespaces-install-console.log",
+      "bytes": 306,
+      "sha256": "b89d71a330715d372aad6e7ce77cae2c145ba887dcd7b83b66c04baee16e37e8",
+      "source": ".scratch/artifacts/namespaces-install-console.log"
+    },
+    {
+      "file": "namespaces-layout-console.log",
+      "bytes": 3128,
+      "sha256": "c088f8d6ad1121cb17cb310acbdb52e50c213d991a9471ddf117104f9f470914",
+      "source": ".scratch/artifacts/namespaces-layout-console.log"
+    },
+    {
+      "file": "namespaces-native-console.log",
+      "bytes": 3311,
+      "sha256": "5ab252e95ad675bcece38fd7a39efa959bdcd39fddf2092f0bd3223ad1b8e429",
+      "source": ".scratch/artifacts/namespaces-native-console.log"
+    },
+    {
+      "file": "namespaces-pack-console.log",
+      "bytes": 8475,
+      "sha256": "7f308775fd709faec78fba9804966cd58a7dbaea16b233930b1bc6e67fdceda7",
+      "source": ".scratch/artifacts/namespaces-pack-console.log"
+    },
+    {
+      "file": "namespaces-package-console.log",
+      "bytes": 185,
+      "sha256": "9b9230fdc4c8f942e3ebe109176899d6b9bfe6705c488e6e731227d1c84fac31",
+      "source": ".scratch/artifacts/namespaces-package-console.log"
+    },
+    {
+      "file": "namespaces-release-console.log",
+      "bytes": 10462,
+      "sha256": "530c6a6e71b46fe504d7880767a32d967e962c8620fe7ecd8e5cfaa9d7b2bb57",
+      "source": ".scratch/artifacts/namespaces-release-console.log"
+    },
+    {
+      "file": "native-namespaces-narrow.png",
+      "bytes": 36964,
+      "sha256": "117189be08c79799f622d8e9d7a71c74a1e59fc664dae2d59769e320788f1089",
+      "source": ".scratch/artifacts/native-namespaces-narrow.png"
+    },
+    {
+      "file": "native-namespaces-smoke.json",
+      "bytes": 4898,
+      "sha256": "bc9eace87babd5a6706e137045d840473e06479c9f3af0f4b668c1b05b4d09a5",
+      "source": ".scratch/artifacts/native-namespaces-smoke.json"
+    },
+    {
+      "file": "native-namespaces-smoke.log",
+      "bytes": 389,
+      "sha256": "566543357fb6ea60f45a661948a414cb684aee3c42ff19d4ceeaa251c8d8aee4",
+      "source": ".scratch/artifacts/native-namespaces-smoke.log"
+    },
+    {
+      "file": "native-namespaces-wide.png",
+      "bytes": 61256,
+      "sha256": "685707cac9f52d74071b2def10acb1697e4207b4fd0e6ec86e8e52f1fe5d975a",
+      "source": ".scratch/artifacts/native-namespaces-wide.png"
+    },
+    {
+      "file": "native-namespaces.png",
+      "bytes": 79161,
+      "sha256": "361cde65101042fbd35eecab2f70b619ccae031381ed48e482f58a0deccf85ed",
+      "source": ".scratch/artifacts/native-namespaces.png"
+    },
+    {
+      "file": "native-sessions-b.png",
+      "bytes": 84345,
+      "sha256": "de221c9409a5c87fb0ee0b0c04da8b3e813b24aea5992a0c8784909fd45ff9d8",
+      "source": ".scratch/artifacts/native-sessions-b.png"
+    },
+    {
+      "file": "native-ui-release-smoke.json",
+      "bytes": 13333,
+      "sha256": "3b335000561a3e93e6e2592b035c736c2ee589465a18cd6c922c89319c99a6a0",
+      "source": ".scratch/artifacts/native-ui-release-smoke.json"
+    },
+    {
+      "file": "native-ui-release-smoke.log",
+      "bytes": 403,
+      "sha256": "00c9675c96ff31a1f8b54bcf2c7a6209b2ffc61459a96213dea5128ec73d2386",
+      "source": ".scratch/artifacts/native-ui-release-smoke.log"
+    },
+    {
+      "file": "native-ui-release.png",
+      "bytes": 76999,
+      "sha256": "626cfc136b46d2f97a68c476a50e7c1c1fbaff4ba68bfd9ece16217ea000e992",
+      "source": ".scratch/artifacts/native-ui-release.png"
+    },
+    {
+      "file": "native-workbench-loading.png",
+      "bytes": 81380,
+      "sha256": "d8d44909f67d3f37f79ca40bdfa4affbc3c3ba7311eaaa94e38528ea3ad7fa6c",
+      "source": ".scratch/artifacts/native-workbench-loading.png"
+    },
+    {
+      "file": "native-workbench-narrow-dark-data.png",
+      "bytes": 89843,
+      "sha256": "d43a563199d5ce66df3249501166df07d90c1dee43d645e1f695c1592eb6dd7a",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark-data.png"
+    },
+    {
+      "file": "native-workbench-narrow-dark.png",
+      "bytes": 87347,
+      "sha256": "b68f14954ebfd4423c932ae642cedf77d5a5661dd3aae001684b5e4bba971339",
+      "source": ".scratch/artifacts/native-workbench-narrow-dark.png"
+    },
+    {
+      "file": "native-workbench-panel-narrow-dark.png",
+      "bytes": 33598,
+      "sha256": "4a68f23edcb714a0d26448ff9ffb1836d6dfc0d898cb1da5cb59b1ef7007e835",
+      "source": ".scratch/artifacts/native-workbench-panel-narrow-dark.png"
+    },
+    {
+      "file": "native-workbench-panel-wide-light.png",
+      "bytes": 53377,
+      "sha256": "81c427e26b1b25a0aab0b32ebf4cacb1b80824ac164c80071b74f7c1a53c3611",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-light.png"
+    },
+    {
+      "file": "native-workbench-panel-wide-zh.png",
+      "bytes": 52122,
+      "sha256": "a7e2bcdf978d7c9dbb8a4816a2c42b45c20e2d710146adae08572b807669cd2d",
+      "source": ".scratch/artifacts/native-workbench-panel-wide-zh.png"
+    },
+    {
+      "file": "native-workbench-smoke.json",
+      "bytes": 16916,
+      "sha256": "df5535194e35077832493f964dc12e15198f9cb9c71e4648ee7c86474ac63af6",
+      "source": ".scratch/artifacts/native-workbench-smoke.json"
+    },
+    {
+      "file": "native-workbench-smoke.log",
+      "bytes": 208,
+      "sha256": "b9e3487edaca2749ee210bfac696ebd8bf02e10d15d6a4f927f582f2cd892992",
+      "source": ".scratch/artifacts/native-workbench-smoke.log"
+    },
+    {
+      "file": "native-workbench-wide-light.png",
+      "bytes": 106287,
+      "sha256": "97cf8989b9b3273aefc85269afd568aa364cec1bc76b64b6a80568b685a74b42",
+      "source": ".scratch/artifacts/native-workbench-wide-light.png"
+    },
+    {
+      "file": "native-workbench-wide-zh.png",
+      "bytes": 105373,
+      "sha256": "2fdd1474c79139004322cd6213d63a11405ef6cd4ce31bc604952c23e6c9da21",
+      "source": ".scratch/artifacts/native-workbench-wide-zh.png"
+    },
+    {
+      "file": "native-workbench.png",
+      "bytes": 88349,
+      "sha256": "f1466e098f96ed9a66a7ccb9310c99c97f9f8775a1282fe8d5bacaf1851eec89",
+      "source": ".scratch/artifacts/native-workbench.png"
+    },
+    {
+      "file": "workbench-release-manifest.json",
+      "bytes": 54435,
+      "sha256": "83c065c3a50ebf5376b80e17f098a87045c73b5f2db08606461f1c4b246e7216",
+      "source": ".scratch/artifacts/workbench-release-manifest.json"
+    }
+  ]
+}

@@ -37,7 +37,7 @@ String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、H
 1. 使用 Node `^22.19.0 || >=24.0.0` 与 DSH `0.2.0-rc.2`，在项目目录执行 `pnpm install --frozen-lockfile`，然后执行 `pnpm pack --pack-destination .scratch/artifacts`。打包前会执行严格类型、构建和回归检查；产物为 `.scratch/artifacts/dsh-redis-0.1.0.tgz`。RC 是预发布版本。
 2. 把包安装到要使用的 **web profile**，例如 PowerShell：`dsh plugin --profile web add 'E:\项目demo\dsh-redis\.scratch\artifacts\dsh-redis-0.1.0.tgz' --ignore-scripts`。再打开该 profile 的 DSH Web 界面。完整可复现实验、包 SHA 和安装文件核对见发布验收文档；开发验证使用独立 `DSH_HOME`。
 3. 进入一个 DSH 会话，展开右侧栏，在引导入口选择 Redis。点击左侧连接或“连接配置”打开弹窗，填写主机、端口及可选 ACL 用户名/密码；TLS 可填受信 CA PEM，不支持关闭证书校验。先测试连接，再点连接，成功后关闭配置弹窗。单机默认从 DB 0 开始，浏览恢复不会自动连接、SELECT 或读取。
-4. 界面采用 Database/RESP 工作台结构：左侧连接/DB，中间 Key 导航，右侧数据详情；受限宽度把连接栏压缩为配置入口，Key 与详情仍并列。手动选择 DB，填写 Redis `MATCH` 模式并扫描；继续扫描需要显式点击。此处是 Redis glob 匹配，不是全文内容搜索。点击 Key 查看有界数据页；切换“数据 / 元信息”不重复读取。
+4. 界面采用 Database/RESP 工作台结构：左侧连接/DB，中间 Key 导航，右侧数据详情；受限宽度把连接栏压缩为配置入口，Key 与详情仍并列。手动选择 DB，填写 Redis `MATCH` 模式并扫描；继续扫描需要显式点击。此处是 Redis glob 匹配，不是全文内容搜索。Key 可切换命名空间树和平铺列表，设置入口可修改分隔符，目录数字仅代表组内已加载数量。长列表只渲染可见行；“定位已选 Key”展开已加载路径并返回位置，方向键浏览、Enter 查看。最多分组16层，更深内容保留在叶名称；这些显示操作不访问 Redis，刷新、换筛选或会话后不恢复旧缓存/展开状态。点击 Key 查看有界数据页；切换“数据 / 元信息”不重复读取。
 5. String 按字节窗口读取；Hash/Set 增量扫描；List/ZSet 按范围；Stream 按消息 ID；RedisJSON 按路径；TimeSeries 按时间范围。Bitmap/HLL 从 String、GEO 从 ZSet 手动选择解释方式；不会凭底层 TYPE 猜测。Bloom 只查看 BF 信息和单个候选成员的“可能存在/不存在”，不列举成员。Cuckoo 不在当前范围。
 6. Text、JSON、Hex、Base64 在紧凑工具栏切换；Base64 内容解码单独选择，复制只复制当前已读内容。完整 Key 字节身份放在“元信息”。格式化与复制不读取 Redis。大值会显示当前覆盖范围、截断或预算限制；缩小窗口/路径/页大小后手动读取。详细说明和预算通过帮助入口展开，错误和部分结果提示保持可见。
 7. 连接配置在当前 DSH profile 共用，不保存密码；会话分别记住连接资料选择、DB、MATCH、Key、显示格式和已提交的 String 窗口。会话切换不恢复数据缓存或游标；点“读取已选 Key”才发起读取。重新连接从 DB 0 开始，必要时先手动选择记住的 DB。

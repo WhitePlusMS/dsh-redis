@@ -1,0 +1,68 @@
+{
+  "artifactPrefix": "native-namespaces",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T11:11:37.456Z",
+  "packageSha256": "e7db52a60946e0204c55a7a61b794f985aed68949780d3d0322cef0edfc3773c",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native namespace groups show only the current loaded count and More available; expansion and keyboard navigation issue no Redis commands",
+    "real SCAN continuation incrementally updates existing groups without rereading the selected value or moving the viewport anchor",
+    "native 5105-key fixture stops at the 5000-key cache limit with an incomplete label; End reaches row 4999 with bounded DOM and Locate expands the exact selected byte path without reading",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "namespaces": {
+    "cacheRowLimit": 5000,
+    "cacheEncodedBytes": 2097152,
+    "maxDepth": 16,
+    "rowHeight": 30,
+    "windows": [
+      {
+        "total": 5000,
+        "mounted": 23,
+        "height": 499,
+        "top": 149501
+      }
+    ],
+    "noPresentationRedis": true,
+    "rowLimitScanPages": 58
+  },
+  "error": "Timed out: actual native sidebar width",
+  "errorStack": "Error: Timed out: actual native sidebar width\n    at until (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/redis-fixture.mjs:20:39)\n    at async resizeSidebar (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/native-view-controls.mjs:68:3)\n    at async smokeKeyNamespaces (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-key-namespaces.mjs:135:5)\n    at async smoke (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1183:57)\n    at async withRedisFixture.tls (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1411:24)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1253:5",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nsession-state-caa8860f-0977-4a34-a4a9-15c192fa7e04\nsession-state-13f73de6-3cba-47e8-8250-cd2dad488a41\nsession-state-3675eb14-1bf4-4981-97c7-bca5bc694daf\nsession-state-1d00db98-c982-4f56-ad71-69515645183e\nsession-state-97c1b089-11cd-4528-a764-2b5bece37e86\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\n127.0.0.1:2689\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 5000 · Local cache limit reached. Narrow the pattern and refresh; this list is incomplete.\n\nStatus checked at 7:12:03 PM\n\"nav\"\n5000\n\"07\"\n504\n\"0497\"\n11\n\"1067\"\n11\n\"4937\"\n11\n\"1077\"\n11\n\"1407\"\n11\n\"4197\"\n11\n\"1487\"\n11\n\"4397\"\n11\n\"3507\"\n11\n\"0357\"\n11\n\"0467\"\n11\n\"0437\"\n11\n\"5077\"\n11\n\"4837\"\n11\n\"3677\"\n11\n\"3227\"\n11\n\"2257\"\n11\n\"2687\"\n11\n\"0397\"\n11\n\"4277\"\n11\n\"4357\"\n11\n\"2777\"\n11\n\"0017\"\n11\n\"nav:07:0497\"\nData\nMetadata\nKey details · \"nav:07:0497\"\nView as Bitmap\nView as HyperLogLog\nStart byte\nWindow bytes\n256\n4096\n16384\n65536\nRead / refresh\nNext window\nStatus checked at 7:11:58 PM\nTYPE\nstring\nTTL (ms)\nNo expiration\n\nComplete value · Start byte 0 · 9 bytes\n\nText\nJSON\nHex\nBase64\nDecode Base64…\nDecode Base64 text to Text\nDecode Base64 text to JSON\nvalue-497\nConnected · 127.0.0.1:2689\n7:11:57 PM\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T11:12:08.357Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "ee6ad48e-b893-4c46-be2c-cb30a9c929c9",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

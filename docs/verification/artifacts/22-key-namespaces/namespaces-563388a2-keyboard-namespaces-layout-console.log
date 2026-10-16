@@ -1,0 +1,20 @@
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] native incremental MATCH scan and explicit continuation load 230 distinct keys
+[smoke check] native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows
+[smoke check] native DB switch clears previous keys and selects the independent DB1 key
+[smoke check] native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds
+[smoke] Expected values to be strictly equal:
++ actual - expected
+
++ ':r14:-0'
+- ':r14:-178'
+         ^
+
+[smoke] Test process stopped: true
+{"passed":false,"checks":11,"fixturesStopped":true}

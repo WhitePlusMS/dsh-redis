@@ -8,6 +8,7 @@ import { appendKeys, emptyKeyCache } from './key-cache.ts'
 import { NS } from './locales.ts'
 import { KeyDetails, type StringActions } from './KeyDetails.tsx'
 import { Icon } from './Icon.tsx'
+import { KeyCatalog } from './KeyCatalog.tsx'
 import type { HashActions } from './HashView.tsx'
 import type { ListActions } from './ListView.tsx'
 import type { SetActions } from './SetView.tsx'
@@ -105,14 +106,10 @@ export function KeyBrowser(props: Props) {
       {sampledAt !== null && <small>{t('connection.sampledAt')} <time dateTime={sampledAt}>{new Date(sampledAt).toLocaleTimeString()}</time></small>}
       {busy && <p role="status">{t('connection.busy')}</p>}
       {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-      <div className="redis-key-list" aria-label="Keys">
-        {cache.keys.length === 0 ? <p>{t('keys.empty')}</p> : cache.keys.map(key => <button type="button" key={key.base64} data-key-base64={key.base64} aria-pressed={selected?.base64 === key.base64} onClick={() => {
-          browsing.update({ db: connection.db, keyBase64: key.base64, ...(selected?.base64 === key.base64 ? {} : { stringOffset: '0', stringCount: 65536 }) })
-          setSelected(key); setOpened(true); setDetailTab('data')
-        }}>
-          <Icon name="key" /><span>{key.label}</span><small title={`${key.byteLength} ${t('keys.bytes')}`}>{key.byteLength}</small>
-        </button>)}
-      </div>
+      <KeyCatalog keys={cache.keys} selected={selected} t={t} select={key => {
+        browsing.update({ db: connection.db, keyBase64: key.base64, ...(selected?.base64 === key.base64 ? {} : { stringOffset: '0', stringCount: 65536 }) })
+        setSelected(key); setOpened(true); setDetailTab('data')
+      }} />
     </div>
     <div className="redis-key-detail">
       {selected !== null ? <>

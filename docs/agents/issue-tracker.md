@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–21 done、新界面包复验完成、22–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–22 done、23–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–21 done；Database/RESP工作台改版及同一新版安装包复验完成（226回归，原生87/17/17/24/18组）。22–29 ready-for-agent，原29票编号/优先级/依赖不变；新版证据见docs/verification/20-database-workbench.md与21-workbench-release.md，旧包记录保留各自范围。
+当前进度：01–22 done；23–29 ready-for-agent。第22项同一563388a2包通过232回归、命名空间25组、全类型/双会话/SDK87组及中英/明暗工作台24组；证据见docs/verification/22-key-namespaces.md。原29票编号/优先级/依赖不变，旧包记录保留各自范围。

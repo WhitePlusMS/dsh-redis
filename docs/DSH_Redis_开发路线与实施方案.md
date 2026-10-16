@@ -87,7 +87,7 @@ Git Graph 的 HTTP 外网头像逻辑、Git subprocess 注入和模型工具注�
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–21 done、新界面包复验完成、22–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–22 done、23–29 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 #### 稳定正式版要求（以后另行迁移时参考）
 
@@ -696,8 +696,12 @@ String SET 丢 TTL、Hash 删除参数、List 按值删除等旧项目写入问�
 
 [R10]: https://redis.io/docs/latest/develop/reference/protocol-spec/
 
-当前进度：01–21 done；Database/RESP工作台改版及同一新版安装包复验完成（226回归，原生87/17/17/24/18组）。22–29 ready-for-agent，原29票编号/优先级/依赖不变；新版证据见docs/verification/20-database-workbench.md与21-workbench-release.md，旧包记录保留各自范围。
+当前进度：01–22 done；23–29 ready-for-agent。第22项同一563388a2包通过232回归、命名空间25组、全类型/双会话/SDK87组及中英/明暗工作台24组；证据见docs/verification/22-key-namespaces.md。原29票编号/优先级/依赖不变，旧包记录保留各自范围。
 
 ### 6.8 新工作台安装包复验完成
 
 Database/RESP三块导航、紧凑工具栏/按需帮助以及窄栏持续左右由同包509aa7b06132ab0fa3123bafca18f75f43df10ac019c00cfbffdcfc950373e43完成中英/主题24组；完整226回归、12类/双会话/SDK与React87组、TLS含DB/Key两阶段17/17组、真实取消/超时/EOF18组均通过。原始当前包证据、源码/锁/产物SHA、阶段失败与清理范围见[21新版验收](verification/21-workbench-release.md)。01–21 done，22–29仍待执行，参考来源与原29票图保留。
+
+### 6.9 第22项命名空间与虚拟目录（已验收）
+
+Database/RESP左右工作台内增加原字节分组、可配置分隔符、组内已加载计数、30px虚拟行、16层有界路径、增量锚点及无读取定位，保留原SCAN/游标/缓存和同一详情状态。具体文件职责、完整实现方法、实际包563388a2的232回归/25命名空间/87全类型与会话/24中英明暗布局、阶段失败与复现方式见[第22项实现与验证](verification/22-key-namespaces.md)。本票不增加Host/RPC接口，2MiB仍是编码DTO而非整个JS堆；23–29为后续原票。

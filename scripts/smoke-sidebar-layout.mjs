@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { RESP_TYPES } from 'redis'
 import { until } from './redis-fixture.mjs'
-import { openConnectionSettings, chooseValueFormat, assertSelectedIdentity } from './native-view-controls.mjs'
+import { openConnectionSettings, chooseValueFormat, assertSelectedIdentity, findLoadedKey, resizeSidebar } from './native-view-controls.mjs'
 
 export async function smokeSidebarLayout({ page, fixture, pane, keys, scanAll, artifacts, report }) {
   const record = (...checks) => { report.checks.push(...checks); console.log('[smoke check] ' + checks.join(' | ')) }
@@ -18,13 +18,7 @@ export async function smokeSidebarLayout({ page, fixture, pane, keys, scanAll, a
   const countRead = request => { if (readerNames.has(request.url().split('/').at(-1))) reads++ }
   page.on('request', countRead)
   async function width(wanted) {
-    const handle = page.locator('[data-side="rightbar"]')
-    const box = await handle.boundingBox(), current = await panel.boundingBox(); assert(box && current)
-    const x = box.x + box.width / 2, y = box.y + box.height / 2
-    await page.mouse.move(x, y); await page.mouse.down()
-    await page.mouse.move(x + current.width - wanted, y, { steps: 8 }); await page.mouse.up()
-    await until(async () => Math.abs((await panel.boundingBox()).width - wanted) < 6, 'actual sidebar drag reached ' + wanted)
-    report.layout.widths.push({ requested: wanted, actual: (await panel.boundingBox()).width })
+    report.layout.widths.push({ requested: wanted, actual: await resizeSidebar(page, pane, wanted) })
   }
   async function theme(dark) {
     await page.getByRole('button', { name: 'Settings', exact: true }).click()
@@ -68,7 +62,7 @@ export async function smokeSidebarLayout({ page, fixture, pane, keys, scanAll, a
   }
   async function open(key, endpoint = 'readString', trigger) {
     assert.equal(await scanAll(key === fixture.layoutLongKey ? 'layout:long:*' : key), 1)
-    const selected = keys.locator('[data-key-base64="' + Buffer.from(key).toString('base64') + '"]')
+    const selected = await findLoadedKey(keys, Buffer.from(key).toString('base64'))
     const responseFor = response => response.url().endsWith('/api/redisViewer/' + endpoint) && response.request().postDataJSON().payload.args.request.keyBase64 === Buffer.from(key).toString('base64')
     let response
     if (trigger === undefined) [response] = await Promise.all([page.waitForResponse(responseFor), selected.click()])
@@ -83,12 +77,15 @@ export async function smokeSidebarLayout({ page, fixture, pane, keys, scanAll, a
   try {
     await width(340)
     assert.equal(await scanAll('*'), fixture.expectedKeyCount)
-    const identity = Buffer.from('native:140').toString('base64'), selected = keys.locator('[data-key-base64="' + identity + '"]')
-    await selected.scrollIntoViewIfNeeded()
-    const before = await keys.locator('.redis-key-list').evaluate(element => element.scrollTop)
-    await selected.focus(); await selected.press('Enter')
+    const identity = Buffer.from('native:140').toString('base64'), selected = await findLoadedKey(keys, identity)
+    const keyList = keys.locator('.redis-key-list'), selectedIndex = Number(await selected.getAttribute('data-row-index'))
+    await keyList.focus(); await keyList.press('Home')
+    for (let index = 0; index < selectedIndex; ++index) await keyList.press('ArrowDown')
+    const before = await keyList.evaluate(element => element.scrollTop)
+    await keyList.press('Enter')
     await details.locator('[data-value-coverage]').waitFor()
-    assert.equal(await selected.evaluate(element => document.activeElement === element), true)
+    assert.equal(await keys.locator('.redis-key-list').evaluate(element => document.activeElement === element), true)
+    assert.equal(await keys.locator('.redis-key-list').getAttribute('aria-activedescendant'), await selected.getAttribute('id'))
     await chooseValueFormat(details, 'text')
     assert.equal(await details.locator('[data-value-preview]').innerText(), '140')
     assert.equal(await keys.locator('.redis-key-catalog').isVisible(), true)
@@ -103,7 +100,7 @@ export async function smokeSidebarLayout({ page, fixture, pane, keys, scanAll, a
     await help.locator('summary').click()
     await selected.click()
     assert.equal(await keys.locator('.redis-key-list').evaluate(element => element.scrollTop), before)
-    assert.equal(await selected.getAttribute('aria-pressed'), 'true')
+    assert.equal(await selected.getAttribute('aria-selected'), 'true')
     assert.equal(reads, beforeDisplayReads, 'Display tabs, formats, help and selecting the same Key must not reread')
     report.layout.listPosition = { before, after: before, reread: false }
     await geometry('340px persistent Key/data split')

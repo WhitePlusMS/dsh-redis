@@ -1,5 +1,8 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'namespace.view': 'Key 导航', 'namespace.tree': '命名空间树', 'namespace.list': '平铺列表', 'namespace.locate': '定位已选 Key', 'namespace.settings': '命名空间设置',
+  'namespace.separator': '分隔符', 'namespace.apply': '应用分隔符', 'namespace.loaded': '组内已加载 Key', 'namespace.invalid': '分隔符须为 1–16 字节的有效 UTF-8 文本。',
+  'namespace.hint': '仅分组已加载 Key，数字为组内已加载数量；次序按首次扫描返回。最多展开 16 层，更深路径保留在叶名称。展开、切换和定位不读取 Redis；使用方向键浏览，Enter 查看。',
   'ui.decode': 'Base64 解码…', 'ui.connections': '我的连接', 'ui.addConnection': '添加连接', 'ui.chooseConnection': '选择或新建连接', 'ui.close': '关闭', 'ui.help': '使用帮助', 'ui.disconnected': '未连接', 'ui.data': '数据', 'ui.metadata': '元信息', 'ui.copy': '复制已读内容', 'ui.copied': '已复制', 'ui.copyError': '复制失败，可选择文本复制',
   'layout.back': '返回 Key 列表', 'layout.selectKey': '从列表选择 Key 查看内容。', 'connection.settings': '连接配置',
   'session.loading': '正在恢复本会话选择…', 'session.loadError': '无法恢复本会话选择，请重试。', 'session.saveError': '本会话选择尚未保存，请重试。',
@@ -109,6 +112,9 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'namespace.view': 'Key navigation', 'namespace.tree': 'Namespace tree', 'namespace.list': 'Flat key list', 'namespace.locate': 'Locate selected key', 'namespace.settings': 'Namespace settings',
+  'namespace.separator': 'Separator', 'namespace.apply': 'Apply separator', 'namespace.loaded': 'Loaded keys in group', 'namespace.invalid': 'Use valid UTF-8 text of 1–16 bytes as the separator.',
+  'namespace.hint': 'Groups cover loaded keys only; counts describe loaded keys, in first-seen scan order. At most 16 group levels; deeper paths remain in leaf names. Expanding, switching and locating never read Redis. Navigate with arrows; Enter opens a key.',
   'ui.decode': 'Decode Base64…', 'ui.connections': 'My connections', 'ui.addConnection': 'Add connection', 'ui.chooseConnection': 'Choose or create a connection', 'ui.close': 'Close', 'ui.help': 'Help', 'ui.disconnected': 'Disconnected', 'ui.data': 'Data', 'ui.metadata': 'Metadata', 'ui.copy': 'Copy read content', 'ui.copied': 'Copied', 'ui.copyError': 'Copy failed. Select the text to copy.',
   'layout.back': 'Back to keys', 'layout.selectKey': 'Select a key from the list to inspect its content.', 'connection.settings': 'Connection settings',
   'session.loading': 'Restoring this session selection…', 'session.loadError': 'Cannot restore this session selection. Retry.', 'session.saveError': 'This session selection has not been saved. Retry.',

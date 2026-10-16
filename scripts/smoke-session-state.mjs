@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { until } from './redis-fixture.mjs'
-import { openConnectionSettings, chooseValueFormat, readValueFormat, assertSelectedIdentity } from './native-view-controls.mjs'
+import { openConnectionSettings, chooseValueFormat, readValueFormat, assertSelectedIdentity, findLoadedKey } from './native-view-controls.mjs'
 
 export async function smokeSessionState({ page, context, origin, rpc, fixture, pane, keys, scanAll, artifacts, report, baseline, workspaceTitle }) {
   const profileId = await pane.locator('select[name="profile"]').inputValue()
@@ -59,7 +59,7 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
   await keys.locator('input[name="db"]').fill('1'); await keys.getByRole('button', { name: 'Select DB', exact: true }).click()
   await keys.getByRole('heading').filter({ hasText: 'DB 1' }).waitFor()
   assert.equal(await scanAll('session:a:*'), 1)
-  await keys.locator('[data-key-base64="' + identity + '"]').click()
+  await (await findLoadedKey(keys, identity)).click()
   let details = keys.locator('.redis-details').filter({ has: page.locator('input[name="byteOffset"]') })
   await details.locator('[data-value-coverage]').waitFor()
   await chooseValueFormat(details, 'hex')

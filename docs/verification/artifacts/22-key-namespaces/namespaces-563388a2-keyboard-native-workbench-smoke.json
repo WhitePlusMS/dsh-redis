@@ -1,0 +1,59 @@
+{
+  "artifactPrefix": "native-workbench",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T11:19:06.748Z",
+  "packageSha256": "563388a2e6803e188328defc0414a14fa0b728623c5681191678735dc21519fb",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "native incremental MATCH scan and explicit continuation load 230 distinct keys",
+    "native binary key selection preserves Base64 identity; empty MATCH is complete without stale rows",
+    "native DB switch clears previous keys and selects the independent DB1 key",
+    "native invalid DB shows fixed error and retains DB1, then manual recovery to DB0 succeeds",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "layout": {
+    "pattern": "Database three panes; compact connection entry below 760px with persistent Key/detail split",
+    "widths": [
+      {
+        "requested": 340,
+        "actual": 340
+      }
+    ],
+    "themes": [],
+    "viewers": []
+  },
+  "error": "Expected values to be strictly equal:\n+ actual - expected\n\n+ ':r14:-0'\n- ':r14:-178'\n         ^\n",
+  "errorStack": "AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:\n+ actual - expected\n\n+ ':r14:-0'\n- ':r14:-178'\n         ^\n\n    at smokeSidebarLayout (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-sidebar-layout.mjs:85:12)\n    at async smoke (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1186:53)\n    at async withRedisFixture.tls (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1411:24)\n    at async withWslRedisFixture (file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/wsl-redis-fixture.mjs:87:19)\n    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1253:5",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\nsession-state-bece1e0d-3f60-4abc-9cb2-4eb877a5e43e\nsession-state-caa8860f-0977-4a34-a4a9-15c192fa7e04\nsession-state-13f73de6-3cba-47e8-8250-cd2dad488a41\nsession-state-3675eb14-1bf4-4981-97c7-bca5bc694daf\nsession-state-1d00db98-c982-4f56-ad71-69515645183e\nsession-state-97c1b089-11cd-4528-a764-2b5bece37e86\nsession-state-6c7a92e4-20ec-4b26-955b-eb877df748ef\nsession-state-c7ec1ac4-c4af-457a-a1ef-8e16f96fdb1b\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nWorkspace Write\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\n127.0.0.1:2250\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nLoaded keys: 244 · Scan complete\n\nStatus checked at 7:19:26 PM\n\"native:20\"\n\"native:37\"\n\"native:100\"\n\"native:196\"\n\"native:126\"\n\"native:10\"\n\"native:68\"\n\"native:209\"\n\"native:185\"\n\"native:208\"\n\"native:182\"\n\"native:92\"\n\"native:217\"\n\"native:31\"\n\"native:11\"\n\"native:153\"\n\"native:140\"\n\"native:102\"\n\"native:1\"\n\"native:223\"\n\"native:147\"\n\"native:46\"\n\"layout:stream\"\n\"native:16\"\n\"native:229\"\n\"native:15\"\n\"native:27\"\n\"native:225\"\n\"native:192\"\n\"native:145\"\n\"native:145\"\nData\nMetadata\nKey details · \"native:145\"\nView as Bitmap\nView as HyperLogLog\nStart byte\nWindow bytes\n256\n4096\n16384\n65536\nRead / refresh\nNext window\nStatus checked at 7:19:27 PM\nTYPE\nstring\nTTL (ms)\nNo expiration\n\nComplete value · Start byte 0 · 3 bytes\n\nText\nJSON\nHex\nBase64\nDecode Base64…\nDecode Base64 text to Text\nDecode Base64 text to JSON\n145\nConnected\n7:19:25 PM\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T11:19:28.988Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "58bc33b4-1f25-4dab-a855-86ebb634c8de",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

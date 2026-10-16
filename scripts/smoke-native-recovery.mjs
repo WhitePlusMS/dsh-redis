@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { resolve } from 'node:path'
 import { RESP_TYPES } from 'redis'
 import { until } from './redis-fixture.mjs'
-import { openConnectionSettings, chooseValueFormat } from './native-view-controls.mjs'
+import { openConnectionSettings, chooseValueFormat, findLoadedKey } from './native-view-controls.mjs'
 
 export async function smokeNativeRecovery({ page, rpc, fixture, pane, keys, scanAll, artifacts, report, workspaceId }) {
   const proxy = fixture.recoveryProxy
@@ -72,7 +72,7 @@ export async function smokeNativeRecovery({ page, rpc, fixture, pane, keys, scan
     assert.equal(bView.state, 'connected'); await checkB()
     assert.equal(await scanAll('*'), fixture.expectedKeyCount)
     const hold = proxy.holdNext('GETRANGE', key)
-    await keys.locator('[data-key-base64="' + identity + '"]').click()
+    await (await findLoadedKey(keys, identity)).click()
     await until(() => hold.received, 'native actual GETRANGE reply buffered')
     const cancelAt = Date.now()
     await cancel.click()
