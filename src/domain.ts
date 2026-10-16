@@ -36,11 +36,18 @@ export interface ConnectionTestResult {
 
 /** Saved connection settings contain no password or live socket identity. */
 export type ConnectionSettings = Omit<ConnectionRequest, 'password'>
-export interface SavedConnection { readonly id: string; readonly name: string; readonly settings: ConnectionSettings }
-export interface SaveProfileRequest { readonly id: string | null; readonly name: string; readonly settings: ConnectionSettings }
+export interface SavedConnection { readonly id: string; readonly name: string; readonly group?: string; readonly settings: ConnectionSettings }
+export interface SaveProfileRequest { readonly id: string | null; readonly name: string; readonly group?: string; readonly settings: ConnectionSettings }
 export interface ProfileId { readonly id: string }
 export interface ProfileCollection { readonly profiles: readonly SavedConnection[]; readonly selectedId: string | null }
 export const MAX_PROFILES = 50
+
+/** Portable data deliberately excludes credentials, certificates and runtime IDs. */
+export interface PortableConnection { readonly name: string; readonly group?: string; readonly settings: { readonly host: string; readonly port: number; readonly username: string; readonly tls: boolean } }
+export interface ImportProfilesRequest { readonly profiles: readonly PortableConnection[] }
+export const PROFILE_DOCUMENT_FORMAT = 'dsh-redis-connections' as const
+export interface ProfileDocument { readonly format: typeof PROFILE_DOCUMENT_FORMAT; readonly version: 1; readonly profiles: readonly PortableConnection[] }
+export const MAX_PROFILE_DOCUMENT_BYTES = 256 * 1024
 
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }

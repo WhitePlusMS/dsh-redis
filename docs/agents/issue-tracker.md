@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–23 done、24–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–23 done、24 in-progress、25–29 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–23 done；24–29 ready-for-agent。23的238回归/25聚焦与恢复/87全类型与会话/24工作台/25命名空间同包证据见docs/verification/23-focused-value-view.md。原29票编号/优先级/依赖不变，24–29尚未实施。
+当前进度：01–23 done；24 in-progress（连接分组、URI与资料导入导出）；25–29 ready-for-agent。23完整同包证据见docs/verification/23-focused-value-view.md。原29票编号/优先级/依赖不变，24尚未验收。

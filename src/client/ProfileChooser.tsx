@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { ConnectionSettings, ConnectionView, ProfileCollection, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
+import type { ConnectionSettings, ConnectionView, ProfileCollection, ImportProfilesRequest, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
 import { connectionSettingsSchema } from '../typert.shared.ts'
 import { useBrowsingState } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
@@ -9,6 +9,7 @@ import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 
 export interface ProfileActions {
+  readonly importProfiles: (request: ImportProfilesRequest, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly listProfiles: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly saveProfile: (request: SaveProfileRequest, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly removeProfile: (request: ProfileId, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>

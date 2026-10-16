@@ -3,7 +3,7 @@ import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionTestResult, ConnectionErrorCode } from './domain.ts'
 import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
-import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
+import { MAX_PROFILES, PROFILE_DOCUMENT_FORMAT, type PortableConnection, type ImportProfilesRequest, type ProfileDocument, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
 import { MAX_KEY_BYTES, MAX_SCAN_KEYS, MAX_SCAN_JSON_BYTES, type DatabaseTarget, type RedisKey, type ScanKeysRequest, type ScanKeysResult } from './domain.ts'
 import { MAX_VALUE_BYTES, type StringReadRequest, type StringReadResult, type KeyMetadata } from './domain.ts'
 import type { BytePrefix, ScanHashRequest, ScanHashResult } from './domain.ts'
@@ -126,8 +126,8 @@ export const connectionSettingsSchema: TypertSchema<ConnectionSettings> = { pars
   return settings
 } }
 export const saveProfileSchema: TypertSchema<SaveProfileRequest> = { parse(value) {
-  const object = objectAt(value, ['id', 'name', 'settings'])
-  return { id: object.id === null ? null : profileIdentity(object.id), name: profileName(object.name), settings: connectionSettingsSchema.parse(object.settings) }
+  const object = objectAt(value, ['id', 'name', 'group', 'settings'])
+  return { id: object.id === null ? null : profileIdentity(object.id), name: profileName(object.name), ...(object.group === undefined ? {} : { group: profileName(object.group) }), settings: connectionSettingsSchema.parse(object.settings) }
 } }
 export const profileIdSchema: TypertSchema<ProfileId> = { parse(value) {
   return { id: profileIdentity(objectAt(value, ['id']).id) }
@@ -136,12 +136,33 @@ export const profileCollectionSchema: TypertSchema<ProfileCollection> = { parse(
   const object = objectAt(value, ['profiles', 'selectedId'])
   if (!Array.isArray(object.profiles) || object.profiles.length > MAX_PROFILES) throw new TypeError('Redis RPC: invalid profile list')
   const profiles: SavedConnection[] = object.profiles.map((value: unknown) => {
-    const item = objectAt(value, ['id', 'name', 'settings'])
-    return { id: profileIdentity(item.id), name: profileName(item.name), settings: connectionSettingsSchema.parse(item.settings) }
+    const item = objectAt(value, ['id', 'name', 'group', 'settings'])
+    return { id: profileIdentity(item.id), name: profileName(item.name), ...(item.group === undefined ? {} : { group: profileName(item.group) }), settings: connectionSettingsSchema.parse(item.settings) }
   })
   const selectedId = object.selectedId === null ? null : profileIdentity(object.selectedId)
   if (new Set(profiles.map(value => value.id)).size !== profiles.length || (selectedId !== null && !profiles.some(value => value.id === selectedId))) throw new TypeError('Redis RPC: invalid profile identities')
   return { profiles, selectedId }
+} }
+
+/** One strict document format; extra fields (including secrets) are refused. */
+export const portableConnectionSchema: TypertSchema<PortableConnection> = { parse(value) {
+  const object = objectAt(value, ['name', 'group', 'settings'])
+  return { name: profileName(object.name), ...(object.group === undefined ? {} : { group: profileName(object.group) }), settings: publicTarget(object.settings) }
+} }
+function portableProfiles(value: unknown): readonly PortableConnection[] {
+  if (!Array.isArray(value) || value.length > MAX_PROFILES) throw new TypeError('Redis profiles: invalid document')
+  return value.map((item: unknown) => portableConnectionSchema.parse(item))
+}
+export const importProfilesSchema: TypertSchema<ImportProfilesRequest> = { parse(value) {
+  const object = objectAt(value, ['profiles'])
+  const profiles = portableProfiles(object.profiles)
+  if (profiles.length === 0) throw new TypeError('Redis profiles: no selected entries')
+  return { profiles }
+} }
+export const profileDocumentSchema: TypertSchema<ProfileDocument> = { parse(value) {
+  const object = objectAt(value, ['format', 'version', 'profiles'])
+  if (object.format !== PROFILE_DOCUMENT_FORMAT || object.version !== 1) throw new TypeError('Redis profiles: invalid document')
+  return { format: PROFILE_DOCUMENT_FORMAT, version: 1, profiles: portableProfiles(object.profiles) }
 } }
 
 export const databaseTargetSchema: TypertSchema<DatabaseTarget> = { parse(value) {
@@ -558,6 +579,7 @@ export const redisDescriptors = [
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema, sessionIdSchema),
+  createRedisInvocation('importProfiles', 'ImportProfilesRequest', 'ProfileCollection', importProfilesSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('selectDatabase', 'DatabaseTarget', 'ConnectionView', databaseTargetSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scanKeysRequestSchema, scanKeysResultSchema, sessionIdSchema),
   createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringReadRequestSchema, stringReadResultSchema, sessionIdSchema),

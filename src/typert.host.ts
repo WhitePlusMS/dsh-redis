@@ -23,9 +23,12 @@ const tested = z.object({ outcome: z.enum(['passed', 'failed']), error: error.nu
 const settings = credentials.omit({ password: true }).strict()
 const profileId = z.string().min(1).max(128)
 const profileName = z.string().min(1).max(80).refine(value => value.trim() === value)
-const savedProfile = z.object({ id: profileId, name: profileName, settings }).strict()
+const profileGroup = profileName.optional()
+const savedProfile = z.object({ id: profileId, name: profileName, group: profileGroup, settings }).strict()
 const saved = z.object({ profiles: z.array(savedProfile).max(MAX_PROFILES), selectedId: profileId.nullable() }).strict().refine(value => new Set(value.profiles.map(item => item.id)).size === value.profiles.length && (value.selectedId === null || value.profiles.some(item => item.id === value.selectedId)))
-const saveProfile = z.object({ id: profileId.nullable(), name: profileName, settings }).strict()
+const saveProfile = z.object({ id: profileId.nullable(), name: profileName, group: profileGroup, settings }).strict()
+const portableProfile = z.object({ name: profileName, group: profileGroup, settings: target }).strict()
+const importProfiles = z.object({ profiles: z.array(portableProfile).min(1).max(MAX_PROFILES) }).strict()
 const databaseTarget = identity.extend({ db: z.number().int().min(0).max(65535) }).strict()
 const scan = z.object({ target: databaseTarget, pattern: z.string().max(256), cursor: z.string().max(36).nullable() }).strict().transform(value => scanKeysRequestSchema.parse(value))
 const scanned = z.object({ state: z.enum(['page', 'failed']), error: error.nullable(), keys: z.array(z.object({ base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), label: z.string().max(1024) }).strict()).max(4096), cursor: z.string().max(36).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => scanKeysResultSchema.parse(value))
@@ -77,6 +80,7 @@ export const redisHostDescriptors = [
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', empty, saved, z.string().min(1)),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfile, saved, z.string().min(1)),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', z.object({ id: profileId }).strict(), saved, z.string().min(1)),
+  createRedisInvocation('importProfiles', 'ImportProfilesRequest', 'ProfileCollection', importProfiles, saved, z.string().min(1)),
   createRedisInvocation('selectDatabase', 'DatabaseTarget', 'ConnectionView', databaseTarget, view, z.string().min(1)),
   createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scan, scanned, z.string().min(1)),
   createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringRead, stringValue, z.string().min(1)),

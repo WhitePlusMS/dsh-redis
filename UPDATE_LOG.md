@@ -963,3 +963,21 @@
 - 提交前审计：29票无缺重号、21P0/8P1、23done/6ready、全部原Blocked by图一致；六当前摘要同步。141源输入/41归档原件SHA逐项匹配，22个相对文档链接存在，不可变研究SHA保持e138f420…。main分支，原暂存区为空，已跟踪变更git diff --check通过；本次只收23生产/原生脚本/证据和进度文档，不含依赖/lib/夹具/原型或24实现。
 
 - 暂存空白检查仅发现原始focus-ui-check-console.log第124行的pnpm末尾空白行；为保留证据字节不裁剪日志。其他文件使用正常cached whitespace检查；仅此日志路径单次允许blank-at-eof、仍查其他空白问题，不改仓库配置或跳hooks。
+
+## 2026-10-16 任务24开始：连接资料分组、URI与导入导出
+
+- 23已本地提交e55b255且main干净。24依原票前置04开始，四项仍空，六进度入口/24表格同步；不改原29票图和历史23证据。
+- 继续prototype LOGIC技能，独立分支prototype/profile-transfer-state提交10ff150展示重名整批拒绝/改名/跳过、保存不连接、URI草稿/清密码、分组与无秘密导出。源在该分支src/client/prototypes/profile-transfer.prototype.html，ignored副本可双击；无测试/数据库/服务/生产合并，不称用户已确认。
+- LUNA完整描述既有ProfileChooser/ConnectionForm/持久化与schema/RPC事实；核对Redis官方连接URL、Node URL和node-redis文档后，docs/verification/24-profile-import-export.md记录完整边界。最简复用原配置队列/稳定id，新增可选分组及严格无秘密可移植格式；导入仅新增、冲突改名或跳过、Host串行整批检查/一次原子写，无覆盖或自动连接。URI只填表单和会话DB草稿，密码/原URI不保存，导出白名单不含密码/CA/运行身份。接下来先实现纯模型及Host契约，立即严格类型/回归，UI与真实包尚未开始。
+
+- 首次批量替换在首文件前置校验因原CRLF行尾不匹配停止，没有写任何生产文件；当时typecheck仅检查旧源码，不能计为新模型通过。改为读取时识别并保留每个文件原行尾，先校验全部替换再写入，未重排无关代码。
+- 第24项首批模型/Host：domain增加可选group、无秘密PortableConnection/ProfileDocument及256KiB上限；shared/Host严格codec和remote-service/remote-client/client桥接新增importProfiles，拒绝额外字段/空批次，复用RemoteResult。profile-transfer以同组同名规则、白名单导出/有界JSON解析实现资料模型；connection-uri只解析基础redis/rediss、百分号解码/IPv6/路径DB，固定null失败，不记录或透传URL异常。
+- RedisProfiles沿用原队列/原子文件写，保存校验同组同名；导入重新验证整批/50条容量、分配新id并一次追加，TLS导入仅开关/空CA，不覆盖/连接。分组缺省即当前未分组语义，不增加迁移/旧接口分支。ProfileChooser此阶段只增加action类型，尚无新UI行为。立即检查三层TypeScript；专项及真实包未运行。
+
+- 新模型/Host三层TypeScript首检通过；随后加入URI原始路径限制与UTF-16校验，拒绝URL点段归一化吞掉DB或替换畸形凭据，不记录输入。新增资料/URI/Host存储与两端codec专项：运行对象额外secret仍白名单导出、未知格式/秘密/身份字段拒绝、UTF-8字节预算、精确Unicode冲突、分组重开/稳定id/空CA导入、整批失败不部分写、并发重验/取消与容量。
+- 首次测试接入在bundle计数替换前置校验停止，其他专项已写；随后完整check因两项测试TypeScript错误中止（exactOptionalPropertyTypes下不应显式group:undefined；有意坏输入不应直接写成已知DTO的多余字段字面量）。立即分别改为省略分组字段和先构造结构化坏输入变量，保留严格类型/运行拒绝断言，不用any或放宽DTO。实际bundle断言变量为descriptors，现基于全文件改成24；旧方法清单也增加importProfiles，不删断言。继续严格检查与回归，尚未标新专项通过。
+
+- 第24项模型/Host最终三层类型、完整构建及250回归通过，新增12项分别覆盖4资料/3URI/4存储/1两端codec；实际client bundle与Host/共享完整方法清单均为24。scripts/smoke-release-boundary.mjs真实SDK坏成功结果清单加入importProfiles并同步文案，尚未运行新原生包，不宣称SDK24通过。
+- 两份模型原始输出按字节归档docs/verification/artifacts/24-profile-import-export，实施说明和24票comment记录模型范围/未完成UI与实际重开。24仍in-progress、四项不勾；此模型+Host小目标核对后按用户约定本地提交，不push/改写历史。
+
+- 模型提交审计：原29票/全部依赖/优先级保持，01–23done/24in-progress/25–29ready和六处当前摘要一致，未勾24验收。正常cached空白检查只报原始model-check-console.log第126行pnpm末尾空白行，保留原字节；其余文件正常检查通过，仅该日志路径单次允许blank-at-eof，不改配置或绕过hooks。

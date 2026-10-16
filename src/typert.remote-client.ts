@@ -2,7 +2,7 @@ import type { SessionBrowsingState } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult, TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { EmptyRequest, RedisHostStatus, ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionTestResult } from './domain.ts'
-import type { SaveProfileRequest, ProfileId, ProfileCollection } from './domain.ts'
+import type { SaveProfileRequest, ProfileId, ProfileCollection, ImportProfilesRequest } from './domain.ts'
 import type { DatabaseTarget, ScanKeysRequest, ScanKeysResult } from './domain.ts'
 import type { StringReadRequest, StringReadResult } from './domain.ts'
 import type { ScanHashRequest, ScanHashResult } from './domain.ts'
@@ -32,6 +32,7 @@ export interface RedisViewerRemote {
   readString: (agentId: SessionId, request: StringReadRequest, signal?: AbortSignal) => Promise<RemoteResult<StringReadResult>>
   selectDatabase: (agentId: SessionId, request: DatabaseTarget, signal?: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   scanKeys: (agentId: SessionId, request: ScanKeysRequest, signal?: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
+  importProfiles: (agentId: SessionId, request: ImportProfilesRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   listProfiles: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   saveProfile: (agentId: SessionId, request: SaveProfileRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   removeProfile: (agentId: SessionId, request: ProfileId, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
@@ -58,6 +59,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'redisViewer/readString': RedisViewerRemote['readString']
     'redisViewer/selectDatabase': RedisViewerRemote['selectDatabase']
     'redisViewer/scanKeys': RedisViewerRemote['scanKeys']
+    'redisViewer/importProfiles': RedisViewerRemote['importProfiles']
     'redisViewer/listProfiles': RedisViewerRemote['listProfiles']
     'redisViewer/saveProfile': RedisViewerRemote['saveProfile']
     'redisViewer/removeProfile': RedisViewerRemote['removeProfile']
@@ -84,6 +86,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
     'agent:redisViewer/readString': (request: StringReadRequest, signal?: AbortSignal) => Promise<RemoteResult<StringReadResult>>
     'agent:redisViewer/selectDatabase': (request: DatabaseTarget, signal?: AbortSignal) => Promise<RemoteResult<ConnectionView>>
     'agent:redisViewer/scanKeys': (request: ScanKeysRequest, signal?: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
+    'agent:redisViewer/importProfiles': (request: ImportProfilesRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
     'agent:redisViewer/listProfiles': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
     'agent:redisViewer/saveProfile': (request: SaveProfileRequest, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
     'agent:redisViewer/removeProfile': (request: ProfileId, signal?: AbortSignal) => Promise<RemoteResult<ProfileCollection>>

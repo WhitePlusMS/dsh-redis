@@ -99,3 +99,56 @@ describe('profile-owned non-secret connection persistence', () => {
     expect(await readFile(file(), 'utf8')).toBe(before)
   })
 })
+
+
+describe('atomic connection profile import and grouping', () => {
+  it('keeps stable IDs when renaming/grouping and reopens imported TLS without credentials or certificates', async () => {
+    const store = new RedisProfiles(directory)
+    const saved = await store.save(input, signal())
+    const renamed = await store.save({ ...input, id: saved.selectedId, name: 'Renamed', group: '开发' }, signal())
+    expect(renamed.selectedId).toBe(saved.selectedId)
+    const imported = await store.import({ profiles: [{ name: 'Remote', group: '测试', settings: { host: 'redis.test', port: 6380, username: 'reader', tls: true } }] }, signal())
+    expect(imported.selectedId).toBeNull()
+    const reopened = await new RedisProfiles(directory).list(signal())
+    expect(reopened.profiles[0]).toMatchObject({ id: saved.selectedId, name: 'Renamed', group: '开发' })
+    expect(reopened.profiles[1]).toMatchObject({ name: 'Remote', group: '测试', settings: { tls: { caPem: '' } } })
+    expect(reopened.profiles[1]?.id).not.toBe(saved.selectedId)
+    expect(await readFile(file(), 'utf8')).not.toContain('password')
+    expect(await readdir(dirname(file()))).toEqual(['connections.json'])
+  })
+  it('refuses a complete batch on existing or internal conflicts without a partial file change', async () => {
+    const store = new RedisProfiles(directory)
+    await store.save(input, signal())
+    const before = await readFile(file(), 'utf8')
+    const entry = { name: 'Fresh', settings: { host: 'localhost', port: 6379, username: '', tls: false } }
+    await expect(store.import({ profiles: [entry, { ...entry, name: input.name }] }, signal())).rejects.toThrow('group and name')
+    expect(await readFile(file(), 'utf8')).toBe(before)
+    await expect(store.import({ profiles: [entry, entry] }, signal())).rejects.toThrow('group and name')
+    expect(await readFile(file(), 'utf8')).toBe(before)
+    const grouped = await store.import({ profiles: [{ ...entry, name: input.name, group: 'Other' }] }, signal())
+    await expect(store.save({ ...input, id: grouped.profiles[1]?.id ?? null }, signal())).rejects.toThrow('group and name')
+    expect((await store.list(signal())).profiles).toHaveLength(2)
+  })
+  it('rechecks concurrent imports inside the existing queue and cancels pending work before writing', async () => {
+    const store = new RedisProfiles(directory)
+    const entry = { name: 'Concurrent', settings: { host: 'localhost', port: 6379, username: '', tls: false } }
+    const results = await Promise.allSettled([store.import({ profiles: [entry] }, signal()), store.import({ profiles: [entry] }, signal())])
+    expect(results.map(value => value.status)).toEqual(['fulfilled', 'rejected'])
+    expect((await store.list(signal())).profiles).toHaveLength(1)
+    const controller = new AbortController(), pending = store.import({ profiles: [{ ...entry, name: 'Cancelled' }] }, controller.signal)
+    const cancelled = expect(pending).rejects.toThrow()
+    controller.abort(); await cancelled
+    expect((await store.list(signal())).profiles).toHaveLength(1)
+  })
+  it('refuses secrets before disk access and an over-capacity batch without changing any saved bytes', async () => {
+    const store = new RedisProfiles(directory)
+    const entry = { name: 'Import', settings: { host: 'localhost', port: 6379, username: '', tls: false } }
+    const invalid = { profiles: [{ ...entry, settings: { ...entry.settings, password: 'never-save' } }] }
+    expect(() => store.import(invalid, signal())).toThrow()
+    expect(await readdir(directory)).toEqual([])
+    await store.save(input, signal())
+    const before = await readFile(file(), 'utf8')
+    await expect(store.import({ profiles: Array.from({ length: MAX_PROFILES }, (_, i) => ({ ...entry, name: 'Import ' + i })) }, signal())).rejects.toThrow('limit')
+    expect(await readFile(file(), 'utf8')).toBe(before)
+  })
+})

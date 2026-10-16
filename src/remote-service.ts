@@ -27,7 +27,7 @@ import type { ListReadRequest, ListReadResult } from './domain.ts'
 import type { ScanHashRequest, ScanHashResult } from './domain.ts'
 import type { StringReadRequest, StringReadResult } from './domain.ts'
 import type { DatabaseTarget, ScanKeysRequest, ScanKeysResult } from './domain.ts'
-import type { SaveProfileRequest, ProfileId, ProfileCollection } from './domain.ts'
+import type { SaveProfileRequest, ProfileId, ProfileCollection, ImportProfilesRequest } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionTestResult, ConnectionView } from './domain.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -124,6 +124,7 @@ export class RedisRemoteService extends TypertRemoteService {
   async listProfiles(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.list(signal) }
   async saveProfile(_agent: Agent, request: SaveProfileRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.save(request, signal) }
   async removeProfile(_agent: Agent, request: ProfileId, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.remove(request, signal) }
+  async importProfiles(_agent: Agent, request: ImportProfilesRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.import(request, signal) }
 
   async status(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<RedisHostStatus> {
     signal.throwIfAborted()
