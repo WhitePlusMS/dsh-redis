@@ -2,11 +2,11 @@
 
 > 当前执行基线：用户明确选择 `0.2.0-rc.2` 并继续原 29 票实现。宿主、对应源码和配套 SDK 固定该 RC 版，如实标注预发布属性；此前稳定版调查及仅文档检查保留为历史，不作为本次实现的等待条件。
 
-> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；01–17 已验收，18 会话浏览状态推进，按实际证据更新完成状态。
+> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；01–18 已验收，19 取消与断线恢复推进，按实际证据更新完成状态。
 
 ## 当前起点
 
-现有任务状态为 01–17 done、18 in-progress、19–29 ready-for-agent，验收各自对应原 RC 环境与包。当前继续原功能票，继续 18 会话浏览状态实现，不改写历史包结果；版本按实施方案第 2.4 节指定 rc.2。完整首版仍未完成。
+现有任务状态为 01–18 done、19 in-progress、20–29 ready-for-agent，验收各自对应原 RC 环境与包。当前继续原功能票，继续 19 取消与断线恢复实现，不改写历史包结果；版本按实施方案第 2.4 节指定 rc.2。完整首版仍未完成。
 
 ## 当前版本与源码约定
 
@@ -15,7 +15,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–17 done、18 会话浏览状态 in-progress，其余 11 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–18 done、19 取消与断线恢复 in-progress，其余 10 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 任务清单
 
@@ -38,8 +38,8 @@
 | 15 | P0 | [只读查看 HyperLogLog 估算数量](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/15-hll-count.md) | 06 | done |
 | 16 | P0 | [按时间范围查看 TimeSeries 样本](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/16-timeseries-view.md) | 07 | done |
 | 17 | P0 | [查看 Bloom 信息和成员存在性](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/17-bloom-view.md) | 06 | done |
-| 18 | P0 | [按 DSH 会话恢复各自的浏览状态](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/18-session-browsing-state.md) | 04、06 | in-progress |
-| 19 | P0 | [取消读取并从超时或断线中恢复](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/19-read-cancellation-recovery.md) | 18 | ready-for-agent |
+| 18 | P0 | [按 DSH 会话恢复各自的浏览状态](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/18-session-browsing-state.md) | 04、06 | done |
+| 19 | P0 | [取消读取并从超时或断线中恢复](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/19-read-cancellation-recovery.md) | 18 | in-progress |
 | 20 | P0 | [在窄宽侧栏和两种主题下完成查看](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/20-sidebar-layout-themes.md) | 07 | ready-for-agent |
 | 21 | P0 | [从安装包完成只读首版的真实验收](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/21-release-verification.md) | 08、09、11、12、13、14、15、16、17、19、20 | ready-for-agent |
 | 22 | P1 | [按命名空间浏览大量 Key](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/22-key-namespaces.md) | 06 | ready-for-agent |
@@ -75,4 +75,4 @@
 - [开发路线](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
 - [已确认的拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
 
-当前进度：01–17 done，18 会话浏览状态 in-progress，其余11票 ready-for-agent；17证据见 docs/verification/17-bloom-view.md：216项回归、真实reader6组、源语义3组及原生79组通过，安装lib68文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–18 done，19 取消与断线恢复 in-progress，其余10票 ready-for-agent；18证据见 docs/verification/18-session-browsing-state.md：222项回归与双会话原生21组通过，安装lib70文件一致。完整类型77组失败记录与各环境失败单独保留，21发布门禁仍需完整重验；29票范围/优先级/依赖不变，完整首版尚未完成。

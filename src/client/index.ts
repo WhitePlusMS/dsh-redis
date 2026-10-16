@@ -6,6 +6,7 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { TYPERT_REMOTE } from '../typert.remote-client.ts'
+import { SessionStateQueue } from './session-state-queue.ts'
 import { RedisWorkspace, type RedisWorkspaceInjected } from './RedisWorkspace.tsx'
 import { installRedisStyles } from './styles.ts'
 import { en, NS, zh } from './locales.ts'
@@ -16,6 +17,7 @@ export function apply(ctx: Context): void {
   ctx.effect(installRedisStyles)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'redis dictionaries')
   const t = ctx.locale.bind(NS)
+  const browsingQueue = new SessionStateQueue()
   let remoteReady: ReturnType<typeof ctx.remote.$mount> | undefined
   // Rejected mounts are not cached, so an explicit retry can discover a recovered Host.
   const remote = async () => {
@@ -37,6 +39,9 @@ export function apply(ctx: Context): void {
   ctx.effect(() => ctx.slots.inject('sidebar.right.pane.tab', () => ctx.slots.register({
     name: 'sidebar.right.pane.tab', key: 'dsh-redis', locale: NS,
     inject: (sessionId): RedisWorkspaceInjected => ({
+      sessionKey: sessionId,
+      loadBrowsingState: signal => browsingQueue.run(sessionId, async () => { signal.throwIfAborted(); return (await remote()).loadBrowsingState(sessionId, {}, signal) }),
+      saveBrowsingState: (state, signal) => browsingQueue.run(sessionId, async () => { signal.throwIfAborted(); return (await remote()).saveBrowsingState(sessionId, state, signal) }),
       status: async signal => (await remote()).status(sessionId, {}, signal),
       testConnection: async (request, signal) => (await remote()).testConnection(sessionId, request, signal),
       connect: async (request, signal) => (await remote()).connect(sessionId, request, signal),

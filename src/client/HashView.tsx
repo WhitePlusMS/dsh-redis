@@ -5,7 +5,7 @@ import type { DatabaseTarget, HashEntry, RedisKey, ScanHashRequest, ScanHashResu
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendHashEntries, emptyHashCache, type HashCache } from './hash-cache.ts'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { prefixWindow, prefixLabel } from './collection-value.ts'
 import { NS } from './locales.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
@@ -19,7 +19,7 @@ export function HashView(props: Props) {
   const { t } = props
   const [pattern, setPattern] = useState('*')
   const [cell, setCell] = useState<{ field: string; column: 'field' | 'value' } | null>(null)
-  const [format, setFormat] = useState<PreviewFormat>('text')
+  const [format, setFormat] = useBrowsingFormat('hash')
   const scanState = useCollectionScan<HashCache, ScanHashResult>({ target: props.target, keyBase64: props.selected.base64, empty: emptyHashCache,
     append: (previous, page) => appendHashEntries(previous, page.entries),
     load: (cursor, signal) => props.scanHash({ target: props.target, keyBase64: props.selected.base64, pattern, cursor }, signal),
@@ -27,7 +27,7 @@ export function HashView(props: Props) {
   const { cache, result, cursor, busy, error, progress } = scanState
   const selected = cell === null ? undefined : cache.rows.find(row => row.field.base64 === cell.field)
   const window = useMemo(() => selected === undefined || cell === null ? null : cell.column === 'value' ? prefixWindow(selected.value) : { base64: selected.field.base64, prefix: '', suffix: '', offset: '0', complete: true }, [selected, cell])
-  const selectCell = (row: HashEntry, column: 'field' | 'value') => { setCell({ field: row.field.base64, column }); setFormat('text') }
+  const selectCell = (row: HashEntry, column: 'field' | 'value') => { setCell({ field: row.field.base64, column }) }
 
   function clear(): void {
     scanState.clear(); setCell(null)

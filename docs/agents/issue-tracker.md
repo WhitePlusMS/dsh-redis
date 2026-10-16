@@ -13,6 +13,7 @@
 - `Blocked by` 列出编号与标题；无阻塞写 `None (can start immediately)`。编号和优先级不代替阻塞关系。
 - 发布使用 `ready-for-agent`；仍有未完成前置的任务不能开工。状态词汇见同目录 `triage-labels.md`。
 - 后续讨论追加在任务的 `Comments` 小节，完成时附实际验证证据。
+- 用户2026-10-16明确授权：每完成一个验证通过的小目标即提交本地Git；按功能收口并记录证据，不push、不改写历史、不跳过hooks。
 
 ## 当前执行前提
 
@@ -22,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–17 done、18 in-progress、其余11票 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–18 done、19 in-progress、其余10票 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–17 done，18 会话浏览状态 in-progress，其余11票 ready-for-agent；17证据见 docs/verification/17-bloom-view.md：216项回归、真实reader6组、源语义3组及原生79组通过，安装lib68文件一致。29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–18 done，19 取消与断线恢复 in-progress，其余10票 ready-for-agent；18证据见 docs/verification/18-session-browsing-state.md：222项回归与双会话原生21组通过，安装lib70文件一致。完整类型77组失败记录与各环境失败单独保留，21发布门禁仍需完整重验；29票范围/优先级/依赖不变，完整首版尚未完成。

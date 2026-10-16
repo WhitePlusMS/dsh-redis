@@ -1,3 +1,4 @@
+import { PREVIEW_FORMATS, PREVIEW_VIEWS, type SessionBrowsingState, type PreviewFormat, type PreviewView } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionTestResult, ConnectionErrorCode } from './domain.ts'
@@ -532,6 +533,20 @@ export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(valu
   return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+/** Explicit allowlist excludes values, credentials, connection identities and sessionId. */
+export const browsingStateSchema: TypertSchema<SessionBrowsingState> = { parse(value) {
+  const object = objectAt(value, ['profileId', 'db', 'pattern', 'keyBase64', 'formats', 'stringOffset', 'stringCount'])
+  const rawFormats = objectAt(object.formats, PREVIEW_VIEWS)
+  const formats = Object.fromEntries(PREVIEW_VIEWS.map(view => {
+    const format = rawFormats[view]
+    if (!PREVIEW_FORMATS.some(value => value === format)) throw new TypeError('Redis RPC: invalid preview format')
+    return [view, format as PreviewFormat]
+  })) as Record<PreviewView, PreviewFormat>
+  const stringCount = integerAt(object.stringCount, 1, MAX_VALUE_BYTES)
+  if (![256, 4096, 16384, MAX_VALUE_BYTES].includes(stringCount)) throw new TypeError('Redis RPC: invalid saved window')
+  return { profileId: object.profileId === null ? null : profileIdentity(object.profileId), db: integerAt(object.db, 0, 65535), pattern: stringAt(object.pattern, 256), keyBase64: object.keyBase64 === null ? null : byteStringAt(object.keyBase64, MAX_KEY_BYTES), formats, stringOffset: unsignedIntegerAt(object.stringOffset), stringCount }
+} }
+
 export const redisDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
   createRedisInvocation('testConnection', 'ConnectionRequest', 'ConnectionTestResult', connectionRequestSchema, connectionTestSchema, sessionIdSchema),
@@ -554,4 +569,6 @@ export const redisDescriptors = [
   createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllReadRequestSchema, hllReadResultSchema, sessionIdSchema),
   createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
+  createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
+  createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),
 ] as const

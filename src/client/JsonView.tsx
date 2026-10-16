@@ -4,7 +4,7 @@ import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseTarget, JsonReadRequest, JsonReadResult, RedisKey } from '../domain.ts'
 import { jsonReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface JsonActions { readonly readJson: (request: JsonReadRequest, signal: AbortSignal) => Promise<RemoteResult<JsonReadResult>> }
@@ -16,7 +16,7 @@ type Props = JsonActions & { readonly target: DatabaseTarget; readonly selected:
 export function JsonView(props: Props) {
   const { t } = props
   const [path, setPath] = useState('$'), [request, setRequest] = useState({ path: '$', attempt: 0 })
-  const [result, setResult] = useState<JsonReadResult | null>(null), [format, setFormat] = useState<PreviewFormat>('json')
+  const [result, setResult] = useState<JsonReadResult | null>(null), [format, setFormat] = useBrowsingFormat('json')
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [pathError, setPathError] = useState(false)
   const active = useRef<AbortController | null>(null)
   useEffect(() => {

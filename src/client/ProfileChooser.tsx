@@ -3,6 +3,7 @@ import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ConnectionSettings, ProfileCollection, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
 import { connectionSettingsSchema } from '../typert.shared.ts'
+import { useBrowsingState } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface ProfileActions {
@@ -19,8 +20,9 @@ type Props = ProfileActions & {
 
 /** This component manages configuration only; selecting a profile never calls connect. */
 export function ProfileChooser(props: Props) {
+  const browsing = useBrowsingState()
   const [profiles, setProfiles] = useState<readonly SavedConnection[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [selectedId, setSelectedId] = useState<string | null>(browsing.state.profileId)
   const [name, setName] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
@@ -28,7 +30,7 @@ export function ProfileChooser(props: Props) {
   const sequence = useRef(0)
   const { t } = props
 
-  async function run(operation: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>): Promise<void> {
+  async function run(operation: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>, followSelection = false): Promise<void> {
     active.current?.abort()
     const controller = new AbortController()
     active.current = controller
@@ -39,8 +41,11 @@ export function ProfileChooser(props: Props) {
       if (controller.signal.aborted || current !== sequence.current) return
       if (!result.ok) { setError(true); return }
       setProfiles(result.value.profiles)
-      setSelectedId(result.value.selectedId)
-      setName(result.value.profiles.find(value => value.id === result.value.selectedId)?.name ?? '')
+      const profile = result.value.profiles.find(value => value.id === (followSelection ? result.value.selectedId : selectedId))
+      const id = profile?.id ?? null
+      setSelectedId(id); setName(profile?.name ?? '')
+      if (id !== browsing.state.profileId) browsing.update({ profileId: id })
+      if (profile !== undefined) props.select(profile.settings)
     } catch { if (!controller.signal.aborted && current === sequence.current) setError(true) }
     finally { if (!controller.signal.aborted && current === sequence.current) setBusy(false) }
   }
@@ -54,6 +59,7 @@ export function ProfileChooser(props: Props) {
       <label>{t('profile.choose')}<select name="profile" value={selectedId ?? ''} onChange={event => {
         const profile = profiles.find(value => value.id === event.target.value)
         setSelectedId(profile?.id ?? null); setName(profile?.name ?? ''); setError(false)
+        browsing.update({ profileId: profile?.id ?? null })
         props.select(profile?.settings ?? null)
       }}><option value="">{t('profile.new')}</option>{profiles.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</select></label>
       <label>{t('profile.name')}<input name="profileName" value={name} maxLength={80} onChange={event => setName(event.target.value)} autoComplete="off" /></label>
@@ -61,13 +67,13 @@ export function ProfileChooser(props: Props) {
         <button type="button" disabled={name.trim() === ''} onClick={() => {
           try {
             const settings = connectionSettingsSchema.parse(props.settings())
-            void run(signal => props.saveProfile({ id: selectedId, name: name.trim(), settings }, signal))
+            void run(signal => props.saveProfile({ id: selectedId, name: name.trim(), settings }, signal), true)
           } catch { setError(true) }
         }}>{t(selectedId === null ? 'profile.save' : 'profile.update')}</button>
         <button type="button" disabled={selectedId === null} onClick={() => {
           if (selectedId === null) return
           const id = selectedId
-          void run(signal => props.removeProfile({ id }, signal))
+          void run(signal => props.removeProfile({ id }, signal), true)
         }}>{t('profile.remove')}</button>
         <button type="button" onClick={() => { void run(props.listProfiles) }}>{t('profile.reload')}</button>
       </div>

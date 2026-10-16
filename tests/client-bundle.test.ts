@@ -4,6 +4,7 @@ import { runInNewContext } from 'node:vm'
 import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
+import { emptyBrowsingState } from '../src/host/browsing-state.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
 
 interface BundleRegistration { id: string; factory: (require: (name: string) => unknown) => { apply: (ctx: Context) => void } }
@@ -18,6 +19,8 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
   const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
+  const loadBrowsingState = vi.fn(async (_sessionId: string) => ({ ok: true as const, value: emptyBrowsingState() }))
+  const saveBrowsingState = vi.fn(async (_sessionId: string, value: ReturnType<typeof emptyBrowsingState>) => ({ ok: true as const, value }))
   const mount = vi.fn().mockRejectedValueOnce(new Error('Host not ready')).mockResolvedValue(unmount)
   function register(id: string): () => void {
     if (contributions.has(id)) throw new Error('Duplicate contribution: ' + id)
@@ -51,7 +54,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
       register: (entry: SlotEntry) => { slot = entry; return register('slot:' + entry.key) },
     },
     remote: { $mount: mount },
-    get: () => ({ status }),
+    get: () => ({ status, loadBrowsingState, saveBrowsingState }),
   } as unknown as Context
   client.apply(context)
   if (slot === undefined) throw new Error('Missing sidebar body')
@@ -60,6 +63,12 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   await expect(api.status(new AbortController().signal)).resolves.toMatchObject({ ok: true, value: { readOnly: true } })
   expect(mount).toHaveBeenCalledTimes(2)
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
+  const other = slot.inject('another-session')
+  expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')
+  await api.saveBrowsingState({ ...emptyBrowsingState(), db: 2 }, new AbortController().signal)
+  await other.loadBrowsingState(new AbortController().signal)
+  expect(saveBrowsingState.mock.calls[0]?.[0]).toBe('trusted-session')
+  expect(loadBrowsingState.mock.calls[0]?.[0]).toBe('another-session')
   expect(importNames.every(name => !name.startsWith('node:'))).toBe(true)
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   expect(unmount).toHaveBeenCalledTimes(1)

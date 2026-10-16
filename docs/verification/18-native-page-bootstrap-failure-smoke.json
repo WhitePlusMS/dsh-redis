@@ -1,0 +1,38 @@
+{
+  "artifactPrefix": "native-sessions",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T07:49:20.337Z",
+  "packageSha256": "53c5b7dcb6a4f2c538d67f894d7fbf6e7029bcdc83e837c0214211720cc4b075",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "error": "locator.waitFor: Timeout 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for getByRole('button', { name: 'New session', exact: true }).first() to be visible\u001b[22m\n",
+  "visibleText": "",
+  "finishedAt": "2026-10-16T07:51:13.441Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "9a31f8f3-1a14-4fe4-8785-664b0d22e3a2",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

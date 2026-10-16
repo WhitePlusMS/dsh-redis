@@ -5,7 +5,7 @@ import { MAX_LIST_ITEMS, type DatabaseTarget, type GeoEntry, type GeoReadRequest
 import { geoReadRequestSchema } from '../typert.shared.ts'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { BytePreview } from './BytePreview.tsx'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface GeoActions { readonly readGeo: (request: GeoReadRequest, signal: AbortSignal) => Promise<RemoteResult<GeoReadResult>> }
@@ -18,7 +18,7 @@ export function GeoView(props: Props) {
   const { t } = props
   const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [request, setRequest] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 })
-  const [result, setResult] = useState<GeoReadResult | null>(null), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useState<PreviewFormat>('text')
+  const [result, setResult] = useState<GeoReadResult | null>(null), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('geo')
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
   const active = useRef<AbortController | null>(null)
   useEffect(() => {
@@ -35,7 +35,7 @@ export function GeoView(props: Props) {
   const row = result?.entries.find(entry => entry.member.base64 === selected)
   const columns: readonly CollectionColumn<GeoEntry>[] = [
     { id: 'rank', title: t('zset.rank'), render: entry => entry.rank },
-    { id: 'member', title: t('set.member'), render: entry => <button type="button" data-geo-member={entry.member.base64} onClick={() => { setSelected(entry.member.base64); setFormat('text') }}>{entry.member.label}<small>{entry.member.byteLength} {t('keys.bytes')}</small></button> },
+    { id: 'member', title: t('set.member'), render: entry => <button type="button" data-geo-member={entry.member.base64} onClick={() => { setSelected(entry.member.base64) }}>{entry.member.label}<small>{entry.member.byteLength} {t('keys.bytes')}</small></button> },
     { id: 'score', title: t('zset.score'), render: entry => <span data-geo-score={entry.member.base64}>{entry.score}</span> },
     { id: 'longitude', title: t('geo.longitude'), render: entry => <span data-geo-longitude={entry.member.base64}>{entry.position?.longitude ?? t('geo.noPosition')}</span> },
     { id: 'latitude', title: t('geo.latitude'), render: entry => <span data-geo-latitude={entry.member.base64}>{entry.position?.latitude ?? t('geo.noPosition')}</span> },

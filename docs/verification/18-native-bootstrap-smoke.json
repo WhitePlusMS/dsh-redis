@@ -1,0 +1,19 @@
+{
+  "artifactPrefix": "native",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T07:52:33.517Z",
+  "packageSha256": "53c5b7dcb6a4f2c538d67f894d7fbf6e7029bcdc83e837c0214211720cc4b075",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "finishedAt": "2026-10-16T07:53:04.521Z"
+}

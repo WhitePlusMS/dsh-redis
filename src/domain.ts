@@ -244,3 +244,20 @@ export interface BloomReadResult {
   readonly membership: 'absent' | 'maybe-present' | null
   readonly sampledAt: string
 }
+
+/** UI preferences belong to the trusted Host session, never to a live socket.
+ * Only selections survive a sidebar remount; values, credentials and cursors do not.
+ */
+export const PREVIEW_FORMATS = ['text', 'json', 'hex', 'base64', 'decode-text', 'decode-json'] as const
+export type PreviewFormat = typeof PREVIEW_FORMATS[number]
+export const PREVIEW_VIEWS = ['string', 'hash', 'list', 'set', 'zset', 'stream', 'geo', 'json'] as const
+export type PreviewView = typeof PREVIEW_VIEWS[number]
+export interface SessionBrowsingState {
+  readonly profileId: string | null
+  readonly db: number
+  readonly pattern: string
+  readonly keyBase64: string | null
+  readonly formats: Readonly<Record<PreviewView, PreviewFormat>>
+  readonly stringOffset: string
+  readonly stringCount: number
+}

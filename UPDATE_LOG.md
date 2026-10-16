@@ -717,3 +717,40 @@
 - 新增docs/verification/17-bloom-view.md及四份机器报告/截图，归档与源件SHA相同。记录null扩展来自固定模块实证、缺命令与伪造确定性结论的HTTP注入边界、删除/转型后0不冒充阴性、真实ACL、源DUMP/绝对过期/写计数不变；未宣称所有模块或统一会话恢复已验收。
 - 17号五项勾选done，18号因可信生命周期/现有状态事实核对开始in-progress但未勾选；更新README、baseline、方案8.7、拆分草案、tracker、spec及索引。保留原29票优先级/依赖和固定参考SHA。下一步仅按原18票实施，17本轮归档核对后本地提交，无push。
 - 所有自建DSH/Chrome/Redis已退出，证书/UUID目录清理true；用户业务库、日常profile和已有服务未动。之前Git16临时快照递归清理被自动审核拒绝（blocked by policy），原目录/junction继续保留，不绕过删除策略。
+
+
+## 2026-10-16 任务18首批：可信会话浏览选择
+
+- 17已本地提交7ff5185，工作区干净后开始18。完整核对官方rc.2 SessionStore/客户端binding生命周期：侧栏解绑不等于Host session/disposed，不借用对话header/event-log保存插件选择。
+- 新增domain.SessionBrowsingState及固定格式枚举；typert.shared/host/remote-client与remote-service新增load/saveBrowsingState严格Agent RPC，禁止浏览器在DTO伪造sessionId、值、秘密、socket/游标。src/host/browsing-state.ts以可信sessionId的Map保存当前Host生命周期内的配置ID、DB、MATCH、原Key字节、各视图格式及String窗口；clone边界、取消前校验、disposed仅删自身，Host卸载清全部，无Redis操作/自动联网/磁盘写入。按原票无跨DSH重启恢复声明。
+- tests/host-typert固定端点清单同步23项；立即三层类型检查。18 UI/专项/真实包验收仍待完成，任务继续in-progress。
+
+- 18第二批新增client/BrowsingSession.tsx与session-state-queue.ts，修改RedisWorkspace/index：可信slot闭包绑定偏好RPC、每会话串行读写，卸载前已发有限保存完成后新挂载再load；不同会话独立，迟到保存响应不覆盖UI，load/save失败可显式重试，成功结果显式严格schema后渲染。
+- ProfileChooser恢复当前会话配置ID和设置，KeyBrowser恢复DB/MATCH/原Key Base64；恢复仅显示身份，用户显式读才挂KeyDetails，实际DB不符需手动SELECT。Key列表/值/续页token不恢复。KeyDetails保留已提交String窗口，八视图格式改由同一会话context保存，保留各自原默认格式，移除cell选择自动重置格式；value-preview复用domain格式类型，仍用既有BytePreview。locale明确Host生命周期及load/save错误。
+- 批量脚本误按无类型的en声明定位，实际英文词典为显式Record类型，最后一步未匹配；类型检查立即发现7个缺失翻译。修正准确声明并补齐条目，未绕过编译。此时18仍未验收/未提交。
+
+- 18严格类型/构建/完整222回归首次通过，其中新会话状态6项。随后补明确sessionKey作为Provider的React key，防DSH复用同一组件位置时短暂沿用旧会话表单/context；浏览器身份仅用于卸载隔离，Host归属仍由闭包及Agent lookup确定。扩展现有真实client bundle测试验证两个slot绑定各自sessionId，不通过DTO指定归属；立即重新类型检查。
+
+- 新增scripts/smoke-session-state.mjs并在原生脚本加入SESSIONS开关、独立报告及自建profile：真实可信API新建第二会话，经官方源码证实的data-row-key切换；验证共享配置/独立DB与二进制Key/格式/窗口、无自动Redis命令、旧HTTP响应跨会话丢弃、单会话断连与显式重连DB边界。真正session移除无公开Remote，事件清理只以Host状态/连接专项和源码接线核对，不冒称点击归档等于dispose。旧String回归两处显式选择Text，不继续依赖新Key隐式reset。原生尚未运行，随后语法检查/完整pack/隔离安装。
+- 18完整prepack222项通过，包53c5b7dcb6a4f2c538d67f894d7fbf6e7029bcdc83e837c0214211720cc4b075。首次安装相对tgz路径被CLI按profile目录解析导致ENOENT，改绝对同SHA路径后成功；lib70文件字节一致。原生首次运行在最终报告前中断，不能从中途截图判为通过。
+- 自动审核拒绝本次UUID6a0fb5e9自建Redis信号/目录清理的整条命令，仅返回blocked by policy，命令没有执行且未换机制重试。随后仅只读核对：本次Windows脚本/DSH进程已不在，Linux记录pid286在/proc已不存在；两份UUID目录保留。中断事实独立记录native-sessions-interrupted.json，未假造完整报告或清理成功。接下来同包捕获完整console复跑，不依据未知中断原因改产品代码。
+
+- 同包第二次原生console证实openSession先创建waitForResponse Promise、再独立await行点击，会在点击等待期间出现未处理的response超时，导致Node退出并跳过finally；首次中断不能仅凭相似性断定同因。修脚本为先等待实际session行，再Promise.all绑定响应与点击，确保失败进入原catch/finally；加入逐组console记录以追溯已完成检查，产品包不变。不依据缺少页面状态的错误继续补产品；重新抓真实DOM定位行缺失或切换原因。
+
+- 第三次同包运行生成完整失败报告：77组（含既有全部类型、A状态保存、Host关闭）通过后，未选中blank B没有列表行。源码和失败截图一致：rc.2树明确隐藏非current blank，rename不改变blank；这不是Redis状态实现故障。本次finally完整退出并清理true。保存失败原报告/console/截图，停下重审测试方向，没有继续猜测DOM。
+- 改验收为自建第二唯一workspace，目录在当前独占Redis UUID目录内随原finally回收；走官方New session in workspace/adopt已有blank入口，并从真实session/create响应核对目标ID后确认aria-selected。两会话状态目标仍不同，既有无自动Redis/迟到响应等验收不减；不写产品测试hook、不额外安装插件、不发模型请求。包与70个lib不变，随后同包重跑。
+
+- 下一次同包全类型复跑在普通SCAN阶段失败：7组后报告未complete，随后fixture admin ClientClosedError；并行只读WSL探针返回Service I/O 0x800703e3，当前C盘仅约238MiB。这里只记录同时观察到的环境连接中断，不把相关性当成产品根因。该轮自建DSH/Redis/证书/目录正常清理true，完整失败报告/console/截图另存environment-failure。保留先前77组全视图报告，后续不改产品，改用仅KEYS+SESSIONS的小夹具隔离跨会话，期间不额外调用WSL探针。
+
+- 缩小KEYS+SESSIONS的同包复跑仅完成5个Host基础组，在初始DSH New session按钮等待超时，尚未执行双会话流程。自建DSH/Redis/证书/目录均清理true；visibleText为空，失败截图尝试未写入新文件，现有native-sessions-failure.png仍是上一轮15:47旧图，未将其复制冒充本轮证据。bootstrap-failure JSON/console单独保留。
+- 暂停真实Redis重复全跑，验收脚本始终记录有界脱敏browser pageerror/console error/requestfailed到机器报告，随后只跑无Redis的Host/侧栏启动检查。产品源码与包不变，18状态仍in-progress，没有把环境失败当成完成或继续打产品补丁。
+
+- 无Redis的同包原生Host/侧栏启动已通过，browser pageErrors/consoleErrors/requestFailures均为空，自建DSH正常退出；原报告native-smoke.json为本次时间戳。继续同包仅普通直连KEYS+SESSIONS小夹具验证，不额外调用WSL探针，TLS和全类型既有77组另记，不混称完整21发布通过。
+
+
+## 2026-10-16 任务18完成：可信会话偏好与显式恢复
+
+- 产品包53c5b7dcb6a4f2c538d67f894d7fbf6e7029bcdc83e837c0214211720cc4b075严格三层类型/构建/222回归通过，lib70文件集合/字节一致；最终普通直连原生双会话21组通过，无Redis启动单独通过，预期旧readString请求ERR_ABORTED外无page/console错误。两个workspace的真实DSH blank创建/复用入口证实独立选择/共享配置/无自动Redis命令、二进制Key/格式/窗口、A旧HTTP响应不覆盖B、单owner断开和DB手动恢复。
+- 新增docs/verification/18-session-browsing-state.md及八份原始报告/截图/console归档，均与原件SHA相同；B截图已查看。保留同包完整类型运行77组但整轮false、未处理waiter、7组环境失连及5组页面启动失败；没有将失败改为通过、假造新截图或宣称21门禁已完。19/20边界明确，状态只保留当前Host生命周期，不新增磁盘/浏览器秘密保存。
+- 18四项勾选done，19按题目和既有取消/队列事实核对进入in-progress，仍5项未勾选；同步七个进度入口与方案6.2、tracker加入每验证小目标本地提交约定，原29票图/优先级与固定参考SHA保留。18完成核对后本地提交，无push。
+- 最终成功轮资源正常清理true；早期异常两对目录6a0fb5e9/ab6db273及Git16快照仍保留，清理被自动审核拒绝后未绕过。最后仅只读验证原Linux PID286/298不存在，当前无这些自建Redis运行；没有启停用户已有服务、日常profile或清理C盘。

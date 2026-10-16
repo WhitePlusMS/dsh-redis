@@ -3,7 +3,7 @@ import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { MAX_VALUE_BYTES, type DatabaseTarget, type RedisKey, type StringReadRequest, type StringReadResult } from '../domain.ts'
 import { BytePreview } from './BytePreview.tsx'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat, useBrowsingState } from './BrowsingSession.tsx'
 import { HashView, type HashActions } from './HashView.tsx'
 import { ListView, type ListActions } from './ListView.tsx'
 import { SetView, type SetActions } from './SetView.tsx'
@@ -27,10 +27,11 @@ type Props = BloomActions & TimeSeriesActions & StringActions & HllActions & Has
  */
 export function KeyDetails(props: Props) {
   const { t } = props
-  const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_VALUE_BYTES)
-  const [request, setRequest] = useState({ offset: '0', count: MAX_VALUE_BYTES, attempt: 0 })
+  const browsing = useBrowsingState()
+  const [offset, setOffset] = useState(browsing.state.stringOffset), [count, setCount] = useState(browsing.state.stringCount)
+  const [request, setRequest] = useState({ offset: browsing.state.stringOffset, count: browsing.state.stringCount, attempt: 0 })
   // The formatter survives the loading state between byte windows.
-  const [format, setFormat] = useState<PreviewFormat>('text')
+  const [format, setFormat] = useBrowsingFormat('string')
   const [result, setResult] = useState<StringReadResult | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false)
   const [rangeError, setRangeError] = useState(false)
@@ -71,7 +72,7 @@ export function KeyDetails(props: Props) {
     </>}
     <form onSubmit={event => {
       event.preventDefault()
-      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); browsing.update({ stringOffset: offset, stringCount: count }); setRequest({ offset, count, attempt: request.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -84,7 +85,7 @@ export function KeyDetails(props: Props) {
         <button type="submit">{t('value.refresh')}</button>
         <button type="button" disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
           if (result?.nextOffset === null || result?.nextOffset === undefined) return
-          setOffset(result.nextOffset); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
+          setOffset(result.nextOffset); browsing.update({ stringOffset: result.nextOffset, stringCount: count }); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
         }}>{t('value.next')}</button>
         {busy && <button type="button" onClick={() => { active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }}>{t('keys.cancel')}</button>}
       </div>

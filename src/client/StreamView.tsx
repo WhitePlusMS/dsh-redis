@@ -8,7 +8,7 @@ import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { prefixLabel, prefixWindow } from './collection-value.ts'
 import { appendStreamMessages, emptyStreamCache, type StreamCache } from './stream-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface StreamActions { readonly readStream: (request: StreamReadRequest, signal: AbortSignal) => Promise<RemoteResult<StreamReadResult>> }
@@ -22,7 +22,7 @@ export function StreamView(props: Props) {
   const [start, setStart] = useState('-'), [end, setEnd] = useState('+'), [count, setCount] = useState(MAX_STREAM_MESSAGES)
   const [range, setRange] = useState({ start: '-', end: '+', count: MAX_STREAM_MESSAGES, attempt: 0 }), [rangeError, setRangeError] = useState(false)
   const [selected, setSelected] = useState<string | null>(null), [cell, setCell] = useState<{ readonly index: number; readonly part: 'field' | 'value' } | null>(null)
-  const [format, setFormat] = useState<PreviewFormat>('text')
+  const [format, setFormat] = useBrowsingFormat('stream')
   const page = useCollectionScan<StreamCache, StreamReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([direction, range]), empty: emptyStreamCache,
     append: (previous, response) => appendStreamMessages(previous, response.messages),
     load: (cursor, signal) => props.readStream({ target: props.target, keyBase64: props.selected.base64, direction, start: range.start, end: range.end, count: range.count, cursor }, signal),
@@ -36,8 +36,8 @@ export function StreamView(props: Props) {
   ]
   const fields: readonly CollectionColumn<FieldRow>[] = [
     { id: 'index', title: t('stream.occurrence'), render: row => row.index },
-    { id: 'field', title: t('hash.field'), render: row => <button type="button" data-stream-field={row.index} onClick={() => { setCell({ index: row.index, part: 'field' }); setFormat('text') }}>{row.field.label}<small>{row.field.byteLength} {t('keys.bytes')}</small></button> },
-    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }); setFormat('text') }}>{prefixLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'field', title: t('hash.field'), render: row => <button type="button" data-stream-field={row.index} onClick={() => { setCell({ index: row.index, part: 'field' }) }}>{row.field.label}<small>{row.field.byteLength} {t('keys.bytes')}</small></button> },
+    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }) }}>{prefixLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
   return <section className="redis-details" aria-label={t('stream.title')}>
     <h2>{t('stream.title')} · <span>{props.selected.label}</span></h2>

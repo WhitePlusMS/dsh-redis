@@ -1,6 +1,7 @@
 import type { StringReadResult } from '../domain.ts'
 
-export type PreviewFormat = 'text' | 'json' | 'hex' | 'base64' | 'decode-text' | 'decode-json'
+import type { PreviewFormat } from '../domain.ts'
+export type { PreviewFormat } from '../domain.ts'
 export interface ValuePreview { readonly text: string; readonly error: 'utf8' | 'json' | 'partial-json' | 'base64' | 'limit' | null; readonly contextBytes: number }
 type Window = Pick<StringReadResult, 'base64' | 'prefix' | 'suffix' | 'offset' | 'complete'>
 const MAX_OUTPUT = 512 * 1024

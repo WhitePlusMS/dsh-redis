@@ -6,7 +6,7 @@ import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendKeys, emptyKeyCache, type KeyCache } from './key-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface SetActions { readonly scanSet: (request: ScanSetRequest, signal: AbortSignal) => Promise<RemoteResult<ScanSetResult>> }
@@ -15,7 +15,7 @@ type Props = SetActions & { readonly target: DatabaseTarget; readonly selected: 
 /** Set members share complete byte identities and the existing bounded identity cache. */
 export function SetView(props: Props) {
   const { t } = props
-  const [pattern, setPattern] = useState('*'), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useState<PreviewFormat>('text')
+  const [pattern, setPattern] = useState('*'), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('set')
   const scanState = useCollectionScan<KeyCache, ScanSetResult>({ target: props.target, keyBase64: props.selected.base64, empty: emptyKeyCache,
     append: (previous, page) => appendKeys(previous, page.members),
     load: (cursor, signal) => props.scanSet({ target: props.target, keyBase64: props.selected.base64, pattern, cursor }, signal),
@@ -24,7 +24,7 @@ export function SetView(props: Props) {
   const member = cache.keys.find(value => value.base64 === selected)
   const window = useMemo(() => member === undefined ? null : { base64: member.base64, offset: '0', prefix: '', suffix: '', complete: true }, [member])
   const columns: readonly CollectionColumn<RedisKey>[] = [
-    { id: 'member', title: t('set.member'), render: value => <button type="button" data-set-member={value.base64} onClick={() => { setSelected(value.base64); setFormat('text') }}>{value.label}<small>{value.byteLength} {t('keys.bytes')}</small></button> },
+    { id: 'member', title: t('set.member'), render: value => <button type="button" data-set-member={value.base64} onClick={() => { setSelected(value.base64) }}>{value.label}<small>{value.byteLength} {t('keys.bytes')}</small></button> },
   ]
   return <section className="redis-details" aria-label={t('set.title')}>
     <h2>{t('set.title')} · <span>{props.selected.label}</span></h2>

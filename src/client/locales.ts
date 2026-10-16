@@ -1,5 +1,9 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'session.loading': '正在恢复本会话选择…', 'session.loadError': '无法恢复本会话选择，请重试。', 'session.saveError': '本会话选择尚未保存，请重试。',
+  'session.scope': '浏览选择按当前Host会话分别保留；只恢复选择，不自动连接或读取。密码与数据值不保存，Host重启后重新选择。',
+  'session.restored': '已恢复Key选择，尚未读取数据。', 'session.readKey': '读取已选Key', 'session.selectDb': '请先手动切换到上次选择的DB，再读取此Key。',
+
   'bloom.title': 'Bloom 统计与存在性', 'bloom.refresh': '读取 / 刷新统计', 'bloom.format': '查询项输入格式', 'bloom.item': '单个查询项（允许空字节）', 'bloom.query': '检查可能性', 'bloom.submitted': '本次提交的查询项字节（Base64）',
   'bloom.capacity': '容量', 'bloom.size': '占用字节', 'bloom.filters': '子过滤器数', 'bloom.inserted': '记录插入数（非精确成员数）', 'bloom.expansion': '扩展系数', 'bloom.nonscaling': '不扩展', 'bloom.absent': '不存在：本次过滤器检查为阴性。', 'bloom.maybe-present': '可能存在：有假阳性，不能证明该项曾被加入。',
   'bloom.hint': '仅查看明确的Bloom类型；不将Cuckoo等同扩展类型当作Bloom。统计不含最初全部成员，记录插入数可能受假阳性影响。0只表示本次过滤器阴性，1表示可能存在；其他业务真值仍需原数据源验证。',
@@ -103,6 +107,10 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'session.loading': 'Restoring this session selection…', 'session.loadError': 'Cannot restore this session selection. Retry.', 'session.saveError': 'This session selection has not been saved. Retry.',
+  'session.scope': 'Selections are kept per current Host session; restore never connects or reads automatically. No passwords or data values are saved. Select again after a Host restart.',
+  'session.restored': 'Key selection restored; data has not been read.', 'session.readKey': 'Read selected key', 'session.selectDb': 'Manually select the previously chosen DB before reading this key.',
+
   'bloom.title': 'Bloom statistics and membership', 'bloom.refresh': 'Read / refresh statistics', 'bloom.format': 'Item input format', 'bloom.item': 'One query item (empty bytes allowed)', 'bloom.query': 'Check possibility', 'bloom.submitted': 'Submitted item bytes (Base64)',
   'bloom.capacity': 'Capacity', 'bloom.size': 'Allocated bytes', 'bloom.filters': 'Sub-filters', 'bloom.inserted': 'Recorded insertions (not exact members)', 'bloom.expansion': 'Expansion factor', 'bloom.nonscaling': 'Non-scaling', 'bloom.absent': 'Absent: negative in this filter observation.', 'bloom.maybe-present': 'Possibly present: false positives cannot prove this item was added.',
   'bloom.hint': 'Only the explicit Bloom type is queried. Cuckoo and other module types are distinct. Statistics cannot enumerate original members; recorded insertions can be affected by false positives. Zero means a negative filter check, one means possible membership. Verify business truth in its original data source.',

@@ -1,0 +1,17 @@
+[smoke] Native rc.2 profile started on loopback
+node:internal/process/promises:394
+    triggerUncaughtException(err, true /* fromPromise */);
+    ^
+
+page.waitForResponse: Timeout 30000ms exceeded while waiting for event "response"
+    at openSession (E:\项目demo\dsh-redis\scripts\smoke-session-state.mjs:20:25)
+    at smokeSessionState (E:\项目demo\dsh-redis\scripts\smoke-session-state.mjs:77:11)
+    at async smoke (E:\项目demo\dsh-redis\scripts\smoke-dsh.mjs:1167:55)
+    at async withRedisFixture.tls (E:\项目demo\dsh-redis\scripts\smoke-dsh.mjs:1368:24)
+    at async withWslRedisFixture (E:\项目demo\dsh-redis\scripts\wsl-redis-fixture.mjs:87:19)
+    at async file:///E:/%E9%A1%B9%E7%9B%AEdemo/dsh-redis/scripts/smoke-dsh.mjs:1231:5 {
+  log: [],
+  name: 'TimeoutError'
+}
+
+Node.js v22.22.1

@@ -1,3 +1,4 @@
+import type { SessionBrowsingState } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult, TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { EmptyRequest, RedisHostStatus, ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionTestResult } from './domain.ts'
@@ -16,6 +17,8 @@ import type { BloomReadRequest, BloomReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  loadBrowsingState: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>
+  saveBrowsingState: (agentId: SessionId, request: SessionBrowsingState, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>
   readBloom: (agentId: SessionId, request: BloomReadRequest, signal?: AbortSignal) => Promise<RemoteResult<BloomReadResult>>
   readTimeSeries: (agentId: SessionId, request: TimeSeriesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<TimeSeriesReadResult>>
   readHll: (agentId: SessionId, request: HllReadRequest, signal?: AbortSignal) => Promise<RemoteResult<HllReadResult>>
@@ -40,6 +43,8 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/loadBrowsingState': RedisViewerRemote['loadBrowsingState']
+    'redisViewer/saveBrowsingState': RedisViewerRemote['saveBrowsingState']
     'redisViewer/readBloom': RedisViewerRemote['readBloom']
     'redisViewer/readTimeSeries': RedisViewerRemote['readTimeSeries']
     'redisViewer/readHll': RedisViewerRemote['readHll']
@@ -64,6 +69,8 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/loadBrowsingState': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>
+    'agent:redisViewer/saveBrowsingState': (request: SessionBrowsingState, signal?: AbortSignal) => Promise<RemoteResult<SessionBrowsingState>>
     'agent:redisViewer/readBloom': (request: BloomReadRequest, signal?: AbortSignal) => Promise<RemoteResult<BloomReadResult>>
     'agent:redisViewer/readTimeSeries': (request: TimeSeriesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<TimeSeriesReadResult>>
     'agent:redisViewer/readHll': (request: HllReadRequest, signal?: AbortSignal) => Promise<RemoteResult<HllReadResult>>

@@ -6,7 +6,7 @@ import { listReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { prefixWindow, prefixLabel } from './collection-value.ts'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface ListActions { readonly readList: (request: ListReadRequest, signal: AbortSignal) => Promise<RemoteResult<ListReadResult>> }
@@ -19,7 +19,7 @@ export function ListView(props: Props) {
   const [request, setRequest] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 })
   const [result, setResult] = useState<ListReadResult | null>(null), [busy, setBusy] = useState(false)
   const [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useState<PreviewFormat>('text')
+  const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('list')
   const active = useRef<AbortController | null>(null)
   const row = result?.entries.find(entry => entry.index === selected)
   const window = useMemo(() => row === undefined ? null : prefixWindow(row.value), [row])
@@ -36,7 +36,7 @@ export function ListView(props: Props) {
   }, [props.readList, props.target.id, props.target.generation, props.target.db, props.selected.base64, request])
   const columns: readonly CollectionColumn<ListEntry>[] = [
     { id: 'index', title: t('list.index'), render: entry => entry.index },
-    { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index); setFormat('text') }}>{prefixLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index) }}>{prefixLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
   return <section className="redis-details" aria-label={t('list.title')}>
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>

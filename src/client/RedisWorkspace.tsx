@@ -3,10 +3,12 @@ import type { PropsLocale, PropsRuntime } from '@deepseek-ai/dsh-client-ui-slots
 import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisHostStatus } from '../domain.ts'
+import { BrowsingSession, type BrowsingActions } from './BrowsingSession.tsx'
 import { ConnectionForm, type ConnectionActions } from './ConnectionForm.tsx'
 import { NS } from './locales.ts'
 
-export interface RedisWorkspaceInjected extends ConnectionActions {
+export interface RedisWorkspaceInjected extends ConnectionActions, BrowsingActions {
+  readonly sessionKey: string
   readonly status: (signal: AbortSignal) => Promise<RemoteResult<RedisHostStatus>>
 }
 type Props = PropsRuntime<'sidebar.right.pane.tab'> & PropsLocale<typeof NS> & RedisWorkspaceInjected
@@ -26,7 +28,7 @@ export function RedisWorkspace(props: Props) {
   }, [props.status, attempt])
   return <section className="dsh-redis" aria-label={t('view.title')}>
     <header><h2>{t('view.title')}</h2><span className="redis-badge">{t('badge.readOnly')}</span></header>
-    {phase === 'ready' ? <ConnectionForm {...props} /> : <div className="redis-empty">
+    {phase === 'ready' ? <BrowsingSession key={props.sessionKey} {...props}><ConnectionForm {...props} /></BrowsingSession> : <div className="redis-empty">
       <h2>{t('empty.title')}</h2><p>{t('empty.description')}</p>
       {phase === 'error' && <button type="button" onClick={() => setAttempt(value => value + 1)}>{t('action.retry')}</button>}
     </div>}

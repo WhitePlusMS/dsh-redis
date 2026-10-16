@@ -1,0 +1,43 @@
+{
+  "artifactPrefix": "native-sessions",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T07:46:26.659Z",
+  "packageSha256": "53c5b7dcb6a4f2c538d67f894d7fbf6e7029bcdc83e837c0214211720cc4b075",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native TLS form rejects wrong CA without a socket and accepts a corrected CA",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket"
+  ],
+  "passed": false,
+  "processStopped": true,
+  "error": "The expression evaluated to a falsy value:\n\n  assert((await keys.innerText()).includes('This scan is complete.'))\n",
+  "visibleText": "New Session\nCtrl\n+\nAlt\n+\nN\nPlugins\nWorkspaces\ndsh-redis\nNew Session\nSettings\nInto the Unknown\nPreview\ndsh-redis\nStandard mode\nDescribe what you want to build, / commands, @ files or sessions\nDeepSeek-V41-Flash\nHigh\nRedis\nRedis\nRead only\n\nSelections are kept per current Host session; restore never connects or reads automatically. No passwords or data values are saved. Select again after a Host restart.\n\nStandalone connection\nSaved connection\nNew connection\nSessions 6a0fb5e9-22fe-4d3e-9cb3-7225433dd2ad\nSessions ab6db273-33cd-4082-9ac8-a257d86f97e2\nSessions a65acc7c-8356-4b6d-87f5-d9c6758a0950\nSessions 980a90db-3daa-4dfe-9e2d-beb06582c81e\nConnection name\nUpdate profile\nDelete profile\nRefresh profiles\n\nOnly address, username and TLS settings are saved. Passwords are excluded. Connect manually after selecting.\n\nConnected · 127.0.0.1:2940 · TLS\n\nDisconnect\nRefresh status\nStatus checked at 3:47:03 PM\n\nPlugin communication failed. Retry the operation.\n\nPasswords are not persisted. The input clears after connecting.\n\nDB and keys · DB 0\nDB index\nSelect DB\nKey match pattern\nScan / refresh\nContinue scan\n\nIncremental Redis glob scan. Never loads all keys automatically and does not require CONFIG or INFO.\n\nLoaded keys: 0 · Scan not complete\n\nStatus checked at 3:47:03 PM\n\nThe connection changed. Check its current state and retry.\n\nNo keys loaded.\n\nHost ready · DSH 0.2.0-rc.2",
+  "finishedAt": "2026-10-16T07:47:06.196Z",
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "980a90db-3daa-4dfe-9e2d-beb06582c81e",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true,
+      "redisJsonVersion": 80209,
+      "timeSeriesVersion": 80210,
+      "bloomVersion": 80212
+    }
+  ],
+  "fixturesStopped": true
+}

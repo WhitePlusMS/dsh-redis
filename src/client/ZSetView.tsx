@@ -7,7 +7,7 @@ import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { appendZSetRows, emptyZSetCache, type ZSetCache } from './zset-cache.ts'
-import type { PreviewFormat } from './value-preview.ts'
+import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 import { GeoView, type GeoActions } from './GeoView.tsx'
 
@@ -20,7 +20,7 @@ export function ZSetView(props: Props) {
   const [geo, setGeo] = useState(false)
   const [mode, setMode] = useState<'range' | 'scan'>('range'), [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [range, setRange] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 }), [pattern, setPattern] = useState('*')
-  const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useState<PreviewFormat>('text'), [rangeError, setRangeError] = useState(false)
+  const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('zset'), [rangeError, setRangeError] = useState(false)
   const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range]), empty: emptyZSetCache,
     append: (previous, page) => appendZSetRows(page.mode === 'range' ? emptyZSetCache() : previous, page.entries),
     load: (cursor, signal) => props.readZSet(mode === 'range' ? { target: props.target, keyBase64: props.selected.base64, mode, offset: range.offset, count: range.count } : { target: props.target, keyBase64: props.selected.base64, mode, pattern, cursor }, signal),
@@ -30,7 +30,7 @@ export function ZSetView(props: Props) {
   const window = useMemo(() => row === undefined ? null : { base64: row.member.base64, offset: '0', prefix: '', suffix: '', complete: true }, [row])
   const columns: readonly CollectionColumn<ZSetEntry>[] = [
     ...(mode === 'range' ? [{ id: 'rank', title: t('zset.rank'), render: (entry: ZSetEntry) => entry.rank }] : []),
-    { id: 'member', title: t('set.member'), render: entry => <button type="button" data-zset-member={entry.member.base64} onClick={() => { setSelected(entry.member.base64); setFormat('text') }}>{entry.member.label}<small>{entry.member.byteLength} {t('keys.bytes')}</small></button> },
+    { id: 'member', title: t('set.member'), render: entry => <button type="button" data-zset-member={entry.member.base64} onClick={() => { setSelected(entry.member.base64) }}>{entry.member.label}<small>{entry.member.byteLength} {t('keys.bytes')}</small></button> },
     { id: 'score', title: t('zset.score'), render: entry => <span data-zset-score={entry.member.base64}>{entry.score}</span> },
   ]
   if (geo) return <>
