@@ -61,13 +61,16 @@ export function ConnectionForm(props: Props) {
   const connected = connection?.state === 'connected'
   const settings = (): ConnectionSettings => ({ host: host.trim(), port: Number(port), username, tls: tls ? { caPem: caPem.trim() } : null })
   const request = (): ConnectionRequest => ({ ...settings(), password })
-  return <div className="redis-connection">
+  return <div className="redis-connection" data-connected={connected}>
     <h2>{t('connection.title')}</h2>
-    <ProfileChooser {...props} disabled={busy || connected} settings={settings} select={value => {
-      setHost(value?.host ?? '127.0.0.1'); setPort(String(value?.port ?? 6379)); setUsername(value?.username ?? '')
-      setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
-      setPassword(''); setError(null); setTested(false)
-    }} />
+    <details className="redis-connection-settings" open={!connected}>
+      <summary>{t('connection.settings')}</summary>
+      <ProfileChooser {...props} disabled={busy || connected} settings={settings} select={value => {
+        setHost(value?.host ?? '127.0.0.1'); setPort(String(value?.port ?? 6379)); setUsername(value?.username ?? '')
+        setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
+        setPassword(''); setError(null); setTested(false)
+      }} />
+    </details>
     {connected ? <>
       <p className="redis-connected" role="status">{t('connection.connected')} · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</p>
       <button type="button" disabled={busy} onClick={() => {

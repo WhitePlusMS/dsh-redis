@@ -6,7 +6,7 @@
 
 **Blocked by:** 08 按原始索引查看 List；09 增量查看 Set 成员；11 按消息 ID 查看 Stream；12 查看 RedisJSON 根值和指定路径；13 按位偏移查看 Bitmap；14 从 ZSet 切换查看 GEO 坐标；15 只读查看 HyperLogLog 估算数量；16 按时间范围查看 TimeSeries 样本；17 查看 Bloom 信息和成员存在性；19 取消读取并从超时或断线中恢复；20 在窄宽侧栏和两种主题下完成查看
 
-**Status:** ready-for-agent
+**Status:** in-progress
 
 **Priority:** P0
 
@@ -21,3 +21,5 @@
 2026-10-16：发布依赖审计事实：隔离profile pnpm peers check报告13个missing（Cordis、11个DSH模块、React）。固定rc.2官方profile.ts明确hoisted+autoInstallPeers:false，以安装目录的共享runtime供给宿主peer；root已复核相关源码段。全局安装实际manifest的Cordis4.0.4及11个DSH模块0.2.0-rc.2与声明匹配；React不在CLI Node lock/实体包，官方rc.2 Web workspace lock解析18.3.1，不能拿源码lock替代浏览器实际共享版本直接证据。后者仍待本票核验，不盲目安装另一React/宿主副本。原生HLL67组成功不替代整体验收。
 
 2026-10-16：16原生响应故障注入发现当前rc.2客户端wire路径未自动执行结果描述器，越界时间戳曾显示；TimeSeries接收入口已显式复用严格schema，新包73组验证拒绝、清空与恢复。其他RPC浏览器接收处仍需本票逐项审计，不把schema单测或Host网关校验代替真实Client边界；本票不勾选。
+
+2026-10-16：20完成后本票开始，5项仍未勾选。LUNA只读事实已核对23项RPC及全部浏览器消费入口：目前只有TimeSeries/Bloom/浏览状态显式parse返回，其他入口仍待统一核验；Host/描述器schema不代替真实浏览器。已定位rc.2 Web seed.ts→__ModuleLoader__.create→ClientModuleSystem.import('react')的实际共享模块链，以及Host createRuntimeResolution→PluginPackages→installRuntimeInterception解析路径；尚未取得浏览器实际React.version，不据lock下结论。不复制另一个React/宿主runtime；后续以当前最终包完成真实门禁。

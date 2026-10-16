@@ -47,7 +47,7 @@ export function StreamView(props: Props) {
       try { streamReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, direction, start, end, count, cursor: null }); setRangeError(false); setSelected(null); setCell(null); setRange({ start, end, count, attempt: range.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
-      <div className="redis-address">
+      <div className="redis-address redis-bounds">
         <label>{t('stream.start')}<input name="streamStart" required maxLength={41} value={start} onChange={event => setStart(event.target.value)} /></label>
         <label>{t('stream.end')}<input name="streamEnd" required maxLength={41} value={end} onChange={event => setEnd(event.target.value)} /></label>
       </div>

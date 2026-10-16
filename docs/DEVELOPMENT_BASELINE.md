@@ -9,7 +9,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–19 done、20 布局与主题适配 in-progress，其余 9 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–20 done、21 发布门禁 in-progress，其余 8 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 前次仅文档阶段的只读快照（2026-10-16）
 
@@ -48,4 +48,4 @@
 
 原样参考副本位于 `.scratch/upstream/`，来源和 MIT 许可见 THIRD_PARTY_NOTICES.md 与 licenses。已有验收见 docs/verification/，只证明各自记录的环境和包；本轮没有重跑这些验收。
 
-当前进度：01–19 done，20 布局与主题适配 in-progress，其余9票 ready-for-agent；19证据见 docs/verification/19-read-cancellation-recovery.md：225项回归、真实恢复8组与原生18组通过，安装lib70文件一致。18历史完整类型77组失败及各失败报告继续保留，21发布门禁仍需完整重验；29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–20 done，21 发布门禁 in-progress，其余8票 ready-for-agent；20证据见 docs/verification/20-sidebar-layout-themes.md：225项回归与最终包原生22组通过，安装lib70文件一致。全部历史报告保留各自检查范围，21仍需当前包完整门禁、浏览器接收边界与共享runtime核验；29票范围/优先级/依赖不变，完整首版尚未完成。

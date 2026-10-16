@@ -1,5 +1,6 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'layout.back': '返回 Key 列表', 'layout.selectKey': '从列表选择 Key 查看内容。', 'connection.settings': '连接配置',
   'session.loading': '正在恢复本会话选择…', 'session.loadError': '无法恢复本会话选择，请重试。', 'session.saveError': '本会话选择尚未保存，请重试。',
   'session.scope': '浏览选择按当前Host会话分别保留；只恢复选择，不自动连接或读取。密码与数据值不保存，Host重启后重新选择。',
   'session.restored': '已恢复Key选择，尚未读取数据。', 'session.readKey': '读取已选Key', 'session.selectDb': '请先手动切换到上次选择的DB，再读取此Key。',
@@ -107,6 +108,7 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'layout.back': 'Back to keys', 'layout.selectKey': 'Select a key from the list to inspect its content.', 'connection.settings': 'Connection settings',
   'session.loading': 'Restoring this session selection…', 'session.loadError': 'Cannot restore this session selection. Retry.', 'session.saveError': 'This session selection has not been saved. Retry.',
   'session.scope': 'Selections are kept per current Host session; restore never connects or reads automatically. No passwords or data values are saved. Select again after a Host restart.',
   'session.restored': 'Key selection restored; data has not been read.', 'session.readKey': 'Read selected key', 'session.selectDb': 'Manually select the previously chosen DB before reading this key.',

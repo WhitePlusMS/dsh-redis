@@ -39,6 +39,9 @@ export function KeyBrowser(props: Props) {
     return { base64, byteLength, label: prefixLabel({ base64, byteLength, fullByteLength: byteLength, suffix: '' }) }
   })
   const [opened, setOpened] = useState(false)
+  const [detailOpen, setDetailOpen] = useState(selected !== null)
+  const list = useRef<HTMLDivElement | null>(null), back = useRef<HTMLButtonElement | null>(null)
+  const listPosition = useRef(0), focusDestination = useRef<'list' | 'detail' | null>(null)
   const [sampledAt, setSampledAt] = useState<string | null>(null)
   const [error, setError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [busy, setBusy] = useState(false)
@@ -50,9 +53,19 @@ export function KeyBrowser(props: Props) {
   }
   function clear(): void {
     ++sequence.current; active.current?.abort(); setBusy(false)
+    setDetailOpen(false); listPosition.current = 0; focusDestination.current = null
     setCache(emptyKeyCache()); setCursor(null); setProgress('idle'); setSelected(null); setOpened(false); setError(null); setSampledAt(null)
   }
   useEffect(() => () => { ++sequence.current; active.current?.abort() }, [])
+  useEffect(() => {
+    // Both panes stay mounted: returning never rereads data or loses the list.
+    // CSS hides the back button in the wide layout, where focus stays on the key.
+    if (focusDestination.current === 'list' && list.current !== null) {
+      list.current.scrollTop = listPosition.current
+      if (selected !== null) list.current.querySelector<HTMLButtonElement>(`button[data-key-base64="${selected.base64}"]`)?.focus({ preventScroll: true })
+    } else if (focusDestination.current === 'detail' && back.current?.getClientRects().length) back.current.focus({ preventScroll: true })
+    focusDestination.current = null
+  }, [detailOpen, selected?.base64])
 
   async function run<T>(operation: (signal: AbortSignal) => Promise<RemoteResult<T>>, accept: (value: T) => void): Promise<void> {
     active.current?.abort()
@@ -68,7 +81,7 @@ export function KeyBrowser(props: Props) {
   }
   function scan(more: boolean): void {
     const previous = more ? cache : emptyKeyCache()
-    if (!more) { browsing.update({ db: connection.db, keyBase64: null }); setCache(previous); setSelected(null); setOpened(false); setProgress('idle'); setSampledAt(null) }
+    if (!more) { browsing.update({ db: connection.db, keyBase64: null }); listPosition.current = 0; setDetailOpen(false); setCache(previous); setSelected(null); setOpened(false); setProgress('idle'); setSampledAt(null) }
     void run(signal => props.scanKeys({ target: target(), pattern, cursor: more ? cursor : null }, signal), value => {
       setSampledAt(value.sampledAt)
       if (value.state === 'failed') { setError(value.error); setCursor(null); setProgress('idle'); return }
@@ -77,43 +90,53 @@ export function KeyBrowser(props: Props) {
       setProgress(next.limited ? 'limited' : value.cursor === null ? 'complete' : 'more')
     })
   }
-  return <section className="redis-keys" aria-label={t('keys.title')}>
-    <h2>{t('keys.title')} · DB {connection.db}</h2>
-    <form className="redis-db" onSubmit={event => {
-      event.preventDefault(); clear()
-      const requested = Number(db)
-      void run(signal => props.selectDatabase({ ...target(), db: requested }, signal), value => {
-        if (value.state === 'connected' && value.db === requested) browsing.update({ db: requested, keyBase64: requested === browsing.state.db ? browsing.state.keyBase64 : null })
-        props.acceptConnection(value)
-      })
-    }}>
-      <label>{t('keys.database')}<input name="db" type="number" required min={0} max={65535} step={1} value={db} disabled={busy} onChange={event => setDb(event.target.value)} /></label>
-      <button type="submit" disabled={busy}>{t('keys.selectDatabase')}</button>
-    </form>
-    <form onSubmit={event => { event.preventDefault(); scan(false) }}>
-      <label>{t('keys.pattern')}<input name="pattern" maxLength={256} value={pattern} spellCheck={false} onChange={event => { clear(); setPattern(event.target.value); browsing.update({ pattern: event.target.value, keyBase64: null }) }} /></label>
-      <div className="redis-actions">
-        <button type="submit" disabled={busy}>{t('keys.scan')}</button>
-        <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => scan(true)}>{t('keys.more')}</button>
-        {busy && <button type="button" onClick={() => { ++sequence.current; active.current?.abort(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }}>{t('keys.cancel')}</button>}
+  return <section className="redis-keys" data-detail-open={detailOpen} aria-label={t('keys.title')}>
+    <div className="redis-key-catalog">
+      <h2>{t('keys.title')} · DB {connection.db}</h2>
+      <form className="redis-db" onSubmit={event => {
+        event.preventDefault(); clear()
+        const requested = Number(db)
+        void run(signal => props.selectDatabase({ ...target(), db: requested }, signal), value => {
+          if (value.state === 'connected' && value.db === requested) browsing.update({ db: requested, keyBase64: requested === browsing.state.db ? browsing.state.keyBase64 : null })
+          props.acceptConnection(value)
+        })
+      }}>
+        <label>{t('keys.database')}<input name="db" type="number" required min={0} max={65535} step={1} value={db} disabled={busy} onChange={event => setDb(event.target.value)} /></label>
+        <button type="submit" disabled={busy}>{t('keys.selectDatabase')}</button>
+      </form>
+      <form onSubmit={event => { event.preventDefault(); scan(false) }}>
+        <label>{t('keys.pattern')}<input name="pattern" maxLength={256} value={pattern} spellCheck={false} onChange={event => { clear(); setPattern(event.target.value); browsing.update({ pattern: event.target.value, keyBase64: null }) }} /></label>
+        <div className="redis-actions">
+          <button type="submit" disabled={busy}>{t('keys.scan')}</button>
+          <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => scan(true)}>{t('keys.more')}</button>
+          {busy && <button type="button" onClick={() => { ++sequence.current; active.current?.abort(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }}>{t('keys.cancel')}</button>}
+        </div>
+      </form>
+      <p>{t('keys.hint')}</p>
+      <p role="status">{t('keys.loaded')}: <span data-loaded-keys>{cache.keys.length}</span> · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
+      {sampledAt !== null && <small>{t('connection.sampledAt')} <time dateTime={sampledAt}>{new Date(sampledAt).toLocaleTimeString()}</time></small>}
+      {busy && <p role="status">{t('connection.busy')}</p>}
+      {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
+      <div className="redis-key-list" aria-label="Keys" ref={list} onScroll={event => { if (event.currentTarget.getClientRects().length) listPosition.current = event.currentTarget.scrollTop }}>
+        {cache.keys.length === 0 ? <p>{t('keys.empty')}</p> : cache.keys.map(key => <button type="button" key={key.base64} data-key-base64={key.base64} aria-pressed={selected?.base64 === key.base64} onClick={() => {
+          browsing.update({ db: connection.db, keyBase64: key.base64, ...(selected?.base64 === key.base64 ? {} : { stringOffset: '0', stringCount: 65536 }) })
+          focusDestination.current = 'detail'; setSelected(key); setOpened(true); setDetailOpen(true)
+        }}>
+          <span>{key.label}</span><small>{key.byteLength} {t('keys.bytes')}</small>
+        </button>)}
       </div>
-    </form>
-    <p>{t('keys.hint')}</p>
-    <p role="status">{t('keys.loaded')}: <span data-loaded-keys>{cache.keys.length}</span> · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
-    {sampledAt !== null && <small>{t('connection.sampledAt')} <time dateTime={sampledAt}>{new Date(sampledAt).toLocaleTimeString()}</time></small>}
-    {busy && <p role="status">{t('connection.busy')}</p>}
-    {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    <div className="redis-key-list" aria-label="Keys">
-      {cache.keys.length === 0 ? <p>{t('keys.empty')}</p> : cache.keys.map(key => <button type="button" key={key.base64} data-key-base64={key.base64} aria-pressed={selected?.base64 === key.base64} onClick={() => { browsing.update({ db: connection.db, keyBase64: key.base64, stringOffset: '0', stringCount: 65536 }); setSelected(key); setOpened(true) }}>
-        <span>{key.label}</span><small>{key.byteLength} {t('keys.bytes')}</small>
-      </button>)}
     </div>
-    {selected !== null && <label>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>}
-    {selected !== null && !opened && <>
-      <p>{t('session.restored')}</p>
-      {connection.db !== browsing.state.db && <p role="status">{t('session.selectDb')}</p>}
-      <button type="button" disabled={busy || connection.db !== browsing.state.db} onClick={() => setOpened(true)}>{t('session.readKey')}</button>
-    </>}
-    {selected !== null && opened && <KeyDetails key={selected.base64} {...props} target={target()} selected={selected} />}
+    <div className="redis-key-detail">
+      {selected !== null ? <>
+        <nav className="redis-key-navigation"><button ref={back} type="button" onClick={() => { focusDestination.current = 'list'; setDetailOpen(false) }}>{t('layout.back')}</button></nav>
+        <label>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
+        {!opened && <>
+          <p>{t('session.restored')}</p>
+          {connection.db !== browsing.state.db && <p role="status">{t('session.selectDb')}</p>}
+          <button type="button" disabled={busy || connection.db !== browsing.state.db} onClick={() => setOpened(true)}>{t('session.readKey')}</button>
+        </>}
+        {opened && <KeyDetails key={selected.base64} {...props} target={target()} selected={selected} />}
+      </> : <p className="redis-empty">{t('layout.selectKey')}</p>}
+    </div>
   </section>
 }

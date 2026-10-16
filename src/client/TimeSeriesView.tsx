@@ -31,7 +31,7 @@ export function TimeSeriesView(props: Props) {
     { id: 'timestamp', title: t('timeseries.timestamp'), render: sample => <span data-ts-timestamp={sample.timestamp}>{sample.timestamp}</span> },
     { id: 'value', title: t('timeseries.value'), render: sample => <span data-ts-value={sample.timestamp}>{sample.value}</span> },
   ]
-  return <section className="redis-details" aria-label={t('timeseries.title')}>
+  return <section className="redis-details redis-timeseries" aria-label={t('timeseries.title')}>
     <h2>{t('timeseries.title')} · <span>{props.selected.label}</span></h2>
     <label>{t('stream.direction')}<select name="timeseriesDirection" value={direction} onChange={event => { page.clear(); setRangeError(false); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('timeseries.forward')}</option><option value="reverse">{t('timeseries.reverse')}</option></select></label>
     <form onSubmit={event => {
@@ -39,7 +39,7 @@ export function TimeSeriesView(props: Props) {
       try { timeSeriesReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, direction, start, end, count, cursor: null }); setRangeError(false); setRange({ start, end, count, attempt: range.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
-      <div className="redis-address">
+      <div className="redis-address redis-bounds">
         <label>{t('timeseries.start')}<input name="timeseriesStart" required maxLength={19} value={start} onChange={event => setStart(event.target.value)} /></label>
         <label>{t('timeseries.end')}<input name="timeseriesEnd" required maxLength={19} value={end} onChange={event => setEnd(event.target.value)} /></label>
       </div>

@@ -11,13 +11,14 @@ import { RedisProfiles } from '../lib/host/profile-store.js'
 import { smokeSessionState } from './smoke-session-state.mjs'
 import { createReadDelayProxy } from './read-delay-proxy.mjs'
 import { smokeNativeRecovery } from './smoke-native-recovery.mjs'
+import { smokeSidebarLayout } from './smoke-sidebar-layout.mjs'
 import { RESP_TYPES } from 'redis'
 
 async function smoke(fixture, profilePhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
+  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-layout' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -64,7 +65,7 @@ async function smoke(fixture, profilePhase) {
     })
     console.log('[smoke] Native rc.2 profile started on loopback')
     browser = await chromium.launch({ executablePath, headless: true })
-    const context = await browser.newContext({ locale: 'en-US', viewport: { width: 1440, height: 960 } })
+    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' ? 1920 : 1440, height: 960 } })
     context.setDefaultTimeout(30_000)
     const origin = new URL(readyUrl).origin
     const exchange = await context.request.get(readyUrl, { maxRedirects: 0 })
@@ -225,6 +226,8 @@ async function smoke(fixture, profilePhase) {
         assert.equal(await keys.locator('[data-loaded-keys]').innerText(), '0', 'Connect must not automatically scan')
         assert.equal(await more.isEnabled(), false)
         async function scanAll(pattern) {
+          const back = keys.getByRole('button', { name: 'Back to keys', exact: true })
+          if (await back.isVisible()) await back.click()
           await keys.locator('input[name="pattern"]').fill(pattern)
           await refresh.click()
           await until(async () => await refresh.isEnabled(), 'native first scan finished')
@@ -1172,6 +1175,7 @@ async function smoke(fixture, profilePhase) {
         }
         if (process.env.REDIS_SMOKE_SESSIONS === '1') await smokeSessionState({ page, context, origin, rpc, fixture, pane, keys, scanAll, artifacts, report, baseline, workspaceTitle: adopted.workspace.title })
         if (process.env.REDIS_SMOKE_RECOVERY === '1') await smokeNativeRecovery({ page, rpc, fixture, pane, keys, scanAll, artifacts, report, workspaceId: adopted.workspace.workspaceId })
+        if (process.env.REDIS_SMOKE_LAYOUT === '1') await smokeSidebarLayout({ page, fixture, pane, keys, scanAll, artifacts, report })
       }
       await pane.getByRole('button', { name: 'Disconnect', exact: true }).click()
       await password.waitFor()
@@ -1244,6 +1248,23 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
         await fixture.admin.set('测试:key', 'unicode-key-value')
         await fixture.admin.select(1); await fixture.admin.set('db1:only', 'one'); await fixture.admin.select(0)
         fixture.expectedKeyCount = 232
+        if (process.env.REDIS_SMOKE_LAYOUT === '1') {
+          fixture.layoutLongKey = 'layout:long:' + 'x'.repeat(2048)
+          fixture.layoutKeys = [fixture.layoutLongKey, ...['hash', 'list', 'set', 'zset', 'stream', 'json', 'bitmap', 'geo', 'hll', 'ts', 'bloom'].map(name => 'layout:' + name)]
+          await fixture.admin.set(fixture.layoutLongKey, Buffer.alloc(131073, 97))
+          await fixture.admin.hSet('layout:hash', { first: 'one', second: 'two' })
+          await fixture.admin.rPush('layout:list', ['one', 'two']); await fixture.admin.sAdd('layout:set', ['one', 'two'])
+          await fixture.admin.sendCommand(['ZADD', 'layout:zset', '1', 'one', '2', 'two'])
+          await fixture.admin.sendCommand(['XADD', 'layout:stream', '1-0', 'field', 'value'])
+          await fixture.admin.sendCommand(['JSON.SET', 'layout:json', '$', '{"id":9007199254740993,"label":"中文"}'])
+          await fixture.admin.set('layout:bitmap', Buffer.from([0x80, 0x01]))
+          await fixture.admin.sendCommand(['GEOADD', 'layout:geo', '13.361389', '38.115556', 'one', '14.361389', '39.115556', 'two'])
+          await fixture.admin.sendCommand(['PFADD', 'layout:hll', 'one', 'two'])
+          await fixture.admin.sendCommand(['TS.ADD', 'layout:ts', '9007199254740993', '1.2345678901234567'])
+          await fixture.admin.sendCommand(['TS.ADD', 'layout:ts', '9223372036854775807', '1.7976931348623157e308'])
+          await fixture.admin.sendCommand(['BF.ADD', 'layout:bloom', 'one'])
+          fixture.expectedKeyCount += fixture.layoutKeys.length
+        }
         if (process.env.REDIS_SMOKE_STRINGS === '1') {
           fixture.jsonText = '{"id":9007199254740993,"huge":1e400,"nested":{"label":"中文😀"}}'
           await fixture.admin.set('view:json', fixture.jsonText)
