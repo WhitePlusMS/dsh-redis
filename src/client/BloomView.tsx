@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { BloomReadRequest, BloomReadResult, DatabaseTarget, RedisKey } from '../domain.ts'
-import { bloomReadRequestSchema, bloomReadResultSchema } from '../typert.shared.ts'
+import { bloomReadRequestSchema } from '../typert.shared.ts'
 import { bloomItemBase64 } from './bloom-query.ts'
 import { NS } from './locales.ts'
 
@@ -22,7 +22,7 @@ export function BloomView(props: Props) {
     setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
     void props.readBloom({ target: props.target, keyBase64: props.selected.base64, itemBase64: request.itemBase64 }, controller.signal).then(response => {
       if (controller.signal.aborted) return
-      if (response.ok) setResult(bloomReadResultSchema.parse(response.value))
+      if (response.ok) setResult(response.value)
       else setRpcError(true)
     }).catch(() => { if (!controller.signal.aborted) setRpcError(true) })
       .finally(() => { if (!controller.signal.aborted) setBusy(false) })

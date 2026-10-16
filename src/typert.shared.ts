@@ -56,7 +56,9 @@ export function createRedisInvocation(method: string, inputSymbol: string, resul
       { name: 'agent', wire: 'agentId', source: 'lookup', lookup: 'agent', codec: { mode: 'strict', typeSymbol: '@deepseek-ai/dsh-session/types#SessionId', create: () => session } },
       { name: 'request', wire: 'request', source: 'json', codec: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${inputSymbol}`, create: () => input } },
     ],
-    result: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${resultSymbol}`, create: () => result },
+    // rc.2 uses create on the Host, but only decode at the browser wire boundary.
+    // Keep one schema for both sides, before any result reaches UI state/cache.
+    result: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${resultSymbol}`, create: () => result, decode: value => result.parse(value) },
   }
 }
 

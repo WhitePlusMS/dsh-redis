@@ -2,11 +2,11 @@
 
 > 当前执行基线：用户明确选择 `0.2.0-rc.2` 并继续原 29 票实现。宿主、对应源码和配套 SDK 固定该 RC 版，如实标注预发布属性；此前稳定版调查及仅文档检查保留为历史，不作为本次实现的等待条件。
 
-> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；01–20 已验收，21 发布门禁推进，按实际证据更新完成状态。
+> 更新2026-10-16：当前继续指定 rc.2 的完整 29 票；01–21 已验收，22 命名空间与虚拟列表推进，按实际证据更新完成状态。
 
 ## 当前起点
 
-现有任务状态为 01–20 done、21 in-progress、22–29 ready-for-agent，验收各自对应原 RC 环境与包。当前继续原功能票，继续 21 真实安装包发布验收，不改写历史包结果；版本按实施方案第 2.4 节指定 rc.2。完整首版仍未完成。
+现有任务状态为 01–21 done、22 in-progress、23–29 ready-for-agent。21已完成当前独立包发布验收，P0通过；继续22命名空间与虚拟列表，原29票尚未全部完成。各证据保留对应包与环境，版本按实施方案第2.4节指定rc.2。
 
 ## 当前版本与源码约定
 
@@ -15,7 +15,7 @@
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–20 done、21 发布门禁 in-progress，其余 8 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留；当前 01–21 done、22 命名空间与虚拟列表 in-progress，其余 7 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
 
 ## 任务清单
 
@@ -41,8 +41,8 @@
 | 18 | P0 | [按 DSH 会话恢复各自的浏览状态](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/18-session-browsing-state.md) | 04、06 | done |
 | 19 | P0 | [取消读取并从超时或断线中恢复](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/19-read-cancellation-recovery.md) | 18 | done |
 | 20 | P0 | [在窄宽侧栏和两种主题下完成查看](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/20-sidebar-layout-themes.md) | 07 | done |
-| 21 | P0 | [从安装包完成只读首版的真实验收](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/21-release-verification.md) | 08、09、11、12、13、14、15、16、17、19、20 | in-progress |
-| 22 | P1 | [按命名空间浏览大量 Key](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/22-key-namespaces.md) | 06 | ready-for-agent |
+| 21 | P0 | [从安装包完成只读首版的真实验收](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/21-release-verification.md) | 08、09、11、12、13、14、15、16、17、19、20 | done |
+| 22 | P1 | [按命名空间浏览大量 Key](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/22-key-namespaces.md) | 06 | in-progress |
 | 23 | P1 | [聚焦详情并搜索、折叠已读内容](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/23-focused-value-view.md) | 20 | ready-for-agent |
 | 24 | P1 | [整理、导入和导出连接资料](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/24-profile-import-export.md) | 04 | ready-for-agent |
 | 25 | P1 | [查看 Redis 服务器概览快照](E:/项目demo/dsh-redis/.scratch/redis-viewer/issues/25-server-overview.md) | 06 | ready-for-agent |
@@ -75,4 +75,4 @@
 - [开发路线](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
 - [已确认的拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
 
-当前进度：01–20 done，21 发布门禁 in-progress，其余8票 ready-for-agent；20证据见 docs/verification/20-sidebar-layout-themes.md：225项回归与最终包原生22组通过，安装lib70文件一致。全部历史报告保留各自检查范围，21仍需当前包完整门禁、浏览器接收边界与共享runtime核验；29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–21 done，22 命名空间与虚拟列表 in-progress，其余7票 ready-for-agent；21证据见 docs/verification/21-release-verification.md：226项回归，最终包原生87/17/17/22/18组通过，70个lib和79个包文件、12个Host peer及实际React18.3.1一致。历史报告保留各自检查范围；P0已验收，原29票范围/优先级/依赖不变，完整29票项目尚未完成。

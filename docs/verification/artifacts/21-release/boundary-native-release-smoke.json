@@ -1,0 +1,59 @@
+{
+  "artifactPrefix": "native-release",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-16T09:25:40.145Z",
+  "packageSha256": "0a23cbfb11f9cedbed2e2fa086eeebb33da9a522c92048fda52040e53a99a2ae",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "actual native plugin require(react) is the identical Web seed object returned by the real module system; React.version=18.3.1",
+    "real rc.2 browser Remote rejects malformed successful HTTP payloads for all 23 methods as gateway/internal, rejects contradictory test/extra secret fields, and recovers to valid status; test routes make zero Host dispatches",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [],
+  "runtime": {
+    "reactVersion": "18.3.1",
+    "pluginUsesSameReact": true,
+    "chromeVersion": "155.0.8059.80",
+    "nodeVersion": "22.22.1"
+  },
+  "decoderChecks": {
+    "methods": [
+      "status",
+      "testConnection",
+      "connect",
+      "disconnect",
+      "connectionStatus",
+      "listProfiles",
+      "saveProfile",
+      "removeProfile",
+      "selectDatabase",
+      "scanKeys",
+      "readString",
+      "scanHash",
+      "readList",
+      "scanSet",
+      "readZSet",
+      "readStream",
+      "readJson",
+      "readGeo",
+      "readHll",
+      "readTimeSeries",
+      "readBloom",
+      "loadBrowsingState",
+      "saveBrowsingState"
+    ],
+    "malformedRejected": 23,
+    "contradictoryConnectionTestRejected": true,
+    "extraSecretFieldRejected": true,
+    "healthyControlBeforeAndAfter": true,
+    "hostDispatches": 0
+  },
+  "finishedAt": "2026-10-16T09:26:04.029Z"
+}

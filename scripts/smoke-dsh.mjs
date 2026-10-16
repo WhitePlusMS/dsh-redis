@@ -12,13 +12,14 @@ import { smokeSessionState } from './smoke-session-state.mjs'
 import { createReadDelayProxy } from './read-delay-proxy.mjs'
 import { smokeNativeRecovery } from './smoke-native-recovery.mjs'
 import { smokeSidebarLayout } from './smoke-sidebar-layout.mjs'
+import { observeReleaseRuntime, smokeReleaseBoundary } from './smoke-release-boundary.mjs'
 import { RESP_TYPES } from 'redis'
 
 async function smoke(fixture, profilePhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-layout' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
+  const artifactPrefix = process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-layout' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -28,6 +29,8 @@ async function smoke(fixture, profilePhase) {
   await mkdir(artifacts, { recursive: true })
   // Refuse to verify an older same-version local package retained by the installer.
   async function verifyInstalled(directory, installed) {
+    const names = async path => (await readdir(path, { withFileTypes: true })).map(entry => [entry.name, entry.isDirectory()]).sort((a, b) => a[0].localeCompare(b[0]))
+    assert.deepEqual(await names(installed), await names(directory), 'Installed artifact file set differs')
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       const source = resolve(directory, entry.name)
       const target = resolve(installed, entry.name)
@@ -66,6 +69,7 @@ async function smoke(fixture, profilePhase) {
     console.log('[smoke] Native rc.2 profile started on loopback')
     browser = await chromium.launch({ executablePath, headless: true })
     const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' ? 1920 : 1440, height: 960 } })
+    if (process.env.REDIS_SMOKE_RELEASE === '1') await context.addInitScript(observeReleaseRuntime)
     context.setDefaultTimeout(30_000)
     const origin = new URL(readyUrl).origin
     const exchange = await context.request.get(readyUrl, { maxRedirects: 0 })
@@ -123,6 +127,7 @@ async function smoke(fixture, profilePhase) {
     assert.equal(await page.locator('.dsh-redis .redis-badge').innerText(), 'Read only')
     assert((await Promise.all(browserStatuses)).some(body => body?.result?.ok === true))
     assert.deepEqual(pageErrors, [])
+    if (process.env.REDIS_SMOKE_RELEASE === '1') await smokeReleaseBoundary({ page, browser, sessionId: created.sessionId, report })
     if (fixture !== undefined) {
       const pane = page.locator('.dsh-redis')
       const password = pane.locator('input[name="password"]')

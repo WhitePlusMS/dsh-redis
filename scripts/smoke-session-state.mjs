@@ -38,7 +38,7 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
       if (!(await guide.isVisible())) await page.locator('[data-dockkit-add-tab]').first().click()
       await guide.waitFor(); await guide.click()
     }
-    await pane.locator('select[name="profile"]').waitFor()
+    await pane.locator('select[name="profile"]').waitFor({ state: 'attached' })
     await until(async () => await pane.locator('select[name="profile"]').isEnabled() || await pane.locator('.redis-connected').isVisible(), 'restored session form ready')
     assert.equal(await activeOwner(), owner)
   }
@@ -53,6 +53,8 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     assert.deepEqual(await status(owner), target)
     assert.deepEqual(counters(await fixture.admin.info('commandstats')), before, 'Switching/restoring must issue no Redis command')
   }
+  const back = keys.getByRole('button', { name: 'Back to keys', exact: true })
+  if (await back.isVisible()) await back.click()
   await keys.locator('input[name="db"]').fill('1'); await keys.getByRole('button', { name: 'Select DB', exact: true }).click()
   await keys.getByRole('heading').filter({ hasText: 'DB 1' }).waitFor()
   assert.equal(await scanAll('session:a:*'), 1)
@@ -167,6 +169,7 @@ export async function smokeSessionState({ page, context, origin, rpc, fixture, p
     assert.equal(await keys.locator('input[name="db"]').inputValue(), '1')
     assert.equal(await keys.getByRole('button', { name: 'Read selected key', exact: true }).isEnabled(), false)
     assert.equal(await keys.locator('[data-value-preview]').count(), 0)
+    if (await back.isVisible()) await back.click()
     await keys.getByRole('button', { name: 'Select DB', exact: true }).click(); await keys.getByRole('heading').filter({ hasText: 'DB 1' }).waitFor()
     await keys.getByRole('button', { name: 'Read selected key', exact: true }).click(); await keys.locator('[data-value-coverage]').waitFor()
     const aAgain = await status(a)

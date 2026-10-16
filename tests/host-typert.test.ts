@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { redisHostDescriptors } from '../src/typert.host.ts'
-import { connectionRequestSchema, connectionViewSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema } from '../src/typert.shared.ts'
+import { connectionRequestSchema, connectionViewSchema, connectionTestSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema } from '../src/typert.shared.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
 
 const valid = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
@@ -65,6 +65,15 @@ describe('strict non-secret saved profile protocol', () => {
 
 
 describe('strict connection protocol', () => {
+  it('rejects contradictory test outcomes before they can report a successful connection', () => {
+    const codec = redisDescriptors.find(value => value.method === 'testConnection')?.result
+    if (codec?.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing connection-test decoder')
+    for (const parse of [connectionTestSchema.parse, codec.decode]) {
+      expect(parse({ outcome: 'passed', error: null })).toEqual({ outcome: 'passed', error: null })
+      expect(parse({ outcome: 'failed', error: 'auth' })).toEqual({ outcome: 'failed', error: 'auth' })
+      for (const value of [{ outcome: 'passed', error: 'auth' }, { outcome: 'failed', error: null }, { outcome: 'passed', error: null, password: 'private' }]) expect(() => parse(value)).toThrow()
+    }
+  })
   it('accepts standalone credentials and rejects URI hosts, invalid ports and arbitrary commands', () => {
     const descriptor = redisHostDescriptors.find(value => value.method === 'connect')
     const codec = descriptor?.parameters.find(value => value.name === 'request')?.codec

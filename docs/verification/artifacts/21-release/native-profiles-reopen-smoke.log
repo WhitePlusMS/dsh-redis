@@ -1,0 +1,7 @@
+[dsh-redis] Read-only Host registered
+dsh web: http://127.0.0.1:2795/?token=[redacted]
+[dsh-redis] Redis connected
+[dsh-redis] Redis disconnected
+[dsh-redis] Redis connected
+[dsh-redis] Redis connection lost
+[dsh-redis] Connection profile removed

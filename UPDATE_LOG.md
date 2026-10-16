@@ -804,3 +804,24 @@
 - 本票各轮自建DSH/Chrome/Redis均正常退出，Host socket回管理员基线、证书/UUID目录清理true，最终浏览器page/console/request错误均空。未启停用户服务、动业务库/日常profile或清理C盘；早期清理被自动审核拒绝的18/16目录继续保留。归档核对后提交20本地Git，不push、不改写历史或跳过hooks。
 - 提交前核对29票原图、P0/P1数量、20 done/21 in-progress/其余8 ready、七个摘要和参考SHA均正确；归档长Key由实际种子计算为2060字节，纠正文档初写2059。仅整理KeyBrowser/ConnectionForm新包裹层JSX缩进以符合现有风格；立即类型/构建，并与原生验收前保存的70文件哈希逐项比较，不以格式改动额外扩大测试范围。
 - 首个格式脚本因CRLF边界未匹配在写入前断言退出；第二个脚本只完成KeyBrowser后因未声明变量停在ConnectionForm前，没有继续修补该脚本。改用直接文件补丁完成剩余六行缩进，相关功能未改变。各次严格类型/构建均通过且70产物仍与实际原生安装一致；最终再次核对，不重跑无变化的225用例。
+
+## 2026-10-16 任务21：统一浏览器结果校验
+
+- 完整核对固定rc.2 protocol/gateway及官方generator和测试：strict结果的create供Host使用，Client unary invoke仅调用可选decode；parse异常进入gateway/internal，取消仍进入gateway/cancelled。src/typert.shared.ts在唯一createRedisInvocation结果codec补decode并复用原schema，使全部23项RPC在UI状态/缓存之前校验，不新增代理层或23套包装。
+- client/BloomView.tsx、TimeSeriesView.tsx、BrowsingSession.tsx删除重复的远端结果parse；本地表单/偏好patch仍保留原输入校验。改动影响结果接收边界，不改变Host命令/DTO、只读策略或取消语义。随后立即三层类型检查，再补真实编译bundle及原生安装响应故障验证；21仍in-progress，不将此前包的验收当作当前通过。
+- 首批及编译bundle测试调整后三层严格类型均通过。tests/client-bundle.test.ts直接检查真实lib/client.js注册的23个strict decode均拒绝null/额外字段，并验证正确/错误只读状态；tests/host-typert.test.ts补连接测试结果成功/错误互斥与秘密字段拒绝，补上此前独立result schema覆盖缺项。后续真实浏览器测试独立于此mock，不把单测冒称原生wire验证。
+- scripts/smoke-release-boundary.mjs增加只在RELEASE验收启用的启动观测：原样调用真实module loader/factory/apply，仅捕获插件实际React/Context与create返回的module system，验证引用同一性及React.version；不创建另一实例。真实SDK的23项方法经HTTP server-response故障注入验证decode/错误分支，route短路不触达Host，结束恢复观测。smoke-dsh.mjs增加开关和完整安装文件集合核对；smoke-session-state.mjs按20实际窄栏返回列表，profile折叠时检查attached，未放宽会话/无网络/值身份断言。先语法、类型和完整prepack，再安装运行，尚无原生通过声明。
+- 新包0a23cbfb11f9cedbed2e2fa086eeebb33da9a522c92048fda52040e53a99a2ae完整prepack严格三层类型/构建/226回归通过，隔离安装后无Redis原生7组通过：实际React18.3.1且同一对象，真实SDK全部23项拒绝畸形成功payload并能恢复，额外秘密字段/矛盾连接测试也拒绝；browser三类错误均空，自建DSH退出。先归档boundary原件，完整类型/会话/TLS门禁尚待执行。
+- README补随包可用的安装、侧栏/12类查看、分页和特殊类型手动解释、会话恢复/密码不落盘、取消/超时/断线操作及验收入口；易过期进度改为链接本地任务索引，避免每次文档状态更新改变已验证包。此后重新打包安装再跑完整门禁，不以0a包替代最终包。
+- 最终包bb2b83e51c1a83abc18c9f638484bded2e53451931ffa2d534f5c06d9584a1ea再次完整prepack严格类型/构建/226回归通过，隔离安装原生全12类+双会话+真实decoder/React共87组通过；TLS保存/冷重启两轮各17组通过，均自建进程/夹具清理true。剩余同包19/20专项执行中，21暂不勾选。
+- 临时资源清单核对先遇直接global peer路径不存在；沿真实CLI的createRequire解析后12个Host版本匹配，又发现原manifest与tarball存在pnpm移除packageManager/scripts.prepack的实际差异；改读tarball后临时REPL的structuredClone对象跨realm导致strict compare失败。停止补临时脚本，新增独立scripts/verify-release-package.mjs，用普通Node+只读Python标准tarfile验证实际包/安装全部文件、70个lib集合/字节、版本/锁文件/源码输入SHA；只记录已观测的pack字段裁剪，不更改产品或依赖以迎合核对。先语法检查再执行，后续结果另记。
+
+## 2026-10-16 任务21完成：P0独立安装包门禁
+
+- 独立Node资源核对成功：最终bb2b83e包79个文件逐字节匹配安装目录，lib完整70集合/字节一致，沿真实CLI解析12个Host peer版本正确，实际生产redis6.2.1/zod4.4.3与锁定相符；source/tests/scripts/lock及包清单SHA记入release-manifest。pnpm pack只移除两个已观测开发字段，tarball manifest与安装完全一致；未为消除peer提示复制另一个runtime。
+- 同一最终包的12类+双会话+真实decoder/React原生87组、TLS资料保存/冷启动各17组、布局22组、恢复18组全部通过。最后两轮返回位置345px相同，取消约33ms、实际10秒截止10077ms；原生SDK23项畸形结果拒绝与正常恢复再次通过。page/console errors均空，原生会话1条及取消2条预期ERR_ABORTED原样记录。
+- 新增docs/verification/21-release-verification.md：完整P0证据矩阵、固定DSH/参考提交与日期/复制裁剪/许可、真实React引用同一性、当前包身份/安装闭包、只读与数据预算、操作复现及明确未覆盖环境。docs/verification/artifacts/21-release保留五轮当前包原始报告/日志/截图、早期0a边界专项和实际资源清单；各归档与原件核对哈希，宽明亮/窄深色数据截图已查看。未声称其他Redis/宿主版本或TLS慢链路恢复已实测。
+- 21五项勾选done；22依据原票/已有KeyBrowser和字节身份/缓存事实进入in-progress，五项仍空。六份当前进度文档与方案6.6同步；随包README使用稳定操作说明并指向任务索引，避免完成状态更改包身份。P0验收完成、29票仍有8张P1，原图/编号/优先级和不可变参考SHA保持。此为单一21小目标，核对后本地提交，不push/改写历史/跳hooks。
+- 本轮所有自建DSH/Chrome/Redis、TLS证书/UUID目录均退出或回收，Host socket回管理员基线，恢复代理停止。未碰用户服务、业务库、日常profile/C盘；旧16快照及18两对清理被自动审批拒绝的目录继续保留，未绕过策略。随后只做归档/图/源码输入清单/链接/git diff核对，不重复无变化的类型/全量验收。
+- 提交前29票/P0=21/P1=8、全部原Blocked by图与不可变参考SHA核对不变，21 done/22 in-progress/其余7 ready正确；源码/测试/脚本输入哈希仍与已归档清单逐项相同，当前包五轮原件/副本一致，验收相对链接全部存在，git diff --check通过。暂存区初始为空，本次只提交上述21小目标及必要进度文件。
+- 首次提交命令因cmd参数引号被拆开，Git在创建提交前拒绝pathspec；暂存内容保留。改用execFile结构化参数传完整提交信息，不跳过hooks、不改写历史。

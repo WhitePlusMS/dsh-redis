@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
+import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
 import { emptyBrowsingState } from '../src/host/browsing-state.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
@@ -21,7 +22,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
   const loadBrowsingState = vi.fn(async (_sessionId: string) => ({ ok: true as const, value: emptyBrowsingState() }))
   const saveBrowsingState = vi.fn(async (_sessionId: string, value: ReturnType<typeof emptyBrowsingState>) => ({ ok: true as const, value }))
-  const mount = vi.fn().mockRejectedValueOnce(new Error('Host not ready')).mockResolvedValue(unmount)
+  const mount = vi.fn(async (_contribution: TypertRemoteContribution) => unmount).mockRejectedValueOnce(new Error('Host not ready'))
   function register(id: string): () => void {
     if (contributions.has(id)) throw new Error('Duplicate contribution: ' + id)
     contributions.add(id)
@@ -62,6 +63,21 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')
   await expect(api.status(new AbortController().signal)).resolves.toMatchObject({ ok: true, value: { readOnly: true } })
   expect(mount).toHaveBeenCalledTimes(2)
+  // Inspect the actual emitted browser contribution, not only TS source schemas.
+  // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
+  const descriptors = mount.mock.calls[1]?.[0].descriptors
+  expect(descriptors).toHaveLength(23)
+  for (const descriptor of descriptors ?? []) {
+    const codec = descriptor.result
+    if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)
+    expect(() => codec.decode?.(null), descriptor.method).toThrow()
+    expect(() => codec.decode?.({ injected: true }), descriptor.method).toThrow()
+  }
+  const statusCodec = descriptors?.find(descriptor => descriptor.method === 'status')?.result
+  if (statusCodec?.mode !== 'strict' || statusCodec.decode === undefined) throw new Error('Missing status decoder')
+  const validStatus = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+  expect(statusCodec.decode(validStatus)).toEqual(validStatus)
+  expect(() => statusCodec.decode?.({ ...validStatus, readOnly: false })).toThrow()
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')
   expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')

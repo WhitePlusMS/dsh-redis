@@ -2,7 +2,7 @@ import { useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { MAX_TIMESERIES_SAMPLES, type DatabaseTarget, type RedisKey, type TimeSeriesReadRequest, type TimeSeriesReadResult, type TimeSeriesSample } from '../domain.ts'
-import { timeSeriesReadRequestSchema, timeSeriesReadResultSchema } from '../typert.shared.ts'
+import { timeSeriesReadRequestSchema } from '../typert.shared.ts'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendTimeSeriesSamples, emptyTimeSeriesCache, type TimeSeriesCache } from './timeseries-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
@@ -19,12 +19,7 @@ export function TimeSeriesView(props: Props) {
   const [range, setRange] = useState({ start: '-', end: '+', count: MAX_TIMESERIES_SAMPLES, attempt: 0 }), [rangeError, setRangeError] = useState(false)
   const page = useCollectionScan<TimeSeriesCache, TimeSeriesReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([direction, range]), empty: emptyTimeSeriesCache,
     append: (previous, response) => appendTimeSeriesSamples(previous, response.samples),
-    load: async (cursor, signal) => {
-      const response = await props.readTimeSeries({ target: props.target, keyBase64: props.selected.base64, direction, start: range.start, end: range.end, count: range.count, cursor }, signal)
-      // rc.2 transport descriptors do not validate this browser HTTP response.
-      // Parse before state/cache/render so an invalid timestamp cannot appear.
-      return response.ok ? { ...response, value: timeSeriesReadResultSchema.parse(response.value) } : response
-    },
+    load: (cursor, signal) => props.readTimeSeries({ target: props.target, keyBase64: props.selected.base64, direction, start: range.start, end: range.end, count: range.count, cursor }, signal),
   })
   const { result, cache, cursor, busy, error, progress } = page
   const columns: readonly CollectionColumn<TimeSeriesSample>[] = [

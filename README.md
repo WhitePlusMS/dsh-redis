@@ -6,7 +6,7 @@
 
 项目根目录：`E:\项目demo\dsh-redis`。
 
-当前阶段：按指定 rc.2 继续完整 29 票；01–20 已验收，21 发布门禁正在推进。
+当前阶段：按指定 rc.2 推进原 29 票；当前进度及逐项验收结果以正式任务索引为准。
 
 ## 文档入口
 
@@ -30,7 +30,24 @@ String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、H
 - CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
 - Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
 - 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留；当前 01–20 done、21 发布门禁 in-progress，其余 8 票 ready-for-agent。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+- 原 29 票范围、优先级、依赖保留。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
+
+## 安装和查看
+
+1. 使用 Node `^22.19.0 || >=24.0.0` 与 DSH `0.2.0-rc.2`，在项目目录执行 `pnpm install --frozen-lockfile`，然后执行 `pnpm pack --pack-destination .scratch/artifacts`。打包前会执行严格类型、构建和回归检查；产物为 `.scratch/artifacts/dsh-redis-0.1.0.tgz`。RC 是预发布版本。
+2. 把包安装到要使用的 **web profile**，例如 PowerShell：`dsh plugin --profile web add 'E:\项目demo\dsh-redis\.scratch\artifacts\dsh-redis-0.1.0.tgz' --ignore-scripts`。再打开该 profile 的 DSH Web 界面。完整可复现实验、包 SHA 和安装文件核对见发布验收文档；开发验证使用独立 `DSH_HOME`。
+3. 进入一个 DSH 会话，展开右侧栏，在引导入口选择 Redis。填写主机、端口及可选 ACL 用户名/密码；TLS 可填受信 CA PEM，不支持关闭证书校验。先测试连接，再点连接。单机默认从 DB 0 开始，浏览恢复不会自动连接、SELECT 或读取。
+4. 手动选择 DB，填写 Redis `MATCH` 模式并扫描；继续扫描需要显式点击。此处是 Redis glob 匹配，不是全文内容搜索。点击 Key 查看有界数据页。窄栏点“返回 Key 列表”，宽栏自动左右分栏；返回保留已有列表和位置。
+5. String 按字节窗口读取；Hash/Set 增量扫描；List/ZSet 按范围；Stream 按消息 ID；RedisJSON 按路径；TimeSeries 按时间范围。Bitmap/HLL 从 String、GEO 从 ZSet 手动选择解释方式；不会凭底层 TYPE 猜测。Bloom 只查看 BF 信息和单个候选成员的“可能存在/不存在”，不列举成员。Cuckoo 不在当前范围。
+6. 文本解码、JSON 格式化、Hex/Binary/Base64 预览只处理已取得的字节。大值会显示当前覆盖范围、截断或预算限制；缩小窗口/路径/页大小后手动读取。不会为了显示完整内容自动拉取整个数据库或大值。
+7. 连接配置在当前 DSH profile 共用，不保存密码；会话分别记住连接资料选择、DB、MATCH、Key、显示格式和已提交的 String 窗口。会话切换不恢复数据缓存或游标；点“读取已选 Key”才发起读取。重新连接从 DB 0 开始，必要时先手动选择记住的 DB。
+8. 取消表示停止等待，Redis 可能仍在执行或回复排空。超时、队列繁忙或断线时，按提示等待并刷新状态；已断开则重输密码、手动重连，再缩小范围重试。关闭侧栏释放界面请求；显式断开/会话销毁/Host 退出释放所属连接，退出前可点断开。
+
+扩展查看要求目标 Redis 实际提供相应模块/命令；权限不足、未安装模块、类型变化和 Key 过期会显示对应状态。当前单机路径不包含 Sentinel、Cluster 或内置 SSH 隧道。生产环境可使用专门的只读 ACL 用户；本项目不会自动修改 Redis 配置或用户权限。
+
+## 复现验收
+
+`pnpm check` 运行严格类型、构建与测试。真实 Redis/原生浏览器脚本位于 `scripts/smoke-*.mjs`，必须显式指定自建夹具后端、固定 CLI 和浏览器路径；运行方法、环境版本、只读数据证据及实际预算见 `docs/verification/21-release-verification.md`。验收使用的写入/删除/断线操作仅属于隔离夹具，不是插件能力。
 
 ## 任务执行
 
@@ -38,4 +55,4 @@ String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、H
 
 后续按[开发基线要求](E:/项目demo/dsh-redis/docs/DEVELOPMENT_BASELINE.md)核对指定 rc.2、对应源码/SDK和产物，再继续剩余功能与受影响验收；P2仍为候选。
 
-当前进度：01–20 done，21 发布门禁 in-progress，其余8票 ready-for-agent；20证据见 docs/verification/20-sidebar-layout-themes.md：225项回归与最终包原生22组通过，安装lib70文件一致。全部历史报告保留各自检查范围，21仍需当前包完整门禁、浏览器接收边界与共享runtime核验；29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度及证据见正式任务索引和 `docs/verification/`。历史报告保留各自版本与检查范围；只有实际执行并通过的项目才计入对应验收，原 29 票全部完成前不宣称完整项目已完成。

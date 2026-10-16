@@ -23,6 +23,6 @@
 
 用户于 2026-10-15 确认草案，29 张正式任务已写入本地 issues：P0 21 张、P1 8 张。任务索引位于功能目录 README；原草案作为已确认拆分记录保留。
 
-2026-10-16：当前按指定 rc.2 继续实现，01–20 done、21 in-progress、其余8票 ready-for-agent；历史仅文档检查作为原时点记录保留。
+2026-10-16：当前按指定 rc.2 继续实现，01–21 done、22 in-progress、其余7票 ready-for-agent；历史仅文档检查作为原时点记录保留。
 
-当前进度：01–20 done，21 发布门禁 in-progress，其余8票 ready-for-agent；20证据见 docs/verification/20-sidebar-layout-themes.md：225项回归与最终包原生22组通过，安装lib70文件一致。全部历史报告保留各自检查范围，21仍需当前包完整门禁、浏览器接收边界与共享runtime核验；29票范围/优先级/依赖不变，完整首版尚未完成。
+当前进度：01–21 done，22 命名空间与虚拟列表 in-progress，其余7票 ready-for-agent；21证据见 docs/verification/21-release-verification.md：226项回归，最终包原生87/17/17/22/18组通过，70个lib和79个包文件、12个Host peer及实际React18.3.1一致。历史报告保留各自检查范围；P0已验收，原29票范围/优先级/依赖不变，完整29票项目尚未完成。

@@ -28,7 +28,7 @@ export function BrowsingSession(props: BrowsingActions & { readonly t: Translate
     void props.loadBrowsingState(controller.signal).then(result => {
       if (controller.signal.aborted) return
       if (!result.ok) throw new Error('Preferences unavailable')
-      const value = browsingStateSchema.parse(result.value)
+      const value = result.value
       latest.current = value; setState(value)
     }).catch(() => { if (!controller.signal.aborted) setLoadError(true) })
     return () => { alive.current = false; controller.abort(); ++sequence.current }
@@ -42,7 +42,6 @@ export function BrowsingSession(props: BrowsingActions & { readonly t: Translate
     // The injected per-session queue makes a subsequent load await those writes.
     void props.saveBrowsingState(value, AbortSignal.timeout(5000)).then(result => {
       if (!result.ok) throw new Error('Preferences unavailable')
-      browsingStateSchema.parse(result.value)
     }).catch(() => { if (alive.current && current === sequence.current) setSaveError(true) })
   }, [props.saveBrowsingState])
   if (state === null) return <div role="status">{props.t(loadError ? 'session.loadError' : 'session.loading')}{loadError && <button type="button" onClick={() => setAttempt(value => value + 1)}>{props.t('action.retry')}</button>}</div>
