@@ -55,3 +55,11 @@ DBSIZE、INFO keyspace和CONFIG GET databases均为固定读取。CONFIG仅允�
 Key缓存最多5000条/2MiB，自动扫描另限1000页或60秒；集合追加沿用5000行/2MiB及1000页上限。达到预算显示部分结果，需缩小筛选或范围刷新。DB目录解释最多128KiB/4096个非空DB条目；元数据不可得不伪造0。全量目录最多65536个DB且只渲染可见行。连接、总数和范围不是事务快照。
 
 日常profile更新与实际业务库查看单独记录在本报告末尾；不保存业务Key/值截图到Git，不把测试种子或故障注入用于业务Redis。
+
+## 日常profile已更新并实际查看
+
+- 2026-10-17在实际C:/Users/admin/.dsh的web profile按SHA唯一包路径安装，97个包内文件/88个lib文件与验收包一致；包核对另包括12个Host peers、2个dependencies和180个源码输入哈希。实现提交为6c229fc。
+- 已先备份5份配置到E:/项目demo/dsh-redis/.scratch/runtime/daily-resp-install-20261017-17c3d27b-d221-4d26-8f38-ac4d216c17ba，只在实际配置中变更package.json和pnpm-lock.yaml的Redis包引用；其他依赖、启用bundle和cordis配置均保持原样。没有恢复此前已停用的第三方插件。启动日志含本机认证URL，保留在忽略目录，不进入Git。
+- 核对旧PID37976确为当前profile及7198监听后停止所属进程树；以隐藏进程PID16528、同profile/loopback/7198重新启动，stderr为空，日常应用保留运行供用户查看。
+- 通过真实浏览器恢复原127.0.0.1:6379连接，未填写或保存密码；实际页面显示db0总数760、已加载760、100%扫描完成，默认树视图，无告警及继续扫描按钮。此处仅归档计数，不归档业务Key或值。
+- 证据：[日常安装及界面计数](artifacts/resp-workbench/daily-install.json)、[最终包逐文件清单](artifacts/resp-workbench/package-manifest.json)、[安装输出](artifacts/resp-workbench/daily-install.log)。原生测试服务均已关闭，日常DSH是用户要求保留的交付界面。

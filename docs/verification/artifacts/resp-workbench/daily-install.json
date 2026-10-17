@@ -1,0 +1,30 @@
+{
+  "verifiedAt": "2026-10-17T13:17:11.954Z",
+  "profile": "web",
+  "dshHome": "C:/Users/admin/.dsh",
+  "origin": "http://127.0.0.1:7198/",
+  "pid": 16528,
+  "packageSha256": "4a9660dfbdedac5608ee0876dbf39f02854ed9bd893e0e5d3c7298ba416c5a87",
+  "packedFilesMatched": 97,
+  "generatedFilesMatched": 88,
+  "otherDependenciesUnchanged": true,
+  "enabledBundlesUnchanged": true,
+  "changedProfileFiles": [
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "backupDirectory": "E:/项目demo/dsh-redis/.scratch/runtime/daily-resp-install-20261017-17c3d27b-d221-4d26-8f38-ac4d216c17ba",
+  "stderrBytes": 0,
+  "ui": {
+    "connected": true,
+    "db": 0,
+    "total": 760,
+    "loaded": 760,
+    "phase": "complete",
+    "percent": 100,
+    "keyView": "tree",
+    "alerts": 0,
+    "manualContinueButtons": 0
+  },
+  "businessValuesOrKeysArchived": false
+}

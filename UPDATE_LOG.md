@@ -1297,3 +1297,10 @@
 - 差异检查清理KeyCatalog一行尾部空白；重新类型检查和构建，并核对生成lib仍与已验收安装包逐字节相同。验收记录与日常更新继续归档。
 
 - 已归档本轮原始类型/构建/318测试/29原生报告、Host日志和合成Hash截图到docs/verification/artifacts/resp-workbench，新增resp-workbench-2026-10-17.md逐文件说明、实现/操作、执行范围与预算。原29票历史证据保留，当前包未冒用旧原生模式的结果。
+
+## 2026-10-17：日常DSH更新与真实数据回看
+
+- 先备份实际web profile的5份安装/运行清单，再核对旧PID/7198所有权后更新SHA唯一包并隐藏重启，保留原origin和会话页；只有package.json、pnpm-lock.yaml包引用发生变化，其他依赖、启用bundles和cordis配置不变。
+- 验证97个包文件及88个lib文件匹配SHA4a9660df…；12 Host peers/2依赖/180源码输入记录package-manifest.json，未放宽旧插件兼容或安装检查。
+- 实际浏览器恢复原127.0.0.1:6379连接，不录入密码；真实DB0自动760/760、100%完成，树导航、0告警、0继续按钮。只将计数写入daily-install.json，业务Key/值和私有认证启动日志不进入Git。
+- docs/RESP_WORKBENCH_PLAN.md全部跟进项完成；resp-workbench-2026-10-17.md补充具体profile变化、备份、服务身份与真实查看。测试DSH/代理/Redis均已停止，用户日常DSH继续运行供实际操作。

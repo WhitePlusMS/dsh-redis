@@ -1,0 +1,18 @@
+✓ Lockfile passes supply-chain policies (verified 1h ago)
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 3, reused 0, downloaded 2, added 0
+Progress: resolved 3, reused 1, downloaded 2, added 0
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+Packages: +1
++
+Progress: resolved 15, reused 1, downloaded 2, added 1, done
+Done in 4s using pnpm v11.22.0
+
+dsh: warning: Plugin dsh-input-plus@0.1.0 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-client-runtime":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-conversation":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-input-trigger":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-primitives":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-input-plus@0.1.0 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+Plugin dsh-input-plus@0.1.0 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-client-runtime":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-conversation":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-input-trigger":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-primitives":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-input-plus@0.1.0 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: it stays installed but profile startup denies it until you grant an exemption for those exact versions.
+
+dsh: warning: Plugin dsh-web-search@0.1.2 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-tools":"^0.1.0-rc.6","@deepseek-ai/dsh-credentials":"^0.1.0-rc.6","@deepseek-ai/dsh-web-search-deepseek":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-web-search@0.1.2 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+Plugin dsh-web-search@0.1.2 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-tools":"^0.1.0-rc.6","@deepseek-ai/dsh-credentials":"^0.1.0-rc.6","@deepseek-ai/dsh-web-search-deepseek":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-web-search@0.1.2 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: it stays installed but profile startup denies it until you grant an exemption for those exact versions.
