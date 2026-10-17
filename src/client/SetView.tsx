@@ -5,6 +5,7 @@ import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { DatabaseTarget, RedisKey, ScanSetRequest, ScanSetResult } from '../domain.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
+import { DetailPage } from './DetailPage.tsx'
 import { appendKeys, emptyKeyCache, type KeyCache } from './key-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
@@ -28,7 +29,7 @@ export function SetView(props: Props) {
   const columns: readonly CollectionColumn<RedisKey>[] = [
     { id: 'member', title: t('set.member'), render: value => <button type="button" data-set-member={value.base64} onClick={() => { setSelected(value.base64) }}>{displayLabel(value.label)}</button> },
   ]
-  return <section className="redis-details" aria-label={t('set.title')}>
+  return <section className="redis-details" aria-label={t('set.title')} data-cell-open={window !== null}>
     <h2>{t('set.title')} · <span>{props.selected.label}</span></h2>
     <form onSubmit={event => { event.preventDefault(); setSelected(null); void scanState.scan(false) }}>
       <label>{t('set.pattern')}<input name="setPattern" maxLength={256} value={pattern} onChange={event => { scanState.clear(); setSelected(null); setPattern(event.target.value) }} /></label>
@@ -46,13 +47,12 @@ export function SetView(props: Props) {
     </>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    {cache.keys.length === 0 && cursor === null ? <p>{t('set.empty')}</p> : <CollectionTable rows={cache.keys} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
-    {member !== undefined && window !== null && <div className="redis-cell-preview">
-      <h2>{t('set.member')} · {member.label}</h2>
+    {cache.keys.length === 0 && cursor === null ? <p>{t('set.empty')}</p> : <CollectionTable rows={cache.keys} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
+    {member !== undefined && window !== null && <DetailPage title={`${t('set.member')} · ${displayLabel(member.label)}`} backLabel={t('detail.back')} onBack={() => setSelected(null)}>
       <p role="status" data-cell-coverage>{t('value.complete')} · {member.byteLength} {t('keys.bytes')}</p>
-      <label>{t('set.identity')}<textarea readOnly rows={2} value={member.base64} spellCheck={false} /></label>
+      <details className="redis-byte-identity"><summary>{t('set.identity')}</summary><textarea aria-label={t('set.identity')} readOnly rows={2} value={member.base64} spellCheck={false} /></details>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </div>}
+    </DetailPage>}
     <HelpDetails label={t('ui.help')}><p>{t('set.hint')}</p><p>{t('set.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

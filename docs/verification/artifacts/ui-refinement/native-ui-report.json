@@ -1,0 +1,134 @@
+{
+  "packageSha": "6d3b5be677659c564b48d4a008bdce0e96fc140c080bfb34047274ee4aa2a44f",
+  "checks": [
+    {
+      "name": "Chinese dark connection layout",
+      "passed": true
+    },
+    {
+      "name": "Closing settings clears password",
+      "passed": true
+    },
+    {
+      "name": "Final package connects and auto-loads 760 keys",
+      "passed": true
+    },
+    {
+      "name": "Detail replaces table in flow and pauses paging",
+      "passed": true
+    },
+    {
+      "name": "Hash pointer selection restores exact scroll and focus",
+      "passed": true
+    },
+    {
+      "name": "Binary Hash field identity and hex preview preserved",
+      "passed": true
+    },
+    {
+      "name": "set details and back",
+      "passed": true
+    },
+    {
+      "name": "list details and back",
+      "passed": true
+    },
+    {
+      "name": "zset details and back",
+      "passed": true
+    },
+    {
+      "name": "Stream message/field/value navigation returns at each level",
+      "passed": true
+    },
+    {
+      "name": "Namespace settings occupy navigation flow without overlap",
+      "passed": true
+    },
+    {
+      "name": "Metadata remains available while cell selected",
+      "passed": true
+    },
+    {
+      "name": "Native narrow sidebar keeps two panes and detail return",
+      "passed": true
+    },
+    {
+      "name": "Connected notice and disconnect permit editing without another handler",
+      "passed": true
+    },
+    {
+      "name": "Light connection dialog fits native viewport and connected fields are disabled",
+      "passed": true
+    },
+    {
+      "name": "Distinct teal DB, blue directory and muted purple record icons",
+      "passed": true
+    }
+  ],
+  "measurements": [
+    {
+      "name": "Hash return",
+      "before": {
+        "field": "cm93XzA0Mg==",
+        "rows": 101,
+        "scroll": 2250.666748046875
+      },
+      "detail": {
+        "autoPage": "false",
+        "detailTop": 184.7777862548828,
+        "focused": "返回表格",
+        "position": "static",
+        "visibleTable": false
+      },
+      "after": {
+        "focused": "cm93XzA0Mg==",
+        "rows": 101,
+        "scroll": 2272
+      }
+    },
+    {
+      "name": "Pointer selection return",
+      "before": {
+        "field": "cm93XzA0Mg==",
+        "scroll": 2272,
+        "x": 522.8888854980469,
+        "y": 510.5555725097656
+      },
+      "after": {
+        "focused": "cm93XzA0Mg==",
+        "scroll": 2272
+      }
+    },
+    {
+      "name": "Dark icons and inline settings",
+      "db": "rgb(249, 250, 251)",
+      "folder": "rgb(154, 181, 207)",
+      "listTop": 319.72222900390625,
+      "position": "static",
+      "settingsBottom": 319.7222137451172
+    },
+    {
+      "name": "Narrow sidebar",
+      "left": 155,
+      "overflow": false,
+      "overlap": false,
+      "right": 312.5555725097656,
+      "width": 467.5555725097656
+    },
+    {
+      "name": "Light dialog",
+      "background": "rgb(255, 255, 255)",
+      "clientWidth": 738,
+      "hostDisabled": true,
+      "scrollWidth": 738,
+      "width": 740
+    },
+    {
+      "name": "Light semantic icon colors",
+      "db": "rgb(57, 126, 114)",
+      "folder": "rgb(90, 124, 159)",
+      "key": "rgb(121, 112, 150)"
+    }
+  ]
+}

@@ -1,11 +1,10 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ConnectionSettings, ProfileCollection, ImportProfilesRequest, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
 import { connectionSettingsSchema } from '../typert.shared.ts'
 import { useBrowsingState } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
-import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { ProfileTransfer } from './ProfileTransfer.tsx'
 import { ConnectionUri } from './ConnectionUri.tsx'
@@ -40,6 +39,7 @@ export function ProfileChooser(props: Props) {
   const sequence = useRef(0)
   const { t } = props
   const dialog = useRef<HTMLDialogElement | null>(null)
+  const descriptionId = useId()
   useEffect(() => {
     const element = dialog.current
     if (element === null) return
@@ -86,10 +86,11 @@ export function ProfileChooser(props: Props) {
     values.push(profile); groups.set(label, values)
   }
   return <>
-    <dialog ref={dialog} className="redis-connection-dialog" aria-label={t('connection.settings')} onClose={props.onClose} onCancel={props.onClose}>
-      <div className="redis-dialog-heading"><h2>{t('connection.settings')}</h2><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={props.onClose}><Icon name="close" /></button></div>
-      <div className="redis-dialog-content">
-      <div className="redis-profiles">
+    <dialog ref={dialog} className="redis-connection-dialog" aria-label={t('connection.settings')} aria-describedby={descriptionId} onClose={props.onClose} onCancel={props.onClose}>
+      <div className="redis-dialog-heading"><div className="redis-connection-title"><Icon name="database" /><div><h2>{t('connection.settings')}</h2><p id={descriptionId}>{t('connection.subtitle')}</p></div></div><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={props.onClose}><Icon name="close" /></button></div>
+      <div className="redis-dialog-content redis-connection-layout">
+      <aside className="redis-profiles" aria-label={t('ui.connections')}>
+      <h2>{t('ui.connections')}</h2>
     <fieldset disabled={busy || props.disabled}>
       <label>{t('profile.choose')}<select name="profile" value={selectedId ?? ''} onChange={event => {
         choose(profiles.find(value => value.id === event.target.value))
@@ -112,11 +113,15 @@ export function ProfileChooser(props: Props) {
       </div>
     </fieldset>
     {error && <p className="redis-error" role="alert">{t('profile.error')}</p>}
-      </div>
+      <p className="redis-profile-privacy">{t('profile.privacy')}</p>
+      </aside>
+      <div className="redis-connection-editor">
       <ConnectionUri t={t} open={props.open} disabled={busy || props.disabled} apply={value => { choose(undefined); props.applyUri(value) }} />
       {props.children}
+      </div>
+      <div className="redis-connection-extras">
       <ProfileTransfer t={t} open={props.open} disabled={busy || props.disabled} profiles={profiles} import={request => run(signal => props.importProfiles(request, signal), 'keep')} />
-      <HelpDetails label={t('ui.help')}><p>{t('profile.privacy')}</p></HelpDetails>
+      </div>
       </div>
     </dialog>
   </>

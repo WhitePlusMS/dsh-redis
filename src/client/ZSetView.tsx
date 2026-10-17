@@ -5,6 +5,8 @@ import { MAX_LIST_ITEMS, type DatabaseTarget, type RedisKey, type ZSetEntry, typ
 import { zsetReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
+import { DetailPage } from './DetailPage.tsx'
+import { displayLabel } from './collection-value.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { appendZSetRows, emptyZSetCache, type ZSetCache } from './zset-cache.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
@@ -42,7 +44,7 @@ export function ZSetView(props: Props) {
     <button type="button" onClick={() => { setGeo(false); setRange({ ...range, attempt: range.attempt + 1 }) }}>{t('geo.back')}</button>
     <GeoView {...props} />
   </>
-  return <section className="redis-details" aria-label={t('zset.title')}>
+  return <section className="redis-details" aria-label={t('zset.title')} data-cell-open={window !== null}>
     <h2>{t('zset.title')} · <span>{props.selected.label}</span></h2>
     <button type="button" disabled={busy} onClick={() => { scanState.cancel(); setSelected(null); setGeo(true) }}>{t('geo.open')}</button>
     <label>{t('zset.mode')}<select name="zsetMode" value={mode} onChange={event => { scanState.clear(); setSelected(null); setRangeError(false); setMode(event.target.value === 'scan' ? 'scan' : 'range') }}><option value="range">{t('zset.range')}</option><option value="scan">{t('zset.scan')}</option></select></label>
@@ -71,12 +73,12 @@ export function ZSetView(props: Props) {
       {result.mode === 'range' && result.state === 'page' && <p role="status">{t('zset.start')}: <span data-zset-start>{result.offset}</span></p>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'zset.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {cache.rows.length === 0 && cursor === null ? <p>{t('zset.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
-    {row !== undefined && window !== null && <div className="redis-cell-preview">
-      <h2>{t('set.member')} · {row.member.label}</h2><p>{t('zset.score')}: {row.score}</p>
-      <label>{t('set.identity')}<textarea readOnly rows={2} value={row.member.base64} spellCheck={false} /></label>
+    {cache.rows.length === 0 && cursor === null ? <p>{t('zset.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
+    {row !== undefined && window !== null && <DetailPage title={`${t('set.member')} · ${displayLabel(row.member.label)}`} backLabel={t('detail.back')} onBack={() => setSelected(null)}>
+      <p>{t('zset.score')}: {row.score}</p>
+      <details className="redis-byte-identity"><summary>{t('set.identity')}</summary><textarea aria-label={t('set.identity')} readOnly rows={2} value={row.member.base64} spellCheck={false} /></details>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </div>}
+    </DetailPage>}
     <HelpDetails label={t('ui.help')}><p>{t(mode === 'range' ? 'zset.rangeHint' : 'zset.scanHint')}</p><p>{t('zset.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

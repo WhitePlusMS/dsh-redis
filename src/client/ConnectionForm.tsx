@@ -69,6 +69,11 @@ export function ConnectionForm(props: Props) {
   const connected = connection?.state === 'connected'
   const settings = (): ConnectionSettings => ({ host: host.trim(), port: Number(port), username, tls: tls ? { caPem: caPem.trim() } : null })
   const request = (): ConnectionRequest => ({ ...settings(), password })
+  function disconnectCurrent(): void {
+    if (connection?.id == null) return
+    const target = { id: connection.id, generation: connection.generation }
+    void run(signal => props.disconnect(target, signal), acceptConnection)
+  }
   return <div className="redis-connection" data-connected={connected}>
     <div className="redis-compact-connection" hidden={connected}><button type="button" onClick={() => setSettingsOpen(true)}><Icon name="database" /><span>{connection?.target?.host ?? host}:{connection?.target?.port ?? port}</span></button><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button></div>
     <ProfileChooser {...props} disabled={busy || connected} settings={settings} open={settingsOpen} onClose={() => { setSettingsOpen(false); setPassword('') }} applyUri={({ request, db }) => {
@@ -82,22 +87,28 @@ export function ConnectionForm(props: Props) {
         setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
         setPassword(''); setError(null); setTested(false)
       }}>
-    <form autoComplete="off" onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection) }}>
+    {connected && <div className="redis-connection-notice"><strong>{t('connection.connected')}</strong><p>{t('connection.editHint')}</p><button type="button" disabled={busy} onClick={disconnectCurrent}><Icon name="disconnect" />{t('connection.disconnect')}</button></div>}
+    <form className="redis-connect-form" autoComplete="off" onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection) }}>
       <fieldset disabled={busy || connected}>
+        <div className="redis-form-section"><h3>{t('connection.serverSection')}</h3>
         <div className="redis-address">
           <label>{t('connection.host')}<input name="host" required maxLength={253} value={host} onChange={event => setHost(event.target.value)} spellCheck={false} /></label>
           <label>{t('connection.port')}<input name="port" type="number" required min={1} max={65535} step={1} value={port} onChange={event => setPort(event.target.value)} /></label>
         </div>
-        <label>{t('connection.username')}<input name="username" maxLength={256} value={username} onChange={event => setUsername(event.target.value)} autoComplete="off" spellCheck={false} /></label>
-        <label>{t('connection.password')}<input name="password" type="password" maxLength={4096} value={password} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label>
-        <label className="redis-checkbox"><input name="tls" type="checkbox" checked={tls} onChange={event => setTls(event.target.checked)} />{t('connection.tls')}</label>
+        </div>
+        <div className="redis-form-section"><h3>{t('connection.authSection')}</h3>
+        <label>{t('connection.username')}<input name="username" maxLength={256} value={username} placeholder={t('connection.userPlaceholder')} onChange={event => setUsername(event.target.value)} autoComplete="off" spellCheck={false} /></label>
+        <label>{t('connection.password')}<input name="password" type="password" maxLength={4096} value={password} placeholder={t('connection.passwordPlaceholder')} onChange={event => setPassword(event.target.value)} autoComplete="off" /></label>
+        </div>
+        <div className="redis-form-section redis-tls-section"><label className="redis-checkbox"><input name="tls" type="checkbox" checked={tls} onChange={event => setTls(event.target.checked)} />{t('connection.tls')}</label>
         {tls && <label>{t('connection.ca')}<textarea name="caPem" rows={5} maxLength={65536} value={caPem} onChange={event => setCaPem(event.target.value)} spellCheck={false} /></label>}
-        <div className="redis-actions">
+        </div>
+        <div className="redis-actions redis-connect-actions">
           <button type="button" onClick={event => {
             if (!event.currentTarget.form?.reportValidity()) return
             void run(signal => props.testConnection(request(), signal), value => { setTested(value.outcome === 'passed'); setError(value.error) })
           }}>{t('connection.test')}</button>
-          <button type="submit">{t('connection.connect')}</button>
+          <button type="submit" className="redis-primary-button"><Icon name="database" />{t('connection.connect')}</button>
         </div>
       </fieldset>
     </form>
@@ -106,7 +117,7 @@ export function ConnectionForm(props: Props) {
     {error !== null && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}
     <HelpDetails label={t('ui.help')}><p>{t('connection.privacy')}</p>{tls && <p>{t('connection.tlsVerification')}</p>}</HelpDetails>
     </ProfileChooser>
-    {connected ? <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} configure={() => setSettingsOpen(true)} connection={connection} acceptConnection={acceptConnection} /> : <div className="redis-connect-empty"><Icon name="database" /><button type="button" onClick={() => setSettingsOpen(true)}>{t('ui.chooseConnection')}</button></div>}
+    {connected ? <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} configure={() => setSettingsOpen(true)} connection={connection} acceptConnection={acceptConnection} /> : <div className="redis-connect-empty"><Icon name="database" /><h2>{t('empty.title')}</h2><p>{t('empty.description')}</p><button type="button" className="redis-primary-button" onClick={() => setSettingsOpen(true)}><Icon name="add" />{t('ui.chooseConnection')}</button></div>}
     <div className="redis-connection-status">
       <span className={connected ? 'redis-connected' : ''} role="status">{connected ? t('connection.connected') : t('ui.disconnected')}{connected && <span className="redis-target"> · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</span>}</span>
       <span className="redis-status-spacer" />
@@ -115,11 +126,7 @@ export function ConnectionForm(props: Props) {
       {connected && connection.id !== null && <ServerOverview key={`${connection.id}:${connection.generation}:${connection.db}`} t={t} readOverview={props.readOverview} target={{ id: connection.id, generation: connection.generation, db: connection.db }} />}
       {sampledAt !== null && <time title={t('connection.sampledAt')} dateTime={sampledAt.toISOString()}>{sampledAt.toLocaleTimeString()}</time>}
       <button type="button" className="redis-icon-button" disabled={busy} title={t('connection.refresh')} aria-label={t('connection.refresh')} onClick={() => { void run(signal => props.connectionStatus(signal), acceptConnection) }}><Icon name="refresh" /></button>
-      {connected && <button type="button" className="redis-icon-button" disabled={busy} title={t('connection.disconnect')} aria-label={t('connection.disconnect')} onClick={() => {
-        const id = connection.id
-        if (id === null) return
-        void run(signal => props.disconnect({ id, generation: connection.generation }, signal), acceptConnection)
-      }}><Icon name="disconnect" /></button>}
+      {connected && <button type="button" className="redis-icon-button" disabled={busy} title={t('connection.disconnect')} aria-label={t('connection.disconnect')} onClick={disconnectCurrent}><Icon name="disconnect" /></button>}
       {busy && <span role="status">{t('connection.busy')}</span>}
       {tested && !settingsOpen && <span role="status">{t('connection.testPassed')}</span>}
       {error !== null && !settingsOpen && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}

@@ -8,6 +8,7 @@ import { MAX_LIST_ITEMS, type DatabaseTarget, type ListEntry, type ListReadReque
 import { listReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
+import { DetailPage } from './DetailPage.tsx'
 import { prefixWindow, cellLabel } from './collection-value.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
@@ -36,7 +37,7 @@ export function ListView(props: Props) {
     { id: 'index', title: t('list.index'), render: entry => entry.index },
     { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index) }}>{cellLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
-  return <section className="redis-details" aria-label={t('list.title')}>
+  return <section className="redis-details" aria-label={t('list.title')} data-cell-open={window !== null}>
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>
     <form onSubmit={event => {
       event.preventDefault()
@@ -63,14 +64,13 @@ export function ListView(props: Props) {
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
       {result.state === 'page' && <>
         <p role="status" data-list-coverage>{t('list.start')}: <span data-list-start>{request.offset}</span> · {t('list.returned')}: <span data-list-count>{cache.rows.length}</span></p>
-        {cache.rows.length === 0 && cursor === null ? <p>{t('list.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
+        {cache.rows.length === 0 && cursor === null ? <p>{t('list.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
       </>}
     </>}
-    {row !== undefined && window !== null && <div className="redis-cell-preview">
-      <h2>{t('list.index')} {row.index}</h2>
+    {row !== undefined && window !== null && <DetailPage title={`${t('list.index')} ${row.index}`} backLabel={t('detail.back')} onBack={() => setSelected(null)}>
       <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')} · {row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</p>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </div>}
+    </DetailPage>}
     <HelpDetails label={t('ui.help')}><p>{t('list.hint')}</p><p>{t('list.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

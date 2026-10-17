@@ -6,6 +6,7 @@ import { MAX_STREAM_MESSAGES, type DatabaseTarget, type RedisKey, type StreamFie
 import { streamReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
+import { DetailPage } from './DetailPage.tsx'
 import { cellLabel, prefixWindow } from './collection-value.ts'
 import { appendStreamMessages, emptyStreamCache, type StreamCache } from './stream-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
@@ -40,7 +41,7 @@ export function StreamView(props: Props) {
     { id: 'field', title: t('hash.field'), render: row => <button type="button" data-stream-field={row.index} onClick={() => { setCell({ index: row.index, part: 'field' }) }}>{row.field.label}<small>{row.field.byteLength} {t('keys.bytes')}</small></button> },
     { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }) }}>{cellLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
-  return <section className="redis-details" aria-label={t('stream.title')}>
+  return <section className="redis-details" aria-label={t('stream.title')} data-message-open={message !== undefined} data-cell-open={window !== null}>
     <h2>{t('stream.title')} · <span>{props.selected.label}</span></h2>
     <label>{t('stream.direction')}<select name="streamDirection" value={direction} onChange={event => { page.clear(); setSelected(null); setCell(null); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('stream.forward')}</option><option value="reverse">{t('stream.reverse')}</option></select></label>
     <form onSubmit={event => {
@@ -69,14 +70,13 @@ export function StreamView(props: Props) {
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('stream.total')}</dt><dd>{result.metadata.length}</dd></dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'stream.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {cache.messages.length === 0 && cursor === null ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
-    {message !== undefined && <div className="redis-stream-fields"><h2>{t('stream.id')} {message.id}</h2><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} /></div>}
-    {pair !== undefined && cell !== null && window !== null && <div className="redis-cell-preview">
-      <h2>{t(cell.part === 'field' ? 'hash.field' : 'hash.value')} · {t('stream.occurrence')} {cell.index}</h2>
+    {cache.messages.length === 0 && cursor === null ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} paused={message !== undefined} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
+    {message !== undefined && <DetailPage kind="message" title={`${t('stream.id')} ${message.id}`} backLabel={t('detail.back')} onBack={() => { setSelected(null); setCell(null) }}><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} paused={window !== null} /></DetailPage>}
+    {pair !== undefined && cell !== null && window !== null && <DetailPage title={`${t(cell.part === 'field' ? 'hash.field' : 'hash.value')} · ${t('stream.occurrence')} ${cell.index}`} backLabel={t('detail.backMessage')} onBack={() => setCell(null)}>
       <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')}{cell.part === 'value' && <> · {pair.value.byteLength}/{pair.value.fullByteLength} {t('keys.bytes')}</>}</p>
-      {cell.part === 'field' && <label>{t('hash.identity')}<textarea readOnly rows={2} value={pair.field.base64} spellCheck={false} /></label>}
+      {cell.part === 'field' && <details className="redis-byte-identity"><summary>{t('hash.identity')}</summary><textarea aria-label={t('hash.identity')} readOnly rows={2} value={pair.field.base64} spellCheck={false} /></details>}
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </div>}
+    </DetailPage>}
     <HelpDetails label={t('ui.help')}><p>{t('stream.hint')}</p><p>{t('stream.pairsHint')}</p><p>{t('stream.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

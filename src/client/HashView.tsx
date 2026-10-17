@@ -5,6 +5,7 @@ import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { DatabaseTarget, HashEntry, RedisKey, ScanHashRequest, ScanHashResult } from '../domain.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
+import { DetailPage } from './DetailPage.tsx'
 import { appendHashEntries, emptyHashCache, type HashCache } from './hash-cache.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { prefixWindow, cellLabel, displayLabel } from './collection-value.ts'
@@ -42,7 +43,7 @@ export function HashView(props: Props) {
     { id: 'field', title: t('hash.field'), render: row => <button type="button" data-hash-field={row.field.base64} onClick={() => selectCell(row, 'field')}>{displayLabel(row.field.label)}</button> },
     { id: 'value', title: t('hash.value'), render: row => <button type="button" data-hash-value={row.field.base64} onClick={() => selectCell(row, 'value')}>{cellLabel(row.value)}</button> },
   ]
-  return <section className="redis-details" aria-label={t('hash.title')}>
+  return <section className="redis-details" aria-label={t('hash.title')} data-cell-open={window !== null}>
     <h2>{t('hash.title')} · <span>{props.selected.label}</span></h2>
     <form onSubmit={event => { event.preventDefault(); void scan(false) }}>
       <label>{t('hash.pattern')}<input name="hashPattern" maxLength={256} value={pattern} onChange={event => { clear(); setPattern(event.target.value) }} /></label>
@@ -60,13 +61,12 @@ export function HashView(props: Props) {
     </>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    {cache.rows.length === 0 && cursor === null ? <p>{t('hash.empty')}</p> : <CollectionTable rows={cache.rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
-    {window !== null && selected !== undefined && cell !== null && <div className="redis-cell-preview">
-      <h2>{t(cell.column === 'field' ? 'hash.field' : 'hash.value')} · {selected.field.label}</h2>
+    {cache.rows.length === 0 && cursor === null ? <p>{t('hash.empty')}</p> : <CollectionTable rows={cache.rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
+    {window !== null && selected !== undefined && cell !== null && <DetailPage title={`${t(cell.column === 'field' ? 'hash.field' : 'hash.value')} · ${displayLabel(selected.field.label)}`} backLabel={t('detail.back')} onBack={() => setCell(null)}>
       <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')} · {cell.column === 'field' ? selected.field.byteLength : `${selected.value.byteLength}/${selected.value.fullByteLength}`} {t('keys.bytes')}</p>
-      <label>{t('hash.identity')}<textarea readOnly rows={2} value={selected.field.base64} spellCheck={false} /></label>
+      <details className="redis-byte-identity"><summary>{t('hash.identity')}</summary><textarea aria-label={t('hash.identity')} readOnly rows={2} value={selected.field.base64} spellCheck={false} /></details>
       <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </div>}
+    </DetailPage>}
     <HelpDetails label={t('ui.help')}><p>{t('hash.hint')}</p><p>{t('hash.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }
