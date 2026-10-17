@@ -1,6 +1,5 @@
 import { useCollectionScan } from './use-collection-scan.ts'
 import { appendRows, emptyRowCache, type RowCache } from './row-cache.ts'
-import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -8,7 +7,6 @@ import { MAX_LIST_ITEMS, type DatabaseTarget, type ListEntry, type ListReadReque
 import { listReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
-import { DetailPage } from './DetailPage.tsx'
 import { prefixWindow, cellLabel } from './collection-value.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
@@ -35,13 +33,13 @@ export function ListView(props: Props) {
   const window = useMemo(() => row === undefined ? null : prefixWindow(row.value), [row])
   const columns: readonly CollectionColumn<ListEntry>[] = [
     { id: 'index', title: t('list.index'), render: entry => entry.index },
-    { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index) }}>{cellLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'value', title: t('hash.value'), render: entry => <span data-list-index={entry.index} title={cellLabel(entry.value)}>{entry.value.fullByteLength === 0 ? t('hash.emptyValue') : cellLabel(entry.value)}</span> },
   ]
-  return <section className="redis-details" aria-label={t('list.title')} data-cell-open={window !== null}>
+  return <section className="redis-details redis-collection-workbench" aria-label={t('list.title')}>
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>
-    <form onSubmit={event => {
+    <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
-      try { setSelected(null); listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setSelected(null); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -54,23 +52,19 @@ export function ListView(props: Props) {
       </div>
     </form>
 
-    <p role="status">{t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('list.rangeError')}</p>}
-    {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
+      <small className="redis-collection-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('list.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
-      {result.state === 'page' && <>
-        <p role="status" data-list-coverage>{t('list.start')}: <span data-list-start>{request.offset}</span> · {t('list.returned')}: <span data-list-count>{cache.rows.length}</span></p>
-        {cache.rows.length === 0 && cursor === null ? <p>{t('list.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
-      </>}
     </>}
-    {row !== undefined && window !== null && <DetailPage title={`${t('list.index')} ${row.index}`} backLabel={t('detail.back')} onBack={() => setSelected(null)}>
-      <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')} · {row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</p>
-      <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </DetailPage>}
-    <HelpDetails label={t('ui.help')}><p>{t('list.hint')}</p><p>{t('list.budget')}</p><p>{t('value.live')}</p></HelpDetails>
+    <div className="redis-collection-summary" role="status" data-list-coverage><span>{t('list.start')}: <b data-list-start>{request.offset}</b></span><span>{t('list.returned')}: <b data-list-count>{cache.rows.length}</b> / {result?.metadata?.length ?? t('workbench.unknown')}</span>{result?.metadata && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{busy ? t('connection.busy') : t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</span></div>
+    <div className="redis-collection-body">
+      <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'list.empty')} selection={{ id: row?.index ?? null, onSelect: entry => setSelected(entry.index) }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
+      <section className="redis-collection-preview" aria-label={t('hash.value')}>
+        {row !== undefined && window !== null ? <BytePreview key={row.index} heading={{ label: t('hash.value'), description: `${t('list.index')} ${row.index} · ${row.value.byteLength}/${row.value.fullByteLength} ${t('keys.bytes')}${window.complete ? '' : ' · ' + t('value.partial')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('hash.value')}</strong><p>{t('collection.selectRow')}</p></>}
+      </section>
+    </div>
   </section>
 }

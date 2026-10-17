@@ -1,5 +1,6 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'collection.selectRow': '选择一行，查看内容。', 'collection.emptyMember': '（空成员）',
   'hash.search': '搜索已加载字段和值', 'hash.clearSearch': '清除表格搜索', 'hash.refresh': '刷新 Hash',
   'hash.filter': '服务端字段筛选', 'hash.resetFilter': '显示全部字段', 'hash.shown': '搜索结果',
   'hash.localSearch': '仅搜索已加载内容', 'hash.emptyField': '（空字段）', 'hash.emptyValue': '（空值）',
@@ -235,6 +236,7 @@ export const zh = {
   'badge.readOnly': '严格只读', 'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'collection.selectRow': 'Select a row to inspect its content.', 'collection.emptyMember': '(empty member)',
   'hash.search': 'Search loaded fields and values', 'hash.clearSearch': 'Clear table search', 'hash.refresh': 'Refresh Hash',
   'hash.filter': 'Server field filter', 'hash.resetFilter': 'Show all fields', 'hash.shown': 'Search results',
   'hash.localSearch': 'Searching loaded content only', 'hash.emptyField': '(empty field)', 'hash.emptyValue': '(empty value)',
