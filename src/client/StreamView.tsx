@@ -6,7 +6,7 @@ import { MAX_STREAM_MESSAGES, type DatabaseTarget, type RedisKey, type StreamFie
 import { streamReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
-import { prefixLabel, prefixWindow } from './collection-value.ts'
+import { cellLabel, prefixWindow } from './collection-value.ts'
 import { appendStreamMessages, emptyStreamCache, type StreamCache } from './stream-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
@@ -38,7 +38,7 @@ export function StreamView(props: Props) {
   const fields: readonly CollectionColumn<FieldRow>[] = [
     { id: 'index', title: t('stream.occurrence'), render: row => row.index },
     { id: 'field', title: t('hash.field'), render: row => <button type="button" data-stream-field={row.index} onClick={() => { setCell({ index: row.index, part: 'field' }) }}>{row.field.label}<small>{row.field.byteLength} {t('keys.bytes')}</small></button> },
-    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }) }}>{prefixLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }) }}>{cellLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
   return <section className="redis-details" aria-label={t('stream.title')}>
     <h2>{t('stream.title')} · <span>{props.selected.label}</span></h2>
@@ -55,7 +55,6 @@ export function StreamView(props: Props) {
       <label>{t('stream.count')}<select name="streamCount" value={count} onChange={event => setCount(Number(event.target.value))}>{[1, 10, 25, MAX_STREAM_MESSAGES].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t('value.refresh')}</button>
-        <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => { void page.scan(true) }}>{t('stream.more')}</button>
         {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
@@ -70,7 +69,7 @@ export function StreamView(props: Props) {
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('stream.total')}</dt><dd>{result.metadata.length}</dd></dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'stream.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {cache.messages.length === 0 ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} />}
+    {cache.messages.length === 0 && cursor === null ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
     {message !== undefined && <div className="redis-stream-fields"><h2>{t('stream.id')} {message.id}</h2><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} /></div>}
     {pair !== undefined && cell !== null && window !== null && <div className="redis-cell-preview">
       <h2>{t(cell.part === 'field' ? 'hash.field' : 'hash.value')} · {t('stream.occurrence')} {cell.index}</h2>

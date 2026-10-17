@@ -1262,3 +1262,38 @@
 - 首轮全量检查发现旧browser-bundle测试固定27个RPC；已更新28并增加真实loopback命令形态测试，拒绝CONFIG SET/通配/额外参数、DBSIZE额外参数和INFO任意section。
 
 - DB目录里程碑：Host/Client/tests严格类型通过，31个测试文件/315项通过；固定元数据命令真实loopback形态、ACL未知、64位精度、取消/错误代次/10秒期限与双面DTO均已覆盖。原始检查日志保存docs/verification/artifacts/resp-workbench/database-check.log。此时尚未接入UI。
+
+## 2026-10-17：RESP 导航与自动扫描接入
+
+- KeyBrowser接入单链自动加载、DB快照、数量/进度/停止状态，连接与DB/会话变更取消；筛选草稿只在提交时生效，移除手动Key续扫。
+- KeyCatalog在一个虚拟列表内展示DB/目录/Key，按文件夹优先和名称排序，计数和状态显示真实已读范围。ConnectionForm/ProfileChooser移除独立连接列，继续使用原有设置弹窗。
+- 显示只移除外层引号，控制字符转义与原始Base64身份保留；新增中英文加载状态。布局和右侧续读继续接入。
+
+- styles改为单连接导航加详情两栏，新增DB行/Key黄色图标、计数与底部加载进度；集合表格固定字段宽度、单行省略/横滚，不再挤成多行。
+- CollectionTable增加以本表视口为root的底部观察器；useCollectionScan同步锁防同游标重复，延续既有取消/错误/缓存限制并加本轮1000页或60秒停止。Hash/Set/ZSet/Stream/TimeSeries移除继续按钮并接入自动续读；ZSet范围偏移只在本地转换，未混入Host扫描令牌。
+
+- List/GEO复用新增通用有界row-cache保留原始索引/成员身份追加读取；ZSet rank范围同样滚动续读。右侧上限按1000页及现有行/字节预算，不按用户停留时长中断正常浏览。新增范围缓存与RESP排序测试。
+
+- 单元格值预览直接显示安全文本，不再二次JSON编码产生大量反斜杠；完整值/字节覆盖仍由点击详情显示。Hash同时显示已读/集合总量，续读提示改为“滚动到底自动加载”。
+
+- 新增smoke-resp-workbench.mjs与隔离原生模式，种入760 Key、235/236行基础/特殊集合、空DB/独立DB/5100Key大库；通过现有只读延迟代理验证取消、旧DB回复、实际两栏和滚动，无业务库写入。待运行通过后记录结果；旧29票报告保持历史。
+
+- 首轮原生测试已装入新包并实际加载760 Key；验收窗口1440限制800侧栏拖宽，测试停在尺寸步骤，所属DSH/Redis/代理均已释放。专用模式改用1920测试窗口并按选中DB身份等待扫描结果。
+- 实际截图发现单Key前缀仍形成多余目录；KeyNamespaces显示层压缩单成员目录为完整剩余Key，原始字节路径不变，多成员分组保留。同步排序与深路径测试。
+
+- README同步两栏导航、自动Key扫描与DB快照、右侧滚动、单Key目录压缩和真实预算；文档明确MATCH分母、未知权限与动态数据边界。目录压缩专项9项及类型已通过。
+
+- 第二轮原生启动在进入夹具前发生Node ArrayBuffer分配失败，未留下新owner目录或测试服务。只读核查主机仍有约7GiB可用提交内存；将单个验收进程堆预算由512MiB调为1GiB再运行，不终止其他Node进程或修改系统设置。
+
+- trace-uncaught已定位真实原因：隔离profile因同名同版本tgz复用旧安装，verifyInstalled对不同大Buffer调用deepEqual时，Node断言Myers差异分配失败；不是插件或Redis读取OOM。保留逐字节真实性校验，改为Buffer.equals，并使用SHA命名新包安装。前述加堆预算未解决，停止该方向。
+
+- 哈希包重装后真实原生浏览验证已通过760自动Key、236行Hash/Set与235行List/ZSet/Stream/TimeSeries/GEO、原始数据DUMP不变及空/独立DB。脚本取消控件错用英文Cancel（实际Cancel read），已按实际词条修正；增加右侧取消迟到与Set空中间页验证。失败轮次服务/夹具均已清理。
+
+- 原生进阶轮次已通过Hash取消迟到、Set空中间页、Key取消和恢复、DB所有权切换、大库5100→5000明确部分状态；停止在筛选按钮名称。发现KeyBrowser筛选复用了namespace.apply词条，实际为应用分隔符；改为独立workbench.apply（应用筛选/Apply filter），同步原生脚本真实文案，所属服务均已清理。
+
+- README补充同版本更新必须使用唯一哈希文件名，避免已复现的旧包复用；最终包重新执行默认prepack门禁。
+
+- 最终SHA 4a9660dfbdedac5608ee0876dbf39f02854ed9bd893e0e5d3c7298ba416c5a87：默认pack前置严格类型/构建/318项通过，真实原生RESP模式29项通过（含7类集合、取消迟到、空页、DB切换、5100预算、MATCH与4种宽度），测试DSH/代理/Redis均已停止。
+- 差异检查清理KeyCatalog一行尾部空白；重新类型检查和构建，并核对生成lib仍与已验收安装包逐字节相同。验收记录与日常更新继续归档。
+
+- 已归档本轮原始类型/构建/318测试/29原生报告、Host日志和合成Hash截图到docs/verification/artifacts/resp-workbench，新增resp-workbench-2026-10-17.md逐文件说明、实现/操作、执行范围与预算。原29票历史证据保留，当前包未冒用旧原生模式的结果。

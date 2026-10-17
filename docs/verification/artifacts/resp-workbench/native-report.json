@@ -1,0 +1,77 @@
+{
+  "artifactPrefix": "native-resp-workbench",
+  "baseline": "0.2.0-rc.2",
+  "startedAt": "2026-10-17T13:07:08.615Z",
+  "packageSha256": "4a9660dfbdedac5608ee0876dbf39f02854ed9bd893e0e5d3c7298ba416c5a87",
+  "checks": [
+    "launch token exchanged for browser session",
+    "installed package loaded and real Agent-scoped Host RPC returned strict status",
+    "native gateway rejected an unexpected request field",
+    "installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result",
+    "native form test succeeded without a persistent Redis socket",
+    "native form displays fixed authentication error and releases its socket",
+    "760 keys auto-load to completion with exact DB total/progress, one DB/folder/key tree and no continuation form",
+    "folder expansion is local and labels/counts stay compact without display quotes",
+    "binary key identity remains exact in the new navigation",
+    "cancelled delayed Hash page never renders late rows or auto-continues; refresh recovers",
+    "Hash scroll auto-loads all 236 fields; names stay one line and value selection opens formatted content",
+    "set table scroll appends every range/page without a Continue button",
+    "empty intermediate Set pages continue automatically until the cursor ends",
+    "list table scroll appends every range/page without a Continue button",
+    "zset table scroll appends every range/page without a Continue button",
+    "stream table scroll appends every range/page without a Continue button",
+    "ts table scroll appends every range/page without a Continue button",
+    "GEO coordinate ranges also append on scroll",
+    "all collection views preserve serialized fixture values",
+    "DB tree switching automatically reads empty DB1 and independent DB2, then restores DB0 count",
+    "cancelled delayed SCAN never publishes a late page or starts its successor; refresh recovers",
+    "DB switch rejects old page ownership; a 5100-key DB stops visibly at 5000 without false completion",
+    "submitted MATCH auto-scans without treating DB total as the filtered denominator",
+    "native two-pane geometry and table horizontal scroll pass at 400/550/800/1000 px",
+    "proxy observed only viewer connection/read commands and no protocol errors or KEYS command",
+    "native connect, local status refresh, disconnect and password clearing passed",
+    "native manual refresh exposes server-side disconnect without reconnecting",
+    "real native sidebar guide opened Redis; browser called Host and rendered ready state",
+    "native Host shutdown released all viewer sockets"
+  ],
+  "passed": true,
+  "processStopped": true,
+  "browserErrors": [],
+  "browserConsoleErrors": [],
+  "browserRequestFailures": [
+    {
+      "url": "http://127.0.0.1:13559/api/redisViewer/scanHash",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:13559/api/redisViewer/scanKeys",
+      "error": "net::ERR_ABORTED"
+    },
+    {
+      "url": "http://127.0.0.1:13559/api/redisViewer/scanKeys",
+      "error": "net::ERR_ABORTED"
+    }
+  ],
+  "finishedAt": "2026-10-17T13:07:41.761Z",
+  "recoveryProxyStopped": true,
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "bb728bab-5a17-4a58-8e86-170151ea509a",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "fixturesStopped": true
+}

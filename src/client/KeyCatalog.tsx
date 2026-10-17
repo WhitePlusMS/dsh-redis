@@ -1,16 +1,20 @@
 import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
-import type { RedisKey } from '../domain.ts'
+import type { DatabaseCatalog, RedisKey } from '../domain.ts'
+import { displayLabel } from './collection-value.ts'
 import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { KEY_ROW_HEIGHT, KeyNamespaces, keyRowId, keyRowWindow, validSeparator, type KeyRow } from './key-namespaces.ts'
 import { NS } from './locales.ts'
 
-type Props = { readonly keys: readonly RedisKey[]; readonly selected: RedisKey | null; readonly select: (key: RedisKey) => void; readonly t: TranslateNS<typeof NS> }
+type DatabaseRow = { readonly kind: 'database'; readonly id: string; readonly label: string; readonly db: number; readonly depth: number; readonly parentId: null }
+type NavigationRow = KeyRow | DatabaseRow
+type Props = { readonly databases: DatabaseCatalog | null; readonly db: number; readonly selectingDb: boolean; readonly selectDb: (db: number) => void; readonly keys: readonly RedisKey[]; readonly selected: RedisKey | null; readonly select: (key: RedisKey) => void; readonly t: TranslateNS<typeof NS> }
 
 /** Presentation only: no remote actions, persisted values, cursors or automatic reads. */
-export function KeyCatalog({ keys, selected, select, t }: Props) {
+export function KeyCatalog({ keys, selected, select, t, databases, db, selectingDb, selectDb }: Props) {
   const [tree, setTree] = useState(true)
+  const [dbOpen, setDbOpen] = useState(true)
   const [separator, setSeparator] = useState(':')
   const [draft, setDraft] = useState(':')
   const [separatorError, setSeparatorError] = useState(false)
@@ -18,13 +22,22 @@ export function KeyCatalog({ keys, selected, select, t }: Props) {
   const [focusId, setFocusId] = useState<string | null>(null)
   const [viewport, setViewport] = useState({ top: 0, height: 0 })
   const list = useRef<HTMLDivElement>(null)
-  const previousRows = useRef<readonly KeyRow[]>([])
+  const previousRows = useRef<readonly NavigationRow[]>([])
   const locate = useRef<string | null>(null)
   const domId = useId()
   const index = useMemo(() => new KeyNamespaces(separator), [separator])
   // appendKeys retains old object references; a refresh/replacement makes this index reset.
   const model = useMemo(() => { index.update(keys); return index }, [index, keys])
-  const rows = useMemo(() => model.rows(expanded, tree), [model, keys, expanded, tree])
+  const rows = useMemo((): readonly NavigationRow[] => {
+    const known = new Map(databases?.keyspace?.map(row => [row.db, row.keys]) ?? [])
+    const dbs = databases?.databaseCount == null ? [...new Set([db, ...known.keys()])].sort((a, b) => a - b) : Array.from({ length: databases.databaseCount }, (_, i) => i)
+    return dbs.flatMap((value): NavigationRow[] => {
+      const count = value === db && databases?.currentKeys != null ? databases.currentKeys : known.get(value) ?? (databases?.keyspace == null ? '?' : '0')
+      const parent = 'database:' + value
+      const row: DatabaseRow = { kind: 'database', id: parent, label: 'db' + value + ' (' + count + ')', db: value, depth: 0, parentId: null }
+      return value === db && dbOpen ? [row, ...model.rows(expanded, tree).map(child => ({ ...child, depth: child.depth + 1, parentId: child.parentId ?? parent }))] : [row]
+    })
+  }, [model, keys, expanded, tree, databases, db, dbOpen])
   const activeIndex = Math.max(0, rows.findIndex(row => row.id === focusId))
   const window = keyRowWindow(rows.length, viewport.top, viewport.height)
   const mounted = Array.from({ length: window.end - window.start }, (_, offset) => window.start + offset)
@@ -71,9 +84,10 @@ export function KeyCatalog({ keys, selected, select, t }: Props) {
   function toggle(id: string): void {
     setExpanded(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next })
   }
-  function activate(row: KeyRow): void {
+  function activate(row: NavigationRow): void {
     setFocusId(row.id); list.current?.focus({ preventScroll: true })
-    if (row.kind === 'namespace') toggle(row.id)
+    if (row.kind === 'database') { if (row.db === db) setDbOpen(!dbOpen); else selectDb(row.db) }
+    else if (row.kind === 'namespace') toggle(row.id)
     else select(row.key)
   }
   function navigate(event: KeyboardEvent<HTMLDivElement>): void {
@@ -88,10 +102,12 @@ export function KeyCatalog({ keys, selected, select, t }: Props) {
       case 'PageDown': reveal(Math.min(rows.length - 1, activeIndex + step)); break
       case 'PageUp': reveal(Math.max(0, activeIndex - step)); break
       case 'ArrowRight':
+        if (row.kind === 'database') { if (row.db !== db) selectDb(row.db); else if (!dbOpen) setDbOpen(true); else reveal(activeIndex + 1) }
         if (row.kind === 'namespace') { if (expanded.has(row.id)) reveal(activeIndex + 1); else toggle(row.id) }
         break
       case 'ArrowLeft':
-        if (row.kind === 'namespace' && expanded.has(row.id)) toggle(row.id)
+        if (row.kind === 'database' && row.db === db) setDbOpen(false)
+        else if (row.kind === 'namespace' && expanded.has(row.id)) toggle(row.id)
         else if (row.parentId !== null) reveal(rows.findIndex(value => value.id === row.parentId))
         break
       case 'Enter': case ' ': activate(row); break
@@ -106,6 +122,7 @@ export function KeyCatalog({ keys, selected, select, t }: Props) {
       <button type="button" className="redis-icon-button" title={t('namespace.list')} aria-label={t('namespace.list')} aria-pressed={!tree} onClick={() => setTree(false)}><Icon name="list" /></button>
       <button type="button" className="redis-icon-button" title={t('namespace.locate')} aria-label={t('namespace.locate')} disabled={selected === null || model.path(selected.base64) === undefined} onClick={() => {
         if (selected === null) return
+        setDbOpen(true)
         locate.current = keyRowId(selected.base64)
         setExpanded(previous => new Set([...previous, ...model.path(selected.base64) ?? []]))
       }}><Icon name="locate" /></button>
@@ -126,9 +143,9 @@ export function KeyCatalog({ keys, selected, select, t }: Props) {
       {rows.length === 0 ? <p>{t('keys.empty')}</p> : <div className="redis-key-spacer" style={{ height: rows.length * KEY_ROW_HEIGHT }}>
         {mounted.map(rowIndex => {
           const row = rows[rowIndex]!
-          return <button type="button" role="treeitem" tabIndex={-1} id={`${domId}-${rowIndex}`} key={row.id} data-key-base64={row.kind === 'key' ? row.key.base64 : undefined} data-namespace-id={row.kind === 'namespace' ? row.id : undefined} data-row-index={rowIndex} aria-level={row.depth + 1} aria-expanded={row.kind === 'namespace' ? expanded.has(row.id) : undefined} aria-selected={row.kind === 'key' ? selected?.base64 === row.key.base64 : undefined} data-active={rowIndex === activeIndex} title={row.kind === 'key' ? row.key.label : row.label} style={{ top: rowIndex * KEY_ROW_HEIGHT, paddingLeft: 4 + Math.min(row.depth, 3) * 8 }} onClick={() => activate(row)}>
-            <Icon name={row.kind === 'key' ? 'key' : expanded.has(row.id) ? 'folderOpen' : 'folder'} /><span>{row.label}</span>
-            {row.kind === 'namespace' ? <small data-namespace-count title={t('namespace.loaded')}>{row.count}</small> : <small title={`${row.key.byteLength} ${t('keys.bytes')}`}>{row.key.byteLength}</small>}
+          return <button type="button" role="treeitem" tabIndex={-1} id={`${domId}-${rowIndex}`} key={row.id} data-key-base64={row.kind === 'key' ? row.key.base64 : undefined} data-namespace-id={row.kind === 'namespace' ? row.id : undefined} data-db={row.kind === 'database' ? row.db : undefined} disabled={selectingDb} data-row-index={rowIndex} aria-level={row.depth + 1} aria-expanded={row.kind === 'database' ? row.db === db && dbOpen : row.kind === 'namespace' ? expanded.has(row.id) : undefined} aria-selected={row.kind === 'database' ? row.db === db : row.kind === 'key' ? selected?.base64 === row.key.base64 : undefined} data-active={rowIndex === activeIndex} title={displayLabel(row.kind === 'key' ? row.key.label : row.label)} style={{ top: rowIndex * KEY_ROW_HEIGHT, paddingLeft: 4 + Math.min(row.depth, 8) * 12 }} onClick={() => activate(row)}>
+            {row.kind === 'database' && <Icon name={row.db === db && dbOpen ? 'down' : 'right'} />}<Icon name={row.kind === 'database' ? 'database' : row.kind === 'key' ? 'key' : expanded.has(row.id) ? 'folderOpen' : 'folder'} /><span>{displayLabel(row.label)}{row.kind === 'namespace' && <small data-namespace-count title={t('namespace.loaded')}> ({row.count})</small>}</span>
+
           </button>
         })}
       </div>}

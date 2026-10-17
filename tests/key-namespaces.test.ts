@@ -31,10 +31,10 @@ describe('byte-identity namespace index', () => {
     const index = new KeyNamespaces(':')
     let cache = appendKeys(emptyKeyCache(), [first]); index.update(cache.keys)
     const initialRevision = index.revision
-    expect(index.rows(new Set(), true)).toMatchObject([{ count: 1 }])
+    expect(index.rows(new Set(), true)).toMatchObject([{ kind: 'key', key: first }])
     cache = appendKeys(cache, [first, next, other]); index.update(cache.keys); index.update(cache.keys)
     expect(index.revision).toBe(initialRevision)
-    expect(index.rows(new Set(), true).map(row => row.kind === 'namespace' ? row.count : 0)).toEqual([2, 1])
+    expect(index.rows(new Set(), true).map(row => row.kind === 'namespace' ? row.count : 0)).toEqual([2, 0])
     index.update([key('one:c')])
     expect(index.revision).toBeGreaterThan(initialRevision)
     expect(index.path(first.base64)).toBeUndefined()
@@ -46,7 +46,7 @@ describe('byte-identity namespace index', () => {
     const index = new KeyNamespaces('分隔'); index.update(keys)
     expect(reveal(index, keys).filter(row => row.kind === 'key')).toHaveLength(keys.length)
     expect(index.path(keys[3]!.base64)).not.toEqual(index.path(keys[4]!.base64))
-    expect(index.rows(new Set(), true).map(row => row.label)).toContain('"\uFEFF"')
+    expect(index.path(keys[5]!.base64)).toEqual(['namespace:' + Buffer.from('\uFEFF分隔').toString('base64')])
     for (const separator of [':', '::', '/', '分隔', '\uFEFF']) expect(validSeparator(separator)).toBe(true)
     for (const separator of ['', 'x'.repeat(17), '界'.repeat(6), '\ud800']) {
       expect(validSeparator(separator)).toBe(false)
@@ -57,8 +57,8 @@ describe('byte-identity namespace index', () => {
     const value = key('x:'.repeat(32768)), index = new KeyNamespaces(':')
     index.update([value]); const rows = reveal(index, [value])
     expect(index.path(value.base64)).toHaveLength(MAX_NAMESPACE_DEPTH)
-    expect(rows).toHaveLength(MAX_NAMESPACE_DEPTH + 1)
-    expect(rows.at(-1)).toMatchObject({ kind: 'key', key: value, depth: MAX_NAMESPACE_DEPTH })
+    expect(rows).toHaveLength(1)
+    expect(rows.at(-1)).toMatchObject({ kind: 'key', key: value, depth: 0 })
     expect(index.rows(new Set(), false)).toMatchObject([{ key: value, depth: 0, label: value.label }])
   })
   it('honours bounded cache identities and loaded counts across 5000 keys and filter replacement', () => {
@@ -70,7 +70,7 @@ describe('byte-identity namespace index', () => {
     expect(index.path(incoming[5000]!.base64)).toBeUndefined()
     expect(reveal(index, cache.keys).filter(row => row.kind === 'key')).toHaveLength(5000)
     index.update([incoming[5000]!])
-    expect(index.rows(new Set(), true)).toMatchObject([{ count: 1 }])
+    expect(index.rows(new Set(), true)).toMatchObject([{ kind: 'key', key: incoming[5000] }])
     expect(index.path(incoming[0]!.base64)).toBeUndefined()
   })
 })
@@ -86,5 +86,15 @@ describe('large key viewport', () => {
       expect(start * KEY_ROW_HEIGHT).toBeLessThanOrEqual(actualTop)
       expect(end * KEY_ROW_HEIGHT).toBeGreaterThanOrEqual(Math.min(count * KEY_ROW_HEIGHT, actualTop + height))
     }
+  })
+})
+
+describe('RESP navigation order', () => {
+  it('sorts folders before leaf keys and preserves case-sensitive lexical names across SCAN arrival order', () => {
+    const names = ['file:1', 'file:2', 'FOURWAYCAR3:GZ', 'Y:one', 'Y:two', 'FOURWAYCAR10:GZ', 'CDP:one', 'CDP:two', 'FZ:one', 'FZ:two']
+    const keys = names.map(name => key(name, JSON.stringify(name))), index = new KeyNamespaces(':')
+    index.update(keys.slice(0, 2)); index.update(keys)
+    expect(index.rows(new Set(), true).map(row => row.label)).toEqual(['"CDP"', '"FZ"', '"Y"', '"file"', '"FOURWAYCAR10:GZ"', '"FOURWAYCAR3:GZ"'])
+    expect(index.rows(new Set(), false).map(row => row.kind === 'key' ? row.key.base64 : '')).toEqual([...keys].sort((a,b) => a.label < b.label ? -1 : 1).map(row => row.base64))
   })
 })

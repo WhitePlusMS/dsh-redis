@@ -1,3 +1,4 @@
+import { prepareRespFixture, smokeRespWorkbench } from './smoke-resp-workbench.mjs'
 import { prepareChartFixture, smokeTimeSeriesChart } from './smoke-timeseries-chart.mjs'
 import { prepareAutoRefreshFixture, smokeAutoRefresh } from './smoke-auto-refresh.mjs'
 import { smokeClientList } from './smoke-client-list.mjs'
@@ -24,11 +25,12 @@ import { observeReleaseRuntime, smokeReleaseBoundary } from './smoke-release-bou
 import { RESP_TYPES } from 'redis'
 import { openConnectionSettings, chooseValueFormat, assertSelectedIdentity, withOpenHelp, readMetadataText, findLoadedKey } from './native-view-controls.mjs'
 
+if (process.env.REDIS_SMOKE_RESP === '1') console.log('[resp stage] modules loaded')
 async function smoke(fixture, profilePhase, transferPhase) {
   const root = resolve(import.meta.dirname, '..')
   const home = resolve(root, '.scratch/runtime/dsh-home')
   const artifacts = resolve(root, '.scratch/artifacts')
-  const artifactPrefix = process.env.REDIS_SMOKE_CHART === '1' ? 'native-chart' : process.env.REDIS_SMOKE_AUTO_REFRESH === '1' ? 'native-auto-refresh' : process.env.REDIS_SMOKE_CLIENTS === '1' ? 'native-clients' : process.env.REDIS_SMOKE_SLOWLOG === '1' ? 'native-slowlog' : process.env.REDIS_SMOKE_OVERVIEW === '1' ? 'native-overview' : transferPhase !== undefined ? 'native-profile-transfer-' + transferPhase : process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
+  const artifactPrefix = process.env.REDIS_SMOKE_RESP === '1' ? 'native-resp-workbench' : process.env.REDIS_SMOKE_CHART === '1' ? 'native-chart' : process.env.REDIS_SMOKE_AUTO_REFRESH === '1' ? 'native-auto-refresh' : process.env.REDIS_SMOKE_CLIENTS === '1' ? 'native-clients' : process.env.REDIS_SMOKE_SLOWLOG === '1' ? 'native-slowlog' : process.env.REDIS_SMOKE_OVERVIEW === '1' ? 'native-overview' : transferPhase !== undefined ? 'native-profile-transfer-' + transferPhase : process.env.REDIS_SMOKE_FOCUSED === '1' ? 'native-focused' : process.env.REDIS_SMOKE_NAMESPACES === '1' ? 'native-namespaces' : process.env.REDIS_SMOKE_RELEASE === '1' ? 'native-ui-release' : profilePhase === undefined ? (process.env.REDIS_SMOKE_LAYOUT === '1' ? 'native-workbench' : process.env.REDIS_SMOKE_RECOVERY === '1' ? 'native-ui-recovery' : process.env.REDIS_SMOKE_SESSIONS === '1' ? 'native-sessions' : process.env.REDIS_SMOKE_BLOOM === '1' ? 'native-bloom' : process.env.REDIS_SMOKE_TIMESERIES === '1' ? 'native-timeseries' : process.env.REDIS_SMOKE_HLL === '1' ? (process.env.REDIS_SMOKE_HLL_DISABLED === '1' ? 'native-hll-unavailable' : 'native-hll') : process.env.REDIS_SMOKE_GEO === '1' ? (process.env.REDIS_SMOKE_GEO_DISABLED === '1' ? 'native-geo-unavailable' : 'native-geo') : process.env.REDIS_SMOKE_BITMAP === '1' ? 'native-bitmap' : process.env.REDIS_SMOKE_JSON === '1' ? 'native-json' : process.env.REDIS_SMOKE_STREAMS === '1' ? 'native-streams' : process.env.REDIS_SMOKE_ZSETS === '1' ? 'native-zsets' : process.env.REDIS_SMOKE_SETS === '1' ? 'native-sets' : process.env.REDIS_SMOKE_LISTS === '1' ? 'native-lists' : process.env.REDIS_SMOKE_HASHES === '1' ? 'native-hashes' : process.env.REDIS_SMOKE_STRINGS === '1' ? 'native-strings' : process.env.REDIS_SMOKE_KEYS === '1' ? 'native-keys' : fixture === undefined ? 'native' : fixture.settings.tls === null ? 'native-connection' : 'native-tls') : 'native-ui-profiles-' + profilePhase
   const cli = process.env.DSH_CLI_ENTRY
   const executablePath = process.env.REDIS_BROWSER_EXECUTABLE
   assert(cli && executablePath, 'Set DSH_CLI_ENTRY and REDIS_BROWSER_EXECUTABLE explicitly')
@@ -44,7 +46,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
       const source = resolve(directory, entry.name)
       const target = resolve(installed, entry.name)
       if (entry.isDirectory()) await verifyInstalled(source, target)
-      else assert.deepEqual(await readFile(target), await readFile(source), 'Installed artifact differs: ' + relative(root, source))
+      else assert((await readFile(target)).equals(await readFile(source)), 'Installed artifact differs: ' + relative(root, source))
     }
   }
   await verifyInstalled(resolve(root, 'lib'), resolve(home, 'profiles/web/node_modules/dsh-redis/lib'))
@@ -77,7 +79,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
     })
     console.log('[smoke] Native rc.2 profile started on loopback')
     browser = await chromium.launch({ executablePath, headless: true })
-    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' || process.env.REDIS_SMOKE_AUTO_REFRESH === '1' || process.env.REDIS_SMOKE_CHART === '1' ? 1920 : 1440, height: 960 } })
+    const context = await browser.newContext({ locale: 'en-US', viewport: { width: process.env.REDIS_SMOKE_RESP === '1' || process.env.REDIS_SMOKE_LAYOUT === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' || process.env.REDIS_SMOKE_AUTO_REFRESH === '1' || process.env.REDIS_SMOKE_CHART === '1' ? 1920 : 1440, height: 960 } })
     if (process.env.REDIS_SMOKE_RELEASE === '1') await context.addInitScript(observeReleaseRuntime)
     context.setDefaultTimeout(30_000)
     const origin = new URL(readyUrl).origin
@@ -235,6 +237,7 @@ async function smoke(fixture, profilePhase, transferPhase) {
       assert(!(await page.evaluate(() => JSON.stringify({ local: { ...localStorage }, session: { ...sessionStorage } }))).includes(fixture.settings.password))
       await pane.getByRole('button', { name: 'Refresh status', exact: true }).click()
       await pane.locator('time').waitFor()
+      if (process.env.REDIS_SMOKE_RESP === '1') await smokeRespWorkbench({ page, fixture, pane, artifacts, report })
       if (process.env.REDIS_SMOKE_KEYS === '1') {
         const keys = pane.locator('.redis-keys')
         const refresh = keys.getByRole('button', { name: 'Scan / refresh', exact: true })
@@ -1264,7 +1267,9 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
   const owners = []
   assert(process.env.REDIS_SMOKE_PROFILES !== '1' || process.env.REDIS_SMOKE_TLS === '1', 'Profile smoke requires the TLS fixture')
   try {
+    if (process.env.REDIS_SMOKE_RESP === '1') console.log('[resp stage] opening owned fixture')
     await withRedisFixture(async fixture => {
+      if (process.env.REDIS_SMOKE_RESP === '1') console.log('[resp stage] owned fixture ready')
       owners.push(fixture.metadata.owner)
       if (process.env.REDIS_SMOKE_KEYS === '1') {
         await fixture.admin.select(0)
@@ -1418,13 +1423,14 @@ if (process.env.REDIS_SMOKE_CONNECTIONS === '1') {
           fixture.expectedKeyCount += 5
         }
       }
+      if (process.env.REDIS_SMOKE_RESP === '1') { await prepareRespFixture(fixture); console.log('[resp stage] fixture seeded') }
       const transfer = process.env.REDIS_SMOKE_PROFILE_TRANSFER === '1'
       assert(!transfer || process.env.REDIS_SMOKE_PROFILES !== '1', 'Run the separate profile transfer and TLS profile gates independently')
       const phases = transfer || process.env.REDIS_SMOKE_PROFILES === '1' ? ['save', 'reopen'] : [undefined]
       for (const phase of phases) {
         // Only this acceptance mode owns a bounded TCP delay proxy. The real
         // fixture/admin and outer shutdown assertions stay unchanged.
-        const proxy = process.env.REDIS_SMOKE_RECOVERY === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' || process.env.REDIS_SMOKE_AUTO_REFRESH === '1' || process.env.REDIS_SMOKE_CHART === '1' ? await createReadDelayProxy(fixture.settings) : undefined
+        const proxy = process.env.REDIS_SMOKE_RESP === '1' || process.env.REDIS_SMOKE_RECOVERY === '1' || process.env.REDIS_SMOKE_NAMESPACES === '1' || process.env.REDIS_SMOKE_FOCUSED === '1' || process.env.REDIS_SMOKE_OVERVIEW === '1' || process.env.REDIS_SMOKE_SLOWLOG === '1' || process.env.REDIS_SMOKE_CLIENTS === '1' || process.env.REDIS_SMOKE_AUTO_REFRESH === '1' || process.env.REDIS_SMOKE_CHART === '1' ? await createReadDelayProxy(fixture.settings) : undefined
         let report
         try { report = await smoke(proxy === undefined ? fixture : { ...fixture, settings: proxy.settings, directSettings: fixture.settings, recoveryProxy: proxy }, transfer ? undefined : phase, transfer ? phase : undefined) }
         finally { await proxy?.close() }

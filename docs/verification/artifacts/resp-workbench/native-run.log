@@ -1,0 +1,36 @@
+[resp stage] modules loaded
+[resp stage] opening owned fixture
+[resp stage] owned fixture ready
+[resp stage] fixture seeded
+[smoke] Native rc.2 profile started on loopback
+[smoke check] launch token exchanged for browser session
+[smoke check] installed package loaded and real Agent-scoped Host RPC returned strict status
+[smoke check] native gateway rejected an unexpected request field
+[smoke check] installed DB/SCAN contract registers and rejects an unconnected target as a fixed stale result
+[smoke check] native form test succeeded without a persistent Redis socket
+[smoke check] native form displays fixed authentication error and releases its socket
+[smoke check] 760 keys auto-load to completion with exact DB total/progress, one DB/folder/key tree and no continuation form
+[smoke check] folder expansion is local and labels/counts stay compact without display quotes
+[smoke check] binary key identity remains exact in the new navigation
+[smoke check] cancelled delayed Hash page never renders late rows or auto-continues; refresh recovers
+[smoke check] Hash scroll auto-loads all 236 fields; names stay one line and value selection opens formatted content
+[smoke check] set table scroll appends every range/page without a Continue button
+[smoke check] empty intermediate Set pages continue automatically until the cursor ends
+[smoke check] list table scroll appends every range/page without a Continue button
+[smoke check] zset table scroll appends every range/page without a Continue button
+[smoke check] stream table scroll appends every range/page without a Continue button
+[smoke check] ts table scroll appends every range/page without a Continue button
+[smoke check] GEO coordinate ranges also append on scroll
+[smoke check] all collection views preserve serialized fixture values
+[smoke check] DB tree switching automatically reads empty DB1 and independent DB2, then restores DB0 count
+[smoke check] cancelled delayed SCAN never publishes a late page or starts its successor; refresh recovers
+[smoke check] DB switch rejects old page ownership; a 5100-key DB stops visibly at 5000 without false completion
+[smoke check] submitted MATCH auto-scans without treating DB total as the filtered denominator
+[smoke check] native two-pane geometry and table horizontal scroll pass at 400/550/800/1000 px
+[smoke check] proxy observed only viewer connection/read commands and no protocol errors or KEYS command
+[smoke check] native connect, local status refresh, disconnect and password clearing passed
+[smoke check] native manual refresh exposes server-side disconnect without reconnecting
+[smoke check] real native sidebar guide opened Redis; browser called Host and rendered ready state
+[smoke] Native sidebar and Host RPC passed
+[smoke] Test process stopped: true
+{"passed":true,"checks":29,"fixturesStopped":true}

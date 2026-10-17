@@ -1,0 +1,2 @@
+$ node scripts/build.mjs
+[build] standalone Host and Client artifacts written to lib/

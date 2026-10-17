@@ -28,14 +28,20 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
   const [error, setError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [progress, setProgress] = useState<'idle' | 'more' | 'complete' | 'limited'>('idle')
   const active = useRef<AbortController | null>(null), sequence = useRef(0)
+  const reading = useRef(false), pages = useRef(0)
   const auto = useAutoRefreshReader({ active: options.active !== false, busy, result, failed: error !== null && error !== 'cancelled', refresh: () => { void scan(false) }, cancel })
-  function stop(): void { ++sequence.current; active.current?.abort() }
+  function stop(): void { ++sequence.current; active.current?.abort(); reading.current = false }
   function clear(): void {
     auto.reset(); stop(); setBusy(false); setCache(options.empty()); setResult(null); setCursor(null); setError(null); setProgress('idle')
   }
   function cancel(): void { auto.reset('cancelled'); stop(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }
   async function scan(more: boolean): Promise<void> {
+    // Scroll events may arrive twice before busy is rendered. Never consume a cursor twice.
+    if (more && (reading.current || cursor === null || cache.limited || progress !== 'more')) return
+    if (more && pages.current >= 1000) { setCursor(null); setProgress('limited'); return }
     if (!auto.begin()) return
+    if (!more) pages.current = 0
+    reading.current = true; ++pages.current
     active.current?.abort()
     const controller = new AbortController(), current = ++sequence.current, previous = more ? cache : options.empty()
     active.current = controller; setBusy(true); setError(null)
@@ -51,7 +57,7 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
       setProgress(next.limited ? 'limited' : page.cursor === null ? 'complete' : 'more')
     } catch {
       if (!controller.signal.aborted && current === sequence.current) { setError('rpc'); setCache(options.empty()); setResult(null); setCursor(null); setProgress('idle') }
-    } finally { if (!controller.signal.aborted && current === sequence.current) setBusy(false) }
+    } finally { if (current === sequence.current) { reading.current = false; if (!controller.signal.aborted) setBusy(false) } }
   }
   useEffect(() => {
     clear(); void scan(false)

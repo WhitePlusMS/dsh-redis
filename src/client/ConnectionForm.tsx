@@ -37,7 +37,6 @@ export function ConnectionForm(props: Props) {
   const [busy, setBusy] = useState(false)
   const sequence = useRef(0)
   const active = useRef<AbortController | null>(null)
-  const databaseInput = useRef<HTMLInputElement | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   function acceptConnection(value: ConnectionView): void {
@@ -71,8 +70,8 @@ export function ConnectionForm(props: Props) {
   const settings = (): ConnectionSettings => ({ host: host.trim(), port: Number(port), username, tls: tls ? { caPem: caPem.trim() } : null })
   const request = (): ConnectionRequest => ({ ...settings(), password })
   return <div className="redis-connection" data-connected={connected}>
-    <div className="redis-compact-connection"><button type="button" onClick={() => setSettingsOpen(true)}><Icon name="database" /><span>{connection?.target?.host ?? host}:{connection?.target?.port ?? port}</span></button><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button></div>
-    <ProfileChooser {...props} disabled={busy || connected} settings={settings} connection={connection} open={settingsOpen} onOpen={() => setSettingsOpen(true)} onClose={() => { setSettingsOpen(false); setPassword('') }} onDatabase={() => databaseInput.current?.focus()} applyUri={({ request, db }) => {
+    <div className="redis-compact-connection" hidden={connected}><button type="button" onClick={() => setSettingsOpen(true)}><Icon name="database" /><span>{connection?.target?.host ?? host}:{connection?.target?.port ?? port}</span></button><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={() => setSettingsOpen(true)}><Icon name="settings" /></button></div>
+    <ProfileChooser {...props} disabled={busy || connected} settings={settings} open={settingsOpen} onClose={() => { setSettingsOpen(false); setPassword('') }} applyUri={({ request, db }) => {
         setHost(request.host); setPort(String(request.port)); setUsername(request.username); setPassword(request.password)
         setTls(request.tls !== null); setCaPem(request.tls?.caPem ?? '')
         setError(null); setTested(false)
@@ -107,7 +106,7 @@ export function ConnectionForm(props: Props) {
     {error !== null && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}
     <HelpDetails label={t('ui.help')}><p>{t('connection.privacy')}</p>{tls && <p>{t('connection.tlsVerification')}</p>}</HelpDetails>
     </ProfileChooser>
-    {connected ? <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} databaseInput={databaseInput} connection={connection} acceptConnection={acceptConnection} /> : <div className="redis-connect-empty"><Icon name="database" /><button type="button" onClick={() => setSettingsOpen(true)}>{t('ui.chooseConnection')}</button></div>}
+    {connected ? <KeyBrowser key={`${connection.id}:${connection.generation}:${connection.db}`} {...props} configure={() => setSettingsOpen(true)} connection={connection} acceptConnection={acceptConnection} /> : <div className="redis-connect-empty"><Icon name="database" /><button type="button" onClick={() => setSettingsOpen(true)}>{t('ui.chooseConnection')}</button></div>}
     <div className="redis-connection-status">
       <span className={connected ? 'redis-connected' : ''} role="status">{connected ? t('connection.connected') : t('ui.disconnected')}{connected && <span className="redis-target"> · {connection.target?.host}:{connection.target?.port}{connection.target?.tls ? ' · TLS' : ''}</span>}</span>
       <span className="redis-status-spacer" />

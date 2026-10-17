@@ -23,8 +23,12 @@ export function ZSetView(props: Props) {
   const [range, setRange] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 }), [pattern, setPattern] = useState('*')
   const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('zset'), [rangeError, setRangeError] = useState(false)
   const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ active: !geo, target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range]), empty: emptyZSetCache,
-    append: (previous, page) => appendZSetRows(page.mode === 'range' ? emptyZSetCache() : previous, page.entries),
-    load: (cursor, signal) => props.readZSet(mode === 'range' ? { target: props.target, keyBase64: props.selected.base64, mode, offset: range.offset, count: range.count } : { target: props.target, keyBase64: props.selected.base64, mode, pattern, cursor }, signal),
+    append: (previous, page) => appendZSetRows(previous, page.entries),
+    load: async (cursor, signal) => {
+      const response = await props.readZSet(mode === 'range' ? { target: props.target, keyBase64: props.selected.base64, mode, offset: cursor ?? range.offset, count: range.count } : { target: props.target, keyBase64: props.selected.base64, mode, pattern, cursor }, signal)
+      // Rank offsets remain local; only SCAN cursors are sent to the SCAN endpoint.
+      return response.ok && response.value.mode === 'range' ? { ...response, value: { ...response.value, cursor: response.value.nextOffset } } : response
+    },
   })
   const { cache, result, cursor, busy, error, progress } = scanState
   const row = cache.rows.find(entry => entry.member.base64 === selected)
@@ -54,10 +58,6 @@ export function ZSetView(props: Props) {
       </div> : <label>{t('set.pattern')}<input name="zsetPattern" maxLength={256} value={pattern} onChange={event => { scanState.clear(); setSelected(null); setPattern(event.target.value) }} /></label>}
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t(mode === 'range' ? 'value.refresh' : 'keys.scan')}</button>
-        {mode === 'range' ? <button type="button" disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
-          if (result?.nextOffset === null || result?.nextOffset === undefined) return
-          setSelected(null); setOffset(result.nextOffset); setRange({ offset: result.nextOffset, count, attempt: range.attempt + 1 })
-        }}>{t('list.next')}</button> : <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => { void scanState.scan(true) }}>{t('keys.more')}</button>}
         {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
@@ -71,7 +71,7 @@ export function ZSetView(props: Props) {
       {result.mode === 'range' && result.state === 'page' && <p role="status">{t('zset.start')}: <span data-zset-start>{result.offset}</span></p>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'zset.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {cache.rows.length === 0 ? <p>{t('zset.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} />}
+    {cache.rows.length === 0 && cursor === null ? <p>{t('zset.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
     {row !== undefined && window !== null && <div className="redis-cell-preview">
       <h2>{t('set.member')} · {row.member.label}</h2><p>{t('zset.score')}: {row.score}</p>
       <label>{t('set.identity')}<textarea readOnly rows={2} value={row.member.base64} spellCheck={false} /></label>

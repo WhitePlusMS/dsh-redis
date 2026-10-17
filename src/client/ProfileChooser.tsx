@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { ConnectionSettings, ConnectionView, ProfileCollection, ImportProfilesRequest, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
+import type { ConnectionSettings, ProfileCollection, ImportProfilesRequest, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
 import { connectionSettingsSchema } from '../typert.shared.ts'
 import { useBrowsingState } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
@@ -23,11 +23,8 @@ type Props = ProfileActions & {
   readonly settings: () => ConnectionSettings
   readonly select: (settings: ConnectionSettings | null) => void
   readonly applyUri: (value: ParsedConnectionUri) => void
-  readonly connection: ConnectionView | null
   readonly open: boolean
-  readonly onOpen: () => void
   readonly onClose: () => void
-  readonly onDatabase: () => void
   readonly children: ReactNode
 }
 
@@ -89,26 +86,6 @@ export function ProfileChooser(props: Props) {
     values.push(profile); groups.set(label, values)
   }
   return <>
-    <aside className="redis-profile-navigation" aria-label={t('ui.connections')}>
-      <div className="redis-navigation-heading"><span>{t('ui.connections')}</span><button type="button" className="redis-icon-button" disabled={props.disabled} title={t('profile.new')} aria-label={t('profile.new')} onClick={() => { choose(undefined); props.onOpen() }}><Icon name="add" /></button></div>
-      <div className="redis-profile-list">
-        {selectedId === null && props.connection?.state === 'connected' && <div>
-          <button type="button" className="redis-profile-entry" aria-pressed={true} onClick={props.onOpen}><Icon name="database" /><span><strong>{props.connection.target?.host}:{props.connection.target?.port}</strong></span></button>
-          <button type="button" className="redis-database-entry" onClick={props.onDatabase}><Icon name="database" />DB {props.connection.db}</button>
-        </div>}
-        {[...groups].map(([label, values]) => <section key={label} className="redis-profile-group" aria-label={label || t('profile.ungrouped')}>
-          {(label !== '' || groups.size > 1) && <div className="redis-profile-group-title"><Icon name="folder" /><span>{label || t('profile.ungrouped')}</span></div>}
-          {values.map(profile => <div key={profile.id}>
-          <button type="button" className="redis-profile-entry" aria-pressed={selectedId === profile.id} disabled={busy || (props.disabled && selectedId !== profile.id)} title={`${profile.settings.host}:${profile.settings.port}`} onClick={() => { if (!props.disabled) choose(profile); props.onOpen() }}>
-            <Icon name="database" /><span><strong>{profile.name}</strong><small>{profile.settings.host}:{profile.settings.port}</small></span>
-          </button>
-          {selectedId === profile.id && props.connection?.state === 'connected' && <button type="button" className="redis-database-entry" onClick={props.onDatabase}><Icon name="database" />DB {props.connection.db}</button>}
-        </div>)}
-        </section>)}
-        {profiles.length === 0 && props.connection?.state !== 'connected' && <button type="button" className="redis-profile-entry" onClick={props.onOpen}><Icon name="add" /><span>{t('ui.addConnection')}</span></button>}
-      </div>
-      <button type="button" className="redis-navigation-settings" onClick={props.onOpen}><Icon name="settings" />{t('connection.settings')}</button>
-    </aside>
     <dialog ref={dialog} className="redis-connection-dialog" aria-label={t('connection.settings')} onClose={props.onClose} onCancel={props.onClose}>
       <div className="redis-dialog-heading"><h2>{t('connection.settings')}</h2><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={props.onClose}><Icon name="close" /></button></div>
       <div className="redis-dialog-content">

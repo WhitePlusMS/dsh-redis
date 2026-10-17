@@ -18,6 +18,13 @@ export function validSeparator(value: string): boolean {
 function byteLabel(value: string): string {
   return prefixLabel({ base64: btoa(value), byteLength: value.length, fullByteLength: value.length, suffix: '' })
 }
+/** A singleton folder can be presented as its remaining full leaf. */
+function singleton(node: Node): Leaf | undefined {
+  if (node.kind === 'namespace' && node.count !== 1) return undefined
+  let only = node
+  while (only.kind === 'namespace' && only.children.size === 1) only = only.children.values().next().value!
+  return only.kind === 'key' ? only : undefined
+}
 export const keyRowId = (base64: string): string => `key:${base64}`
 
 /** Incremental index over the bounded cache. Refresh/replacement resets it; labels never identify nodes. */
@@ -63,16 +70,30 @@ export class KeyNamespaces {
   get revision(): number { return this.#revision }
   path(base64: string): readonly string[] | undefined { return this.#paths.get(base64) }
 
-  /** Stable first-seen SCAN order; folder counts cover loaded keys only, never the whole DB. */
+  /** RESP order: folders first, then case-sensitive names; counts cover loaded keys. */
   rows(expanded: ReadonlySet<string>, tree: boolean): readonly KeyRow[] {
-    if (!tree) return this.#keys.map(key => ({ kind: 'key', id: keyRowId(key.base64), label: key.label, key, depth: 0, parentId: null }))
+    const compare = (a: { readonly label: string; readonly id: string }, b: { readonly label: string; readonly id: string }): number => a.label < b.label ? -1 : a.label > b.label ? 1 : a.id < b.id ? -1 : a.id > b.id ? 1 : 0
+    if (!tree) return [...this.#keys].sort((a, b) => compare({ label: a.label, id: a.base64 }, { label: b.label, id: b.base64 })).map(key => ({ kind: 'key', id: keyRowId(key.base64), label: key.label, key, depth: 0, parentId: null }))
     const rows: KeyRow[] = []
-    const visit = (nodes: ReadonlyMap<string, Node>, depth: number, parentId: string | null): void => {
-      for (const node of nodes.values()) {
+    const visit = (nodes: ReadonlyMap<string, Node>, depth: number, parentId: string | null, start = 0): void => {
+      const ordered = (node: Node) => {
+        const leaf = singleton(node)
+        return leaf === undefined ? node : { kind: 'key', id: leaf.id, label: depth === 0 ? leaf.key.label : byteLabel(atob(leaf.key.base64).slice(start)) }
+      }
+      for (const node of [...nodes.values()].sort((a, b) => {
+        const left = ordered(a), right = ordered(b)
+        return left.kind === right.kind ? compare(left, right) : left.kind === 'namespace' ? -1 : 1
+      })) {
         if (node.kind === 'key') rows.push({ ...node, depth, parentId })
         else {
-          rows.push({ kind: node.kind, id: node.id, label: node.label, count: node.count, depth, parentId })
-          if (expanded.has(node.id)) visit(node.children, depth + 1, node.id)
+          // RESP shows a singleton prefix as the remaining full Key, avoiding a
+          // chain of folders with one child. The underlying byte path is unchanged.
+          const only = singleton(node)
+          if (only !== undefined) rows.push({ ...only, label: depth === 0 ? only.key.label : byteLabel(atob(only.key.base64).slice(start)), depth, parentId })
+          else {
+            rows.push({ kind: node.kind, id: node.id, label: node.label, count: node.count, depth, parentId })
+            if (expanded.has(node.id)) visit(node.children, depth + 1, node.id, atob(node.id.slice('namespace:'.length)).length)
+          }
         }
       }
     }

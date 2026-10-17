@@ -8,6 +8,7 @@ import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendKeys, emptyKeyCache, type KeyCache } from './key-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
+import { displayLabel } from './collection-value.ts'
 import { NS } from './locales.ts'
 
 export interface SetActions { readonly scanSet: (request: ScanSetRequest, signal: AbortSignal) => Promise<RemoteResult<ScanSetResult>> }
@@ -25,7 +26,7 @@ export function SetView(props: Props) {
   const member = cache.keys.find(value => value.base64 === selected)
   const window = useMemo(() => member === undefined ? null : { base64: member.base64, offset: '0', prefix: '', suffix: '', complete: true }, [member])
   const columns: readonly CollectionColumn<RedisKey>[] = [
-    { id: 'member', title: t('set.member'), render: value => <button type="button" data-set-member={value.base64} onClick={() => { setSelected(value.base64) }}>{value.label}<small>{value.byteLength} {t('keys.bytes')}</small></button> },
+    { id: 'member', title: t('set.member'), render: value => <button type="button" data-set-member={value.base64} onClick={() => { setSelected(value.base64) }}>{displayLabel(value.label)}</button> },
   ]
   return <section className="redis-details" aria-label={t('set.title')}>
     <h2>{t('set.title')} · <span>{props.selected.label}</span></h2>
@@ -33,7 +34,6 @@ export function SetView(props: Props) {
       <label>{t('set.pattern')}<input name="setPattern" maxLength={256} value={pattern} onChange={event => { scanState.clear(); setSelected(null); setPattern(event.target.value) }} /></label>
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t('keys.scan')}</button>
-        <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => { void scanState.scan(true) }}>{t('keys.more')}</button>
         {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
@@ -46,7 +46,7 @@ export function SetView(props: Props) {
     </>}
     {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    {cache.keys.length === 0 ? <p>{t('set.empty')}</p> : <CollectionTable rows={cache.keys} identity={value => value.base64} columns={columns} label={t('set.title')} />}
+    {cache.keys.length === 0 && cursor === null ? <p>{t('set.empty')}</p> : <CollectionTable rows={cache.keys} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
     {member !== undefined && window !== null && <div className="redis-cell-preview">
       <h2>{t('set.member')} · {member.label}</h2>
       <p role="status" data-cell-coverage>{t('value.complete')} · {member.byteLength} {t('keys.bytes')}</p>

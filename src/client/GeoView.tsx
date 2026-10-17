@@ -1,6 +1,7 @@
-import { useAutoRefreshReader } from './AutoRefresh.tsx'
+import { useCollectionScan } from './use-collection-scan.ts'
+import { appendRows, emptyRowCache, type RowCache } from './row-cache.ts'
 import { HelpDetails } from './HelpDetails.tsx'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { MAX_LIST_ITEMS, type DatabaseTarget, type GeoEntry, type GeoReadRequest, type GeoReadResult, type RedisKey } from '../domain.ts'
@@ -13,31 +14,22 @@ import { NS } from './locales.ts'
 export interface GeoActions { readonly readGeo: (request: GeoReadRequest, signal: AbortSignal) => Promise<RemoteResult<GeoReadResult>> }
 type Props = GeoActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
-/** A bounded coordinate interval with the original rank, score and byte identity.
- * Each explicit range owns its cancellation; no global Geo classification occurs.
- */
+/** Scroll reads bounded coordinate ranges with original rank and byte identity. */
 export function GeoView(props: Props) {
   const { t } = props
   const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [request, setRequest] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 })
-  const [result, setResult] = useState<GeoReadResult | null>(null), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('geo')
-  const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
-  const active = useRef<AbortController | null>(null)
-  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
-  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }
-  useEffect(() => {
-    if (!auto.begin()) return
-    const controller = new AbortController(); active.current = controller
-    setBusy(true); setResult(null); setSelected(null); setRpcError(false); setCancelled(false)
-    void props.readGeo({ target: props.target, keyBase64: props.selected.base64, offset: request.offset, count: request.count }, controller.signal).then(response => {
-      if (controller.signal.aborted) return
-      if (response.ok) setResult(response.value)
-      else setRpcError(true)
-    }).catch(() => { if (!controller.signal.aborted) setRpcError(true) })
-      .finally(() => { if (!controller.signal.aborted) setBusy(false) })
-    return () => controller.abort()
-  }, [props.readGeo, props.target.id, props.target.generation, props.target.db, props.selected.base64, request])
-  const row = result?.entries.find(entry => entry.member.base64 === selected)
+  const [rangeError, setRangeError] = useState(false), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('geo')
+  const page = useCollectionScan<RowCache<GeoEntry>, GeoReadResult & { readonly cursor: string | null }>({
+    target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify(request), empty: emptyRowCache,
+    append: (previous, value) => appendRows(previous, value.entries, row => row.member.base64),
+    load: async (cursor, signal) => {
+      const response = await props.readGeo({ target: props.target, keyBase64: props.selected.base64, offset: cursor ?? request.offset, count: request.count }, signal)
+      return response.ok ? { ...response, value: { ...response.value, cursor: response.value.nextOffset } } : response
+    },
+  })
+  const { cache, result, busy, error, cursor, progress } = page
+  const row = cache.rows.find(entry => entry.member.base64 === selected)
   const columns: readonly CollectionColumn<GeoEntry>[] = [
     { id: 'rank', title: t('zset.rank'), render: entry => entry.rank },
     { id: 'member', title: t('set.member'), render: entry => <button type="button" data-geo-member={entry.member.base64} onClick={() => { setSelected(entry.member.base64) }}>{entry.member.label}<small>{entry.member.byteLength} {t('keys.bytes')}</small></button> },
@@ -49,7 +41,7 @@ export function GeoView(props: Props) {
     <h2>{t('geo.title')} · <span>{props.selected.label}</span></h2>
     <form onSubmit={event => {
       event.preventDefault()
-      try { geoReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { setSelected(null); geoReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -58,25 +50,21 @@ export function GeoView(props: Props) {
       </div>
       <div className="redis-actions">
         <button type="submit">{t('value.refresh')}</button>
-        <button type="button" disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
-          if (result?.nextOffset === null || result?.nextOffset === undefined) return
-          setOffset(result.nextOffset); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
-        }}>{t('list.next')}</button>
-        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
 
+    <p role="status">{t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('zset.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
-    {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
-    {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
+    {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
       <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('zset.total')}</dt><dd>{result.metadata.length}</dd></dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(result.error === 'oversize' ? 'geo.oversize' : `connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unavailable' ? 'geo.unavailable' : result.state === 'unsupported' ? 'geo.unsupported' : `value.state.${result.state}`)}</p>}
       {result.state === 'page' && <>
-        <p role="status">{t('zset.start')}: <span data-geo-start>{result.offset}</span> · {t('zset.loaded')}: <span data-loaded-geo>{result.entries.length}</span></p>
-        {result.entries.length === 0 ? <p>{t('geo.empty')}</p> : <CollectionTable rows={result.entries} identity={entry => entry.member.base64} columns={columns} label={t('geo.title')} />}
+        <p role="status">{t('zset.start')}: <span data-geo-start>{request.offset}</span> · {t('zset.loaded')}: <span data-loaded-geo>{cache.rows.length}</span></p>
+        {cache.rows.length === 0 && cursor === null ? <p>{t('geo.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('geo.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
       </>}
     </>}
     {row !== undefined && <div className="redis-cell-preview">

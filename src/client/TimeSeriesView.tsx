@@ -44,7 +44,6 @@ export function TimeSeriesView(props: Props) {
       <label>{t('timeseries.count')}<select name="timeseriesCount" value={count} onChange={event => setCount(Number(event.target.value))}>{[1, 10, 25, MAX_TIMESERIES_SAMPLES].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t('value.refresh')}</button>
-        <button type="button" disabled={busy || cursor === null || cache.limited} onClick={() => { void page.scan(true) }}>{t('stream.more')}</button>
         {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
@@ -62,7 +61,7 @@ export function TimeSeriesView(props: Props) {
       {result.info !== null && <dl className="redis-metadata"><dt>{t('timeseries.total')}</dt><dd data-ts-total>{result.info.totalSamples}</dd><dt>{t('timeseries.first')}</dt><dd>{result.info.firstTimestamp}</dd><dt>{t('timeseries.last')}</dt><dd>{result.info.lastTimestamp}</dd><dt>{t('timeseries.retention')}</dt><dd>{result.info.retentionTime}</dd></dl>}
     </>}
     <div className="redis-actions redis-data-views" role="group" aria-label={t('chart.title')}><button type="button" aria-pressed={view === 'table'} onClick={() => setView('table')}>{t('chart.table')}</button><button type="button" aria-pressed={view === 'chart'} onClick={() => setView('chart')}>{t('chart.view')}</button></div>
-    {view === 'chart' ? <TimeSeriesChart samples={cache.samples} t={t} /> : cache.samples.length > 0 ? <CollectionTable rows={cache.samples} identity={sample => sample.timestamp} columns={columns} label={t('timeseries.title')} /> : result?.state === 'page' && <p>{t('timeseries.empty')}</p>}
+    {view === 'chart' ? <TimeSeriesChart samples={cache.samples} t={t} /> : (cache.samples.length > 0 || cursor !== null) ? <CollectionTable rows={cache.samples} identity={sample => sample.timestamp} columns={columns} label={t('timeseries.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} /> : result?.state === 'page' && <p>{t('timeseries.empty')}</p>}
     <HelpDetails label={t('ui.help')}><p>{t('timeseries.hint')}</p><p>{t('timeseries.budget')}</p><p>{t('chart.hint')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

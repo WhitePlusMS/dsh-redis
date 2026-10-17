@@ -1,53 +1,46 @@
-import { useAutoRefreshReader } from './AutoRefresh.tsx'
+import { useCollectionScan } from './use-collection-scan.ts'
+import { appendRows, emptyRowCache, type RowCache } from './row-cache.ts'
 import { HelpDetails } from './HelpDetails.tsx'
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { MAX_LIST_ITEMS, type DatabaseTarget, type ListEntry, type ListReadRequest, type ListReadResult, type RedisKey } from '../domain.ts'
 import { listReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
-import { prefixWindow, prefixLabel } from './collection-value.ts'
+import { prefixWindow, cellLabel } from './collection-value.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 
 export interface ListActions { readonly readList: (request: ListReadRequest, signal: AbortSignal) => Promise<RemoteResult<ListReadResult>> }
 type Props = ListActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
-/** Keep one bounded interval, not an accumulated pseudo-snapshot of list positions. */
+/** Scroll appends bounded live ranges, retaining original list positions. */
 export function ListView(props: Props) {
   const { t } = props
   const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [request, setRequest] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 })
-  const [result, setResult] = useState<ListReadResult | null>(null), [busy, setBusy] = useState(false)
-  const [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('list')
-  const active = useRef<AbortController | null>(null)
-  const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
-  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setSelected(null) }
-  const row = result?.entries.find(entry => entry.index === selected)
+  const [rangeError, setRangeError] = useState(false), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('list')
+  const page = useCollectionScan<RowCache<ListEntry>, ListReadResult & { readonly cursor: string | null }>({
+    target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify(request), empty: emptyRowCache,
+    append: (previous, value) => appendRows(previous, value.entries, row => row.index),
+    load: async (cursor, signal) => {
+      const response = await props.readList({ target: props.target, keyBase64: props.selected.base64, offset: cursor ?? request.offset, count: request.count }, signal)
+      return response.ok ? { ...response, value: { ...response.value, cursor: response.value.nextOffset } } : response
+    },
+  })
+  const { cache, result, busy, error, cursor, progress } = page
+  const row = cache.rows.find(entry => entry.index === selected)
   const window = useMemo(() => row === undefined ? null : prefixWindow(row.value), [row])
-  useEffect(() => {
-    if (!auto.begin()) return
-    const controller = new AbortController(); active.current = controller
-    setBusy(true); setResult(null); setSelected(null); setRpcError(false); setCancelled(false)
-    void props.readList({ target: props.target, keyBase64: props.selected.base64, offset: request.offset, count: request.count }, controller.signal).then(response => {
-      if (controller.signal.aborted) return
-      if (response.ok) setResult(response.value)
-      else setRpcError(true)
-    }).catch(() => { if (!controller.signal.aborted) setRpcError(true) })
-      .finally(() => { if (!controller.signal.aborted) setBusy(false) })
-    return () => controller.abort()
-  }, [props.readList, props.target.id, props.target.generation, props.target.db, props.selected.base64, request])
   const columns: readonly CollectionColumn<ListEntry>[] = [
     { id: 'index', title: t('list.index'), render: entry => entry.index },
-    { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index) }}>{prefixLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'value', title: t('hash.value'), render: entry => <button type="button" data-list-index={entry.index} onClick={() => { setSelected(entry.index) }}>{cellLabel(entry.value)}<small>{entry.value.byteLength}/{entry.value.fullByteLength} {t('keys.bytes')}</small></button> },
   ]
   return <section className="redis-details" aria-label={t('list.title')}>
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>
     <form onSubmit={event => {
       event.preventDefault()
-      try { listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { setSelected(null); listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -56,25 +49,21 @@ export function ListView(props: Props) {
       </div>
       <div className="redis-actions">
         <button type="submit">{t('value.refresh')}</button>
-        <button type="button" disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
-          if (result?.nextOffset === null || result?.nextOffset === undefined) return
-          setOffset(result.nextOffset); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
-        }}>{t('list.next')}</button>
-        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
+        {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
       </div>
     </form>
 
+    <p role="status">{t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('list.rangeError')}</p>}
     {busy && <p role="status">{t('connection.busy')}</p>}
-    {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
-    {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
+    {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
       <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('list.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
       {result.state === 'page' && <>
-        <p role="status" data-list-coverage>{t('list.start')}: <span data-list-start>{result.offset}</span> · {t('list.returned')}: <span data-list-count>{result.entries.length}</span></p>
-        {result.entries.length === 0 ? <p>{t('list.empty')}</p> : <CollectionTable rows={result.entries} identity={entry => entry.index} columns={columns} label={t('list.title')} />}
+        <p role="status" data-list-coverage>{t('list.start')}: <span data-list-start>{request.offset}</span> · {t('list.returned')}: <span data-list-count>{cache.rows.length}</span></p>
+        {cache.rows.length === 0 && cursor === null ? <p>{t('list.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
       </>}
     </>}
     {row !== undefined && window !== null && <div className="redis-cell-preview">
