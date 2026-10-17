@@ -30,7 +30,8 @@
       "back": true,
       "open": "true",
       "position": "static"
-    }
+    },
+    "theme": "dark"
   },
   "process": {
     "pid": 35240,
