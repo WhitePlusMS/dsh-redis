@@ -1,9 +1,9 @@
 {
-  "verifiedAt": "2026-10-17T15:18:09.244Z",
+  "verifiedAt": "2026-10-17T15:21:37.684Z",
   "packageName": "dsh-redis",
   "packageVersion": "0.1.0",
-  "packageSha256": "6d3b5be677659c564b48d4a008bdce0e96fc140c080bfb34047274ee4aa2a44f",
-  "sourceParentCommit": "3bc75a5cafedb17d6c8576e5c0cdec9659f3634f",
+  "packageSha256": "61d18726a59c7e35500f33256f62faa2a571f2a72b2fa724f73d186f9422aabd",
+  "sourceParentCommit": "74a807609586d684123a5ffb1d3ff7334192a382",
   "sourceInputs": [
     {
       "path": "cordis.patch.yml",
@@ -382,8 +382,8 @@
     },
     {
       "path": "src/client/locales.ts",
-      "bytes": 63356,
-      "sha256": "06347491e05a3d189427139047e80e53f8901d670af33107ae873e27e2cc9c0f"
+      "bytes": 63287,
+      "sha256": "8b272bb0222175c77fbfb2854011cf8c3f1cbe3bcf357d8ec9d7d8c9c39b6253"
     },
     {
       "path": "src/client/ProfileChooser.tsx",
@@ -877,8 +877,8 @@
     },
     {
       "path": "tsconfig.client.tsbuildinfo",
-      "bytes": 49268,
-      "sha256": "e0370045172c462d535b3ca4aea2fc04a9c7326288c64a0669754bb9b427ca30"
+      "bytes": 49110,
+      "sha256": "71c448216333b3a7410e1a0d90c0621f53f2935cd7b367d5493d8227e978f2af"
     },
     {
       "path": "tsconfig.host.json",
@@ -902,8 +902,8 @@
     },
     {
       "path": "tsconfig.tests.tsbuildinfo",
-      "bytes": 133962,
-      "sha256": "348e8a550b9af51119ec35601f9533f945ed7ebf4c7797ee7636189dba2d2301"
+      "bytes": 133804,
+      "sha256": "a921e9a0cbf66786a128a01f5aff5123ca112e0037e680596b004fdb00bf8c8e"
     },
     {
       "path": "vitest.config.ts",
@@ -914,8 +914,8 @@
   "lib": [
     {
       "path": "client.js",
-      "bytes": 441982,
-      "sha256": "054477b914b58b86120d095627b0fc91239ea0d4f3c52b736d9b77f07ffa2f94"
+      "bytes": 441913,
+      "sha256": "47b4b827e8f125a0b2cf1ea0a4c3eda7e1dede2f5a4674e1e296e6f1fd3cb4e5"
     },
     {
       "path": "client/index.d.ts",
@@ -1381,8 +1381,8 @@
     },
     {
       "path": "lib/client.js",
-      "bytes": 441982,
-      "sha256": "054477b914b58b86120d095627b0fc91239ea0d4f3c52b736d9b77f07ffa2f94"
+      "bytes": 441913,
+      "sha256": "47b4b827e8f125a0b2cf1ea0a4c3eda7e1dede2f5a4674e1e296e6f1fd3cb4e5"
     },
     {
       "path": "lib/host/connection-service.js",

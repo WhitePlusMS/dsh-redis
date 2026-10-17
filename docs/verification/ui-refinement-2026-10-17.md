@@ -41,4 +41,8 @@
 
 ## 日常安装
 
-待将文案修正后的唯一哈希包更新到原 `C:/Users/admin/.dsh` 的 web profile，并核对实际安装文件和 `127.0.0.1:7198` 页面；完成后补记最终包、配置变化和真实计数，不保存业务截图或认证启动日志到 Git。
+- 最终包 SHA256：`61d18726a59c7e35500f33256f62faa2a571f2a72b2fa724f73d186f9422aabd`。更正帮助后再次通过默认 prepack 严格类型/构建/318回归；使用唯一 SHA 文件名，隔离安装与日常安装的97包文件、88lib、12Host peers和2依赖均核对通过。最终 [package-manifest.json](E:/项目demo/dsh-redis/docs/verification/artifacts/ui-refinement/package-manifest.json) 与交互候选 [candidate-package-manifest.json](E:/项目demo/dsh-redis/docs/verification/artifacts/ui-refinement/candidate-package-manifest.json) 分开保存。
+- 先备份原 web profile 五份清单到 `.scratch/runtime/daily-ui-refinement-1ef8f286-0732-4ec6-8b98-96bf090148b9/backup`，确认7198旧进程所属后停止并通过官方 plugin add 更新。命令实际 exit0；仅 `package.json`、`pnpm-lock.yaml` 的 Redis 包引用变化，其他依赖、启用 bundles 与 Cordis 配置保持不变。
+- 隐藏启动日常 DSH，PID35240，原 `http://127.0.0.1:7198/`。实际中文暗色配置含服务器/认证分组，未输入密码，恢复原127.0.0.1:6379连接；DB0自动760/760、100%完成、0继续按钮，原创图标和更正的帮助均已在实际页面核对。
+- 在用户既有真实 Key 中实际打开字段详情：`data-cell-open=true`，有“返回表格”，`position:static`；只记录行为和计数，业务 Key/值及截图留在忽略目录，不入Git。日常页面已保留供用户操作，临时测试服务全部停止。
+- 无秘密安装及UI结果见 [daily-install.json](E:/项目demo/dsh-redis/docs/verification/artifacts/ui-refinement/daily-install.json)。CLI启动认证URL、用户配置备份和业务截图不归档到版本库。

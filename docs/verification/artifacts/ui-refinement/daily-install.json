@@ -1,0 +1,40 @@
+{
+  "verifiedAt": "2026-10-17T15:22:30.112Z",
+  "profile": "C:/Users/admin/.dsh/profiles/web",
+  "packageSha256": "61d18726a59c7e35500f33256f62faa2a571f2a72b2fa724f73d186f9422aabd",
+  "installedPackageRoot": "C:\\Users\\admin\\.dsh\\profiles\\web\\node_modules\\dsh-redis",
+  "allPackedFilesMatch": true,
+  "packedFiles": 97,
+  "libFiles": 88,
+  "bundles": [
+    "@deepseek-ai/dsh-base",
+    "@deepseek-ai/dsh-web-app",
+    "dsh-redis"
+  ],
+  "otherDependenciesUnchanged": true,
+  "changedProfileFiles": [
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "backupDirectory": "E:\\项目demo\\dsh-redis\\.scratch\\runtime\\daily-ui-refinement-1ef8f286-0732-4ec6-8b98-96bf090148b9\\backup",
+  "ui": {
+    "connected": "true",
+    "db": "0",
+    "loaded": "760",
+    "manualContinue": 0,
+    "newIcons": true,
+    "phase": "complete",
+    "total": "760",
+    "correctedHelpVisible": true,
+    "detail": {
+      "back": true,
+      "open": "true",
+      "position": "static"
+    }
+  },
+  "process": {
+    "pid": 35240,
+    "port": 7198,
+    "leftRunningForUser": true
+  }
+}
