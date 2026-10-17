@@ -4,8 +4,8 @@ export function installRedisStyles(): () => void {
   style.dataset.dshRedis = 'true'
   style.textContent = `
 
-.dsh-redis { height:100%; min-height:0; min-width:0; display:flex; flex-direction:column; overflow:hidden; container:redis-sidebar / inline-size; color:var(--dsw-alias-label-primary); background:var(--dsw-alias-bg-base); font-family:inherit; font-size:12px; line-height:1.45; --redis-error:#b42318; --redis-accent:#397e72; --redis-folder:#5a7c9f; --redis-key:#797096; --redis-panel:color-mix(in srgb,var(--dsw-alias-bg-base) 97%,var(--dsw-alias-label-primary)); --redis-selected:color-mix(in srgb,var(--dsw-alias-bg-base) 86%,var(--redis-accent)); }
-body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#79c6b6; --redis-folder:#9ab5cf; --redis-key:#b4a9ca; }
+.dsh-redis { height:100%; min-height:0; min-width:0; display:flex; flex-direction:column; overflow:hidden; container:redis-sidebar / inline-size; color:var(--dsw-alias-label-primary); background:var(--dsw-alias-bg-base); font-family:inherit; font-size:12px; line-height:1.45; --redis-error:#b42318; --redis-accent:#007fa9; --redis-folder:#7945ce; --redis-key:#bc480d; --redis-panel:color-mix(in srgb,var(--dsw-alias-bg-base) 97%,var(--dsw-alias-label-primary)); --redis-selected:color-mix(in srgb,var(--dsw-alias-bg-base) 86%,var(--redis-accent)); }
+body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23bbed; --redis-folder:#a27cff; --redis-key:#ff7f49; }
 .dsh-redis * { box-sizing:border-box; }
 .dsh-redis [hidden] { display:none; }
 .dsh-redis h2, .dsh-redis p { margin:0; }
@@ -16,6 +16,10 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#79c
 .dsh-redis button:disabled { opacity:.45; cursor:default; }
 .dsh-redis :is(button,input,select,textarea,summary,[tabindex]):focus-visible { outline:2px solid var(--dsw-alias-label-primary); outline-offset:1px; }
 .dsh-redis .redis-icon { width:14px; height:14px; flex-shrink:0; fill:none; stroke:currentColor; stroke-width:1.5; stroke-linecap:round; stroke-linejoin:round; }
+.dsh-redis .redis-icon-duotone { fill:currentColor; stroke:none; }
+.dsh-redis .redis-icon-duotone[data-icon=database] { color:var(--redis-accent); }
+.dsh-redis .redis-icon-duotone:is([data-icon=folder],[data-icon=folderOpen]) { color:var(--redis-folder); }
+.dsh-redis .redis-icon-duotone[data-icon=key] { color:var(--redis-key); }
 .dsh-redis .redis-icon-button { width:26px; min-width:26px; padding:3px; border-color:transparent; background:transparent; }
 .dsh-redis .redis-icon-button:hover { border-color:var(--dsw-alias-border-l2); }
 .dsh-redis .redis-workspace-heading { display:flex; align-items:center; gap:8px; height:34px; padding:0 9px; flex-shrink:0; border-bottom:1px solid var(--dsw-alias-border-l2); position:relative; }
@@ -245,6 +249,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#79c
 .dsh-redis .redis-namespace-tools { padding:0 5px 3px; border-bottom:1px solid var(--dsw-alias-border-l2); }
 .dsh-redis .redis-key-list button { border-radius:0; }
 .dsh-redis .redis-key-list button > .redis-icon { color:var(--redis-key); }
+.dsh-redis .redis-key-list button > .redis-icon-duotone { width:17px; height:17px; }
 .dsh-redis .redis-key-list button[data-namespace-id] > .redis-icon { color:var(--redis-folder); }
 .dsh-redis .redis-key-list button[data-db] > .redis-icon { color:var(--redis-accent); }
 .dsh-redis .redis-key-list button[data-db] > .redis-icon:first-child { color:inherit; width:10px; }

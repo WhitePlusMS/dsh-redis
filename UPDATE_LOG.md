@@ -1360,3 +1360,10 @@
 - `.scratch/artifacts/icon-hash-comparison.png` / `.svg` 为同组图标和三布局的静态示意，PNG 1440×1136，已渲染人工查看；不是已安装插件截图。`ICON_LICENSES.md`、`ICON_HASH_PROTOTYPE.md`、`build-icon-hash-lab.cjs` 随原型保存完整许可、源 SHA、操作/边界和生成方法。
 - 内联脚本语法、4×3 图标角色、许可、无外部运行脚本/网络调用/占位符核对通过。首次原型差异检查仅发现上游 SVG 带入行尾空白，已在生成器清理并重渲染，随后检查通过；本轮未做真实浏览器/DSH/Redis 验收，未启动任何服务。
 - 六份原型交付物已本地归档 `prototype/redis-icon-hash-lab`（`5ddac110d15d5ecea2288db67465c84be7fab22c`），主分支不包含原型代码。`docs/ICON_HASH_VISUAL_REVIEW.md` 保存可点击交付物、组合选择、验证范围和后续清单；用户选定前不修改或重装正式插件。原日常 DSH 继续可用，无本轮测试服务需要停止。
+
+## 2026-10-18：采用 Phosphor 青紫橘与 RESP Hash 操作
+
+- 用户明确选择 Phosphor 双色第 2 组及青/紫/橘配色，并要求参照 RESP 截图和 DSH Database 的实际操作；新增 `docs/RESP_OPERATION_REFINEMENT.md` 记录已确定目标、步骤和待验收项，不再提供多套 Hash 操作让用户猜选。
+- `src/client/NavigationIcon.tsx` 新增四个固定来源的内联 SVG（DB、关闭/打开目录、Key）；`Icon.tsx` 将导航形状交给该模块，移除旧方块/标签绘图，其他工具图标沿用原实现。没有引入图标运行依赖。
+- `src/client/styles.ts` 使用青 DB/强调、紫目录、橘 Key，深浅主题分别采用已选原型配色；导航 17px 保证小尺寸识别，双色填充与原工具描边分开。`THIRD_PARTY_NOTICES.md` 及 `licenses/phosphor-icons-MIT.txt` 保留完整许可和来源。随后立即运行严格类型检查。
+- 图标小目标三层严格类型检查通过；仅对已确认图标/配色作正式修改，实际原生外观将与 Hash 新操作一起核对，尚未安装本轮包。
