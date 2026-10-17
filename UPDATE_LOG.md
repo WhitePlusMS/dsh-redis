@@ -1374,3 +1374,10 @@
 - `BytePreview.tsx` 清理空搜索时重复作用域文字，Hash 状态显示真实 Key TTL；`styles.ts` 删除两处旧绝对定位帮助规则和被新规则重复覆盖的格式样式。新增 `docs/references/DSH_DATABASE_REDIS_OPERATIONS.md` 核对固定来源、实际 Hash 接线与本轮实现取舍；不把上游截图 String/JSON 冒称 Hash，也不复制写操作。
 - `locales.ts` 中英删除六组已无调用的长帮助正文；共享 `hash.identity` 仍供 Stream 使用而保留。`KeyBrowser.tsx` 聚焦详情优先进入 Hash 值预览；原生脚本 `smoke-dsh.mjs`、`smoke-focused-value.mjs`、`smoke-resp-workbench.mjs` 同步新 Hash 刷新/筛选、双预览作用域及触底操作，不再依赖已移除的 cell 详情页或续扫按钮。脚本修改不表示已经执行；马上进行类型、构建和现有回归。
 - `pnpm check` 通过：Host/Client/tests 三层严格类型、standalone 构建、32 文件 / 318 项现有回归。Hash 操作与主链提示小目标据此本地提交；布局、真实鼠标/键盘和滚动行为另做隔离 DSH 验证，不以此回归代替。
+- 首个交互候选 SHA256 `10c380a0115f519ed33bfaa7d2f805c7a65cb79cb22c0d6533023af112ae5c8d` 通过默认 pack 门禁并安装到隔离 profile，88 个 lib 逐字节匹配。忽略目录 `hash-operation.manual.mjs` 仅启动独占 Redis/延迟代理/DSH，CUA 实际操作；240 字段、匹配100/空匹配、取消迟到、二进制、131073大值部分覆盖、无损JSON和复制/查找、896/464px 两种宽度均实际核对。7 份源 DUMP 不变、代理无写命令/KEYS/协议错误；所属三服务与新fixture已正常清理。
+- 原生核对发现旧通用 metadata 选择器优先级导致 Hash 重复显示 TYPE/TTL，现从原规则排除 Hash；本地搜索状态不再误写“滚动加载”。`HashView.tsx` 明确空字段/空值显示，按原始字段身份重建预览局部状态，切行不残留上一行查找和滚动；`BytePreview.tsx` 只在查找打开时高亮，关闭立即清除。两个格式仍由父组件独立保存，表格不重建。随后立即类型检查并准备最终候选复核。
+- `README.md` 同步实际 Hash/其他集合操作差异及统一格式下拉；两份先前审查/对比文档追加本轮实施进度，明确剩余14个专用帮助场景仍保留，未宣称全量删除。
+- 最终包 `79ce59fb8c0aa1a1098bbae379669d884cf0b08f711ecea7f6175d55b95df048` 再次通过默认 prepack 的三层类型、构建、32 文件/318 回归。按用户“启动项目，实时看更新”要求，备份个人 web profile 的五份清单后更新；确认旧 PID35240/7198 所有权，仅停止所属进程树并隐藏重启为 PID45416，保持 127.0.0.1:7198。没有运行 npm dev/start:dev。
+- 最终 98 个包文件与日常安装逐字节一致，88 个 lib 同时与当前构建一致；仅 package.json/pnpm-lock.yaml 插件引用变化，其他依赖、bundles、cordis 不变。打包根清单按 pnpm 发布规范变化，不能直接与源码清单作字节比较，记录以 tarball 为准。
+- 最终原生页面已手动恢复 127.0.0.1:6379、DB0 的 760/760，并打开真实8字段 Hash；确认 Text/JSON 两种独立格式、固定三分区、metadata 不重复、关闭查找清高亮、切行重置查找且保留格式。真实业务内容、截图、认证 URL 和安装备份仅留忽略目录；应用窗口保留给用户查看。
+- 新增 `docs/verification/hash-operation-2026-10-18.md`，逐文件说明修改原因/影响、候选11项CUA检查、最终复核和边界，配套无秘密包/命令/清理报告；完成 `RESP_OPERATION_REFINEMENT.md` 清单。临时三服务已清理，用户日常服务按明确启动要求保留；后续小目标通过检查后构建/安装并刷新，同步窗口，不声称具备源码自动热更新。

@@ -1,0 +1,91 @@
+{
+  "verifiedAt": "2026-10-17T16:53:49.267Z",
+  "profile": "C:/Users/admin/.dsh/profiles/web",
+  "packageSha256": "79ce59fb8c0aa1a1098bbae379669d884cf0b08f711ecea7f6175d55b95df048",
+  "installedPackageRoot": "C:\\Users\\admin\\.dsh\\profiles\\web\\node_modules\\dsh-redis",
+  "allPackedFilesMatch": true,
+  "packedFiles": 98,
+  "libFiles": 88,
+  "bundlesUnchanged": true,
+  "otherDependenciesUnchanged": true,
+  "changedProfileFiles": [
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "backupDirectory": "E:\\项目demo\\dsh-redis\\.scratch\\runtime\\daily-hash-operation-9c0d2c33-39f0-4b4d-b96b-0943eaf46408\\backup",
+  "port": 7198,
+  "servicePid": 45416,
+  "connectedRedis": "127.0.0.1:6379",
+  "db": 0,
+  "dbTotal": 760,
+  "loadedKeys": 760,
+  "scanComplete": true,
+  "dailyUi": {
+    "formats": [
+      "text",
+      "json"
+    ],
+    "icons": [
+      {
+        "color": "rgb(35, 187, 237)",
+        "name": "database"
+      },
+      {
+        "color": "rgb(162, 124, 255)",
+        "name": "folder"
+      },
+      {
+        "color": "rgb(255, 127, 73)",
+        "name": "key"
+      }
+    ],
+    "metadataHiddenInData": true,
+    "parts": [
+      {
+        "class": "redis-collection-table",
+        "rect": {
+          "bottom": 424.5375061035156,
+          "height": 184.83750915527344,
+          "left": 265.5,
+          "right": 828,
+          "top": 239.6999969482422,
+          "width": 562.5,
+          "x": 265.5,
+          "y": 239.6999969482422
+        }
+      },
+      {
+        "class": "redis-hash-preview redis-hash-field",
+        "rect": {
+          "bottom": 503.7500076293946,
+          "height": 79.2125015258789,
+          "left": 265.5,
+          "right": 828,
+          "top": 424.5375061035156,
+          "width": 562.5,
+          "x": 265.5,
+          "y": 424.5375061035156
+        }
+      },
+      {
+        "class": "redis-hash-preview redis-hash-value",
+        "rect": {
+          "bottom": 688.5875091552734,
+          "height": 184.83750915527344,
+          "left": 265.5,
+          "right": 828,
+          "top": 503.75,
+          "width": 562.5,
+          "x": 265.5,
+          "y": 503.75
+        }
+      }
+    ],
+    "tableRows": 8,
+    "theme": "#23bbed",
+    "closeFindClearsHighlight": true,
+    "switchRowResetsFind": true,
+    "tableRemainsVisible": true
+  },
+  "privateScreenshotExcludedFromGit": true
+}

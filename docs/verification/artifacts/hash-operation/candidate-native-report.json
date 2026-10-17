@@ -1,0 +1,140 @@
+{
+  "packageSha256": "10c380a0115f519ed33bfaa7d2f805c7a65cb79cb22c0d6533023af112ae5c8d",
+  "checks": [
+    {
+      "name": "row selection and independent format",
+      "passed": true
+    },
+    {
+      "name": "binary identity and two previews",
+      "passed": true
+    },
+    {
+      "name": "large value keeps explicit partial coverage",
+      "passed": true
+    },
+    {
+      "name": "lossless JSON and local find",
+      "passed": true
+    },
+    {
+      "name": "automatic continuation with selection",
+      "passed": true
+    },
+    {
+      "name": "local find and next button",
+      "passed": true
+    },
+    {
+      "name": "MATCH draft does not clear or read; submitted match keeps total distinct",
+      "passed": true
+    },
+    {
+      "name": "empty MATCH clears both previews and automatically finishes empty pages",
+      "passed": true
+    },
+    {
+      "name": "cancel rejects delayed page and continuation",
+      "passed": true
+    },
+    {
+      "name": "metadata tab preserves reader and selection",
+      "passed": true
+    },
+    {
+      "name": "copy reports success",
+      "passed": true
+    }
+  ],
+  "geometry": [
+    {
+      "label": "wide dark",
+      "dark": true,
+      "overflow": 0,
+      "parts": [
+        {
+          "bottom": 724.3333435058594,
+          "client": 461,
+          "height": 461.27777099609375,
+          "scroll": 461,
+          "selector": ".redis-hash-body",
+          "y": 263.0555725097656
+        },
+        {
+          "bottom": 452.9861297607422,
+          "client": 190,
+          "height": 189.93055725097656,
+          "scroll": 6964,
+          "selector": ".redis-hash-body .redis-collection-table",
+          "y": 263.0555725097656
+        },
+        {
+          "bottom": 534.3888931274414,
+          "client": 81,
+          "height": 81.40277862548828,
+          "scroll": 81,
+          "selector": ".redis-hash-field",
+          "y": 452.9861145019531
+        },
+        {
+          "bottom": 724.3333587646484,
+          "client": 189,
+          "height": 189.94444274902344,
+          "scroll": 189,
+          "selector": ".redis-hash-value",
+          "y": 534.388916015625
+        }
+      ],
+      "width": 896.1111450195312
+    },
+    {
+      "label": "464px dark",
+      "overflow": 0,
+      "parts": [
+        {
+          "bottom": 718.3333435058594,
+          "client": 449,
+          "height": 449.27777099609375,
+          "scroll": 449,
+          "selector": ".redis-hash-body",
+          "width": 297.1111145019531,
+          "x": 1119.111083984375,
+          "y": 269.0555725097656
+        },
+        {
+          "bottom": 454.0416870117187,
+          "client": 185,
+          "height": 184.98611450195312,
+          "scroll": 6964,
+          "selector": ".redis-hash-body .redis-collection-table",
+          "width": 297.1111145019531,
+          "x": 1119.111083984375,
+          "y": 269.0555725097656
+        },
+        {
+          "bottom": 533.3333206176758,
+          "client": 78,
+          "height": 79.29166412353516,
+          "scroll": 78,
+          "selector": ".redis-hash-field",
+          "width": 297.1111145019531,
+          "x": 1119.111083984375,
+          "y": 454.0416564941406
+        },
+        {
+          "bottom": 718.3194274902344,
+          "client": 184,
+          "height": 184.98611450195312,
+          "scroll": 184,
+          "selector": ".redis-hash-value",
+          "width": 297.1111145019531,
+          "x": 1119.111083984375,
+          "y": 533.3333129882812
+        }
+      ],
+      "tableScroll": 293,
+      "tableWidth": 293,
+      "width": 464.1111145019531
+    }
+  ]
+}

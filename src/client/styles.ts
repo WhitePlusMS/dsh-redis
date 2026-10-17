@@ -149,8 +149,8 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-metadata { display:grid; grid-template-columns:minmax(100px,1fr) minmax(0,2fr); gap:6px 12px; margin:0; font-size:11px; }
 .dsh-redis .redis-metadata dt { color:var(--dsw-alias-label-secondary); overflow-wrap:anywhere; }
 .dsh-redis .redis-metadata dd { margin:0; min-width:0; overflow-wrap:anywhere; font-family:Consolas,monospace; font-variant-numeric:tabular-nums; }
-.dsh-redis .redis-inspector[data-view=data] .redis-details > .redis-metadata:first-of-type { display:flex; align-items:center; gap:5px 9px; flex-wrap:wrap; order:-2; min-height:23px; }
-.dsh-redis .redis-inspector[data-view=data] .redis-details > .redis-metadata:first-of-type > :nth-child(n+5) { display:none; }
+.dsh-redis .redis-inspector[data-view=data] .redis-details:not(.redis-hash-workbench) > .redis-metadata:first-of-type { display:flex; align-items:center; gap:5px 9px; flex-wrap:wrap; order:-2; min-height:23px; }
+.dsh-redis .redis-inspector[data-view=data] .redis-details:not(.redis-hash-workbench) > .redis-metadata:first-of-type > :nth-child(n+5) { display:none; }
 .dsh-redis .redis-inspector[data-view=data] .redis-timeseries > .redis-metadata:not(:first-of-type) { display:none; }
 .dsh-redis .redis-inspector[data-view=metadata] .redis-details > :not(.redis-metadata):not(small):not([role=alert]):not([role=status]) { display:none; }
 .dsh-redis .redis-inspector[data-view=metadata] > button { display:none; }

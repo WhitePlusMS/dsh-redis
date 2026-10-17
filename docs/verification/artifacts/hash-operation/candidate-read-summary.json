@@ -1,0 +1,16 @@
+{
+  "counts": {
+    "PING": 1,
+    "DBSIZE": 1,
+    "INFO": 1,
+    "CONFIG": 1,
+    "SCAN": 8,
+    "TYPE": 24,
+    "PTTL": 24,
+    "HLEN": 23,
+    "HSCAN": 12
+  },
+  "unchangedValueSnapshots": 7,
+  "noWritesOrKeys": true,
+  "hashFields": 240
+}

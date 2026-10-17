@@ -18,7 +18,7 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
   const [matchIndex, setMatchIndex] = useState(0), [scrollAttempt, setScrollAttempt] = useState(0)
   const [collapsed, setCollapsed] = useState<ReadonlySet<number>>(() => new Set())
   const searchInput = useRef<HTMLInputElement>(null), content = useRef<HTMLPreElement>(null)
-  const matches = useMemo(() => findLoadedText(preview.text, query), [preview.text, query])
+  const matches = useMemo(() => findLoadedText(preview.text, searchOpen ? query : ''), [preview.text, query, searchOpen])
   const folds = useMemo(() => (format === 'json' || format === 'decode-json') && preview.error === null ? indexJsonFolds(preview.text) : { blocks: [], limited: false, error: null }, [preview.text, preview.error, format])
   const pieces = useMemo(() => projectLoadedText(preview.text.length, folds.blocks, collapsed), [preview.text, folds, collapsed])
   const current = matches.ranges.length === 0 ? -1 : matchIndex % matches.ranges.length

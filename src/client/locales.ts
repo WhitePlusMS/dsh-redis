@@ -2,6 +2,7 @@ export const NS = 'redis-viewer'
 export const zh = {
   'hash.search': '搜索已加载字段和值', 'hash.clearSearch': '清除表格搜索', 'hash.refresh': '刷新 Hash',
   'hash.filter': '服务端字段筛选', 'hash.resetFilter': '显示全部字段', 'hash.shown': '搜索结果',
+  'hash.localSearch': '仅搜索已加载内容', 'hash.emptyField': '（空字段）', 'hash.emptyValue': '（空值）',
   'hash.selectRow': '选择一行，查看字段和值。', 'hash.noMatches': '已加载内容中没有匹配的字段。', 'hash.noRead': '尚无可显示的字段。', 'hash.sampledAt': '读取时间',
   'detail.back': '返回表格',
   'detail.backMessage': '返回消息字段',
@@ -236,6 +237,7 @@ export const zh = {
 export const en: Record<keyof typeof zh, string> = {
   'hash.search': 'Search loaded fields and values', 'hash.clearSearch': 'Clear table search', 'hash.refresh': 'Refresh Hash',
   'hash.filter': 'Server field filter', 'hash.resetFilter': 'Show all fields', 'hash.shown': 'Search results',
+  'hash.localSearch': 'Searching loaded content only', 'hash.emptyField': '(empty field)', 'hash.emptyValue': '(empty value)',
   'hash.selectRow': 'Select a row to inspect its field and value.', 'hash.noMatches': 'No matches in loaded content.', 'hash.noRead': 'No fields available to display.', 'hash.sampledAt': 'Read at',
   'detail.back': 'Back to table',
   'detail.backMessage': 'Back to message fields',

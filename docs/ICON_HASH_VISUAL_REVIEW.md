@@ -2,6 +2,8 @@
 
 状态：**对比样例已交付，等待用户选择组合，正式源码与安装包未改动**。这份文档承接本次用户对图标、提示和 RESP Hash 效果的新反馈；上一轮独立详情页验收记录仍是历史事实，不当作新方案已获确认。
 
+2026-10-18 更新：用户已选 **图标 2 Phosphor 双色 + 青/紫/橘**，并要求 Hash 直接按 RESP 截图操作。正式实施进度转到 [RESP 操作方式调整](E:/项目demo/dsh-redis/docs/RESP_OPERATION_REFINEMENT.md)；下文保留 10-17 对比交付的历史范围。
+
 ## 直接查看
 
 - [交互 HTML：四组图标 + 三种配色 + 三种 Hash 布局](E:/项目demo/dsh-redis/.scratch/artifacts/icon-hash-lab.prototype.html)；可双击打开，约 50KB，单文件、无需服务。

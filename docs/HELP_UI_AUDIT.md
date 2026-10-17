@@ -100,3 +100,9 @@
 直接核对 `HelpDetails.tsx`、`RedisWorkspace.tsx`、`KeyCatalog.tsx`、`AutoRefresh.tsx`、`ConnectionForm.tsx`、`ProfileChooser.tsx`、`KeyDetails.tsx`、各类型视图、`SnapshotDialog.tsx`、`BytePreview.tsx`、`TimeSeriesChart.tsx`、`locales.ts`、`styles.ts` 的调用和实际状态结构。由 GPT6 LUNA 提供逐文件事实清单，主模型复核边界并作出上述处理决定。
 
 没有执行网页端 GPT 审查，没有改动 Host、Redis 数据或当前安装包。
+
+## 2026-10-18 实施进度
+
+本轮已实施工作区、Key 树、自动刷新、String 详情、Hash 共五个场景的帮助清理，删除六组无调用中英文长正文。当前还保留 12 个源码级 HelpDetails / 14 个功能场景，其余专用类型和连接/诊断帮助没有冒称全部完成。`value.live`、`hash.identity` 仍有其他真实调用，继续保留。
+
+Hash 以已加载/全部字段、实际部分覆盖、读取时间、错误代替帮助；服务器 MATCH 和本地搜索作用域分别标明。具体改动及验证见 [本轮跟进](E:/项目demo/dsh-redis/docs/RESP_OPERATION_REFINEMENT.md)。
