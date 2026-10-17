@@ -1,3 +1,5 @@
+import { MAX_DATABASE_ENTRIES } from './domain.ts'
+import { databasesReadRequestSchema, databasesReadResultSchema } from './typert.shared.ts'
 import { CLIENT_LIST_FIELDS } from './domain.ts'
 import { clientListReadRequestSchema, clientListReadResultSchema } from './typert.shared.ts'
 import { slowLogReadRequestSchema, slowLogReadResultSchema } from './typert.shared.ts'
@@ -75,6 +77,8 @@ const clientListRead = z.object({ target: databaseTarget }).strict().transform(v
 const clientListPage = z.object({ state: z.enum(['page', 'unavailable', 'failed']), error: error.nullable(), entries: z.array(z.object(Object.fromEntries(CLIENT_LIST_FIELDS.map(field => [field, z.string().max(256).nullable()]))).strict()).max(200), total: z.number().int().min(0).max(262144), limited: z.boolean(), sampledAt: z.string().max(24) }).strict().transform(value => clientListReadResultSchema.parse(value))
 const slowLogRead = z.object({ target: databaseTarget, count: z.number().int().min(1).max(100) }).strict().transform(value => slowLogReadRequestSchema.parse(value))
 const slowLogPage = z.object({ state: z.enum(['page', 'unavailable', 'failed']), error: error.nullable(), entries: z.array(z.object({ id: z.string().max(19), timestampSeconds: z.string().max(19), durationUs: z.string().max(19), command: z.string().max(64).nullable(), loggedArgumentCount: z.number().int().min(1).max(128), argumentBytes: z.array(z.number().int().min(0).max(1048576)).max(8), originalArgumentCount: z.string().max(19).nullable() }).strict()).max(100), count: z.number().int().min(1).max(100), more: z.boolean(), sampledAt: z.string().max(24) }).strict().transform(value => slowLogReadResultSchema.parse(value))
+const databasesRead = z.object({ target: databaseTarget }).strict().transform(value => databasesReadRequestSchema.parse(value))
+const databasesValue = z.object({ state: z.enum(['value', 'failed']), error: error.nullable(), catalog: z.object({ databaseCount: z.number().int().min(1).max(65536).nullable(), keyspace: z.array(z.object({ db: z.number().int().min(0).max(65535), keys: z.string().max(19) }).strict()).max(MAX_DATABASE_ENTRIES).nullable(), currentKeys: z.string().max(19).nullable() }).strict().nullable(), sampledAt: z.string().max(24) }).strict().transform(value => databasesReadResultSchema.parse(value))
 const overviewRead = z.object({ target: databaseTarget }).strict().transform(value => overviewReadRequestSchema.parse(value))
 const overviewValue = z.object({ state: z.enum(['value', 'failed']), error: error.nullable(), fields: z.object(Object.fromEntries(OVERVIEW_FIELDS.map(field => [field, z.string().max(64).nullable()]))).strict().nullable(), sampledAt: z.string().max(24) }).strict().transform(value => overviewReadResultSchema.parse(value))
 
@@ -108,6 +112,7 @@ export const redisHostDescriptors = [
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomRead, bloomValue, z.string().min(1)),
   createRedisInvocation('readSlowLog', 'SlowLogReadRequest', 'SlowLogReadResult', slowLogRead, slowLogPage, z.string().min(1)),
   createRedisInvocation('readClients', 'ClientListReadRequest', 'ClientListReadResult', clientListRead, clientListPage, z.string().min(1)),
+  createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesRead, databasesValue, z.string().min(1)),
   createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewRead, overviewValue, z.string().min(1)),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', empty, browsingState, z.string().min(1)),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingState, browsingState, z.string().min(1)),

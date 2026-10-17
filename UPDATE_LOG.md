@@ -1252,3 +1252,13 @@
 ### 自动Key加载纯模型通过
 - 三层严格TS与10项自动加载模型专项通过，760个Key不重叠顺序8批完成、空页不提前终止、字节去重、取消后无迟到发布/后续派发、缓存/时间/页预算和异常停止均覆盖。
 - 同一纯模块内存原型已捕获prototype/resp-db-key-workbench/db72a922be09af61a7f3a325ef411251fda30e1f，源码HTML壳不进main；三个引导与自由操作只演示状态，当前不声称数据库计数或正式界面已完成。准备将该小目标单独本地提交，再接Host目录和RESP UI。
+
+## 2026-10-17：DB目录与数量快照实现
+
+- 新增 domain 数据库DTO、redis-databases纯解析和Host database-reader，读取固定DBSIZE、INFO keyspace、CONFIG GET databases；保留64位数量文本和未知状态。
+- typert shared/host/remote-client、remote-service注册严格readDatabases；redis-transport限制新增命令形态，所有者/代次/DB/期限复用RedisReadContext。无通用命令入口、无配置写入。
+- 依据Redis官方DBSIZE、INFO、CONFIG GET文档；影响为导航可获得真实DB数和计数快照。编译和专项验证随后记录。
+
+- 首轮全量检查发现旧browser-bundle测试固定27个RPC；已更新28并增加真实loopback命令形态测试，拒绝CONFIG SET/通配/额外参数、DBSIZE额外参数和INFO任意section。
+
+- DB目录里程碑：Host/Client/tests严格类型通过，31个测试文件/315项通过；固定元数据命令真实loopback形态、ACL未知、64位精度、取消/错误代次/10秒期限与双面DTO均已覆盖。原始检查日志保存docs/verification/artifacts/resp-workbench/database-check.log。此时尚未接入UI。

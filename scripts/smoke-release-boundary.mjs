@@ -68,7 +68,7 @@ export async function smokeReleaseBoundary({ page, browser, sessionId, report })
   assert.equal(runtime.pluginUsesSameReact, true)
   report.runtime = { ...runtime, chromeVersion: browser.version(), nodeVersion: process.versions.node }
   report.checks.push('actual native plugin require(react) is the identical Web seed object returned by the real module system; React.version=18.3.1')
-  const methods = ['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readClients', 'readOverview', 'loadBrowsingState', 'saveBrowsingState']
+  const methods = ['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readClients', 'readDatabases', 'readOverview', 'loadBrowsingState', 'saveBrowsingState']
   const endpoint = '**/api/redisViewer/*'
   let value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1 }
   const seen = []

@@ -181,6 +181,22 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'SLOWLOG'])
     }, (socket, args) => { expect(args.map(arg => Buffer.isBuffer(arg) ? arg.toString() : arg)).toEqual(['SLOWLOG', 'GET', '101']); socket.write('*0\r\n') })
   })
+  it('allows only fixed database metadata shapes and refuses config mutations or wildcards', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['SET', 'databases', '32'], ['GET', '*'], ['GET', 'databases', 'maxmemory'], [Buffer.from('GET'), 'databases']]) await expect(transport.execute('CONFIG', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      await expect(transport.execute('DBSIZE', ['extra'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      await expect(transport.execute('INFO', ['keyspace', 'all'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('DBSIZE', [], signal(), () => undefined)).toBe(760n)
+      expect(await transport.execute('INFO', ['keyspace'], signal(), () => undefined)).toEqual(Buffer.alloc(0))
+      expect(await transport.execute('CONFIG', ['GET', 'databases'], signal(), () => undefined)).toEqual([Buffer.from('databases'), Buffer.from('16')])
+    }, (socket, args) => {
+      const text = args.map(arg => Buffer.isBuffer(arg) ? arg.toString() : arg)
+      if (text[0] === 'DBSIZE') socket.write(':760\r\n')
+      else if (text[0] === 'INFO') { expect(text).toEqual(['INFO', 'keyspace']); socket.write('$0\r\n\r\n') }
+      else { expect(text).toEqual(['CONFIG', 'GET', 'databases']); socket.write('*2\r\n$9\r\ndatabases\r\n$2\r\n16\r\n') }
+    })
+  })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {
       const controller = new AbortController(); controller.abort()

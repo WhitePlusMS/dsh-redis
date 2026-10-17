@@ -1,3 +1,4 @@
+import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import type { ClientListReadRequest, ClientListReadResult } from './domain.ts'
 import type { SlowLogReadRequest, SlowLogReadResult } from './domain.ts'
 import type { OverviewReadRequest, OverviewReadResult } from './domain.ts'
@@ -20,6 +21,7 @@ import type { BloomReadRequest, BloomReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  readDatabases: (agentId: SessionId, request: DatabasesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
   readClients: (agentId: SessionId, request: ClientListReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ClientListReadResult>>
   readSlowLog: (agentId: SessionId, request: SlowLogReadRequest, signal?: AbortSignal) => Promise<RemoteResult<SlowLogReadResult>>
   readOverview: (agentId: SessionId, request: OverviewReadRequest, signal?: AbortSignal) => Promise<RemoteResult<OverviewReadResult>>
@@ -50,6 +52,7 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/readDatabases': RedisViewerRemote['readDatabases']
     'redisViewer/readClients': RedisViewerRemote['readClients']
     'redisViewer/readSlowLog': RedisViewerRemote['readSlowLog']
     'redisViewer/readOverview': RedisViewerRemote['readOverview']
@@ -80,6 +83,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/readDatabases': (request: DatabasesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
     'agent:redisViewer/readClients': (request: ClientListReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ClientListReadResult>>
     'agent:redisViewer/readSlowLog': (request: SlowLogReadRequest, signal?: AbortSignal) => Promise<RemoteResult<SlowLogReadResult>>
     'agent:redisViewer/readOverview': (request: OverviewReadRequest, signal?: AbortSignal) => Promise<RemoteResult<OverviewReadResult>>

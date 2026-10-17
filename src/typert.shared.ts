@@ -1,3 +1,4 @@
+import { MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
 import { CLIENT_LIST_FIELDS, MAX_CLIENT_LIST_BYTES, MAX_CLIENT_LIST_ROWS, type ClientListEntry, type ClientListReadRequest, type ClientListReadResult } from './domain.ts'
 import { isClientListValue } from './redis-client-list.ts'
 import { MAX_SLOWLOG_ENTRIES, MAX_SLOWLOG_ARGUMENTS, MAX_SLOWLOG_SUMMARY_ARGS, type SlowLogEntry, type SlowLogReadRequest, type SlowLogReadResult } from './domain.ts'
@@ -605,6 +606,29 @@ export const slowLogReadResultSchema: TypertSchema<SlowLogReadResult> = { parse(
   return { state, error, entries, count, more: object.more, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+export const databasesReadRequestSchema: TypertSchema<DatabasesReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target'])
+  return { target: databaseTargetSchema.parse(object.target) }
+} }
+export const databasesReadResultSchema: TypertSchema<DatabasesReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'catalog', 'sampledAt']), state = object.state, error = errorAt(object.error)
+  if ((state !== 'value' && state !== 'failed') || (state === 'value') !== (error === null) || (state === 'value') !== (object.catalog !== null)) throw new TypeError('Redis RPC: invalid database state')
+  const catalog: DatabaseCatalog | null = object.catalog === null ? null : (() => {
+    const raw = objectAt(object.catalog, ['databaseCount', 'keyspace', 'currentKeys'])
+    const databaseCount = raw.databaseCount === null ? null : integerAt(raw.databaseCount, 1, 65536)
+    if (raw.keyspace !== null && (!Array.isArray(raw.keyspace) || raw.keyspace.length > MAX_DATABASE_ENTRIES)) throw new TypeError('Redis RPC: invalid database counts')
+    const seen = new Set<number>()
+    const keyspace = raw.keyspace === null ? null : (raw.keyspace as unknown[]).map(value => {
+      const row = objectAt(value, ['db', 'keys']), db = integerAt(row.db, 0, databaseCount === null ? 65535 : databaseCount - 1)
+      if (seen.has(db)) throw new TypeError('Redis RPC: duplicate database')
+      seen.add(db)
+      return { db, keys: unsignedIntegerAt(row.keys) }
+    })
+    return { databaseCount, keyspace, currentKeys: raw.currentKeys === null ? null : unsignedIntegerAt(raw.currentKeys) }
+  })()
+  return { state, error, catalog, sampledAt: sampleTimeAt(object.sampledAt) }
+} }
+
 export const overviewReadRequestSchema: TypertSchema<OverviewReadRequest> = { parse(value) {
   const object = objectAt(value, ['target'])
   return { target: databaseTargetSchema.parse(object.target) }
@@ -662,6 +686,7 @@ export const redisDescriptors = [
   createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
   createRedisInvocation('readSlowLog', 'SlowLogReadRequest', 'SlowLogReadResult', slowLogReadRequestSchema, slowLogReadResultSchema, sessionIdSchema),
   createRedisInvocation('readClients', 'ClientListReadRequest', 'ClientListReadResult', clientListReadRequestSchema, clientListReadResultSchema, sessionIdSchema),
+  createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema, sessionIdSchema),
   createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewReadRequestSchema, overviewReadResultSchema, sessionIdSchema),
   createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
   createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),

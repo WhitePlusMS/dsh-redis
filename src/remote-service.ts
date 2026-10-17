@@ -1,3 +1,5 @@
+import { RedisDatabases } from './host/database-reader.ts'
+import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import { RedisClientList } from './host/client-list-reader.ts'
 import type { ClientListReadRequest, ClientListReadResult } from './domain.ts'
 import { RedisSlowLog } from './host/slowlog-reader.ts'
@@ -43,6 +45,7 @@ import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus 
 /** Typert supplies the trusted Agent; clients cannot select an arbitrary owner. */
 export class RedisRemoteService extends TypertRemoteService {
   private readonly connections = new RedisConnections()
+  private readonly databases = new RedisDatabases(this.connections)
   private readonly clientList = new RedisClientList(this.connections)
   private readonly slowlog = new RedisSlowLog(this.connections)
   private readonly overview = new RedisOverview(this.connections)
@@ -126,6 +129,7 @@ export class RedisRemoteService extends TypertRemoteService {
   }
   async readClients(agent: Agent, request: ClientListReadRequest, signal: AbortSignal): Promise<ClientListReadResult> { return this.clientList.read(agent.session.id, request, signal) }
   async readSlowLog(agent: Agent, request: SlowLogReadRequest, signal: AbortSignal): Promise<SlowLogReadResult> { return this.slowlog.read(agent.session.id, request, signal) }
+  async readDatabases(agent: Agent, request: DatabasesReadRequest, signal: AbortSignal): Promise<DatabasesReadResult> { return this.databases.read(agent.session.id, request, signal) }
   async readOverview(agent: Agent, request: OverviewReadRequest, signal: AbortSignal): Promise<OverviewReadResult> { return this.overview.read(agent.session.id, request, signal) }
   async connectionStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()

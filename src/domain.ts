@@ -85,6 +85,21 @@ export interface ScanKeysResult {
   readonly cursor: string | null
   readonly sampledAt: string
 }
+/** Read-only DB directory. Null means metadata is unavailable, never an empty DB. */
+export interface DatabaseKeyCount { readonly db: number; readonly keys: string }
+export interface DatabaseCatalog {
+  readonly databaseCount: number | null
+  readonly keyspace: readonly DatabaseKeyCount[] | null
+  readonly currentKeys: string | null
+}
+export interface DatabasesReadRequest { readonly target: DatabaseTarget }
+export interface DatabasesReadResult {
+  readonly state: 'value' | 'failed'
+  readonly error: ConnectionErrorCode | null
+  readonly catalog: DatabaseCatalog | null
+  readonly sampledAt: string
+}
+export const MAX_DATABASE_ENTRIES = 4096
 export const MAX_KEY_BYTES = 65536
 export const MAX_SCAN_KEYS = 4096
 export const MAX_SCAN_JSON_BYTES = 1024 * 1024
