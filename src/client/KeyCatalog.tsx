@@ -2,7 +2,6 @@ import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent }
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseCatalog, RedisKey } from '../domain.ts'
 import { displayLabel } from './collection-value.ts'
-import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { KEY_ROW_HEIGHT, KeyNamespaces, keyRowId, keyRowWindow, validSeparator, type KeyRow } from './key-namespaces.ts'
 import { NS } from './locales.ts'
@@ -140,7 +139,6 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
           <button type="submit">{t('namespace.apply')}</button>
         </form>
         {separatorError && <p role="alert" className="redis-error">{t('namespace.invalid')}</p>}
-        <HelpDetails label={t('ui.help')}><p>{t('namespace.hint')}</p></HelpDetails>
     </section>}
     <div ref={list} className="redis-key-list" role="tree" aria-label={t(tree ? 'namespace.tree' : 'namespace.list')} tabIndex={0} aria-activedescendant={rows[activeIndex] === undefined ? undefined : `${domId}-${activeIndex}`} data-key-view={tree ? 'tree' : 'list'} data-row-count={rows.length} onKeyDown={navigate} onScroll={event => setViewport({ top: event.currentTarget.scrollTop, height: event.currentTarget.clientHeight })}>
       {rows.length === 0 ? <p>{t('keys.empty')}</p> : <div className="redis-key-spacer" style={{ height: rows.length * KEY_ROW_HEIGHT }}>

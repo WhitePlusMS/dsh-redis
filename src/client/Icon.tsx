@@ -1,6 +1,6 @@
 import { NavigationIcon, type NavigationIconName } from './NavigationIcon.tsx'
 
-type IconName = NavigationIconName | 'clients' | 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'search' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'back' | 'focus' | 'restore'
+type IconName = NavigationIconName | 'clients' | 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'search' | 'filter' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'back' | 'focus' | 'restore'
 const paths: Record<Exclude<IconName, NavigationIconName>, string> = {
   clients: 'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 17v-2a5 5 0 0 1 10 0v2M14 4a3 3 0 0 1 0 6M14 12a5 5 0 0 1 4 5',
   history: 'M3 8a7 7 0 1 1 1 7M3 3v5h5M10 6v5l3 2',
@@ -15,6 +15,7 @@ const paths: Record<Exclude<IconName, NavigationIconName>, string> = {
   list: 'M7 5h10M7 10h10M7 15h10M3 5h.01M3 10h.01M3 15h.01',
   locate: 'M10 2v3M10 15v3M2 10h3M15 10h3M10 5a5 5 0 1 0 0 10 5 5 0 0 0 0-10Zm0 3a2 2 0 1 0 0 4 2 2 0 0 0 0-4',
   search: 'M14 14l4 4M9 3a6 6 0 1 0 0 12A6 6 0 0 0 9 3Z',
+  filter: 'M3 4h14l-5.5 6v6l-3-2v-4L3 4Z',
   collapse: 'M4 4h12M4 16h12M7 7l3 3 3-3M7 13l3-3 3 3',
   expand: 'M4 4h12M4 16h12M7 9l3-3 3 3M7 11l3 3 3-3',
   up: 'm5 12 5-5 5 5',

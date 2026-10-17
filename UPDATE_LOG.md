@@ -1367,3 +1367,10 @@
 - `src/client/NavigationIcon.tsx` 新增四个固定来源的内联 SVG（DB、关闭/打开目录、Key）；`Icon.tsx` 将导航形状交给该模块，移除旧方块/标签绘图，其他工具图标沿用原实现。没有引入图标运行依赖。
 - `src/client/styles.ts` 使用青 DB/强调、紫目录、橘 Key，深浅主题分别采用已选原型配色；导航 17px 保证小尺寸识别，双色填充与原工具描边分开。`THIRD_PARTY_NOTICES.md` 及 `licenses/phosphor-icons-MIT.txt` 保留完整许可和来源。随后立即运行严格类型检查。
 - 图标小目标三层严格类型检查通过；仅对已确认图标/配色作正式修改，实际原生外观将与 Hash 新操作一起核对，尚未安装本轮包。
+- `HashView.tsx` 改为 RESP 固定表格/字段/值三分区，字段原始 Base64 仍是行身份，选行只改变本地预览；两处格式独立。新增只查已加载字节的本地搜索，搜索期间不触发后续页；服务端 MATCH 改为显式展开/提交的草稿，输入不清空现有数据。计数拆为已加载和全部字段，避免错误匹配分母。
+- `CollectionTable.tsx` 增加可选整行选择、显示序号所需 render 索引、空态和局部键盘导航；不改变其他类型的详情行为或读取边界。`BytePreview.tsx` 将六种已有格式统一为单个下拉，支持带字段/值名称及字节数的紧凑标题，复制/查找/JSON折叠仍复用原功能；`native-view-controls.mjs` 同步新的格式控件。
+- `styles.ts` 给 Hash 正常布局的三个区域分配高度、各自滚动，移除 Hash 对独立 DetailPage 的使用；`locales.ts` 中英同步搜索、筛选、刷新、空态和计数名称。随后立即严格类型检查；真实原生操作验证继续进行，尚未将本轮包更新到日常 DSH。
+- Hash 核心首次三层严格类型检查通过。`RedisWorkspace.tsx`、`AutoRefresh.tsx`、`KeyCatalog.tsx`、`KeyDetails.tsx` 去除本轮主操作链的四个重复帮助入口，Hash 已去除本身入口；底层自动刷新/读取限制与条件错误保留，其他类型的专用帮助按既有审查分阶段处理。
+- `BytePreview.tsx` 清理空搜索时重复作用域文字，Hash 状态显示真实 Key TTL；`styles.ts` 删除两处旧绝对定位帮助规则和被新规则重复覆盖的格式样式。新增 `docs/references/DSH_DATABASE_REDIS_OPERATIONS.md` 核对固定来源、实际 Hash 接线与本轮实现取舍；不把上游截图 String/JSON 冒称 Hash，也不复制写操作。
+- `locales.ts` 中英删除六组已无调用的长帮助正文；共享 `hash.identity` 仍供 Stream 使用而保留。`KeyBrowser.tsx` 聚焦详情优先进入 Hash 值预览；原生脚本 `smoke-dsh.mjs`、`smoke-focused-value.mjs`、`smoke-resp-workbench.mjs` 同步新 Hash 刷新/筛选、双预览作用域及触底操作，不再依赖已移除的 cell 详情页或续扫按钮。脚本修改不表示已经执行；马上进行类型、构建和现有回归。
+- `pnpm check` 通过：Host/Client/tests 三层严格类型、standalone 构建、32 文件 / 318 项现有回归。Hash 操作与主链提示小目标据此本地提交；布局、真实鼠标/键盘和滚动行为另做隔离 DSH 验证，不以此回归代替。

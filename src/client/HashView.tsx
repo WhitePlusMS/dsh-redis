@@ -1,72 +1,90 @@
-import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { DatabaseTarget, HashEntry, RedisKey, ScanHashRequest, ScanHashResult } from '../domain.ts'
+import type { DatabaseTarget, HashEntry, PreviewFormat, RedisKey, ScanHashRequest, ScanHashResult } from '../domain.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
-import { DetailPage } from './DetailPage.tsx'
 import { appendHashEntries, emptyHashCache, type HashCache } from './hash-cache.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { prefixWindow, cellLabel, displayLabel } from './collection-value.ts'
 import { NS } from './locales.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
+import { previewValue } from './value-preview.ts'
+import { Icon } from './Icon.tsx'
 
 export interface HashActions { readonly scanHash: (request: ScanHashRequest, signal: AbortSignal) => Promise<RemoteResult<ScanHashResult>> }
 type Props = HashActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
+const fieldWindow = (row: HashEntry) => ({ base64: row.field.base64, prefix: '', suffix: '', offset: '0', complete: true })
 
-/** One page per visible table end; the shared hook owns cancellation and bounds. */
+/** RESP-style row selection changes only local previews. The shared reader owns
+ * cancellation, raw field identities and one continuation per visible table end.
+ */
 export function HashView(props: Props) {
   const { t } = props
   const [pattern, setPattern] = useState('*')
-  const [cell, setCell] = useState<{ field: string; column: 'field' | 'value' } | null>(null)
+  const [draft, setDraft] = useState('*'), [filterOpen, setFilterOpen] = useState(false)
+  const [search, setSearch] = useState(''), [selectedField, setSelectedField] = useState<string | null>(null)
+  const [fieldFormat, setFieldFormat] = useState<PreviewFormat>('text')
   const [format, setFormat] = useBrowsingFormat('hash')
-  const scanState = useCollectionScan<HashCache, ScanHashResult>({ target: props.target, keyBase64: props.selected.base64, empty: emptyHashCache,
+  const scanState = useCollectionScan<HashCache, ScanHashResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: pattern, empty: emptyHashCache,
     append: (previous, page) => appendHashEntries(previous, page.entries),
     load: (cursor, signal) => props.scanHash({ target: props.target, keyBase64: props.selected.base64, pattern, cursor }, signal),
   })
   const { cache, result, cursor, busy, error, progress } = scanState
-  const selected = cell === null ? undefined : cache.rows.find(row => row.field.base64 === cell.field)
-  const window = useMemo(() => selected === undefined || cell === null ? null : cell.column === 'value' ? prefixWindow(selected.value) : { base64: selected.field.base64, prefix: '', suffix: '', offset: '0', complete: true }, [selected, cell])
-  const selectCell = (row: HashEntry, column: 'field' | 'value') => { setCell({ field: row.field.base64, column }) }
-
-  function clear(): void {
-    scanState.clear(); setCell(null)
+  // Search only cached bytes, including values beyond the abbreviated table label.
+  // While searching locally, the bottom observer must not start more Redis reads.
+  const rows = useMemo(() => {
+    const needle = search.trim().toLocaleLowerCase()
+    return needle === '' ? cache.rows : cache.rows.filter(row => {
+      const field = previewValue(fieldWindow(row), 'text'), value = previewValue(prefixWindow(row.value), 'text')
+      return [field.error === null ? field.text : row.field.base64, value.error === null ? value.text : row.value.base64].some(text => text.toLocaleLowerCase().includes(needle))
+    })
+  }, [cache.rows, search])
+  const selected = rows.find(row => row.field.base64 === selectedField)
+  const windows = useMemo(() => selected === undefined ? null : { field: fieldWindow(selected), value: prefixWindow(selected.value) }, [selected])
+  function refresh(): void { setSelectedField(null); void scanState.scan(false) }
+  function applyPattern(value: string): void {
+    setSelectedField(null); setSearch(''); setFilterOpen(false)
+    if (value === pattern) refresh()
+    else setPattern(value)
   }
-  function scan(more: boolean): void {
-    if (!more) setCell(null)
-    void scanState.scan(more)
-  }
-
   const columns: readonly CollectionColumn<HashEntry>[] = [
-    { id: 'field', title: t('hash.field'), render: row => <button type="button" data-hash-field={row.field.base64} onClick={() => selectCell(row, 'field')}>{displayLabel(row.field.label)}</button> },
-    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-hash-value={row.field.base64} onClick={() => selectCell(row, 'value')}>{cellLabel(row.value)}</button> },
+    { id: 'number', title: '#', render: (_row, index) => index + 1 },
+    { id: 'field', title: t('hash.field'), render: row => <span data-hash-field={row.field.base64} title={displayLabel(row.field.label)}>{displayLabel(row.field.label)}</span> },
+    { id: 'value', title: t('hash.value'), render: row => <span data-hash-value={row.field.base64} title={cellLabel(row.value)}>{cellLabel(row.value)}</span> },
   ]
-  return <section className="redis-details" aria-label={t('hash.title')} data-cell-open={window !== null}>
+  const searching = search.trim() !== ''
+  const empty = t(busy ? 'connection.busy' : error !== null ? 'hash.noRead' : searching ? 'hash.noMatches' : 'hash.empty')
+  return <section className="redis-details redis-hash-workbench" aria-label={t('hash.title')}>
     <h2>{t('hash.title')} · <span>{props.selected.label}</span></h2>
-    <form onSubmit={event => { event.preventDefault(); void scan(false) }}>
-      <label>{t('hash.pattern')}<input name="hashPattern" maxLength={256} value={pattern} onChange={event => { clear(); setPattern(event.target.value) }} /></label>
-      <div className="redis-actions">
-        <button type="submit" disabled={busy}>{t('keys.scan')}</button>
-        {busy && <button type="button" onClick={scanState.cancel}>{t('keys.cancel')}</button>}
-      </div>
-    </form>
-
-    <p role="status">{t('hash.loaded')}: <span data-loaded-fields>{cache.rows.length}</span> / {result?.metadata?.length ?? '?'} · {t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</p>
+    <div className="redis-hash-controls">
+      <strong>HASH</strong>
+      <input name="hashSearch" maxLength={256} aria-label={t('hash.search')} placeholder={t('hash.search')} value={search} spellCheck={false} onChange={event => setSearch(event.target.value)} />
+      {search !== '' && <button type="button" className="redis-icon-button" title={t('hash.clearSearch')} aria-label={t('hash.clearSearch')} onClick={() => setSearch('')}><Icon name="close" /></button>}
+      <button type="button" className="redis-icon-button" title={t('hash.refresh')} aria-label={t('hash.refresh')} disabled={busy} onClick={refresh}><Icon name="refresh" /></button>
+      <button type="button" className="redis-icon-button" title={t('hash.filter')} aria-label={t('hash.filter')} aria-expanded={filterOpen} aria-pressed={pattern !== '*'} onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" /></button>
+      {busy && <button type="button" className="redis-icon-button" title={t('keys.cancel')} aria-label={t('keys.cancel')} onClick={scanState.cancel}><Icon name="close" /></button>}
+    </div>
+    {filterOpen && <form className="redis-hash-filter" onSubmit={event => { event.preventDefault(); applyPattern(draft) }}>
+      <label>{t('hash.pattern')}<input name="hashPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
+      <div className="redis-actions"><button type="submit" disabled={busy}>{t('workbench.apply')}</button><button type="button" disabled={busy} onClick={() => { setDraft('*'); applyPattern('*') }}>{t('hash.resetFilter')}</button></div>
+    </form>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
+      <small className="redis-hash-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('hash.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'hash.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    {cache.rows.length === 0 && cursor === null ? <p>{t('hash.empty')}</p> : <CollectionTable rows={cache.rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} paused={window !== null} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />}
-    {window !== null && selected !== undefined && cell !== null && <DetailPage title={`${t(cell.column === 'field' ? 'hash.field' : 'hash.value')} · ${displayLabel(selected.field.label)}`} backLabel={t('detail.back')} onBack={() => setCell(null)}>
-      <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')} · {cell.column === 'field' ? selected.field.byteLength : `${selected.value.byteLength}/${selected.value.fullByteLength}`} {t('keys.bytes')}</p>
-      <details className="redis-byte-identity"><summary>{t('hash.identity')}</summary><textarea aria-label={t('hash.identity')} readOnly rows={2} value={selected.field.base64} spellCheck={false} /></details>
-      <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </DetailPage>}
-    <HelpDetails label={t('ui.help')}><p>{t('hash.hint')}</p><p>{t('hash.budget')}</p><p>{t('value.live')}</p></HelpDetails>
+    <div className="redis-hash-summary" role="status"><span>{t('hash.loaded')}: <b data-loaded-fields>{cache.rows.length}</b></span><span>{t('hash.total')}: {result?.metadata?.length ?? t('workbench.unknown')}</span>{searching && <span>{t('hash.shown')}: {rows.length}</span>}{result?.metadata !== null && result?.metadata !== undefined && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</span>{pattern !== '*' && <span>MATCH {pattern}</span>}</div>
+    <div className="redis-hash-body">
+      <CollectionTable rows={rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} emptyMessage={empty} selection={{ id: selected?.field.base64 ?? null, onSelect: row => setSelectedField(row.field.base64) }} onEnd={searching || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
+      <section className="redis-hash-preview redis-hash-field" aria-label={t('hash.field')}>
+        {windows !== null && selected !== undefined ? <BytePreview heading={{ label: t('hash.field'), description: `${selected.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <><strong>{t('hash.field')}</strong><p>{t('hash.selectRow')}</p></>}
+      </section>
+      <section className="redis-hash-preview redis-hash-value" aria-label={t('hash.value')}>
+        {windows !== null && selected !== undefined ? <BytePreview heading={{ label: t('hash.value'), description: windows.value.complete ? `${selected.value.fullByteLength} ${t('keys.bytes')}` : `${selected.value.byteLength}/${selected.value.fullByteLength} ${t('keys.bytes')} · ${t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} /> : <strong>{t('hash.value')}</strong>}
+      </section>
+    </div>
   </section>
 }

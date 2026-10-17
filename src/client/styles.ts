@@ -24,7 +24,6 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-icon-button:hover { border-color:var(--dsw-alias-border-l2); }
 .dsh-redis .redis-workspace-heading { display:flex; align-items:center; gap:8px; height:34px; padding:0 9px; flex-shrink:0; border-bottom:1px solid var(--dsw-alias-border-l2); position:relative; }
 .dsh-redis .redis-badge { border:1px solid var(--dsw-alias-border-l2); border-radius:3px; padding:0 4px; color:var(--dsw-alias-label-secondary); font-size:10px; }
-.dsh-redis .redis-workspace-heading > .redis-help { margin-left:auto; }
 .dsh-redis .redis-empty, .dsh-redis .redis-connect-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:16px; min-height:0; text-align:center; }
 .dsh-redis .redis-empty { flex:1; }
 .dsh-redis .redis-connect-empty { grid-area:browser; }
@@ -135,7 +134,6 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-auto-refresh [aria-pressed=true] { background:var(--redis-selected); }
 .dsh-redis .redis-auto-refresh select { width:auto; max-width:100%; min-height:25px; padding:2px; font-size:10px; }
 .dsh-redis .redis-auto-refresh > small { flex-basis:100%; font-size:9px; color:var(--dsw-alias-label-secondary); overflow-wrap:anywhere; }
-.dsh-redis .redis-auto-refresh .redis-help-content { position:absolute; z-index:5; top:30px; right:0; width:min(310px,100%); max-height:50dvh; overflow:auto; }
 @container redis-sidebar (max-width:480px) { .dsh-redis .redis-auto-refresh > button > span { display:none; } }
 .dsh-redis .redis-inspector { flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; }
 .dsh-redis .redis-key-identity { padding:9px; flex-shrink:0; }
@@ -159,9 +157,11 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-format-toolbar { display:flex; align-items:center; gap:3px; flex-wrap:wrap; min-height:28px; border-bottom:1px solid var(--dsw-alias-border-l2); padding-bottom:4px; flex-shrink:0; }
 .dsh-redis .redis-format-toolbar > button { padding:3px 6px; border-color:transparent; }
 .dsh-redis .redis-format-toolbar [aria-pressed=true] { background:var(--redis-panel); border-color:var(--dsw-alias-border-l2); }
-.dsh-redis .redis-format-toolbar select { width:128px; min-height:24px; padding:3px; font-size:10px; }
-.dsh-redis .redis-format-toolbar .redis-copy-button { margin-left:auto; }
+.dsh-redis .redis-format-toolbar select { width:116px; min-height:24px; padding:3px; font-size:10px; }
+.dsh-redis .redis-format-toolbar .redis-copy-button { margin-left:0; }
 .dsh-redis .redis-format-toolbar small { font-size:10px; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-preview-caption { display:flex; align-items:center; flex-wrap:wrap; gap:3px 8px; flex:1; min-width:0; }
+.dsh-redis .redis-preview-caption strong { font-size:11px; font-weight:500; }
 .dsh-redis .redis-value { flex:1 1 200px; min-height:100px; white-space:pre; overflow:auto; overscroll-behavior:contain; max-width:100%; margin:0; padding:8px; border:0; border-radius:0; font:12px/1.65 Consolas,"SFMono-Regular",monospace; }
 .dsh-redis .redis-byte-preview { display:flex; flex-direction:column; flex:1 1 200px; min-height:160px; min-width:0; gap:5px; overflow:hidden; }
 .dsh-redis .redis-content-search { display:flex; align-items:center; flex-wrap:wrap; gap:3px; flex-shrink:0; }
@@ -183,6 +183,44 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-collection-table :is([data-column=index],[data-column=rank],[data-column=fields]) { width:70px; }
 .dsh-redis .redis-collection-table :is([data-column=timestamp],[data-column=id]) { width:185px; }
 .dsh-redis .redis-collection-table [data-column=score] { width:135px; }
+.dsh-redis .redis-collection-table [aria-selected=true] { background:var(--redis-selected); box-shadow:inset 2px 0 var(--redis-accent); }
+.dsh-redis .redis-collection-table tr[tabindex] { cursor:pointer; }
+.dsh-redis .redis-collection-table tr[tabindex]:focus-visible { outline-offset:-2px; }
+.dsh-redis .redis-collection-table .redis-collection-empty { text-align:center; padding:18px 8px; color:var(--dsw-alias-label-secondary); font-family:inherit; }
+/* Hash keeps the table and both byte viewers mounted in fixed, independently
+ * scrollable areas. Row selection cannot cover or replace its own table.
+ */
+.dsh-redis .redis-hash-workbench { min-height:0; padding:0; gap:0; overflow:hidden; }
+.dsh-redis .redis-hash-controls { display:flex; align-items:center; gap:3px; padding:5px 7px; flex-shrink:0; border-bottom:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-hash-controls > strong { color:var(--redis-key); font-size:10px; padding-right:3px; }
+.dsh-redis .redis-hash-controls > input { flex:1; width:90px; font-size:11px; }
+.dsh-redis .redis-hash-controls [aria-pressed=true] { background:var(--redis-selected); }
+.dsh-redis .redis-hash-workbench > .redis-hash-filter { margin:0; padding:7px; gap:6px; flex-shrink:0; }
+.dsh-redis .redis-hash-summary { display:flex; flex-wrap:wrap; align-items:center; gap:3px 12px; padding:5px 8px; flex-shrink:0; font-size:10px; color:var(--dsw-alias-label-secondary); border-bottom:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-hash-summary b { font-weight:500; font-variant-numeric:tabular-nums; }
+.dsh-redis .redis-hash-body { display:grid; grid-template-rows:minmax(110px,1.4fr) minmax(74px,.6fr) minmax(120px,1.4fr); flex:1; min-height:0; min-width:0; }
+.dsh-redis .redis-hash-body > .redis-collection-table { min-height:0; max-height:none; border:0; }
+.dsh-redis .redis-hash-body table { min-width:280px; }
+.dsh-redis .redis-hash-body [data-column=number] { width:35px; text-align:right; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-hash-body [data-column=field] { width:36%; }
+.dsh-redis .redis-hash-body :is(th,td) { padding:4px 7px; }
+.dsh-redis .redis-hash-body td > span { display:block; overflow:hidden; text-overflow:ellipsis; }
+.dsh-redis .redis-hash-preview { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; border-top:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-hash-preview > strong { padding:6px 8px; font-size:11px; font-weight:500; background:var(--redis-panel); }
+.dsh-redis .redis-hash-preview > p { padding:8px; }
+.dsh-redis .redis-hash-preview .redis-byte-preview { min-height:0; flex:1; gap:0; }
+.dsh-redis .redis-hash-preview .redis-format-toolbar { padding:3px 6px; gap:2px; background:var(--redis-panel); }
+.dsh-redis .redis-hash-preview .redis-value { min-height:0; flex:1; }
+.dsh-redis .redis-hash-preview .redis-content-search { padding:4px 6px; }
+.dsh-redis .redis-hash-workbench > .redis-hash-time { padding:4px 8px; order:8; border-top:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
+.dsh-redis .redis-inspector[data-view=data] .redis-hash-workbench > .redis-metadata { display:none; }
+.dsh-redis .redis-inspector[data-view=metadata] .redis-hash-workbench { padding:8px; overflow:auto; }
+@container redis-sidebar (max-width:560px) {
+  .dsh-redis .redis-hash-controls > strong { display:none; }
+  .dsh-redis .redis-hash-preview .redis-format-toolbar select { width:76px; font-size:10px; }
+  .dsh-redis .redis-hash-preview .redis-preview-caption { flex-basis:100%; }
+  .dsh-redis .redis-hash-summary { gap:2px 8px; }
+}
 .dsh-redis .redis-page-sentinel { height:2px; width:1px; }
 .dsh-redis .redis-data-views [aria-pressed=true] { background:var(--redis-selected); }
 .dsh-redis .redis-ts-chart { display:flex; flex-direction:column; gap:7px; min-width:0; }
@@ -214,7 +252,6 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-help > summary::-webkit-details-marker { display:none; }
 .dsh-redis .redis-help > summary:hover { border-color:var(--dsw-alias-border-l2); }
 .dsh-redis .redis-help-content { display:flex; flex-direction:column; gap:8px; padding:9px; border:1px solid var(--dsw-alias-border-l2); border-radius:4px; background:var(--redis-panel); }
-.dsh-redis .redis-workspace-heading .redis-help-content { position:absolute; z-index:3; top:32px; right:5px; width:min(310px,calc(100% - 10px)); max-height:60dvh; overflow:auto; }
 @container redis-sidebar (max-width:760px) {
   .dsh-redis .redis-keys { grid-template-columns:190px minmax(0,1fr); }
   .dsh-redis .redis-inspector[data-view=metadata] .redis-metadata { grid-template-columns:minmax(0,1fr); }

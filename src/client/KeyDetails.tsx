@@ -1,5 +1,4 @@
 import { useAutoRefreshReader } from './AutoRefresh.tsx'
-import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -111,6 +110,5 @@ export function KeyDetails(props: Props) {
         <BytePreview value={result} t={t} format={format} onFormatChange={setFormat} />
       </>}
     </>}
-    <HelpDetails label={t('ui.help')}><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

@@ -1,7 +1,6 @@
 import { createContext, useContext, useLayoutEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { AutoRefreshClock, AUTO_REFRESH_INTERVALS, type RefreshSample, type RefreshStopReason } from './auto-refresh.ts'
-import { HelpDetails } from './HelpDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { NS } from './locales.ts'
 
@@ -36,7 +35,6 @@ function RefreshControls({ clock, t }: { readonly clock: AutoRefreshClock; reado
   return <div className="redis-auto-refresh" data-auto-refresh={state.enabled ? 'on' : 'off'} data-auto-reason={state.reason}>
     <button type="button" aria-label={t('auto.title')} title={t('auto.title')} aria-pressed={state.enabled} disabled={!state.enabled && (!state.ready || state.busy)} onClick={() => state.enabled ? clock.stop() : clock.enable()}><Icon name="refresh" /><span>{t('auto.title')}</span></button>
     <select name="autoRefreshInterval" aria-label={t('auto.interval')} value={state.intervalMs} onChange={event => clock.setInterval(Number(event.target.value))}>{AUTO_REFRESH_INTERVALS.map(milliseconds => <option key={milliseconds} value={milliseconds}>{milliseconds / 1000} {t('overview.seconds')}</option>)}</select>
-    <HelpDetails label={t('ui.help')}><p>{t('auto.hint')}</p></HelpDetails>
     {(state.enabled || state.reason === 'hidden' || state.reason === 'failed' || state.reason === 'cancelled') && <small role="status" data-auto-status>{t(status)}</small>}
     {state.sampledAt !== null && (state.enabled || state.reason === 'failed' || state.reason === 'hidden' || state.reason === 'cancelled') && <small className="redis-auto-time">{t('auto.last')} <time dateTime={state.sampledAt}>{new Date(state.sampledAt).toLocaleTimeString()}</time></small>}
   </div>

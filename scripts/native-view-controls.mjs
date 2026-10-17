@@ -9,13 +9,13 @@ export async function openConnectionSettings(pane) {
 }
 
 export async function chooseValueFormat(scope, format) {
-  if (format.startsWith('decode-')) await scope.locator('select[name="decodeFormat"]').selectOption(format)
-  else await scope.locator('[data-value-format="' + format + '"]').click()
+  // Hash has two simultaneous viewers; the last is the value viewer.
+  // Callers inspecting field bytes pass that panel as their explicit scope.
+  await scope.locator('select[name="valueFormat"]').last().selectOption(format)
 }
 
 export async function readValueFormat(scope) {
-  const pressed = scope.locator('[data-value-format][aria-pressed="true"]')
-  return await pressed.count() === 1 ? await pressed.getAttribute('data-value-format') : await scope.locator('select[name="decodeFormat"]').inputValue()
+  return await scope.locator('select[name="valueFormat"]').last().inputValue()
 }
 
 /** Metadata is a display tab: switching must not unmount or reread the viewer. */
