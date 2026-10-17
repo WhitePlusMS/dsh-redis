@@ -18,6 +18,7 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
   const [separator, setSeparator] = useState(':')
   const [draft, setDraft] = useState(':')
   const [separatorError, setSeparatorError] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [expanded, setExpanded] = useState<ReadonlySet<string>>(() => new Set())
   const [focusId, setFocusId] = useState<string | null>(null)
   const [viewport, setViewport] = useState({ top: 0, height: 0 })
@@ -126,19 +127,21 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
         locate.current = keyRowId(selected.base64)
         setExpanded(previous => new Set([...previous, ...model.path(selected.base64) ?? []]))
       }}><Icon name="locate" /></button>
-      <HelpDetails label={t('namespace.settings')}>
+      <button type="button" className="redis-icon-button redis-namespace-settings-toggle" title={t('namespace.settings')} aria-label={t('namespace.settings')} aria-expanded={settingsOpen} aria-controls={`${domId}-settings`} onClick={() => setSettingsOpen(!settingsOpen)}><Icon name="settings" /></button>
+    </div>
+    {settingsOpen && <section id={`${domId}-settings`} className="redis-namespace-settings" aria-label={t('namespace.settings')}>
+      <div className="redis-section-heading"><strong>{t('namespace.settings')}</strong><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={() => setSettingsOpen(false)}><Icon name="close" /></button></div>
         <form onSubmit={event => {
           event.preventDefault()
           if (!validSeparator(draft)) { setSeparatorError(true); return }
-          setSeparatorError(false); setExpanded(new Set()); setSeparator(draft)
+          setSeparatorError(false); setExpanded(new Set()); setSeparator(draft); setSettingsOpen(false)
         }}>
           <label>{t('namespace.separator')}<input name="namespaceSeparator" value={draft} maxLength={16} spellCheck={false} onChange={event => { setDraft(event.target.value); setSeparatorError(false) }} /></label>
           <button type="submit">{t('namespace.apply')}</button>
         </form>
         {separatorError && <p role="alert" className="redis-error">{t('namespace.invalid')}</p>}
-        <p>{t('namespace.hint')}</p>
-      </HelpDetails>
-    </div>
+        <HelpDetails label={t('ui.help')}><p>{t('namespace.hint')}</p></HelpDetails>
+    </section>}
     <div ref={list} className="redis-key-list" role="tree" aria-label={t(tree ? 'namespace.tree' : 'namespace.list')} tabIndex={0} aria-activedescendant={rows[activeIndex] === undefined ? undefined : `${domId}-${activeIndex}`} data-key-view={tree ? 'tree' : 'list'} data-row-count={rows.length} onKeyDown={navigate} onScroll={event => setViewport({ top: event.currentTarget.scrollTop, height: event.currentTarget.clientHeight })}>
       {rows.length === 0 ? <p>{t('keys.empty')}</p> : <div className="redis-key-spacer" style={{ height: rows.length * KEY_ROW_HEIGHT }}>
         {mounted.map(rowIndex => {
