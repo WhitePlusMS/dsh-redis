@@ -1355,3 +1355,8 @@
 - `docs/references/RESP_HASH_SOURCE_REVIEW.md`：固定 RESP 2022.2 SHA，核查原表格、两个 MultilineEditor、选行联动和上下分区的真实源码；区分原版写入/分页与本项目已确认只读/触底续读。给出复用 Hash 缓存、字节身份、BytePreview 的实现步骤及待执行验收点。
 - GPT6 LUNA 仅提供帮助调用及上游源码/图标路径事实，主模型核对实际文件并负责结论；官方仓库只读副本、过程清单保存在忽略目录。未执行网页端 GPT 评审、npm dev/start、Redis 写入或依赖安装。
 - 文档小目标完成差异/空白检查；本小目标仅修改两份新文档与本更新日志，没有 TypeScript 源码变更，因此未把历史类型或浏览器测试冒称为本轮结果。
+- 交互样例 `.scratch/artifacts/icon-hash-lab.prototype.html` 提供 Tabler 实心、Phosphor 双色、自绘双色、Tabler 描边四组图标，16/20/24px 与树行同屏；另有三套高饱和配色和深浅主题。DB 不红、目录不黄。所有图标、样式、交互及 MIT 许可内嵌，不新增运行依赖。
+- Hash 样例 A 为上表格/下字段和值固定分区；B 为下方并排预览，C 为左表右预览，B/C 窄栏均退为上下。支持演示行选择、独立 Text/JSON/Hex/Base64、二进制/空值、局部滚动、本地搜索、460px 与比例选择。全部合成数据，没有触碰真实 Redis。
+- `.scratch/artifacts/icon-hash-comparison.png` / `.svg` 为同组图标和三布局的静态示意，PNG 1440×1136，已渲染人工查看；不是已安装插件截图。`ICON_LICENSES.md`、`ICON_HASH_PROTOTYPE.md`、`build-icon-hash-lab.cjs` 随原型保存完整许可、源 SHA、操作/边界和生成方法。
+- 内联脚本语法、4×3 图标角色、许可、无外部运行脚本/网络调用/占位符核对通过。首次原型差异检查仅发现上游 SVG 带入行尾空白，已在生成器清理并重渲染，随后检查通过；本轮未做真实浏览器/DSH/Redis 验收，未启动任何服务。
+- 六份原型交付物已本地归档 `prototype/redis-icon-hash-lab`（`5ddac110d15d5ecea2288db67465c84be7fab22c`），主分支不包含原型代码。`docs/ICON_HASH_VISUAL_REVIEW.md` 保存可点击交付物、组合选择、验证范围和后续清单；用户选定前不修改或重装正式插件。原日常 DSH 继续可用，无本轮测试服务需要停止。
