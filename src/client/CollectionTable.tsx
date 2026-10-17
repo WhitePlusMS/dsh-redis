@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 
 export interface CollectionColumn<Row> { readonly id: string; readonly title: string; readonly render: (row: Row, index: number) => ReactNode }
 interface Props<Row> {
@@ -8,7 +8,6 @@ interface Props<Row> {
   readonly label: string
   readonly onEnd?: (() => Promise<void>) | undefined
   readonly loading?: boolean
-  readonly paused?: boolean
   readonly selection?: { readonly id: string | null; readonly onSelect: (row: Row) => void }
   readonly emptyMessage?: string
 }
@@ -16,21 +15,10 @@ interface Props<Row> {
 /** Observe the bottom inside this table, never the document. A local latch prevents
  * overlapping callbacks before React commits busy state; readers own cursor/error limits.
  */
-export function CollectionTable<Row>({ rows, identity, columns, label, onEnd, loading = false, paused = false, selection, emptyMessage }: Props<Row>) {
+export function CollectionTable<Row>({ rows, identity, columns, label, onEnd, loading = false, selection, emptyMessage }: Props<Row>) {
   const viewport = useRef<HTMLDivElement>(null), sentinel = useRef<HTMLDivElement>(null)
-  const pending = useRef(false), latest = useRef({ onEnd, loading, paused })
-  const position = useRef({ top: 0, left: 0 })
-  latest.current = { onEnd, loading, paused }
-  // Hiding a table can change browser scroll anchoring. Keep its own position,
-  // rather than trying to scroll a DSH ancestor back after returning from a cell.
-  useLayoutEffect(() => {
-    const element = viewport.current
-    if (!paused && element !== null) { element.scrollTop = position.current.top; element.scrollLeft = position.current.left }
-  }, [paused])
-  function rememberPosition(): void {
-    const element = viewport.current
-    if (!paused && element !== null && element.getClientRects().length !== 0) position.current = { top: element.scrollTop, left: element.scrollLeft }
-  }
+  const pending = useRef(false), latest = useRef({ onEnd, loading })
+  latest.current = { onEnd, loading }
   const activeIndex = selection === undefined ? -1 : Math.max(0, rows.findIndex(row => identity(row) === selection.id))
   function selectRow(index: number): void {
     const row = rows[index], root = viewport.current
@@ -53,16 +41,16 @@ export function CollectionTable<Row>({ rows, identity, columns, label, onEnd, lo
   }
   useEffect(() => {
     const root = viewport.current, end = sentinel.current
-    if (root === null || end === null || onEnd === undefined || loading || paused) return
+    if (root === null || end === null || onEnd === undefined || loading) return
     const observer = new IntersectionObserver(entries => {
-      if (!entries.some(entry => entry.isIntersecting) || pending.current || latest.current.loading || latest.current.paused || latest.current.onEnd === undefined) return
+      if (!entries.some(entry => entry.isIntersecting) || pending.current || latest.current.loading || latest.current.onEnd === undefined) return
       pending.current = true
       void latest.current.onEnd().finally(() => { pending.current = false })
     }, { root, rootMargin: '0px 0px 40px 0px' })
     observer.observe(end)
     return () => observer.disconnect()
-  }, [onEnd, loading, paused, rows])
-  return <div ref={viewport} className="redis-collection-table" tabIndex={0} data-auto-page={onEnd !== undefined && !paused} aria-busy={loading} onScroll={rememberPosition} onClickCapture={rememberPosition}>
+  }, [onEnd, loading, rows])
+  return <div ref={viewport} className="redis-collection-table" tabIndex={0} data-auto-page={onEnd !== undefined} aria-busy={loading}>
     <table aria-label={label} role={selection === undefined ? undefined : 'grid'}>
       <thead><tr>{columns.map(column => <th key={column.id} scope="col" data-column={column.id}>{column.title}</th>)}</tr></thead>
       <tbody>{rows.map((row, index) => <tr key={identity(row)} data-row-identity={identity(row)} aria-selected={selection === undefined ? undefined : selection.id === identity(row)} tabIndex={selection === undefined ? undefined : index === activeIndex ? 0 : -1} onClick={selection === undefined ? undefined : () => selectRow(index)} onKeyDown={event => navigate(event, index)}>{columns.map(column => <td key={column.id} data-column={column.id}>{column.render(row, index)}</td>)}</tr>)}{rows.length === 0 && emptyMessage !== undefined && <tr><td colSpan={columns.length} className="redis-collection-empty">{emptyMessage}</td></tr>}</tbody>

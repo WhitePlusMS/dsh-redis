@@ -172,7 +172,6 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-value [data-search-current=true] { outline:1px solid var(--dsw-alias-label-primary); }
 .dsh-redis .redis-value .redis-json-toggle { display:inline-flex; vertical-align:middle; padding:0; width:14px; min-height:16px; height:16px; border:0; background:transparent; }
 .dsh-redis .redis-json-summary { color:var(--dsw-alias-label-secondary); }
-.dsh-redis .redis-detail-page .redis-byte-preview { flex:1 0 190px; }
 .dsh-redis .redis-collection-table { flex:1 1 240px; min-height:120px; max-height:58dvh; overflow:auto; overscroll-behavior:contain; min-width:0; border-top:1px solid var(--dsw-alias-border-l2); overflow-anchor:none; }
 .dsh-redis .redis-collection-table table { border-collapse:collapse; width:100%; min-width:460px; table-layout:fixed; }
 .dsh-redis .redis-collection-table th, .dsh-redis .redis-collection-table td { text-align:left; padding:5px 9px; border-bottom:1px solid var(--dsw-alias-border-l2); vertical-align:middle; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font:11px/20px Consolas,monospace; }
@@ -223,6 +222,20 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-collection-body td > span { display:block; overflow:hidden; text-overflow:ellipsis; }
 .dsh-redis .redis-collection-workbench > .redis-collection-controls { padding:6px 8px; margin:0; }
 .dsh-redis .redis-collection-workbench > :is([role=alert],p[role=status]) { padding:4px 8px; }
+/* Selecting a message exposes its first pair immediately; field occurrences
+ * remain a separate table so duplicate names are never collapsed into an object.
+ */
+.dsh-redis .redis-stream-controls { display:flex; align-items:center; gap:5px; padding:5px 7px; flex-shrink:0; border-bottom:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-stream-controls > strong { color:var(--redis-key); font-size:10px; }
+.dsh-redis .redis-stream-controls > label { flex:1; flex-direction:row; align-items:center; gap:5px; }
+.dsh-redis .redis-stream-controls select { width:auto; max-width:140px; }
+.dsh-redis .redis-stream-body { grid-template-rows:minmax(0,1fr) minmax(0,1fr) minmax(74px,.55fr) minmax(0,1fr); }
+.dsh-redis .redis-stream-pairs { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; border-top:1px solid var(--dsw-alias-border-l2); }
+.dsh-redis .redis-stream-pairs > strong { padding:3px 7px; flex-shrink:0; font-size:10px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-stream-pairs > .redis-collection-table { min-height:0; max-height:none; border:0; }
+.dsh-redis .redis-stream-pairs [data-column=index] { width:40px; }
+.dsh-redis .redis-stream-pairs [data-column=field] { width:34%; }
+.dsh-redis .redis-stream-body :is(th,td) { padding:3px 7px; }
 @container redis-sidebar (max-width:560px) {
   .dsh-redis .redis-hash-controls > strong { display:none; }
   .dsh-redis :is(.redis-hash-preview,.redis-collection-preview) .redis-format-toolbar select { width:76px; font-size:10px; }
@@ -243,18 +256,10 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-chart-stats dt { color:var(--dsw-alias-label-secondary); font-size:10px; }
 .dsh-redis .redis-chart-stats dd { margin:2px 0 0; font:11px/1.45 Consolas,monospace; overflow-wrap:anywhere; }
 .dsh-redis .redis-chart-point { padding-top:6px; border-top:1px solid var(--dsw-alias-border-l2); }
-.dsh-redis .redis-detail-page { display:flex; flex:1; flex-direction:column; gap:10px; min-width:0; min-height:0; overflow:auto; overscroll-behavior:contain; }
-.dsh-redis .redis-detail-page-heading { display:flex; flex-direction:column; gap:10px; padding-bottom:9px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
-.dsh-redis .redis-detail-page-heading h2 { font-size:13px; overflow-wrap:anywhere; }
-.dsh-redis .redis-back-button { align-self:flex-start; color:var(--redis-accent); border-color:transparent; background:transparent; padding:3px 0; }
 .dsh-redis .redis-byte-identity { flex-shrink:0; font-size:10px; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-byte-identity > summary { cursor:pointer; padding:3px 0; }
 .dsh-redis .redis-byte-identity textarea { margin-top:6px; font:11px/1.5 Consolas,monospace; }
 .dsh-redis .redis-cell-preview .redis-value { min-height:120px; max-height:none; background:var(--redis-panel); border-radius:5px; }
-/* Keep tables mounted, but expose only one inspector page at a time. */
-.dsh-redis .redis-inspector[data-view=data] .redis-details:is([data-cell-open=true],[data-message-open=true]) { height:100%; min-height:0; overflow:hidden; }
-.dsh-redis .redis-inspector[data-view=data] .redis-details[data-message-open=true] > :not(.redis-stream-fields):not(.redis-cell-preview):not([role=alert]) { display:none; }
-.dsh-redis .redis-inspector[data-view=data] .redis-details[data-cell-open=true] > :not(.redis-cell-preview):not([role=alert]) { display:none; }
 .dsh-redis .redis-help { min-width:0; flex-shrink:0; font-size:11px; }
 .dsh-redis .redis-help > summary { display:flex; align-items:center; justify-content:center; width:24px; height:24px; border:1px solid transparent; border-radius:4px; list-style:none; cursor:pointer; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-help > summary::-webkit-details-marker { display:none; }

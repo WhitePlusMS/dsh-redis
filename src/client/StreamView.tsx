@@ -1,52 +1,62 @@
-import { HelpDetails } from './HelpDetails.tsx'
 import { useMemo, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import { MAX_STREAM_MESSAGES, type DatabaseTarget, type RedisKey, type StreamField, type StreamMessage, type StreamReadRequest, type StreamReadResult } from '../domain.ts'
+import { MAX_STREAM_MESSAGES, type DatabaseTarget, type PreviewFormat, type RedisKey, type StreamField, type StreamMessage, type StreamReadRequest, type StreamReadResult } from '../domain.ts'
 import { streamReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
-import { DetailPage } from './DetailPage.tsx'
-import { cellLabel, prefixWindow } from './collection-value.ts'
+import { cellLabel, displayLabel, prefixWindow } from './collection-value.ts'
 import { appendStreamMessages, emptyStreamCache, type StreamCache } from './stream-cache.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
+import { Icon } from './Icon.tsx'
 
 export interface StreamActions { readonly readStream: (request: StreamReadRequest, signal: AbortSignal) => Promise<RemoteResult<StreamReadResult>> }
 type Props = StreamActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 type FieldRow = StreamField & { readonly index: number }
 
-/** Message selection and pair occurrence, never field text, identify a preview. */
+/** Messages, ordered field pairs and both byte previews remain visible together.
+ * Message ID + occurrence identifies a preview, including repeated field names.
+ */
 export function StreamView(props: Props) {
   const { t } = props
   const [direction, setDirection] = useState<'forward' | 'reverse'>('forward')
   const [start, setStart] = useState('-'), [end, setEnd] = useState('+'), [count, setCount] = useState(MAX_STREAM_MESSAGES)
   const [range, setRange] = useState({ start: '-', end: '+', count: MAX_STREAM_MESSAGES, attempt: 0 }), [rangeError, setRangeError] = useState(false)
-  const [selected, setSelected] = useState<string | null>(null), [cell, setCell] = useState<{ readonly index: number; readonly part: 'field' | 'value' } | null>(null)
+  const [selected, setSelected] = useState<string | null>(null), [pairIndex, setPairIndex] = useState(0)
+  const [optionsOpen, setOptionsOpen] = useState(false), [fieldFormat, setFieldFormat] = useState<PreviewFormat>('text')
   const [format, setFormat] = useBrowsingFormat('stream')
   const page = useCollectionScan<StreamCache, StreamReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([direction, range]), empty: emptyStreamCache,
     append: (previous, response) => appendStreamMessages(previous, response.messages),
     load: (cursor, signal) => props.readStream({ target: props.target, keyBase64: props.selected.base64, direction, start: range.start, end: range.end, count: range.count, cursor }, signal),
   })
   const { cache, result, cursor, busy, error, progress } = page
-  const message = cache.messages.find(item => item.id === selected), pair = cell === null ? undefined : message?.fields[cell.index]
-  const window = useMemo(() => pair === undefined || cell === null ? null : cell.part === 'value' ? prefixWindow(pair.value) : { base64: pair.field.base64, offset: '0', prefix: '', suffix: '', complete: true }, [pair, cell])
+  const message = cache.messages.find(item => item.id === selected), pair = message?.fields[pairIndex]
+  const rows = useMemo(() => message?.fields.map((field, index) => ({ ...field, index })) ?? [], [message])
+  const windows = useMemo(() => pair === undefined ? null : { field: { base64: pair.field.base64, offset: '0', prefix: '', suffix: '', complete: true }, value: prefixWindow(pair.value) }, [pair])
+  function refresh(): void { setSelected(null); setPairIndex(0); void page.scan(false) }
   const columns: readonly CollectionColumn<StreamMessage>[] = [
-    { id: 'id', title: t('stream.id'), render: item => <button type="button" data-stream-id={item.id} onClick={() => { setSelected(item.id); setCell(null) }}>{item.id}</button> },
+    { id: 'id', title: t('stream.id'), render: item => <span data-stream-id={item.id}>{item.id}</span> },
     { id: 'fields', title: t('stream.fields'), render: item => item.fields.length },
   ]
   const fields: readonly CollectionColumn<FieldRow>[] = [
     { id: 'index', title: t('stream.occurrence'), render: row => row.index },
-    { id: 'field', title: t('hash.field'), render: row => <button type="button" data-stream-field={row.index} onClick={() => { setCell({ index: row.index, part: 'field' }) }}>{row.field.label}<small>{row.field.byteLength} {t('keys.bytes')}</small></button> },
-    { id: 'value', title: t('hash.value'), render: row => <button type="button" data-stream-value={row.index} onClick={() => { setCell({ index: row.index, part: 'value' }) }}>{cellLabel(row.value)}<small>{row.value.byteLength}/{row.value.fullByteLength} {t('keys.bytes')}</small></button> },
+    { id: 'field', title: t('hash.field'), render: row => <span data-stream-field={row.index} title={displayLabel(row.field.label)}>{row.field.byteLength === 0 ? t('hash.emptyField') : displayLabel(row.field.label)}</span> },
+    { id: 'value', title: t('hash.value'), render: row => <span data-stream-value={row.index} title={cellLabel(row.value)}>{row.value.fullByteLength === 0 ? t('hash.emptyValue') : cellLabel(row.value)}</span> },
   ]
-  return <section className="redis-details" aria-label={t('stream.title')} data-message-open={message !== undefined} data-cell-open={window !== null}>
+  return <section className="redis-details redis-collection-workbench redis-stream-workbench" aria-label={t('stream.title')}>
     <h2>{t('stream.title')} · <span>{props.selected.label}</span></h2>
-    <label>{t('stream.direction')}<select name="streamDirection" value={direction} onChange={event => { page.clear(); setSelected(null); setCell(null); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('stream.forward')}</option><option value="reverse">{t('stream.reverse')}</option></select></label>
-    <form onSubmit={event => {
+    <div className="redis-stream-controls">
+      <strong>STREAM</strong>
+      <label>{t('stream.direction')}<select name="streamDirection" value={direction} onChange={event => { setSelected(null); setPairIndex(0); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('stream.forward')}</option><option value="reverse">{t('stream.reverse')}</option></select></label>
+      <button type="button" className="redis-icon-button" aria-label={t('stream.refresh')} title={t('stream.refresh')} disabled={busy} onClick={refresh}><Icon name="refresh" /></button>
+      <button type="button" className="redis-icon-button" aria-label={t('stream.range')} title={t('stream.range')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(!optionsOpen)}><Icon name="filter" /></button>
+      {busy && <button type="button" className="redis-icon-button" aria-label={t('keys.cancel')} title={t('keys.cancel')} onClick={page.cancel}><Icon name="close" /></button>}
+    </div>
+    {optionsOpen && <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
-      try { streamReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, direction, start, end, count, cursor: null }); setRangeError(false); setSelected(null); setCell(null); setRange({ start, end, count, attempt: range.attempt + 1 }) }
+      try { streamReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, direction, start, end, count, cursor: null }); setRangeError(false); setSelected(null); setPairIndex(0); setRange({ start, end, count, attempt: range.attempt + 1 }); setOptionsOpen(false) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address redis-bounds">
@@ -55,28 +65,30 @@ export function StreamView(props: Props) {
       </div>
       <label>{t('stream.count')}<select name="streamCount" value={count} onChange={event => setCount(Number(event.target.value))}>{[1, 10, 25, MAX_STREAM_MESSAGES].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
       <div className="redis-actions">
-        <button type="submit" disabled={busy}>{t('value.refresh')}</button>
-        {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
+        <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
       </div>
-    </form>
+    </form>}
 
-    <p role="status">{t('stream.loaded')}: <span data-loaded-messages>{cache.messages.length}</span> · {t(`stream.${progress === 'more' ? 'moreState' : progress}`)}</p>
     {rangeError && <p role="alert" className="redis-error">{t('stream.rangeError')}</p>}
-    {busy && <p role="status">{t('connection.busy')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      <p>{t('stream.bounds')}: {result.start} … {result.end}</p>
+      <small className="redis-collection-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
       {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('stream.total')}</dt><dd>{result.metadata.length}</dd></dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'stream.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    {cache.messages.length === 0 && cursor === null ? <p>{t('stream.empty')}</p> : <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} paused={message !== undefined} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}
-    {message !== undefined && <DetailPage kind="message" title={`${t('stream.id')} ${message.id}`} backLabel={t('detail.back')} onBack={() => { setSelected(null); setCell(null) }}><CollectionTable rows={message.fields.map((pair, index) => ({ ...pair, index }))} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} paused={window !== null} /></DetailPage>}
-    {pair !== undefined && cell !== null && window !== null && <DetailPage title={`${t(cell.part === 'field' ? 'hash.field' : 'hash.value')} · ${t('stream.occurrence')} ${cell.index}`} backLabel={t('detail.backMessage')} onBack={() => setCell(null)}>
-      <p role="status" data-cell-coverage>{t(window.complete ? 'value.complete' : 'value.partial')}{cell.part === 'value' && <> · {pair.value.byteLength}/{pair.value.fullByteLength} {t('keys.bytes')}</>}</p>
-      {cell.part === 'field' && <details className="redis-byte-identity"><summary>{t('hash.identity')}</summary><textarea aria-label={t('hash.identity')} readOnly rows={2} value={pair.field.base64} spellCheck={false} /></details>}
-      <BytePreview value={window} t={t} format={format} onFormatChange={setFormat} />
-    </DetailPage>}
-    <HelpDetails label={t('ui.help')}><p>{t('stream.hint')}</p><p>{t('stream.pairsHint')}</p><p>{t('stream.budget')}</p><p>{t('value.live')}</p></HelpDetails>
+    <div className="redis-collection-summary" role="status"><span>{t('stream.loaded')}: <b data-loaded-messages>{cache.messages.length}</b> / {result?.metadata?.length ?? t('workbench.unknown')}</span><span>{range.start} … {range.end}</span>{result?.metadata && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{busy ? t('connection.busy') : t(`stream.${progress === 'more' ? 'moreState' : progress}`)}</span></div>
+    <div className="redis-collection-body redis-stream-body">
+      <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'stream.empty')} selection={{ id: message?.id ?? null, onSelect: item => { setSelected(item.id); setPairIndex(0) } }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
+      <section className="redis-stream-pairs" aria-label={t('stream.fields')}>
+        <strong>{message === undefined ? t('stream.selectMessage') : `${t('stream.id')} ${message.id}`}</strong>
+        <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(message === undefined ? 'stream.selectMessage' : 'stream.noFields')} selection={{ id: pair === undefined ? null : String(pairIndex), onSelect: row => setPairIndex(row.index) }} />
+      </section>
+      <section className="redis-collection-preview redis-stream-field" aria-label={t('hash.field')}>
+        {pair !== undefined && message !== undefined && windows !== null ? <BytePreview key={`${message.id}:${pairIndex}`} heading={{ label: t('hash.field'), description: `#${pairIndex} · ${pair.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <strong>{t('hash.field')}</strong>}
+      </section>
+      <section className="redis-collection-preview redis-stream-value" aria-label={t('hash.value')}>
+        {pair !== undefined && message !== undefined && windows !== null ? <BytePreview key={`${message.id}:${pairIndex}`} heading={{ label: t('hash.value'), description: `${pair.value.byteLength}/${pair.value.fullByteLength} ${t('keys.bytes')}${windows.value.complete ? '' : ' · ' + t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} /> : <strong>{t('hash.value')}</strong>}
+      </section>
+    </div>
   </section>
 }

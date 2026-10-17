@@ -106,3 +106,5 @@
 本轮已实施工作区、Key 树、自动刷新、String 详情、Hash 共五个场景的帮助清理，删除六组无调用中英文长正文。当前还保留 12 个源码级 HelpDetails / 14 个功能场景，其余专用类型和连接/诊断帮助没有冒称全部完成。`value.live`、`hash.identity` 仍有其他真实调用，继续保留。
 
 Hash 以已加载/全部字段、实际部分覆盖、读取时间、错误代替帮助；服务器 MATCH 和本地搜索作用域分别标明。具体改动及验证见 [本轮跟进](E:/项目demo/dsh-redis/docs/RESP_OPERATION_REFINEMENT.md)。
+
+随后用户要求统一 List / Set / ZSet / Stream，四页已删除帮助入口及十组无调用中英文长正文，以范围/方向、已加载/全部数量、原始分数、读取时间、实际部分覆盖和错误表达状态。当前保留 8 个源码级 HelpDetails / 10 个功能场景；其他特殊类型、连接与诊断尚未全量清理。`set.identity` 仍由 GEO 使用，`value.live` 仍有专用类型调用，继续保留；已无调用的 `hash.identity` 与详情返回文案删除。见 [集合统一跟进](E:/项目demo/dsh-redis/docs/COLLECTION_INLINE_PLAN.md)。

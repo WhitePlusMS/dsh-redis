@@ -93,7 +93,7 @@ export function KeyBrowser(props: Props) {
     return () => { ++sequence.current; active.current?.abort(); signal?.removeEventListener('abort', cancel); document.removeEventListener('visibilitychange', hidden) }
   }, [visibility?.visible, visibility?.signal])
   useLayoutEffect(() => {
-    if (focused) (detail.current?.querySelector<HTMLElement>('.redis-hash-value [data-value-preview]') ?? detail.current?.querySelector<HTMLElement>('[data-value-preview]') ?? detail.current)?.focus({ preventScroll: true })
+    if (focused) (detail.current?.querySelector<HTMLElement>(':is(.redis-hash-value,.redis-stream-value) [data-value-preview]') ?? detail.current?.querySelector<HTMLElement>('[data-value-preview]') ?? detail.current)?.focus({ preventScroll: true })
     else if (returnToCatalog.current) {
       const list = catalog.current?.querySelector<HTMLElement>('.redis-key-list')
       if (list !== null && list !== undefined) { list.scrollTop = catalogPosition.current; list.focus({ preventScroll: true }) }
