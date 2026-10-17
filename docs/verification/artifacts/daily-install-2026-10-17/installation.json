@@ -1,0 +1,68 @@
+{
+  "date": "2026-10-17",
+  "cliVersion": "0.2.0-rc.2",
+  "profileDirectory": "C:/Users/admin/.dsh/profiles/web",
+  "package": {
+    "name": "dsh-redis",
+    "version": "0.1.0",
+    "sha256": "b21a919b4ac93768fc22fdf47ecd8c6fd609687f9b216bb277ad8e6369ceb737",
+    "bytes": 140128,
+    "installedFilesMatched": 93
+  },
+  "installation": {
+    "pnpmAddSucceeded": true,
+    "initialCliExitCode": 1,
+    "initialPostInstallFailure": "pre-existing selected dsh-git-graph has no package.json",
+    "configurationRepair": "official saveManifest under withFileLock in local Node process",
+    "enabledBundles": [
+      "@deepseek-ai/dsh-base",
+      "@deepseek-ai/dsh-web-app",
+      "dsh-redis"
+    ],
+    "temporarilyDisabled": [
+      "dsh-input-plus",
+      "dsh-git-graph",
+      "dsh-web-search"
+    ],
+    "originalDependencySpecsRetained": true,
+    "compatibilityExemptionsAdded": false
+  },
+  "runtime": {
+    "pid": 37976,
+    "origin": "http://127.0.0.1:7198",
+    "loopbackOnly": true,
+    "hostRegistered": true,
+    "browserRedisEntryVisible": true,
+    "hostReadyVisible": true,
+    "connectionFormVisible": true,
+    "keptOpenForUser": true
+  },
+  "dataDiagnostic": {
+    "method": "visible UI controls only; existing readonly SCAN continuation",
+    "initialLoadedKeys": 102,
+    "loadedAfterFirstContinuation": 202,
+    "subsequentLoadedCounts": [
+      302,
+      402,
+      504,
+      605,
+      705,
+      760
+    ],
+    "finalScanState": "complete",
+    "respScreenshotKeyCount": 760,
+    "productCodeChanged": false,
+    "redisWritesByAgent": 0,
+    "credentialsFilledByAgent": false,
+    "realKeyNamesOrValuesArchived": false
+  },
+  "backupDirectory": "E:/项目demo/dsh-redis/.scratch/runtime/daily-install-20261017-261001dc-7c75-4cc7-8dae-3d77eaf51977/backup",
+  "backupFiles": [
+    "package.json",
+    "pnpm-lock.yaml",
+    "pnpm-workspace.yaml",
+    "cordis.yml",
+    "cordis.patch.yml"
+  ],
+  "secretsArchived": false
+}

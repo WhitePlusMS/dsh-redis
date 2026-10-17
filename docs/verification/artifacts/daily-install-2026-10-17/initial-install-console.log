@@ -1,0 +1,56 @@
+? Verifying lockfile against supply-chain policies (5 entries)...
+Progress: resolved 0, reused 0, downloaded 1, added 0
+Progress: resolved 1, reused 0, downloaded 1, added 0
+✓ Lockfile passes supply-chain policies (5 entries in 2.1s)
+Progress: resolved 2, reused 0, downloaded 1, added 0
+
+   ╭──────────────────────────────────────────╮
+   │                                          │
+   │   Update available! 11.22.0 → 12.14.0.   │
+   │   Changelog: https://pnpm.io/v/12.14.0   │
+   │     To update, run: pnpm self-update     │
+   │                                          │
+   ╰──────────────────────────────────────────╯
+
+Progress: resolved 2, reused 0, downloaded 2, added 0
+Progress: resolved 12, reused 0, downloaded 2, added 0
+[WARN] Issues with peer dependencies found. Run "pnpm peers check" to list them.
+
+dependencies:
++ dsh-redis file:E:/项目demo/dsh-redis/.scratch/artifacts/dsh-redis-b21a919b4ac93768fc22fdf47ecd8c6fd609687f9b216bb277ad8e6369ceb737.tgz
+
+Packages: +9
++++++++++
+Progress: resolved 14, reused 0, downloaded 4, added 3
+Progress: resolved 14, reused 1, downloaded 7, added 4
+Progress: resolved 14, reused 1, downloaded 8, added 7
+Progress: resolved 14, reused 1, downloaded 8, added 8
+Progress: resolved 14, reused 1, downloaded 9, added 8
+Progress: resolved 14, reused 1, downloaded 9, added 9
+Progress: resolved 14, reused 1, downloaded 9, added 9, done
+Done in 17s using pnpm v11.22.0
+
+dsh: warning: Plugin dsh-input-plus@0.1.0 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-client-runtime":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-conversation":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-input-trigger":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-primitives":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-input-plus@0.1.0 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+Plugin dsh-input-plus@0.1.0 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-client-runtime":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-conversation":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-input-trigger":"^0.1.0-rc.6","@deepseek-ai/dsh-client-ui-primitives":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-input-plus@0.1.0 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: it stays installed but profile startup denies it until you grant an exemption for those exact versions.
+
+dsh: warning: Plugin dsh-web-search@0.1.2 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-tools":"^0.1.0-rc.6","@deepseek-ai/dsh-credentials":"^0.1.0-rc.6","@deepseek-ai/dsh-web-search-deepseek":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-web-search@0.1.2 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+Plugin dsh-web-search@0.1.2 is incompatible with dsh 0.2.0-rc.2: peerDependencies {"@deepseek-ai/dsh-tools":"^0.1.0-rc.6","@deepseek-ai/dsh-credentials":"^0.1.0-rc.6","@deepseek-ai/dsh-web-search-deepseek":"^0.1.0-rc.6"}. Running it may cause crashes or data loss. Update the plugin or install a plugin version compatible with this dsh runtime. To accept this risk explicitly, grant the exact-version exemption for dsh-web-search@0.1.2 on dsh 0.2.0-rc.2 with `dsh plugin allow-version` or the plugin manager, then retry the installation or restart dsh. Exact-version exemption: not active.
+dsh: it stays installed but profile startup denies it until you grant an exemption for those exact versions.
+file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-app-boot@0_29a57175adbd788903e565fb9da60644/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:906
+	throw new Error(`${binName}: cannot resolve profile bundle ${JSON.stringify(packageName)} from the dsh installation or ${profileDir}; run 'dsh plugin --profile ${basename(profileDir)} install' if its dependency is not installed`);
+	      ^
+
+Error: dsh: cannot resolve profile bundle "dsh-git-graph" from the dsh installation or C:\Users\admin\.dsh\profiles\web; run 'dsh plugin --profile web install' if its dependency is not installed
+    at resolveBundleDir (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-app-boot@0_29a57175adbd788903e565fb9da60644/node_modules/@deepseek-ai/dsh-app-boot/lib/index.js:906:8)
+    at bundleManifest (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-plugin-man_96c23650cd5f079c031774b6f48f0c71/node_modules/@deepseek-ai/dsh-plugin-manager/lib/types/operations.js:32:24)
+    at file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-plugin-man_96c23650cd5f079c031774b6f48f0c71/node_modules/@deepseek-ai/dsh-plugin-manager/lib/types/operations.js:52:47
+    at Array.filter (<anonymous>)
+    at reconcile (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-plugin-man_96c23650cd5f079c031774b6f48f0c71/node_modules/@deepseek-ai/dsh-plugin-manager/lib/types/operations.js:49:30)
+    at runProfilePnpm (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-plugin-man_96c23650cd5f079c031774b6f48f0c71/node_modules/@deepseek-ai/dsh-plugin-manager/lib/types/operations.js:504:23)
+    at async withFileLock (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh-atomic-wri_53932133d6b90df1547fd5cf2bfd134d/node_modules/@deepseek-ai/dsh-atomic-write/lib/index.js:211:10)
+    at async runPlugin (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh@0.2.0-rc.2_2d03925acd3ffc991faf19f6064fc656/node_modules/@deepseek-ai/dsh/lib/plugin-BGnVfe_D.js:93:25)
+    at async runCli (file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh@0.2.0-rc.2_2d03925acd3ffc991faf19f6064fc656/node_modules/@deepseek-ai/dsh/lib/bin.js:236:17)
+    at async file:///C:/Users/admin/AppData/Local/pnpm/global/v11/a158-1a11a1c5f8f-a5427f42502719f7/node_modules/.pnpm/@deepseek-ai+dsh@0.2.0-rc.2_2d03925acd3ffc991faf19f6064fc656/node_modules/@deepseek-ai/dsh/lib/bin.js:252:23
+
+Node.js v22.22.1

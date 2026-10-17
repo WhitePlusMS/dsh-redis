@@ -1226,3 +1226,21 @@
 ### 29 最终一致性审计通过
 - 原29票连续编号、21张P0/8张P1、全部done、140项checked/0项未勾、原Blocked by物理行依赖逐项一致；六份当前进度一致，63处本地链接均有效。固定Database/RESP研究原件SHA保持e138f4206b3534f3e7c74050ca7e7dc36b359ab1a64feeb15e5e832271800b0c。
 - 32份归档原件的长度/SHA及172源码输入重核一致；当前main暂存起点为空。仅本29UI/原生专项/使用说明/验收/进度与证据进入本地提交，排除lib、依赖、tgz、runtime和原型壳；原始日志不重写字节，仅明确raw路径单次blank-at-eof检查，其余标准diff检查，不改Git配置/跳过hook或推送。
+
+## 2026-10-17 安装到日常DSH：前置核对与配置保全
+- 用户明确授权把已验收Redis插件安装到正在使用的DSH，以实际查看界面和操作。当前PATH入口CLI为0.2.0-rc.2，正式DSH_HOME为C:/Users/admin/.dsh、目标profile为web；未发现正在运行的DSH进程或现有DSH浏览器页。
+- 安装候选沿用已验收b21a919b4ac93768fc22fdf47ecd8c6fd609687f9b216bb277ad8e6369ceb737包（140128字节），实际SHA已复核，不重新构建或改产品代码。C盘约1.37GiB/E盘约62.9GiB可用；不清理用户文件。
+- 现有profile含Git Graph失效本地依赖及input-plus/web-search旧rc.6 peer约束。plugin --profile web --help实际进入pnpm转发/reconcile而非只打印顶层帮助，触发现有依赖错误；add --help输出超过读取预算，未作为安装成功。已核对package.json仍与事前读取内容一致；后续先基于实际CLI实现核对语法。
+- 已将profile五份安装配置原字节备份到项目.scratch/runtime/daily-install-20261017-261001dc-7c75-4cc7-8dae-3d77eaf51977/backup（忽略目录，不入Git），不读取/备份凭据或用户会话正文，不启动npm dev/start。接下来只添加Redis及处理确实阻止启动的既有配置问题，保持宿主兼容检查。
+
+### 日常安装：包落盘，恢复profile启用清单
+- 官方plugin add的pnpm步骤17秒完成，Redis0.1.0已落盘，但随后既有Git Graph缺package.json导致全profile reconcile退出1；没有把该命令整体误记为成功。93份实际安装文件逐字节/长度/SHA全部匹配b21a919b已验收包。
+- 初次在工具内嵌Node运行时直接import官方operations被其模块解析器以缺execa拒绝，发生在配置写入之前；改为本机Node独立进程加载同一官方saveManifest/withFileLock，不继续修补工具模块路径或改宿主代码。一次验证读取使用了未保留的嵌套作用域变量，前置拒绝未写入；随后从已归档manifest重新读取。
+- 在官方原子锁下仅调整dsh.profile.bundles：保留base/web-app并启用dsh-redis，暂时停用既有dsh-input-plus/dsh-web-search（rc.6 peers）与dsh-git-graph（原路径缺元数据）。原三项dependencies逐项完全保留，未改其源码、个别配置或兼容豁免；五份配置备份已保全。
+- 产品代码未变；接下来启动用户正式web profile验证真实Redis侧栏，不连接业务Redis、不发送模型消息。
+
+### 正式安装完成与真实数据可见性核对
+- 正式web profile的93文件与b21a919b包逐SHA一致，保留原依赖并仅调整启用列表后，日常DSH真实启动成功：Host已注册、页面Redis入口/Host就绪/连接配置可见；127.0.0.1:7198、PID 37976。用户应用保持打开，未启动npm开发服务或额外Redis夹具。
+- 用户提供RESP真实数据截图后，用可见UI状态反馈复现“只加载102、可继续扫描”。只点击左侧只读继续扫描，观测202/302/402/504/605/705/760，最终扫描完成，与RESP总数一致；原因是显式增量SCAN和目录仅统计已加载Key。右侧Hash字段独立分页。本次未改源码、Redis值、地址/DB/MATCH，未填写密码或发送模型消息。
+- 新增docs/verification/daily-install-2026-10-17.md与artifacts/daily-install-2026-10-17的无秘密安装报告/首次失败原始控制台，记录3个旧插件暂时停用、依赖/配置保留、备份位置、实际Node准备/启动等待失败及最终恢复方式。认证启动URL、私有备份、业务Key/值/截图不入Git。
+- 产品包未变，93文件再次核验；本轮仅安装与诊断文档，按最简原则不重复执行产品编译/296测试。接下来检查文档链接和Git差异后，按小目标本地提交，不push。
