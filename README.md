@@ -1,73 +1,59 @@
 # DSH Redis
 
-> 当前执行基线：用户明确选择 `0.2.0-rc.2` 并继续原 29 票实现。宿主、对应源码和配套 SDK 固定该 RC 版，如实标注预发布属性；此前稳定版调查及仅文档检查保留为历史，不作为本次实现的等待条件。
+DSH 原生右侧栏中的个人 Redis 查看器。当前精简版只保留六种基础类型和日常查看操作，严格只读，支持单机直连及 TLS。
 
-独立的 DSH 原生右侧栏 Redis 查看器，面向个人使用；首版严格只读，支持单机与 TLS。
+> 按此前明确确认的开发基线，宿主、SDK 和官方源码固定为 `DSH 0.2.0-rc.2`，这是预发布版本。此轮精简不更换宿主基线；此前稳定版调查和原29票记录保留为历史。
 
-项目根目录：`E:\项目demo\dsh-redis`。
+## 当前功能
 
-当前阶段：原29票、统一导航与自动分批浏览已完成；界面细节与当前验证见独立跟进文档，历史报告保留对应版本范围。
+- 连接：地址、端口、可选 ACL 用户名/密码、TLS/CA；手动连接、断开和状态查询。
+- 连接资料：本地选择、新建、保存、更新、分组、删除确认与刷新。不保存密码；保存资料不会清空当次密码。
+- DB / Key：手动切换 DB；自动分批 SCAN、总数和进度；MATCH 筛选、树/列表、分隔符、定位与键盘导航。
+- 数据：String、Hash、List、Set、ZSet、Stream。集合选中一行直接显示同屏详情，滚动到底追加下一批。
+- 内容：Text、JSON、Hex、Base64 四种格式，查找、JSON 折叠及复制当前已读内容。
+- 刷新：手动刷新、1/5/10/30秒自动刷新、取消和最近读取时间。同一查询刷新保留画面，重新读取已加载批次后替换结果。
+- 界面：青色 DB、紫色目录、橘色 Key 的 Phosphor 双色导航，官方 Lucide 操作图标，随 DSH 明暗主题及中英文切换。
 
-## 文档入口
+已删除诊断快照、六种特殊类型专用视图及曲线、URI、资料导入导出、独立测试连接、显式 Base64 解码、DB/Key 选择自动恢复。普通 String 中的 JSON 格式化仍保留；GEO 可看底层 ZSet，Bitmap/HLL 可看底层 String 原始字节。模块专用类型显示不支持。
 
-- [当前功能清单与界面说明：10 个模块、56 项条目](E:/项目demo/dsh-redis/docs/FEATURE_INVENTORY.md)
-- [56 项功能与界面操作审查：问题、图标及功能精简建议](E:/项目demo/dsh-redis/docs/FEATURE_OPERATION_AUDIT.md)
-- [正式任务索引：21 张 P0、8 张 P1](E:/项目demo/dsh-redis/.scratch/redis-viewer/README.md)
-- [开发路线与实施方案](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
-- [已确认的任务拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
-- [参考项目研究及 RESP.app 对比](E:/项目demo/dsh-redis/docs/references/DSH_Database_Redis_功能与实现说明.md)
-- [本地任务跟踪规则](E:/项目demo/dsh-redis/docs/agents/issue-tracker.md)
-- [RESP导航与自动加载跟进](E:/项目demo/dsh-redis/docs/RESP_WORKBENCH_PLAN.md)
-- [图标、字段详情与连接配置跟进](E:/项目demo/dsh-redis/docs/UI_REFINEMENT_PLAN.md)
-- [Phosphor 青紫橘、RESP Hash 操作及 Database 源码核对](E:/项目demo/dsh-redis/docs/RESP_OPERATION_REFINEMENT.md)
-- [List / Set / ZSet / Stream 同屏选行预览](E:/项目demo/dsh-redis/docs/COLLECTION_INLINE_PLAN.md)
-- [A方案状态控件与P0/P1实施](E:/项目demo/dsh-redis/docs/STATE_CONTROLS_IMPLEMENTATION_PLAN.md)
-- [截图中 RESP DB 工具栏逐项核对与缺项方案](E:/项目demo/dsh-redis/docs/references/RESP_DB_TOOLBAR_COMPARISON.md)
+## 操作
+
+1. 打开 DSH 会话右侧栏的 Redis，点击“选择或新建连接”或连接配置图标。
+2. 选择已保存资料，或填写地址、端口、用户名及密码；TLS 与 CA 在折叠区域中。需要保存时填写名称，可选分组，再点保存。
+3. 直接点“连接”，成功后关闭窗口并自动加载 DB 0。关闭设置会清空密码；取消未完成的连接会释放所属连接请求。
+4. 左侧选择 DB / 目录 / Key，右侧查看数据。Hash 为表格、字段和值三区；List/Set/ZSet 为表格与详情两区；Stream 的消息、字段对和字段/值预览同屏。
+5. 使用预览格式下拉、查找和复制图标。范围与服务端筛选按需展开，填写草稿后点应用才读取。
+6. 自动刷新为图标开关加间隔下拉，默认关闭。同一 Key 刷新保留选行和未卸载的预览；原选行未包含在本次读取中会提示重新选择。切换 Key/DB/会话、隐藏、取消或读取失败会停止自动刷新。
+7. 已连接时仍可编辑、保存、删除其他资料，实际连接身份单独显示。切换服务器前先断开，再选择资料并手动连接。
+
+资料在同一 DSH profile 内共用；网络连接和读取按会话隔离。连接从 DB 0 开始，不自动恢复以前的 DB/Key。格式选择仅在当前挂载会话内保存。不直接打开 RDB/AOF 文件，不提供 Redis 写入、命令控制台、Cluster、Sentinel 或内置 SSH 隧道。
+
+## 构建与安装
+
+项目目录：`E:\项目demo\dsh-redis`。使用 Node `^22.19.0 || >=24.0.0`、pnpm 11.22.0 和上述 DSH 基线。
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm check
+pnpm pack --pack-destination .scratch/artifacts
+```
+
+打包再次检查类型、构建和回归。按包的 SHA256 复制为唯一文件名，再安装到目标 web profile，避免同版本复用旧包：
+
+```powershell
+dsh plugin --profile web add '<唯一 SHA 包的绝对路径>' --ignore-scripts
+```
+
+开发验证使用项目内独立 `DSH_HOME` 与自建 Redis；临时服务验收后关闭。日常安装前备份配置、核对包与安装文件，用户明确要求查看的日常 DSH 保持运行。
+
+## 文档与验证
+
+- [当前功能清单：8 个模块、41 项条目](E:/项目demo/dsh-redis/docs/FEATURE_INVENTORY.md)
+- [本次精简实施与检查点](E:/项目demo/dsh-redis/docs/SLIM_VIEWER_IMPLEMENTATION.md)
+- [精简版专项验收](E:/项目demo/dsh-redis/docs/verification/slim-viewer-2026-10-19.md)
+- [旧56项操作审查与精简决策](E:/项目demo/dsh-redis/docs/FEATURE_OPERATION_AUDIT.md)
+- [参考项目与 RESP 对比](E:/项目demo/dsh-redis/docs/references/DSH_Database_Redis_功能与实现说明.md)
+- [开发基线要求](E:/项目demo/dsh-redis/docs/DEVELOPMENT_BASELINE.md)
 - [更新说明](E:/项目demo/dsh-redis/UPDATE_LOG.md)
 
-## 首版范围
-
-String、Hash、List、Set、ZSet、Stream，以及 RedisJSON、Bitmap、GEO、HyperLogLog、TimeSeries、Bloom 的专用查看。特殊查看不等于独立 Redis TYPE，扩展能力依目标服务器而定。
-
-显示格式共六种：Text、JSON、Hex、Base64、Base64 解码为 Text、Base64 解码为 JSON。连接资料在同一 DSH profile 内共用，浏览选择按会话分离；恢复选择不自动新建连接。
-
-## 当前版本与源码约定
-
-当前按用户明确指定的 `0.2.0-rc.2` 实现完整原 29 票，不等待稳定正式版。
-
-- CLI/相关 SDK 固定 rc.2；宿主源码为官方 `dsh-v0.2.0-rc.2` / `639ed015397290b3745d163aafe02ffee4aa3f84`。本机 CLI 已同版，不重复安装或自动改用 alpha；桌面核心按实际验证另记。
-- Git Graph、Database 保留原样参考副本与来源/SHA/日期/许可，仅在独立项目裁剪必要接入骨架与只读逻辑，既有工作先比较，不整目录覆盖。
-- 只适配目标宿主真实 API，不维护旧版兼容。每次变更完成受影响类型、专项、真实 Redis 和原生包验证；历史包证据不冒充当前包通过。
-- 原 29 票范围、优先级、依赖保留。测试用独立 profile 和自建 Redis，采用已验证的 wsl-image 路径，不依赖失去响应的 Docker，也不清理用户 C 盘文件。
-
-## 安装和查看
-
-1. 使用 Node `^22.19.0 || >=24.0.0` 与 DSH `0.2.0-rc.2`，在项目目录执行 `pnpm install --frozen-lockfile`，然后执行 `pnpm pack --pack-destination .scratch/artifacts`。打包前会执行严格类型、构建和回归检查；产物为 `.scratch/artifacts/dsh-redis-0.1.0.tgz`。RC 是预发布版本。
-2. 同版本更新时，先按实际SHA256将包复制为唯一名称（如dsh-redis-哈希.tgz），再用该唯一绝对路径安装，避免安装器复用旧同名包。以下命令仅示意安装入口；请替换为哈希包路径。把包安装到要使用的 **web profile**，例如PowerShell：`dsh plugin --profile web add 'E:\项目demo\dsh-redis\.scratch\artifacts\dsh-redis-0.1.0.tgz' --ignore-scripts`。再打开该 profile 的 DSH Web 界面。完整可复现实验、包 SHA 和安装文件核对见发布验收文档；开发验证使用独立 `DSH_HOME`。
-3. 进入一个 DSH 会话，展开右侧栏，在引导入口选择 Redis。点击左侧连接或“连接配置”，设置窗口左侧管理连接资料，右侧按服务器、认证和 TLS 分组。填写主机、端口及可选 ACL 用户名/密码；TLS 可填受信 CA PEM，不支持关闭证书校验。先测试连接，再点连接，成功后关闭窗口；已连接时先在窗口中点“断开”，再编辑地址和认证。单机默认从 DB 0 开始，浏览恢复不会自动连接或SELECT；已有连接的当前DB会自动加载Key目录，恢复选中的Key值仍需点击读取。
-4. 界面采用RESP式两栏：左侧在同一棵树内显示连接→DB→目录/Key，右侧显示所选数据。点击DB即SELECT并自动分批SCAN当前DB，不再点“继续扫描”；DB行显示数量快照，底部显示总数、已读和进度，支持取消/刷新。数量来自固定DBSIZE、INFO keyspace、CONFIG GET databases；无权限显示未知，仍可扫描，未知DB数量可在筛选内打开指定DB。筛选图标按需展开MATCH，草稿只在提交后查询；MATCH结果不拿DB总数冒充匹配总数。名称区分大小写排序、目录优先，单Key前缀直接显示完整剩余名称；目录数字只表示组内已加载数量。树/列表、分隔符、定位和方向键均为本地操作，Key字节身份不依赖显示文本。长导航只渲染可见行，分组路径最多16层；点击Key查看数据，切换数据/元信息不重复读取。
-5. String按字节窗口读取；Hash/Set增量扫描，List/ZSet按范围，Stream按消息ID，TimeSeries按时间范围，表格滚动到底自动追加下一批，不再点击继续；GEO范围同样支持滚动。RedisJSON按路径读取。Hash 使用 RESP 式固定三分区：上方行号/字段/值表格，选中整行后下方同时显示字段和值，两处独立格式、局部滚动。List/Set/ZSet 使用固定表格/预览两区，点击任意单元格或用方向键选中整行，直接显示元素/成员；ZSet 同时保留原始分数。Stream 消息列表、字段对表格和字段/值预览同屏，选消息立即显示首字段对，换字段对同时显示字段和值；重复字段按出现序号保留。上述集合选行不跳页、不隐藏表格、不额外查询，也不暂停可见表格的触底续读。Hash 顶部关键词仅搜索已加载字节，搜索期间不续读；清空后恢复。Hash/Set/ZSet 的服务端 MATCH 草稿提交后才读取，不因输入清空原结果；已加载和集合总数分开显示。Stream 范围/批量控件按需展开，提交后读取。Bitmap/HLL 从 String、GEO 从 ZSet 手动解释，不凭底层 TYPE 猜测；Bloom 只查看统计和单个候选项的“可能存在/不存在”。Cuckoo 不在当前范围。
-6. Text、JSON、Hex、Base64 与两种显式 Base64 解码统一在格式下拉中切换，复制当前已读预览；Hash/Stream 的字段和值分别操作，成功后只有对应复制按钮短暂显示对勾，失败就地提示。详情标题显示类型和TTL，点击查看元信息；可聚焦并保留DB上下文、返回原目录位置。查找入口或预览内 Ctrl/Cmd+F 仅搜索当前已读文本，区分大小写；Enter/F3 与 Shift 反向导航，Esc 先收起查找，再退出聚焦。关闭查找清除高亮，集合切换行重置查找/滚动状态，格式保留。JSON可逐块或整体折叠/展开，复制不含省略号。完整Key身份在元信息，集合原始字节可选Base64；格式化、搜索、折叠与复制不读取Redis。大值保留精确字节覆盖和“部分”，统一删除通用长帮助，错误及估算/概率/权限等必要说明就地保留。
-7. 连接配置在当前 DSH profile 共用，可重命名和分组，不保存密码。设置窗口按需展开 URI 或资料导入导出：URI 只填写表单与 DB 草稿，提交清空原 URI，关闭设置清除密码，仍需手动连接和选择 DB。只支持基础 redis/rediss、编码凭据与数字 DB，不支持查询参数/片段。导出只带名称、分组、地址、用户名及 TLS 开关，不带密码、证书或运行身份；导入仅支持本插件无秘密 JSON（至多256KiB/50条），先预览、可改名/分组或跳过，同组同名须明确处理；整批新增、不覆盖或自动连接，导入 TLS 后手动补 CA。会话分别记住连接资料选择、DB、MATCH、Key、显示格式和已提交的 String 窗口。会话切换不恢复数据缓存或游标；点“读取已选 Key”才发起读取。重新连接从 DB 0 开始，必要时先手动选择记住的 DB。
-8. 连接状态栏的“服务器概览”打开独立快照窗口，按服务器、内存、连接和统计四组显示16个选定INFO字段。仅显式打开/刷新时读取，支持取消/关闭；精确保留整数、字节/秒/次数单位，未报告与0分开。关闭恢复原Key/详情位置；采样时间来自本机，无持续轮询或图表。
-9. 状态栏“慢日志快照”手动读取最近日志，数量最多100条；当前可见日志ID、精确Unix秒、执行微秒、命令名和已记录参数数。本机日期、参数字节摘要及可用原始参数数虽已生成，但被现有表格样式隐藏，显示缺口见功能清单。所有参数正文与客户端地址/名称都隐藏。明确区分空、完整范围、更多、权限与不可用；数量草稿不触发读取，不提供清空/重置或阈值配置。
-10. 状态栏“客户端连接快照”手动读取选定CLIENT LIST字段，主表显示ID、地址、名称、DB、时长与最后命令；点击地址查看ACL用户、标志、缓冲字节和订阅计数，不额外访问Redis。最多显示200条，显示本次返回记录数及完整/截断状态，缺失与空名称分开。整帧接收上限1MiB，另设256KiB解释预算，超限拒绝整个快照；不提供踢连接、暂停或配置，也不把地址写入常规日志。
-11. 数据/元信息页签右侧为“自动刷新图标开关＋5s下拉”，默认关闭，可选1/5/10/30秒；开启只改变按下态，不新增状态文字行。“最近读取”时钟按需展开成功时间和停止原因。上一轮完成后再等待，不叠加请求；沿用已提交范围，草稿不提交。游标集合重读当前查询首个有界页，后续页由表格底部可见触发；曲线不主动追加历史，Bloom只刷新统计。切换Key/DB/会话/解释方式、隐藏、取消或失败即停止；恢复可见或手动重连不自动开启，开关与计时器不保存。手动刷新箭头/忙态/取消与范围筛选入口就近呈现；List/Set/ZSet/String/Bitmap/GEO/TimeSeries的范围、JSON路径和Bloom查询按需展开，提交条件与草稿分开，数据区只保留当前范围、数量和真实部分状态。
-12. TimeSeries 可在表格和曲线之间切换，只使用同一批已读样本，不查询更多历史。曲线最多取读取顺序前512点，再按时间升序绘制；显示实际绘制范围与未绘制数，其余样本仍在表格。点击数据点或用左右/Home/End查看原始Unix毫秒和值；坐标近似，UTC只作范围内的辅助日期，超Date范围保留原始时间。重复或自动刷新沿用曲线模式并替换旧点；本地表格/曲线切换属于显示格式，不更换读取源。
-13. Key自动扫描最多5000条/2MiB、1000页或60秒；集合追加沿用5000行/2MiB并最多1000页。达到边界明确显示部分结果，请缩小MATCH/范围后刷新，不把部分数据标记完成。Redis数据会变化，DB总数/分组/范围均不是事务快照。取消表示停止等待，Redis可能仍在执行或回复排空。超时、队列繁忙或断线时，按提示等待并刷新状态；已断开则重输密码、手动重连，再缩小范围重试。关闭侧栏释放界面请求；显式断开/会话销毁/Host 退出释放所属连接，退出前可点断开。
-
-扩展查看要求目标 Redis 实际提供相应模块/命令；权限不足、未安装模块、类型变化和 Key 过期会显示对应状态。当前单机路径不包含 Sentinel、Cluster 或内置 SSH 隧道。生产环境可使用专门的只读 ACL 用户；本项目不会自动修改 Redis 配置或用户权限。
-
-工作区锁图标标识只读，插件信息入口查看宿主基线/Host状态；Host就绪不代表Redis已连接。连接测试的通过/失败在原按钮显示，改变草稿清除旧结果，测试通过仍需点击“连接”。密码和TLS说明只在字段旁保留一次；正常底栏用连接图标、诊断入口与按需状态时间表达。三个诊断仍为显式快照，数量/部分状态靠近内容，采样时间在刷新旁按需展开。
-
-## 复现验收
-
-`pnpm check` 运行严格类型、构建与测试。真实 Redis/原生浏览器脚本位于 `scripts/smoke-*.mjs`，必须显式指定自建夹具后端、固定 CLI 和浏览器路径；运行方法、环境版本、只读数据证据及实际预算见 `docs/verification/21-release-verification.md`。验收使用的写入/删除/断线操作仅属于隔离夹具，不是插件能力。
-
-## 任务执行
-
-正式任务已写入 `.scratch/redis-viewer/issues/`，一票一文件；使用 `Blocked by` 表示实际前置。优先做已解除阻塞的 P0 任务，不把编号误当作唯一串行顺序。
-
-后续按[开发基线要求](E:/项目demo/dsh-redis/docs/DEVELOPMENT_BASELINE.md)核对指定 rc.2、对应源码/SDK和产物，再进行后续维护与受影响验收；P2仍为候选。
-
-当前进度及证据见正式任务索引和 `docs/verification/`。历史报告保留各自版本与检查范围；只有实际执行并通过的项目才计入对应验收，原 29 票全部完成前不宣称完整项目已完成。
+`pnpm check` 覆盖严格类型、构建和单元回归。真实 Redis 与原生 DSH 专项使用 `scripts/smoke-*.mjs`，工具路径和实际结果见本次验收文档；历史29票、12类型和318项回归的报告只对应当时版本。

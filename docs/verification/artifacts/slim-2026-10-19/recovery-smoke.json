@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-18T18:01:39.779Z",
+  "checks": [
+    "actual binary GETRANGE cancellation returns promptly while its bounded reply drains; same-session successor waits, receives its own value, and B remains readable on an independent socket",
+    "real transport admits one active plus 15 queued commands, rejects the seventeenth as busy, skips all cancelled queue entries and remains reusable without closing B",
+    "an explicit short queued deadline expires before dispatch on a real transport, is never sent later, and its socket and other sessions recover; production ten-second deadline is tested separately",
+    "real SELECT advances generation before dispatch, discards the old active value and queued old-target command, then reads only the confirmed DB while B stays in DB0",
+    "actual production ten-second total deadline closes only stalled A, keeps B readable, and explicit reconnect advances generation with handshake only and no replay of old reads",
+    "cancelling SELECT after the real server changed DB closes its uncertain owned socket; explicit reconnect starts DB0 and never disrupts B",
+    "actual proxy TCP EOF fails active and queued A reads without reconnect/replay; manual generation replacement reads fresh data and B remains connected",
+    "all production commands remain fixed reads/lifecycle operations; binary and maximum-key identities, source serialized bytes, absolute expiry and monitored data-write counts are unchanged"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "50a6ce5a-94f0-480f-8911-b345a8d271cf",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "cancelObservedMs": 0,
+  "queueDrainFirstResult": {
+    "state": "failed",
+    "error": "busy"
+  },
+  "productionTimeoutMs": 10044,
+  "commandCounts": {
+    "AUTH": 6,
+    "PING": 6,
+    "TYPE": 36,
+    "PTTL": 34,
+    "STRLEN": 34,
+    "GETRANGE": 20,
+    "SELECT": 3
+  },
+  "proxyErrors": [
+    "ECONNRESET"
+  ],
+  "finishedAt": "2026-10-18T18:01:55.983Z"
+}

@@ -96,7 +96,7 @@ export function ConnectionForm(props: Props) {
           </details>
           <div className="redis-actions redis-connect-actions"><button type="submit" disabled={connected} className={'redis-primary-button' + (operation === 'connect' ? ' redis-spinning' : '')} aria-busy={operation === 'connect'}><Icon name={operation === 'connect' ? 'refresh' : 'database'} />{t('connection.connect')}</button></div>
         </fieldset>
-        {operation === 'connect' && <button type="button" onClick={() => { cancelPending(); setError('cancelled') }}>{t('keys.cancel')}</button>}
+        {operation === 'connect' && <button type="button" onClick={() => { cancelPending(); setError('cancelled') }}>{t('ui.cancel')}</button>}
       </form>
       {error !== null && <p className="redis-error" role="alert">{t(`connection.error.${error}`)}</p>}
     </ProfileChooser>

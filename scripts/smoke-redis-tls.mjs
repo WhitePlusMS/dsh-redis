@@ -9,6 +9,11 @@ import { until, withRedisFixture } from './redis-fixture.mjs'
 const report = { startedAt: new Date().toISOString(), checks: [], fixtures: [], passed: false }
 const secrets = new Set()
 const signal = () => new AbortController().signal
+async function connectAndClose(service, settings, requestSignal) {
+  const view = await service.connect('tls-probe', settings, requestSignal)
+  if (view.state === 'connected') service.disconnect('tls-probe', { id: view.id, generation: view.generation })
+  return { state: view.state, error: view.error }
+}
 
 /** A fresh Node process loads its default trust store before opening the real client. */
 async function defaultTrust(settings, caFile) {
@@ -16,7 +21,7 @@ async function defaultTrust(settings, caFile) {
     import {RedisConnections} from './lib/host/connection-service.js';
     let input='';for await(const chunk of process.stdin)input+=chunk;
     const service=new RedisConnections();
-    try{console.log(JSON.stringify(await service.test(JSON.parse(input),new AbortController().signal)));}
+    try{const view=await service.connect('default-trust',JSON.parse(input),new AbortController().signal);console.log(JSON.stringify({state:view.state,error:view.error}));}
     finally{service.dispose();}
   `
   const child = spawn(process.execPath, ['--input-type=module', '-e', code], {
@@ -30,7 +35,7 @@ async function defaultTrust(settings, caFile) {
   child.stderr.resume()
   child.stdin.on('error', () => undefined)
   child.stdin.end(JSON.stringify(settings))
-  try { assert.equal(await closed, 0, 'Default trust test process must exit cleanly'); return JSON.parse(output) }
+  try { assert.equal(await closed, 0, 'Default trust test process must exit cleanly'); return JSON.parse(output.trim().split('\n').at(-1)) }
   finally { clearTimeout(timer); if (child.exitCode === null && child.signalCode === null) { child.kill(); await closed } }
 }
 
@@ -40,7 +45,7 @@ try {
     const service = new RedisConnections()
     const baseline = await clients()
     try {
-      assert.deepEqual(await service.test(settings, signal()), { outcome: 'passed', error: null })
+      assert.deepEqual(await connectAndClose(service, settings, signal()), { state: 'connected', error: null })
       await until(async () => await clients() === baseline, 'verified TLS test socket closes')
       report.checks.push('trusted private CA chain and IP subjectAltName accepted; test socket released')
       const connected = await service.connect('tls', settings, signal())
@@ -53,11 +58,11 @@ try {
       await until(async () => await clients() === baseline, 'TLS disconnect closes its socket')
       report.checks.push('persistent TLS connect, public TLS marker and manual disconnect without credentials')
       for (const caPem of [wrongCaPem, '', 'not a PEM certificate']) {
-        assert.deepEqual(await service.test({ ...settings, tls: { caPem } }, signal()), { outcome: 'failed', error: 'tls-certificate' })
+        assert.deepEqual(await connectAndClose(service, { ...settings, tls: { caPem } }, signal()), { state: 'error', error: 'tls-certificate' })
         await until(async () => await clients() === baseline, 'failed CA handshake does not retain a client')
       }
       report.checks.push('wrong, untrusted and malformed CA fail closed with certificate error; no sockets remain')
-      assert.deepEqual(await defaultTrust({ ...settings, tls: { caPem: '' } }, resolve(certDirectory, 'ca.pem')), { outcome: 'passed', error: null })
+      assert.deepEqual(await defaultTrust({ ...settings, tls: { caPem: '' } }, resolve(certDirectory, 'ca.pem')), { state: 'connected', error: null })
       await until(async () => await clients() === baseline, 'default trust process releases its client')
       report.checks.push('empty CA uses Node default trust store, including NODE_EXTRA_CA_CERTS; no verification bypass')
     } finally { service.dispose() }
@@ -66,7 +71,7 @@ try {
     report.fixtures.push(metadata); secrets.add(settings.password)
     const service = new RedisConnections()
     try {
-      assert.deepEqual(await service.test(settings, signal()), { outcome: 'failed', error: 'tls-hostname' })
+      assert.deepEqual(await connectAndClose(service, settings, signal()), { state: 'error', error: 'tls-hostname' })
       const failed = await service.connect('mismatch', settings, signal())
       assert.equal(failed.state, 'error'); assert.equal(failed.error, 'tls-hostname')
       await until(async () => await clients() === 1, 'mismatched identity leaves only the fixture administrator')

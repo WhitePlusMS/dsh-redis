@@ -1,5 +1,6 @@
 export const NS = 'redis-viewer'
 export const zh = {
+  'ui.cancel': '取消',
   'value.error.base64': '无法解析读取的数据，请重新读取。',
   'ui.pluginInfo': '插件信息',
   'auto.off': '自动刷新已关闭',
@@ -175,7 +176,7 @@ export const zh = {
   'value.partial': '分段预览（非完整值）',
   'value.context': '文本包含用于补全跨界字符的窗口外字节：',
   'value.state.missing': 'Key 已不存在或已过期。',
-  'value.state.unsupported': '当前类型不能按 String 查看。',
+  'value.state.unsupported': '当前类型暂不支持查看。',
   'value.state.changed': '读取期间类型或长度发生变化，请刷新。',
   'value.state.failed': '读取失败，请重试。',
   'value.format.text': 'Text',
@@ -255,6 +256,7 @@ export const zh = {
   'baseline': 'DSH 0.2.0-rc.2',
 } as const
 export const en: Record<keyof typeof zh, string> = {
+  'ui.cancel': 'Cancel',
   'value.error.base64': 'Cannot decode the received bytes. Read the value again.',
   'ui.pluginInfo': 'Plugin information',
   'auto.off': 'Auto refresh off',
@@ -430,7 +432,7 @@ export const en: Record<keyof typeof zh, string> = {
   'value.partial': 'Partial byte preview (not the whole value)',
   'value.context': 'Text includes outside-window bytes completing boundary characters:',
   'value.state.missing': 'The key no longer exists or has expired.',
-  'value.state.unsupported': 'This type cannot be viewed as a String.',
+  'value.state.unsupported': 'This data type is not supported by this viewer.',
   'value.state.changed': 'The type or length changed during reading. Refresh the key.',
   'value.state.failed': 'Read failed. Retry the operation.',
   'value.format.text': 'Text',

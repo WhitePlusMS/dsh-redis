@@ -68,7 +68,7 @@ export async function smokeReleaseBoundary({ page, browser, sessionId, report })
   assert.equal(runtime.pluginUsesSameReact, true)
   report.runtime = { ...runtime, chromeVersion: browser.version(), nodeVersion: process.versions.node }
   report.checks.push('actual native plugin require(react) is the identical Web seed object returned by the real module system; React.version=18.3.1')
-  const methods = ['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readClients', 'readDatabases', 'readOverview', 'loadBrowsingState', 'saveBrowsingState']
+  const methods = ['status', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases']
   const endpoint = '**/api/redisViewer/*'
   let value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1 }
   const seen = []
@@ -88,14 +88,14 @@ export async function smokeReleaseBoundary({ page, browser, sessionId, report })
     value = null
     for (const method of methods) assert.deepEqual(await invoke(method), { ok: false, code: 'gateway/internal' }, method)
     assert.deepEqual(seen.slice(1), methods.map(method => 'redisViewer/' + method))
-    value = { outcome: 'passed', error: 'auth' }
-    assert.deepEqual(await invoke('testConnection'), { ok: false, code: 'gateway/internal' })
+    value = { state: 'connected', id: null, generation: 0, db: 0, target: null, error: 'auth' }
+    assert.deepEqual(await invoke('connect'), { ok: false, code: 'gateway/internal' })
     value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1, password: 'forbidden-response-field' }
     assert.deepEqual(await invoke('status'), { ok: false, code: 'gateway/internal' })
     value = { state: 'ready', readOnly: true, hostVersion: '0.2.0-rc.2', protocolVersion: 1 }
     assert.deepEqual(await invoke('status'), { ok: true, value })
-    report.decoderChecks = { methods, malformedRejected: methods.length, contradictoryConnectionTestRejected: true, extraSecretFieldRejected: true, healthyControlBeforeAndAfter: true, hostDispatches: 0 }
-    report.checks.push('real rc.2 browser Remote rejects malformed successful HTTP payloads for all 27 methods as gateway/internal, rejects contradictory test/extra secret fields, and recovers to valid status; test routes make zero Host dispatches')
+    report.decoderChecks = { methods, malformedRejected: methods.length, contradictoryConnectionRejected: true, extraSecretFieldRejected: true, healthyControlBeforeAndAfter: true, hostDispatches: 0 }
+    report.checks.push('real rc.2 browser Remote rejects malformed successful payloads for all 16 methods, contradictory connection and extra secret fields, and recovers; decoder routes make zero Host dispatches')
   } finally {
     await page.unroute(endpoint, handler)
     await page.evaluate(() => window.__redisReleaseProbe?.restore())

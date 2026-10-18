@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-18T18:00:17.114Z",
+  "checks": [
+    "actual binary/empty field and value bytes, precise TTL and 64 KiB prefix with UTF-8 boundary context",
+    "actual incremental HSCAN and MATCH complete without HGET/HGETALL or writes; serialized bytes and absolute expiry unchanged",
+    "minimal read ACL succeeds; denied HSCAN is permission rather than missing and HSET remains forbidden",
+    "65,537-byte field and a sub-1-MiB RESP page amplified above the JSON budget are refused whole on a healthy socket; 2 MiB value is rejected by bounded reception and closes only its own socket; explicit reconnect recovers",
+    "actual DB change rejects old generation and isolates DB1 without stale fields",
+    "admin changes between actual HSCAN and metadata replies discard type/length/deletion races without returning old cells"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "4b9f56ab-077c-4b9e-864e-c19215616d7a",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T18:00:24.668Z"
+}

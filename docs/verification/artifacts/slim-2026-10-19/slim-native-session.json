@@ -1,0 +1,52 @@
+{
+  "startedAt": "2026-10-18T18:02:52.702Z",
+  "passed": true,
+  "processStopped": true,
+  "fixtureStopped": true,
+  "fixture": {
+    "backend": "wsl-image",
+    "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+    "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+    "owner": "ef9da6ea-e54a-45df-b886-cbb781a4c1e1",
+    "container": null,
+    "redisVersion": "8.2.6",
+    "moduleCommands": [
+      "JSON.GET",
+      "TS.RANGE",
+      "BF.INFO"
+    ],
+    "tls": false,
+    "stopped": true,
+    "certificatesRemoved": true,
+    "fixtureRemoved": true
+  },
+  "readOnly": {
+    "dumpKeysUnchanged": 6,
+    "streamGroupsUnchanged": true,
+    "commands": [
+      "AUTH",
+      "CONFIG",
+      "DBSIZE",
+      "GETRANGE",
+      "HLEN",
+      "HSCAN",
+      "INFO",
+      "LLEN",
+      "LRANGE",
+      "PING",
+      "PTTL",
+      "SCAN",
+      "SCARD",
+      "SELECT",
+      "SSCAN",
+      "STRLEN",
+      "TYPE",
+      "XLEN",
+      "XRANGE",
+      "ZCARD",
+      "ZRANGE"
+    ],
+    "proxyErrors": []
+  },
+  "finishedAt": "2026-10-18T18:15:04.009Z"
+}

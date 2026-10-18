@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-18T18:00:40.945Z",
+  "checks": [
+    "actual binary key, empty/binary/full 64 KiB members, precise TTL and complete byte identities",
+    "actual multi-page SSCAN/MATCH finishes without SMEMBERS or writes; serialized bytes and absolute expiry unchanged",
+    "minimal Set read ACL succeeds; SSCAN refusal is permission, and SADD stays forbidden",
+    "65,537-byte member and JSON-amplified sub-1-MiB RESP page refuse whole without truncated identities; 2 MiB member closes only its own bounded socket; explicit reconnect recovers",
+    "actual DB generation switch refuses old Set requests and isolates DB1",
+    "admin cardinality/type/deletion changes between actual SSCAN and metadata replies discard old members"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "46b6def7-9b9f-428e-a716-7807b50946a5",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T18:00:46.403Z"
+}

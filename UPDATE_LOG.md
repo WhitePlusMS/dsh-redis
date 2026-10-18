@@ -1486,3 +1486,13 @@
 - `locales.ts`清理退出功能的中英文键，保留普通JSON和原始字节解析；编译发现字节解析错误仍在使用，已保留并改为准确简短提示。`styles.ts`删除专用视图、快照、URI/导入等失效样式，保留共享连接dialog，补分组/TLS展开和删除确认样式；`tsconfig.client.json`删去不存在的旧文件输入。逐轮编译优先，随后验证真实浏览器bundle与隔离界面。
 
 - 小目标4三层严格类型与esbuild实际浏览器产物通过19文件187项回归；bundle加载测试确认仅使用宿主react/react-jsx外部依赖，16方法严格decode和注册/卸载仍正常。导航源码未改，退出功能文案/专用样式已清；实际原生深浅与窄栏检查待后续隔离验收。
+
+- 验证与说明小目标：README与`docs/FEATURE_INVENTORY.md`改为六类型/四格式/8模块41项当前清单，逐字段说明连接窗口、保存不丢密码、已连接资料管理及刷新连续性；旧56项完整清单归档到`docs/references/FEATURE_INVENTORY_4786a61.md`，操作审查文首注明历史基线并改指历史清单，旧证据不冒充当前通过。
+- 新增`docs/verification/slim-viewer-2026-10-19.md`区分已完成类型/187回归与待执行的隔离及安装。Host连接/TLS smoke改用唯一connect路径，成功后显式断开，不保留test API的兼容壳；release-boundary改为16方法及ConnectionView反例。原生旧入口正在收敛到六类型，完成后才执行。
+
+- 原生专项发现连接/删除资料的取消按钮复用读取文案，已在ConnectionForm/ProfileChooser改用独立ui.cancel中英文；不支持模块类型提示改为当前类型暂不支持，避免误说只能按String查看。仅修正场景表达，不改变取消或连接行为；立即三层类型检查。
+
+- 本轮真实Host专项11套73组通过：连接8/TLS5/String7/Hash6/List6/Set6/ZSet7/Stream7/Key8/帧预算5/恢复8；所有所属Redis/TCP夹具已清理。候选7b71a067…经prepack三层类型+187回归；隔离安装67发布/56lib文件逐字节匹配。
+- `scripts/smoke-dsh.mjs`由原12类型大入口收敛成自有DSH/Redis原生验收夹具，仅提供合成种子和loopback hold/verify/stop，UI一律由CUA操作；删除已失效的smoke-auto-refresh/sidebar-layout/resp-workbench三入口，保留其历史报告。旧release-boundary辅助脚本只更新16方法语法，本轮没有执行该headless驱动，不冒充原生decoder专项。
+- CUA实际通过连接错误/保存后直接连接、草稿与实际连接隔离、关闭等待后socket基线、已连接资料管理/删除取消；String正常刷新查找折叠保留，长hold等待中128px滚动保留、超时后正确停止并手动重连。五集合均加载200行选第106行，定时刷新后行数/选中身份/表格滚动/查找词/折叠保持，成功时间更新；Stream重复字段未合并。
+- 手动DB1/DB0、六视图约464px（实际463）33px工具带无整体溢出、原生明暗主题及1279px Hash全宽均检查；保留Phosphor青紫橘、操作为官方Lucide。六DUMP与Stream消费组不变，代理未见写命令/KEYS或协议错误；隔离DSH/代理/WSL已停止清理。`docs/verification/slim-viewer-2026-10-19.md`与实施状态同步，并归档脱敏合成截图/JSON；最终提示文案和日常安装仍待最终包核对。

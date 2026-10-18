@@ -84,7 +84,7 @@ export function ProfileChooser(props: Props) {
             <button type="button" disabled={selectedId === null} onClick={() => setConfirmRemove(true)}>{t('profile.remove')}</button>
             <button type="button" className={'redis-icon-button' + (busy ? ' redis-spinning' : '')} title={t('profile.reload')} aria-label={t('profile.reload')} onClick={() => { void run(props.listProfiles) }}><Icon name="refresh" /></button>
           </div>
-          {confirmRemove && selectedId !== null && <div className="redis-profile-confirm"><strong>{t('profile.remove')} · {profiles.find(value => value.id === selectedId)?.name}</strong><div className="redis-actions"><button type="button" onClick={() => { const id = selectedId; void run(signal => props.removeProfile({ id }, signal), true) }}>{t('profile.remove')}</button><button type="button" onClick={() => setConfirmRemove(false)}>{t('keys.cancel')}</button></div></div>}
+          {confirmRemove && selectedId !== null && <div className="redis-profile-confirm"><strong>{t('profile.remove')} · {profiles.find(value => value.id === selectedId)?.name}</strong><div className="redis-actions"><button type="button" onClick={() => { const id = selectedId; void run(signal => props.removeProfile({ id }, signal), true) }}>{t('profile.remove')}</button><button type="button" onClick={() => setConfirmRemove(false)}>{t('ui.cancel')}</button></div></div>}
         </fieldset>
         {error !== null && <p className="redis-error" role="alert">{t(error)}</p>}
       </aside>

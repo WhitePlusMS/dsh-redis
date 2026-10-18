@@ -1,0 +1,51 @@
+{
+  "startedAt": "2026-10-18T17:57:28.116Z",
+  "checks": [
+    "password authentication through connect and explicit socket cleanup",
+    "wrong password classification and failed socket cleanup",
+    "named ACL authentication, including an explicitly empty password",
+    "persistent connect, local status, manual disconnect and no reconnect",
+    "session isolation, disposal and server-side close without reconnect",
+    "server without a password",
+    "real hanging socket timeout and explicit cancellation release resources",
+    "unreachable loopback endpoint is a network failure"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "0f1f0d9c-d7cb-44da-81f5-c5d81c44880c",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    },
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "31758da9-635d-4c51-be91-d7f40fe1c381",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T17:57:52.736Z"
+}

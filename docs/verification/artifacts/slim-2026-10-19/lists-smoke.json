@@ -1,0 +1,32 @@
+{
+  "startedAt": "2026-10-18T18:00:30.192Z",
+  "checks": [
+    "actual binary key, duplicate zero-based positions, binary/empty elements, precise TTL and bounded long-value prefix",
+    "actual inclusive intervals continue 0/100/200 through the final index; signed-64-bit EOF is empty; serialized data/expiry and write counters unchanged",
+    "minimal List read ACL works and LRANGE refusal is permission rather than missing; LPOP remains forbidden",
+    "JSON-amplified interval is refused whole on a healthy socket; 2 MiB element is rejected before unbounded reception and closes only its own socket",
+    "actual DB generation switch refuses old List intervals and isolates DB1",
+    "admin inserts/type changes/deletes between actual LRANGE and metadata replies discard the old interval"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "f9f4093d-654c-49b7-bb2c-7b1bea07bfa4",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T18:00:35.420Z"
+}

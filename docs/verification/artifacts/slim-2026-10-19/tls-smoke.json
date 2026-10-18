@@ -1,0 +1,48 @@
+{
+  "startedAt": "2026-10-18T17:57:53.271Z",
+  "checks": [
+    "trusted private CA chain and IP subjectAltName accepted; test socket released",
+    "persistent TLS connect, public TLS marker and manual disconnect without credentials",
+    "wrong, untrusted and malformed CA fail closed with certificate error; no sockets remain",
+    "empty CA uses Node default trust store, including NODE_EXTRA_CA_CERTS; no verification bypass",
+    "trusted CA with a different DNS identity is rejected for the IP target; no retained socket"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "fe267a1e-2b04-409f-9770-4d93f4d32f70",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    },
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "ea7deeb5-30a2-4188-94b1-bc55de7a0f60",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": true,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T17:58:05.652Z"
+}

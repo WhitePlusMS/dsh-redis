@@ -1,0 +1,120 @@
+{
+  "checkedAt": "2026-10-18T18:14:06.187Z",
+  "packageSha256": "7b71a067a0924333402a7e178c1138f55731217ee52d299cf446c0179c4cdc90",
+  "method": "CUA actual installed isolated DSH",
+  "connection": {
+    "wrongAuth": true,
+    "saveThenConnectWithoutRetypingPassword": true,
+    "profileReloadPreservesDraft": true,
+    "explicitProfileSelection": true,
+    "closePendingReturnsClientsToBaseline": true,
+    "connectedProfileEditing": true,
+    "deleteCancel": true,
+    "statusDoesNotOverwriteDraft": true,
+    "passwordAbsentFromSavedFile": true
+  },
+  "string": {
+    "normalReadSampleChanged": true,
+    "searchRetained": true,
+    "foldRetained": true,
+    "heldReadPreviewScroll": 128,
+    "heldReadSearchRetained": true,
+    "timeoutStopsAuto": true,
+    "manualReconnect": true
+  },
+  "hash": {
+    "rowsBefore": 200,
+    "rowsAfter": 200,
+    "selectionSame": true,
+    "scrollSame": true,
+    "searchSame": true,
+    "foldSame": true,
+    "actualRefresh": true
+  },
+  "collections": [
+    {
+      "type": "list",
+      "rows": 200,
+      "selectionSame": true,
+      "scrollSame": true,
+      "searchSame": true,
+      "foldSame": true,
+      "actualRefresh": true,
+      "errors": 0
+    },
+    {
+      "type": "set",
+      "rows": 200,
+      "selectionSame": true,
+      "scrollSame": true,
+      "searchSame": true,
+      "foldSame": true,
+      "actualRefresh": true,
+      "errors": 0
+    },
+    {
+      "type": "zset",
+      "rows": 200,
+      "selectionSame": true,
+      "scrollSame": true,
+      "searchSame": true,
+      "foldSame": true,
+      "actualRefresh": true,
+      "errors": 0
+    },
+    {
+      "type": "stream",
+      "rows": 200,
+      "selectionSame": true,
+      "scrollSame": true,
+      "searchSame": true,
+      "foldSame": true,
+      "actualRefresh": true,
+      "errors": 0
+    }
+  ],
+  "narrow": [
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "hash",
+      "width": 463
+    },
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "list",
+      "width": 463
+    },
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "set",
+      "width": 463
+    },
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "zset",
+      "width": 463
+    },
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "stream",
+      "width": 463
+    },
+    {
+      "overflow": false,
+      "toolbar": 33,
+      "type": "string",
+      "width": 463
+    }
+  ],
+  "notes": [
+    "Light and dark screenshots use the native host appearance setting",
+    "Three diagnostic/module controls and decode options absent",
+    "No headless Playwright UI driver was executed",
+    "CUA was used for all browser actions"
+  ]
+}

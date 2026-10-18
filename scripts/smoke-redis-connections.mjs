@@ -11,6 +11,12 @@ const report = { startedAt: new Date().toISOString(), checks: [], fixtures: [], 
 const secrets = new Set()
 const signal = () => new AbortController().signal
 const target = view => { assert(view.id !== null); return { id: view.id, generation: view.generation } }
+// Exercise the product's sole connection path and explicitly release successes.
+async function connectAndClose(service, settings, requestSignal) {
+  const view = await service.connect('probe', settings, requestSignal)
+  if (view.state === 'connected') service.disconnect('probe', target(view))
+  return { state: view.state, error: view.error }
+}
 try {
   await withRedisFixture(async ({ settings, admin, clients, metadata }) => {
     report.fixtures.push(metadata); secrets.add(settings.password)
@@ -18,21 +24,21 @@ try {
     assert.equal(baseline, 1)
     const service = new RedisConnections()
     try {
-      assert.deepEqual(await service.test(settings, signal()), { outcome: 'passed', error: null })
+      assert.deepEqual(await connectAndClose(service, settings, signal()), { state: 'connected', error: null })
       await until(async () => await clients() === baseline, 'test connection closes its socket')
-      report.checks.push('password authentication and temporary test socket cleanup')
+      report.checks.push('password authentication through connect and explicit socket cleanup')
       const invalid = { ...settings, password: 'definitely-wrong-fixture-password' }
-      assert.deepEqual(await service.test(invalid, signal()), { outcome: 'failed', error: 'auth' })
+      assert.deepEqual(await connectAndClose(service, invalid, signal()), { state: 'error', error: 'auth' })
       const failed = await service.connect('bad', invalid, signal())
       assert.equal(failed.error, 'auth')
       assert(!JSON.stringify(failed).includes(invalid.password))
       await until(async () => await clients() === baseline, 'failed authentication closes its socket')
       report.checks.push('wrong password classification and failed socket cleanup')
       await admin.sendCommand(['ACL', 'SETUSER', 'viewer-fixture', 'reset', 'on', '>' + settings.password, '~*', '+@connection'])
-      assert.equal((await service.test({ ...settings, username: 'viewer-fixture' }, signal())).outcome, 'passed')
+      assert.equal((await connectAndClose(service, { ...settings, username: 'viewer-fixture' }, signal())).state, 'connected')
       await until(async () => await clients() === baseline, 'ACL test cleanup')
       await admin.sendCommand(['ACL', 'SETUSER', 'viewer-nopass', 'reset', 'on', 'nopass', '~*', '+@connection'])
-      assert.equal((await service.test({ ...settings, username: 'viewer-nopass', password: '' }, signal())).outcome, 'passed')
+      assert.equal((await connectAndClose(service, { ...settings, username: 'viewer-nopass', password: '' }, signal())).state, 'connected')
       await until(async () => await clients() === baseline, 'empty-password ACL cleanup')
       report.checks.push('named ACL authentication, including an explicitly empty password')
       const connected = await service.connect('a', settings, signal())
@@ -63,7 +69,7 @@ try {
   await withRedisFixture(async ({ settings, clients, metadata }) => {
     report.fixtures.push(metadata)
     const service = new RedisConnections()
-    try { assert.equal((await service.test(settings, signal())).outcome, 'passed') }
+    try { assert.equal((await connectAndClose(service, settings, signal())).state, 'connected') }
     finally { service.dispose() }
     await until(async () => await clients() === 1, 'no-password fixture cleanup')
     report.checks.push('server without a password')
@@ -75,11 +81,11 @@ try {
   const blackhole = { host: '127.0.0.1', port: address.port, username: '', password: '', tls: null }
   const service = new RedisConnections()
   try {
-    const timed = await service.test(blackhole, signal())
+    const timed = await connectAndClose(service, blackhole, signal())
     assert.equal(timed.error, 'timeout')
     await until(() => sockets.size === 0, 'timeout closes the hanging handshake')
     const controller = new AbortController()
-    const waiting = service.test(blackhole, controller.signal)
+    const waiting = connectAndClose(service, blackhole, controller.signal)
     const timer = setTimeout(() => controller.abort(), 100)
     try { assert.equal((await waiting).error, 'cancelled') } finally { clearTimeout(timer) }
     await until(() => sockets.size === 0, 'cancel closes the hanging handshake')
@@ -89,7 +95,7 @@ try {
     for (const socket of sockets) socket.destroy()
     await new Promise(resolveClose => server.close(resolveClose))
   }
-  assert.equal((await service.test(blackhole, signal())).error, 'network')
+  assert.equal((await connectAndClose(service, blackhole, signal())).error, 'network')
   report.checks.push('unreachable loopback endpoint is a network failure')
   assert(report.fixtures.every(fixture => fixture.stopped))
   report.passed = true

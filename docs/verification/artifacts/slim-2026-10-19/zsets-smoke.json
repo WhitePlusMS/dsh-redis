@@ -1,0 +1,33 @@
+{
+  "startedAt": "2026-10-18T18:00:51.925Z",
+  "checks": [
+    "actual binary key/member and empty member, exact raw WITHSCORES strings including infinities/high precision, ascending zero-based rank and precise TTL",
+    "actual rank intervals 0/100/200 and signed-64-bit EOF differ from unordered multi-page MATCH scans; writes, serialized bytes and absolute expiry unchanged",
+    "actual rank-mode read invalidates a prior scan continuation instead of treating cursor as an offset",
+    "minimal ACL permits both modes, refuses ZSCAN distinctly while rank still works, and forbids ZADD",
+    "full 64 KiB identities survive; 65,537-byte/JSON-amplified rank and scan pages refuse whole on a healthy socket; 2 MiB member closes only its own bounded socket and manual reconnect recovers",
+    "actual DB generation changes reject old rank requests and isolate DB1",
+    "admin cardinality/type/deletion changes between actual ZRANGE or ZSCAN and metadata replies discard old rows"
+  ],
+  "fixtures": [
+    {
+      "backend": "wsl-image",
+      "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+      "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+      "owner": "5dc88af4-0bfd-4599-9df2-74ed8103e05e",
+      "container": null,
+      "redisVersion": "8.2.6",
+      "moduleCommands": [
+        "JSON.GET",
+        "TS.RANGE",
+        "BF.INFO"
+      ],
+      "tls": false,
+      "stopped": true,
+      "certificatesRemoved": true,
+      "fixtureRemoved": true
+    }
+  ],
+  "passed": true,
+  "finishedAt": "2026-10-18T18:00:57.242Z"
+}
