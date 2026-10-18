@@ -1,7 +1,12 @@
 import { NavigationIcon, type NavigationIconName } from './NavigationIcon.tsx'
 
-type IconName = NavigationIconName | 'clients' | 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'search' | 'filter' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'back' | 'focus' | 'restore'
+type IconName = NavigationIconName | 'clock' | 'pause' | 'check' | 'warning' | 'lock' | 'clients' | 'history' | 'add' | 'refresh' | 'disconnect' | 'close' | 'settings' | 'info' | 'copy' | 'tree' | 'list' | 'locate' | 'search' | 'filter' | 'collapse' | 'expand' | 'up' | 'down' | 'right' | 'back' | 'focus' | 'restore'
 const paths: Record<Exclude<IconName, NavigationIconName>, string> = {
+  clock: 'M10 3a7 7 0 1 0 7 7M10 6v4l3 2M13 3h4v4M17 3l-3 3',
+  pause: 'M6 5v10M14 5v10',
+  check: 'm4 10 4 4 8-8',
+  warning: 'm10 3 8 14H2ZM10 8v4M10 14h.01',
+  lock: 'M5 9h10v8H5ZM7 9V6a3 3 0 0 1 6 0v3M10 12v2',
   clients: 'M7 10a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM2 17v-2a5 5 0 0 1 10 0v2M14 4a3 3 0 0 1 0 6M14 12a5 5 0 0 1 4 5',
   history: 'M3 8a7 7 0 1 1 1 7M3 3v5h5M10 6v5l3 2',
   add: 'M10 4v12M4 10h12',

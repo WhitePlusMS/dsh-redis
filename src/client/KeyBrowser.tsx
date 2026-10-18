@@ -8,7 +8,7 @@ import { emptyKeyLoad, keyLoadPercent, loadKeysAutomatically } from './key-loadi
 import { NS } from './locales.ts'
 import { KeyDetails, type StringActions } from './KeyDetails.tsx'
 import { Icon } from './Icon.tsx'
-import { KeyAutoRefresh, RefreshVisibility } from './AutoRefresh.tsx'
+import { KeyAutoRefresh, RefreshControls, RefreshReadInfo, RefreshVisibility } from './AutoRefresh.tsx'
 import { KeyCatalog } from './KeyCatalog.tsx'
 import type { HashActions } from './HashView.tsx'
 import type { ListActions } from './ListView.tsx'
@@ -136,18 +136,19 @@ export function KeyBrowser(props: Props) {
       {(load.error !== null || catalogError !== null) && <p role="alert" className="redis-error">{t(`connection.error.${load.error ?? catalogError!}`)}</p>}
     </div>
     <div ref={detail} className="redis-key-detail" tabIndex={-1}>
-      {selected !== null ? <>
+      {selected !== null ? <KeyAutoRefresh key={selected.base64}>
         <div className="redis-inspector-heading"><Icon name="key" /><strong title={displayLabel(selected.label)}>{displayLabel(selected.label)}</strong><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>
-        <div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
+        <div className="redis-inspector-toolbar"><div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
           <button type="button" role="tab" aria-selected={detailTab === 'data'} onClick={() => setDetailTab('data')}>{t('ui.data')}</button>
           <button type="button" role="tab" aria-selected={detailTab === 'metadata'} onClick={() => setDetailTab('metadata')}>{t('ui.metadata')}</button>
-        </div>
+        </div>{opened && <RefreshControls t={t} />}</div>
+        {opened && <RefreshReadInfo t={t} />}
         {!opened && <><p>{t('session.restored')}</p><button type="button" disabled={selectingDb} onClick={() => setOpened(true)}>{t('session.readKey')}</button></>}
         <div className="redis-inspector" data-view={detailTab} role="tabpanel" aria-label={t(detailTab === 'data' ? 'ui.data' : 'ui.metadata')}>
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
-          {opened && <KeyAutoRefresh key={selected.base64} t={t}><KeyDetails {...props} target={target()} selected={selected} /></KeyAutoRefresh>}
+          {opened && <KeyDetails {...props} target={target()} selected={selected} />}
         </div>
-      </> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
+      </KeyAutoRefresh> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
     </div>
   </section>
 }

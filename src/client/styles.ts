@@ -126,15 +126,23 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-focus-button { margin-left:auto; flex-shrink:0; }
 .dsh-redis .redis-inspector-heading { display:flex; align-items:center; gap:6px; padding:6px 9px; min-height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-inspector-heading strong { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font:500 11px/1.4 Consolas,monospace; }
-.dsh-redis .redis-inspector-tabs { display:flex; gap:7px; padding:0 7px; height:31px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
+.dsh-redis .redis-inspector-toolbar { display:flex; align-items:center; justify-content:space-between; gap:4px; min-height:33px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; padding-right:4px; }
+.dsh-redis .redis-inspector-tabs { display:flex; gap:7px; padding:0 7px; height:31px; flex-shrink:0; }
 .dsh-redis .redis-inspector-tabs button { border:0; border-radius:0; border-bottom:2px solid transparent; padding:4px 9px; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-inspector-tabs [aria-selected=true] { color:var(--dsw-alias-label-primary); border-bottom-color:var(--dsw-alias-label-primary); }
-.dsh-redis .redis-auto-refresh { display:flex; align-items:center; flex-wrap:wrap; gap:3px; min-width:0; padding:4px 6px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; position:relative; }
-.dsh-redis .redis-auto-refresh > button { padding:3px 5px; }
-.dsh-redis .redis-auto-refresh [aria-pressed=true] { background:var(--redis-selected); }
-.dsh-redis .redis-auto-refresh select { width:auto; max-width:100%; min-height:25px; padding:2px; font-size:10px; }
-.dsh-redis .redis-auto-refresh > small { flex-basis:100%; font-size:9px; color:var(--dsw-alias-label-secondary); overflow-wrap:anywhere; }
-@container redis-sidebar (max-width:480px) { .dsh-redis .redis-auto-refresh > button > span { display:none; } }
+.dsh-redis .redis-reader-tools { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.dsh-redis .redis-auto-refresh { display:flex; align-items:stretch; border:1px solid var(--dsw-alias-border-l2); border-radius:4px; flex-shrink:0; }
+.dsh-redis .redis-auto-refresh > button { width:27px; min-height:25px; padding:3px; border:0; border-radius:3px 0 0 3px; }
+.dsh-redis .redis-auto-refresh [aria-pressed=true] { color:var(--redis-accent); background:var(--redis-selected); }
+.dsh-redis .redis-auto-refresh select { width:48px; min-height:25px; padding:2px; border:0; border-left:1px solid var(--dsw-alias-border-l2); border-radius:0 3px 3px 0; font:10px Consolas,monospace; }
+.dsh-redis .redis-auto-refresh[data-auto-refresh=on] { border-color:var(--redis-accent); }
+.dsh-redis .redis-auto-refresh[data-busy=true] > button .redis-icon, .dsh-redis .redis-spinning .redis-icon { animation:redis-spin 1.2s linear infinite; }
+@keyframes redis-spin { to { transform:rotate(360deg); } }
+@media (prefers-reduced-motion:reduce) { .dsh-redis .redis-auto-refresh[data-busy=true] > button .redis-icon, .dsh-redis .redis-spinning .redis-icon { animation:none; } }
+.dsh-redis .redis-sr-only { position:absolute !important; width:1px !important; height:1px !important; margin:-1px !important; padding:0 !important; overflow:hidden !important; clip-path:inset(50%); white-space:nowrap; border:0 !important; }
+.dsh-redis .redis-read-info { display:flex; align-items:center; flex-wrap:wrap; gap:4px 9px; padding:6px 8px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; font-size:10px; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-read-info > button { margin-left:auto; }
+.dsh-redis .redis-copy-button[data-copy-state=copied] { color:var(--redis-accent); }
 .dsh-redis .redis-inspector { flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; overflow:auto; overscroll-behavior:contain; }
 .dsh-redis .redis-key-identity { padding:9px; flex-shrink:0; }
 .dsh-redis .redis-details { position:relative; display:flex; flex-direction:column; flex:1; gap:6px; min-height:100%; min-width:0; padding:8px; overflow:auto; overscroll-behavior:contain; }

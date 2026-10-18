@@ -14,6 +14,7 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
   const preview = useMemo(() => previewValue(value, format), [value, format])
   const [copyState, setCopyState] = useState<'copied' | 'failed' | null>(null)
   const copySequence = useRef(0)
+  const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [searchOpen, setSearchOpen] = useState(false), [query, setQuery] = useState('')
   const [matchIndex, setMatchIndex] = useState(0), [scrollAttempt, setScrollAttempt] = useState(0)
   const [collapsed, setCollapsed] = useState<ReadonlySet<number>>(() => new Set())
@@ -24,7 +25,8 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
   const current = matches.ranges.length === 0 ? -1 : matchIndex % matches.ranges.length
   useEffect(() => {
     ++copySequence.current; setCopyState(null); setCollapsed(new Set()); setMatchIndex(0)
-    return () => { ++copySequence.current }
+    if (copyTimer.current !== null) clearTimeout(copyTimer.current)
+    return () => { ++copySequence.current; if (copyTimer.current !== null) clearTimeout(copyTimer.current) }
   }, [preview.text, format])
   useEffect(() => { if (searchOpen) searchInput.current?.focus() }, [searchOpen])
   useLayoutEffect(() => {
@@ -71,12 +73,18 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
         <button type="button" className="redis-icon-button" title={t('content.collapse')} aria-label={t('content.collapse')} onClick={() => setCollapsed(new Set(folds.blocks.filter(block => block.depth === 0).map(block => block.start)))}><Icon name="collapse" /></button>
         <button type="button" className="redis-icon-button" title={t('content.expand')} aria-label={t('content.expand')} onClick={() => setCollapsed(new Set())}><Icon name="expand" /></button>
       </>}
-      <button type="button" className="redis-icon-button redis-copy-button" title={heading === undefined ? t('ui.copy') : `${t('ui.copy')} · ${heading.label}`} aria-label={heading === undefined ? t('ui.copy') : `${t('ui.copy')} · ${heading.label}`} disabled={preview.error !== null} onClick={() => {
+      <button type="button" className="redis-icon-button redis-copy-button" data-copy-state={copyState ?? 'idle'} title={copyState === 'copied' ? t('ui.copied') : heading === undefined ? t('ui.copy') : `${t('ui.copy')} · ${heading.label}`} aria-label={heading === undefined ? t('ui.copy') : `${t('ui.copy')} · ${heading.label}`} disabled={preview.error !== null} onClick={() => {
         const current = ++copySequence.current
+        if (copyTimer.current !== null) clearTimeout(copyTimer.current)
+        setCopyState(null)
         if (navigator.clipboard === undefined) { setCopyState('failed'); return }
-        void navigator.clipboard.writeText(preview.text).then(() => { if (current === copySequence.current) setCopyState('copied') }).catch(() => { if (current === copySequence.current) setCopyState('failed') })
-      }}><Icon name="copy" /></button>
-      {copyState !== null && <small role="status">{t(copyState === 'copied' ? 'ui.copied' : 'ui.copyError')}</small>}
+        void navigator.clipboard.writeText(preview.text).then(() => {
+          if (current !== copySequence.current) return
+          setCopyState('copied')
+          copyTimer.current = setTimeout(() => { if (current === copySequence.current) setCopyState(null) }, 1600)
+        }).catch(() => { if (current === copySequence.current) setCopyState('failed') })
+      }}><Icon name={copyState === 'copied' ? 'check' : copyState === 'failed' ? 'warning' : 'copy'} /></button>
+      {copyState !== null && <small className={copyState === 'copied' ? 'redis-sr-only' : 'redis-error'} role="status">{t(copyState === 'copied' ? 'ui.copied' : 'ui.copyError')}</small>}
     </div>
     {searchOpen && <div className="redis-content-search" role="search" aria-label={t('content.find')}>
       <input ref={searchInput} name="loadedQuery" maxLength={256} value={query} aria-label={t('content.query')} placeholder={t('content.query')} spellCheck={false} onChange={event => { setQuery(event.target.value); setMatchIndex(0); setCollapsed(new Set()) }} />
