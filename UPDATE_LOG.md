@@ -1394,3 +1394,9 @@
 - Stream 范围/批量输入收纳到明确工具入口，草稿提交后读取并收起，方向选择、刷新和取消就近显示；消息表选中时继续正常触底读。`styles.ts` 增加四个独立区域及字段表局部滚动，`locales.ts` 添加对应中英文。立即重查三层严格类型，窄屏和原生操作随后验证。
 - Stream 首轮三层严格类型通过。确认全项目无调用后删除 `DetailPage.tsx`，`CollectionTable.tsx` 删除无调用 paused/隐藏恢复分支，所有集合保持可见表格的自身滚动；清理旧隐藏页/返回 CSS 及中英无调用 hint、身份和返回文案。Geo 仍使用的成员身份及 inline 预览样式保留；`KeyBrowser.tsx` 聚焦优先进入 Stream 值预览。再次立即严格类型检查后本地提交本小目标。
 - 清理后三层严格类型再次通过。`README.md` 更新四类型同屏流程、MATCH 草稿语义和查找状态；`HELP_UI_AUDIT.md` 记录本轮四场景/十组正文清理及剩余8 JSX/10功能场景。新增 `docs/references/RESP_DB_TOOLBAR_COMPARISON.md`，按固定源码列出截图七项、当前已提供的筛选/刷新、其余缺项与后续方案；明确 DB 列表实时更新不等于 Key 内容自动刷新，未新增控制台/内存扫描/写入入口。
+- 四集合最终候选 `34e7cb8351c04d25c3911b53736589c6a307bb3348ddb5086515d62e99e5c941` 已通过默认 prepack 的三层严格类型、构建、32 文件 / 318 项测试。List/Set/ZSet 小目标本地提交 `0a8c1b1`，Stream/共享清理本地提交 `53ab6f5`，没有推送。
+- 本次独占 Redis 8.2.6 + 原生 DSH 的 CUA 专项13项通过：List241、Set238、ZSet237、Stream235 行选中时继续加载；二进制、空成员、重复索引/字段、无损 JSON、部分字节、MATCH/范围草稿、取消迟到、Stream逆序/元信息及464px深浅布局。7份源DUMP和消费组状态未变，代理只观察到允许的读取命令；本轮所属DSH/代理/Redis均已停止，新建fixture已清理。先前中断轮次没有完整结束报告，不作为本轮验收证据。
+- `scripts/smoke-resp-workbench.mjs` 补充四集合选行不读取、固定表格/预览及续页保留选择断言。只做脚本语法检查，不冒称本轮执行了该 Playwright 全模式；本轮浏览器动作通过 CUA，历史独立模式不计入本轮通过项。下一步核对日常 profile 备份和安装字节，再保持7198供用户查看。
+- 日常web profile五清单已原字节备份，安装上述SHA唯一包exit0；逐98包文件及88lib核对通过，仅package.json/pnpm-lock.yaml引用变化，其他依赖/bundles/cordis未变。恢复时7198无监听，隐藏启动PID11652并实际打开，保留供用户查看。
+- 当前本机127.0.0.1:6379无监听，原生连接实际失败；未填写凭据、未启动或修改用户Redis，不宣称真实760 Key已恢复。`daily-install.json`如实记录connected=false及原因，业务资料和认证/安装私有输出不入Git。
+- 新增 `docs/verification/collection-inline-2026-10-18.md` 逐文件说明原因/影响、13项实际CUA专项、318回归、只读/清理和日常连接边界；归档合成截图、原生/命令/清理及包文件报告。`COLLECTION_INLINE_PLAN.md`清单完成，测试三服务已停止，仅按用户要求保留日常7198；最后执行语法与差异检查后本地提交验证小目标。

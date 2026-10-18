@@ -120,8 +120,31 @@ export async function smokeRespWorkbench({ page, fixture, pane, artifacts, repor
   record('Hash scroll auto-loads all 236 fields; row selection keeps the table and both previews visible')
   for(const [kind,selector,expected] of [['set','[data-loaded-members]',236],['list','[data-list-count]',235],['zset','[data-loaded-zset]',235],['stream','[data-loaded-messages]',235],['ts','[data-loaded-samples]',235]]) {
     details=await select(fixture.respKeys[kind]); await details.locator(selector).waitFor()
+    // Keep a selected row mounted while the same visible table loads later pages.
+    // Selection is local; no new Redis read belongs to opening the preview.
+    const rowSelector={set:'[data-set-member]',list:'[data-list-index]',zset:'[data-zset-member]',stream:'[data-stream-id]'}[kind]
+    let selectedIdentity
+    if(rowSelector) {
+      await details.locator(rowSelector).first().waitFor()
+      const beforeSelection=proxy.commands.length
+      await details.locator(rowSelector).first().click()
+      const table=details.locator('.redis-collection-body > .redis-collection-table')
+      const selected=table.locator('tr[aria-selected="true"]')
+      selectedIdentity=await selected.getAttribute('data-row-identity')
+      assert.notEqual(selectedIdentity,null)
+      assert(await table.isVisible())
+      const preview=details.locator(kind==='stream'?'.redis-stream-value [data-value-preview]':'.redis-collection-preview [data-value-preview]')
+      await preview.waitFor()
+      if(kind==='stream') {
+        assert(await details.locator('.redis-stream-pairs .redis-collection-table').isVisible())
+        assert.equal(await details.locator('.redis-stream-field [data-value-preview]').count(),1)
+      }
+      assert.equal(proxy.commands.length,beforeSelection,'Row preview does not read Redis')
+    }
     await drain(details,selector,expected)
+    if(rowSelector) assert.equal(await details.locator('.redis-collection-body > .redis-collection-table tr[aria-selected="true"]').getAttribute('data-row-identity'),selectedIdentity)
     record(kind+' table scroll appends every range/page without a Continue button')
+    if(rowSelector) record(kind+' selected row remains mounted beside its local preview while pages append')
     if(kind==='set') {
       await details.locator('input[name="setPattern"]').fill('absent:*')
       await details.getByRole('button',{name:'Scan / refresh',exact:true}).click()

@@ -1,0 +1,30 @@
+{
+  "counts": {
+    "PING": 1,
+    "DBSIZE": 5,
+    "INFO": 5,
+    "CONFIG": 5,
+    "SCAN": 40,
+    "TYPE": 49,
+    "PTTL": 49,
+    "SCARD": 13,
+    "SSCAN": 7,
+    "ZCARD": 14,
+    "ZRANGE": 3,
+    "ZSCAN": 4,
+    "XLEN": 10,
+    "XRANGE": 4,
+    "XREVRANGE": 1,
+    "LLEN": 8,
+    "LRANGE": 4
+  },
+  "unchangedValueSnapshots": 7,
+  "consumerGroupsUnchanged": true,
+  "noWritesOrKeys": true,
+  "sizes": {
+    "list": 241,
+    "set": 238,
+    "zset": 237,
+    "stream": 235
+  }
+}

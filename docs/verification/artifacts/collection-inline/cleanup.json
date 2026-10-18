@@ -1,0 +1,33 @@
+{
+  "value": {
+    "libFiles": 88,
+    "unchangedValueSnapshots": 7,
+    "consumerGroupsUnchanged": true,
+    "noWritesOrKeys": true,
+    "sizes": {
+      "list": 241,
+      "set": 238,
+      "zset": 237,
+      "stream": 235
+    }
+  },
+  "fixture": {
+    "backend": "wsl-image",
+    "image": "redis:8.2.6-alpine@sha256:ea5a07305d6c66f99df5a5ff8d9659e8f6cb598e6e586dc8dd92b7fcd915746e",
+    "manifest": "sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e",
+    "owner": "af00cbeb-e90b-468e-9950-e7d5f412a33e",
+    "container": null,
+    "redisVersion": "8.2.6",
+    "moduleCommands": [
+      "JSON.GET",
+      "TS.RANGE",
+      "BF.INFO"
+    ],
+    "tls": false,
+    "stopped": true,
+    "certificatesRemoved": true,
+    "fixtureRemoved": true
+  },
+  "dshStopped": true,
+  "proxyStopped": true
+}

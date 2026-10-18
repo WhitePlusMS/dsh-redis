@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-10-18T14:28:02.968Z",
+  "profile": "C:/Users/admin/.dsh/profiles/web",
+  "packageSha256": "34e7cb8351c04d25c3911b53736589c6a307bb3348ddb5086515d62e99e5c941",
+  "installedPackageRoot": "C:\\Users\\admin\\.dsh\\profiles\\web\\node_modules\\dsh-redis",
+  "allPackedFilesMatch": true,
+  "packedFiles": 98,
+  "libFiles": 88,
+  "bundlesUnchanged": true,
+  "otherDependenciesUnchanged": true,
+  "changedProfileFiles": [
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "backupDirectory": "E:\\项目demo\\dsh-redis\\.scratch\\runtime\\daily-collection-inline-b29d861b-03a4-4b09-87c8-e1f2a9cdef28\\backup",
+  "port": 7198,
+  "native": {
+    "verifiedAt": "2026-10-18T14:30:19.777Z",
+    "dshReady": true,
+    "connected": false,
+    "redisHost": "127.0.0.1",
+    "redisPort": 6379,
+    "reason": "No listener on6379; native connect failed",
+    "noCredentialsEntered": true,
+    "realDataClaim": false,
+    "temporaryServicesStopped": true
+  }
+}

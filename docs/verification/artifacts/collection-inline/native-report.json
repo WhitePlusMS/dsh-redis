@@ -1,0 +1,209 @@
+{
+  "packageSha": "34e7cb8351c04d25c3911b53736589c6a307bb3348ddb5086515d62e99e5c941",
+  "checks": [
+    {
+      "name": "Set row local preview, draft deferred, all238 continue while selected, binary and empty identities",
+      "pass": true
+    },
+    {
+      "name": "Set committed empty filter clears preview; canceled held response does not restore rows or selection",
+      "pass": true
+    },
+    {
+      "name": "ZSet score-cell selection previews empty/binary member, preserves score string and selection through all237 rank rows",
+      "pass": true
+    },
+    {
+      "name": "ZSet mode resets selection, MATCH draft deferred, empty submitted scan clears preview",
+      "pass": true
+    },
+    {
+      "name": "Stream first pair immediate, duplicate fields kept by position, field/value independent binary and empty preview without reads",
+      "pass": true
+    },
+    {
+      "name": "Stream exact JSON tokens, partial65536/131073, changing message resets pair, automatic235 messages while selected",
+      "pass": true
+    },
+    {
+      "name": "Stream464px sidebar: both tables and field/value previews nonoverlapping, no root horizontal overflow",
+      "pass": true
+    },
+    {
+      "name": "Stream metadata/data toggling preserves selected pair without reread",
+      "pass": true
+    },
+    {
+      "name": "Stream range draft preserves preview; submit resets preview and bounds three messages; reverse starts1000-2",
+      "pass": true
+    },
+    {
+      "name": "Stream464px light theme actual screenshot: selected row and both previews visible",
+      "pass": true
+    },
+    {
+      "name": "List local row/arrow preview, selected table continues241, original duplicate index and empty/binary values",
+      "pass": true
+    },
+    {
+      "name": "List464px light, partial65536/131073, exact JSON tokens preserved",
+      "pass": true
+    },
+    {
+      "name": "Invalid List range preserves selected preview; submitted EOF range clears table and preview",
+      "pass": true
+    }
+  ],
+  "geometry": [
+    {
+      "name": "Stream normal sidebar464px",
+      "body": {
+        "bottom": 718.3333282470703,
+        "height": 472.27777099609375,
+        "left": 1119.111083984375,
+        "right": 1416.222198486328,
+        "top": 246.05555725097656,
+        "width": 297.1111145019531,
+        "x": 1119.111083984375,
+        "y": 246.05555725097656
+      },
+      "field": {
+        "bottom": 585.569465637207,
+        "height": 22.27777862548828,
+        "left": 1119.111083984375,
+        "right": 1416.222198486328,
+        "top": 563.2916870117188,
+        "width": 297.1111145019531,
+        "x": 1119.111083984375,
+        "y": 563.2916870117188
+      },
+      "parts": [
+        {
+          "class": "redis-collection-table",
+          "clientWidth": 293,
+          "rect": {
+            "bottom": 378.80555725097656,
+            "height": 132.75,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 246.05555725097656,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 246.05555725097656
+          },
+          "scrollWidth": 293
+        },
+        {
+          "class": "redis-stream-pairs",
+          "clientWidth": 297,
+          "rect": {
+            "bottom": 511.5694580078125,
+            "height": 132.76388549804688,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 378.8055725097656,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 378.8055725097656
+          },
+          "scrollWidth": 297
+        },
+        {
+          "class": "redis-collection-preview redis-stream-field",
+          "clientWidth": 297,
+          "rect": {
+            "bottom": 585.5694580078125,
+            "height": 74,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 511.5694580078125,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 511.5694580078125
+          },
+          "scrollWidth": 297
+        },
+        {
+          "class": "redis-collection-preview redis-stream-value",
+          "clientWidth": 297,
+          "rect": {
+            "bottom": 718.3333435058594,
+            "height": 132.76388549804688,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 585.5694580078125,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 585.5694580078125
+          },
+          "scrollWidth": 297
+        }
+      ],
+      "root": {
+        "scrollWidth": 464,
+        "width": 464
+      },
+      "value": {
+        "bottom": 718.3333511352539,
+        "height": 81.04166412353516,
+        "left": 1119.111083984375,
+        "right": 1416.222198486328,
+        "top": 637.2916870117188,
+        "width": 297.1111145019531,
+        "x": 1119.111083984375,
+        "y": 637.2916870117188
+      }
+    },
+    {
+      "name": "List464px light",
+      "inputs": [
+        {
+          "name": "listOffset",
+          "value": "0"
+        }
+      ],
+      "parts": [
+        {
+          "class": "redis-collection-table",
+          "rect": {
+            "bottom": 493.1666717529297,
+            "height": 225.1666717529297,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 268,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 268
+          }
+        },
+        {
+          "class": "redis-collection-preview",
+          "rect": {
+            "bottom": 718.3333282470703,
+            "height": 225.1666717529297,
+            "left": 1119.111083984375,
+            "right": 1416.222198486328,
+            "top": 493.1666564941406,
+            "width": 297.1111145019531,
+            "x": 1119.111083984375,
+            "y": 493.1666564941406
+          }
+        }
+      ],
+      "preview": {
+        "bottom": 718.3333587646484,
+        "height": 173.44444274902344,
+        "left": 1119.111083984375,
+        "right": 1416.222198486328,
+        "top": 544.888916015625,
+        "width": 297.1111145019531,
+        "x": 1119.111083984375,
+        "y": 544.888916015625
+      },
+      "root": {
+        "scrollWidth": 464,
+        "width": 464
+      }
+    }
+  ]
+}
