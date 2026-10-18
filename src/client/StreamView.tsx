@@ -36,7 +36,7 @@ export function StreamView(props: Props) {
   const message = cache.messages.find(item => item.id === selected), pair = message?.fields[pairIndex]
   const rows = useMemo(() => message?.fields.map((field, index) => ({ ...field, index })) ?? [], [message])
   const windows = useMemo(() => pair === undefined ? null : { field: { base64: pair.field.base64, offset: '0', prefix: '', suffix: '', complete: true }, value: prefixWindow(pair.value) }, [pair])
-  function refresh(): void { setSelected(null); setPairIndex(0); void page.scan(false) }
+  function refresh(): void { void page.scan(false) }
   const columns: readonly CollectionColumn<StreamMessage>[] = [
     { id: 'id', title: t('stream.id'), render: item => <span data-stream-id={item.id}>{item.id}</span> },
     { id: 'fields', title: t('stream.fields'), render: item => item.fields.length },
@@ -80,7 +80,7 @@ export function StreamView(props: Props) {
       <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'stream.empty')} selection={{ id: message?.id ?? null, onSelect: item => { setSelected(item.id); setPairIndex(0) } }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
       <section className="redis-stream-pairs" aria-label={t('stream.fields')}>
         <strong>{message === undefined ? t('stream.fields') : `${t('stream.id')} ${message.id}`}</strong>
-        <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(message === undefined ? 'stream.selectMessage' : 'stream.noFields')} selection={{ id: pair === undefined ? null : String(pairIndex), onSelect: row => setPairIndex(row.index) }} />
+        <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(message === undefined ? selected === null ? 'stream.selectMessage' : 'collection.selectionAbsent' : 'stream.noFields')} selection={{ id: pair === undefined ? null : String(pairIndex), onSelect: row => setPairIndex(row.index) }} />
       </section>
       <section className="redis-collection-preview redis-stream-field" aria-label={t('hash.field')}>
         {pair !== undefined && message !== undefined && windows !== null ? <BytePreview key={`${message.id}:${pairIndex}`} heading={{ label: t('hash.field'), description: `#${pairIndex} · ${pair.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <strong>{t('hash.field')}</strong>}

@@ -45,7 +45,7 @@ export function HashView(props: Props) {
   }, [cache.rows, search])
   const selected = rows.find(row => row.field.base64 === selectedField)
   const windows = useMemo(() => selected === undefined ? null : { field: fieldWindow(selected), value: prefixWindow(selected.value) }, [selected])
-  function refresh(): void { setSelectedField(null); void scanState.scan(false) }
+  function refresh(): void { void scanState.scan(false) }
   function applyPattern(value: string): void {
     setSelectedField(null); setSearch(''); setFilterOpen(false)
     if (value === pattern) refresh()
@@ -80,7 +80,7 @@ export function HashView(props: Props) {
     <div className="redis-hash-body">
       <CollectionTable rows={rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} emptyMessage={empty} selection={{ id: selected?.field.base64 ?? null, onSelect: row => setSelectedField(row.field.base64) }} onEnd={searching || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       <section className="redis-hash-preview redis-hash-field" aria-label={t('hash.field')}>
-        {windows !== null && selected !== undefined ? <BytePreview key={selected.field.base64} heading={{ label: t('hash.field'), description: `${selected.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <><strong>{t('hash.field')}</strong><p>{t('hash.selectRow')}</p></>}
+        {windows !== null && selected !== undefined ? <BytePreview key={selected.field.base64} heading={{ label: t('hash.field'), description: `${selected.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <><strong>{t('hash.field')}</strong><p>{t(selectedField === null ? 'hash.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
       <section className="redis-hash-preview redis-hash-value" aria-label={t('hash.value')}>
         {windows !== null && selected !== undefined ? <BytePreview key={selected.field.base64} heading={{ label: t('hash.value'), description: windows.value.complete ? `${selected.value.fullByteLength} ${t('keys.bytes')}` : `${selected.value.byteLength}/${selected.value.fullByteLength} ${t('keys.bytes')} · ${t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} /> : <strong>{t('hash.value')}</strong>}

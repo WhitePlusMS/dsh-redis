@@ -41,7 +41,7 @@ export function ListView(props: Props) {
   return <section className="redis-details redis-collection-workbench" aria-label={t('list.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>
-    <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => { setSelected(null); void page.scan(false) }} cancel={page.cancel}><QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => { void page.scan(false) }} cancel={page.cancel}><QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
     {optionsOpen && <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
       try { listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setSelected(null); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
@@ -67,7 +67,7 @@ export function ListView(props: Props) {
     <div className="redis-collection-body">
       <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'list.empty')} selection={{ id: row?.index ?? null, onSelect: entry => setSelected(entry.index) }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
       <section className="redis-collection-preview" aria-label={t('hash.value')}>
-        {row !== undefined && window !== null ? <BytePreview key={row.index} heading={{ label: t('hash.value'), description: `${t('list.index')} ${row.index} · ${row.value.byteLength}/${row.value.fullByteLength} ${t('keys.bytes')}${window.complete ? '' : ' · ' + t('value.partial')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('hash.value')}</strong><p>{t('collection.selectRow')}</p></>}
+        {row !== undefined && window !== null ? <BytePreview key={row.index} heading={{ label: t('hash.value'), description: `${t('list.index')} ${row.index} · ${row.value.byteLength}/${row.value.fullByteLength} ${t('keys.bytes')}${window.complete ? '' : ' · ' + t('value.partial')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('hash.value')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
     </div>
   </section>

@@ -43,7 +43,7 @@ export function ZSetView(props: Props) {
   return <section className="redis-details redis-collection-workbench" aria-label={t('zset.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('zset.title')} · <span>{props.selected.label}</span></h2>
-    <div className="redis-view-tools"><label><span className="redis-sr-only">{t('zset.mode')}</span><select name="zsetMode" title={t('zset.mode')} value={mode} onChange={event => { setSelected(null); setRangeError(false); setMode(event.target.value === 'scan' ? 'scan' : 'range') }}><option value="range">{t('zset.range')}</option><option value="scan">{t('zset.scan')}</option></select></label><ReadActions t={t} busy={busy} refresh={() => { setSelected(null); void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle label={t('read.range')} open={optionsOpen} active={mode === 'scan' ? pattern !== '*' : range.offset !== '0'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
+    <div className="redis-view-tools"><label><span className="redis-sr-only">{t('zset.mode')}</span><select name="zsetMode" title={t('zset.mode')} value={mode} onChange={event => { setSelected(null); setRangeError(false); setMode(event.target.value === 'scan' ? 'scan' : 'range') }}><option value="range">{t('zset.range')}</option><option value="scan">{t('zset.scan')}</option></select></label><ReadActions t={t} busy={busy} refresh={() => { void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle label={t('read.range')} open={optionsOpen} active={mode === 'scan' ? pattern !== '*' : range.offset !== '0'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
     {optionsOpen && <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
       if (mode === 'scan') { setSelected(null); setOptionsOpen(false); if (draft === pattern) void scanState.scan(false); else setPattern(draft); return }
@@ -69,7 +69,7 @@ export function ZSetView(props: Props) {
     <div className="redis-collection-body">
       <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'zset.empty')} selection={{ id: row?.member.base64 ?? null, onSelect: entry => setSelected(entry.member.base64) }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       <section className="redis-collection-preview" aria-label={t('set.member')}>
-        {row !== undefined && window !== null ? <BytePreview key={row.member.base64} heading={{ label: t('set.member'), description: `${row.member.byteLength} ${t('keys.bytes')} · ${t('zset.score')}: ${row.score}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('set.member')}</strong><p>{t('collection.selectRow')}</p></>}
+        {row !== undefined && window !== null ? <BytePreview key={row.member.base64} heading={{ label: t('set.member'), description: `${row.member.byteLength} ${t('keys.bytes')} · ${t('zset.score')}: ${row.score}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
     </div>
   </section>

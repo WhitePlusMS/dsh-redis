@@ -36,7 +36,7 @@ export function SetView(props: Props) {
   return <section className="redis-details redis-collection-workbench" aria-label={t('set.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('set.title')} · <span>{props.selected.label}</span></h2>
-    <div className="redis-view-tools"><ReadActions t={t} busy={busy} label={t('keys.scan')} refresh={() => { setSelected(null); void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle label={t('set.pattern')} open={optionsOpen} active={pattern !== '*'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} label={t('keys.scan')} refresh={() => { void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle label={t('set.pattern')} open={optionsOpen} active={pattern !== '*'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
     {optionsOpen && <form className="redis-collection-controls" onSubmit={event => { event.preventDefault(); setSelected(null); setOptionsOpen(false); if (draft === pattern) void scanState.scan(false); else setPattern(draft) }}>
       <label>{t('set.pattern')}<input name="setPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
       <div className="redis-actions">
@@ -54,7 +54,7 @@ export function SetView(props: Props) {
     <div className="redis-collection-body">
       <CollectionTable rows={cache.keys} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'set.empty')} selection={{ id: member?.base64 ?? null, onSelect: value => setSelected(value.base64) }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       <section className="redis-collection-preview" aria-label={t('set.member')}>
-        {member !== undefined && window !== null ? <BytePreview key={member.base64} heading={{ label: t('set.member'), description: `${member.byteLength} ${t('keys.bytes')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('set.member')}</strong><p>{t('collection.selectRow')}</p></>}
+        {member !== undefined && window !== null ? <BytePreview key={member.base64} heading={{ label: t('set.member'), description: `${member.byteLength} ${t('keys.bytes')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
     </div>
   </section>

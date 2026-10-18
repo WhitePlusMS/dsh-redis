@@ -33,12 +33,16 @@ export function KeyDetails(props: Props) {
   const [rangeError, setRangeError] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const currentWindow = useRef('0:' + MAX_VALUE_BYTES)
   const auto = useAutoRefreshReader({ active: result?.state !== 'unsupported', busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
-  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
+  function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true) }
   useEffect(() => {
     if (!auto.begin()) return
     const controller = new AbortController(); active.current = controller
-    setBusy(true); setResult(null); setRpcError(false); setCancelled(false)
+    const windowKey = request.offset + ':' + request.count
+    // A refresh keeps this preview mounted; an explicit byte-window change resets it.
+    if (currentWindow.current !== windowKey) { currentWindow.current = windowKey; setResult(null) }
+    setBusy(true); setRpcError(false); setCancelled(false)
     void props.readString({ target: props.target, keyBase64: props.selected.base64, offset: request.offset, count: request.count }, controller.signal).then(response => {
       if (controller.signal.aborted) return
       if (response.ok) setResult(response.value)

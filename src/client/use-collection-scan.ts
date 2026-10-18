@@ -32,7 +32,7 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
   const auto = useAutoRefreshReader({ active: options.active !== false, busy, result, failed: error !== null && error !== 'cancelled', refresh: () => { void scan(false) }, cancel })
   function stop(): void { ++sequence.current; active.current?.abort(); reading.current = false }
   function clear(): void {
-    auto.reset(); stop(); setBusy(false); setCache(options.empty()); setResult(null); setCursor(null); setError(null); setProgress('idle')
+    auto.reset(); stop(); pages.current = 0; setBusy(false); setCache(options.empty()); setResult(null); setCursor(null); setError(null); setProgress('idle')
   }
   function cancel(): void { auto.reset('cancelled'); stop(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }
   async function scan(more: boolean): Promise<void> {
@@ -40,21 +40,28 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
     if (more && (reading.current || cursor === null || cache.limited || progress !== 'more')) return
     if (more && pages.current >= 1000) { setCursor(null); setProgress('limited'); return }
     if (!auto.begin()) return
-    if (!more) pages.current = 0
-    reading.current = true; ++pages.current
+    reading.current = true
     active.current?.abort()
-    const controller = new AbortController(), current = ++sequence.current, previous = more ? cache : options.empty()
+    const controller = new AbortController(), current = ++sequence.current
+    const batches = more ? 1 : Math.max(1, pages.current)
+    let next = more ? cache : options.empty(), nextCursor = more ? cursor : null, loaded = more ? pages.current : 0
     active.current = controller; setBusy(true); setError(null)
-    if (!more) { setCache(previous); setResult(null); setCursor(null); setProgress('idle') }
     try {
-      const response = await options.load(more ? cursor : null, controller.signal)
-      if (controller.signal.aborted || current !== sequence.current) return
-      if (!response.ok) throw new Error('RPC failed')
-      const page = response.value; setResult(page)
-      if (page.state !== 'page') { setCache(options.empty()); setCursor(null); setProgress('idle'); setError(page.error); return }
-      const next = options.append(previous, page)
-      setCache(next); setCursor(next.limited ? null : page.cursor)
-      setProgress(next.limited ? 'limited' : page.cursor === null ? 'complete' : 'more')
+      // Keep the committed table/preview mounted while replacing the same query.
+      // Replay only its already loaded batches, under the existing page/cache caps.
+      for (let index = 0; index < batches; ++index) {
+        const response = await options.load(nextCursor, controller.signal)
+        if (controller.signal.aborted || current !== sequence.current) return
+        if (!response.ok) throw new Error('RPC failed')
+        const page = response.value
+        if (page.state !== 'page') { pages.current = 0; setResult(page); setCache(options.empty()); setCursor(null); setProgress('idle'); setError(page.error); return }
+        ++loaded; next = options.append(next, page); nextCursor = next.limited ? null : page.cursor
+        if (nextCursor === null || index === batches - 1) {
+          pages.current = loaded; setResult(page); setCache(next); setCursor(nextCursor)
+          setProgress(next.limited ? 'limited' : nextCursor === null ? 'complete' : 'more')
+          break
+        }
+      }
     } catch {
       if (!controller.signal.aborted && current === sequence.current) { setError('rpc'); setCache(options.empty()); setResult(null); setCursor(null); setProgress('idle') }
     } finally { if (current === sequence.current) { reading.current = false; if (!controller.signal.aborted) setBusy(false) } }
