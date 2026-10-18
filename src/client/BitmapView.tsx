@@ -1,5 +1,4 @@
 import { useAutoRefreshReader } from './AutoRefresh.tsx'
-import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseTarget, RedisKey, StringReadResult } from '../domain.ts'
@@ -7,6 +6,9 @@ import type { StringActions } from './KeyDetails.tsx'
 import { bitmapByteRange, bitmapWindow, MAX_BITMAP_BITS, type BitmapWindow, type BitmapRow } from './bitmap-preview.ts'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { NS } from './locales.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle } from './ReadControls.tsx'
+import { Icon } from './Icon.tsx'
 
 type Props = StringActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
@@ -20,6 +22,7 @@ export function BitmapView(props: Props) {
   const [result, setResult] = useState<StringReadResult | null>(null), [window, setWindow] = useState<BitmapWindow | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [rangeError, setRangeError] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const [optionsOpen, setOptionsOpen] = useState(false)
   const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
   function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null); setWindow(null) }
   useEffect(() => {
@@ -42,10 +45,18 @@ export function BitmapView(props: Props) {
     { id: 'bits', title: t('bitmap.bits'), render: row => <code data-bitmap-offset={row.offset} data-bitmap-bits>{row.bits}</code> },
   ]
   return <section className="redis-details" aria-label={t('bitmap.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('bitmap.title')} · <span>{props.selected.label}</span></h2>
-    <form onSubmit={event => {
+    <div className="redis-view-tools"><span className="redis-chip">Bitmap</span><ReadActions t={t} busy={busy} refresh={() => setRequest(value => ({ ...value, attempt: value.attempt + 1 }))} cancel={cancelRead}>
+      <button type="button" className="redis-icon-button" title={t('bitmap.next')} aria-label={t('bitmap.next')} disabled={busy || window?.nextOffset === null || window === null} onClick={() => {
+        if (window?.nextOffset === null || window === null) return
+        setOffset(window.nextOffset); setCount(request.count); setRequest({ offset: window.nextOffset, count: request.count, attempt: request.attempt + 1 })
+      }}><Icon name="right" /></button>
+      <QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(value => !value)} />
+    </ReadActions></div>
+    {optionsOpen && <form onSubmit={event => {
       event.preventDefault()
-      try { bitmapByteRange({ offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { bitmapByteRange({ offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -53,28 +64,20 @@ export function BitmapView(props: Props) {
         <label>{t('bitmap.count')}<select name="bitCount" value={count} onChange={event => setCount(Number(event.target.value))}>{[8, 64, 256, 1024, MAX_BITMAP_BITS].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
       </div>
       <div className="redis-actions">
-        <button type="submit">{t('value.refresh')}</button>
-        <button type="button" disabled={busy || window?.nextOffset === null || window === null} onClick={() => {
-          if (window?.nextOffset === null || window === null) return
-          setOffset(window.nextOffset); setRequest({ offset: window.nextOffset, count, attempt: request.attempt + 1 })
-        }}>{t('bitmap.next')}</button>
-        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
+        <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
       </div>
-    </form>
+    </form>}
 
     {rangeError && <p role="alert" className="redis-error">{t('bitmap.rangeError')}</p>}
-    {busy && <p role="status">{t('connection.busy')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
     {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd></dl>}
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd></dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'value' && <p role="status">{t(result.state === 'unsupported' ? 'bitmap.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
     {window !== null && <>
-      <p role="status" data-bitmap-coverage data-bitmap-start={window.offset}>{t('bitmap.total')}: {window.totalBits} · {t('bitmap.offset')}: {window.offset} · {t('bitmap.returned')}: <span data-bitmap-count>{window.count}</span></p>
+      <div className="redis-collection-state" data-bitmap-coverage data-bitmap-start={window.offset} title={`${t('bitmap.total')}: ${window.totalBits} · ${t('bitmap.offset')}: ${window.offset} · ${t('bitmap.returned')}: ${window.count}`}><span className="redis-chip">#{window.offset}–{window.count === 0 ? window.offset : (BigInt(window.offset) + BigInt(window.count) - 1n).toString()}</span><b data-bitmap-count>{window.count}</b> bits · {t('bitmap.total')} {window.totalBits}</div>
       {window.count === 0 ? <p>{t('bitmap.empty')}</p> : <CollectionTable rows={window.rows} identity={row => row.offset} columns={columns} label={t('bitmap.title')} />}
     </>}
-    <HelpDetails label={t('ui.help')}><p>{t('bitmap.hint')}</p><p>{t('bitmap.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

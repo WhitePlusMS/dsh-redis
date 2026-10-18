@@ -1421,3 +1421,5 @@
 - 小目标2：新增 `KeyPresentation.tsx` 只提升当前叶视图元信息到Key标题，按渲染所有者清理，不改变读取结果；`ReadControls.tsx`共用手动读取/取消、范围开关、范围进度和按需时间。`KeyBrowser.tsx`收纳数量/真实进度/筛选标签，避免MATCH分母误报，聚焦时保留DB身份。
 - Hash/List/Set/ZSet/Stream移除常驻读取时间、重复TYPE/TTL和正常长状态；保留数量、范围、分数、原始身份、部分状态、错误和触底加载。List/Set/ZSet范围/MATCH按需展开，独立刷新读取已提交条件；Stream移除重复未选消息提示。`styles.ts`和中英文文案同步，立即执行严格类型检查。
 - 小目标2首次检查发现Stream残留无调用Icon导入，立即删除；随后Host/Client/tests三层严格类型通过，差异空白检查通过。本地提交当前小目标，暂不将中间包安装到日常环境。
+- 小目标3：`KeyDetails.tsx`、`JsonView.tsx`、`BitmapView.tsx`统一叶视图元信息上报、就近刷新/取消与按需范围；刷新使用已提交条件，下一窗口不误用尚未提交的count草稿。String保留真实字节覆盖/部分，Bitmap保留位范围与总位数，JSON明确已提交路径、匹配数/字节及元信息中的类型；取消和错误仍可见，去掉常驻时间/busy及三页重复帮助。立即执行三层严格类型检查。
+- 小目标3首次检查发现应用按钮使用了不存在的翻译键，立即复用既有workbench.apply；随后Host/Client/tests三层严格类型通过。本小目标本地提交，实际范围/复制/布局在最终原生专项中核对。

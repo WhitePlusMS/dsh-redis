@@ -19,6 +19,9 @@ import { isTimeSeriesType } from '../redis-timeseries.ts'
 import { HllView, type HllActions } from './HllView.tsx'
 import { NS } from './locales.ts'
 import { stringReadRequestSchema } from '../typert.shared.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle } from './ReadControls.tsx'
+import { Icon } from './Icon.tsx'
 
 export interface StringActions { readonly readString: (request: StringReadRequest, signal: AbortSignal) => Promise<RemoteResult<StringReadResult>> }
 type Props = BloomActions & TimeSeriesActions & StringActions & HllActions & HashActions & ListActions & SetActions & ZSetActions & StreamActions & JsonActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -36,6 +39,7 @@ export function KeyDetails(props: Props) {
   const [result, setResult] = useState<StringReadResult | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false)
   const [rangeError, setRangeError] = useState(false)
+  const [optionsOpen, setOptionsOpen] = useState(false)
   const [view, setView] = useState<'string' | 'bitmap' | 'hll'>('string')
   const active = useRef<AbortController | null>(null)
   const auto = useAutoRefreshReader({ active: view === 'string' && result?.state !== 'unsupported', busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
@@ -61,22 +65,26 @@ export function KeyDetails(props: Props) {
   if (result?.state === 'unsupported' && result.metadata !== null && isTimeSeriesType(result.metadata.type)) return <TimeSeriesView {...props} />
   if (result?.state === 'unsupported' && result.metadata?.type === 'MBbloom--') return <BloomView {...props} />
   if (view === 'hll') return <>
-    <button type="button" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}>{t('bitmap.back')}</button>
+    <button type="button" className="redis-interpretation-back" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}><Icon name="back" />{t('bitmap.back')}</button>
     <HllView {...props} />
   </>
   if (view === 'bitmap') return <>
-    <button type="button" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}>{t('bitmap.back')}</button>
+    <button type="button" className="redis-interpretation-back" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}><Icon name="back" />{t('bitmap.back')}</button>
     <BitmapView {...props} />
   </>
   return <section className="redis-details" aria-label={t('value.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('value.title')} · <span>{props.selected.label}</span></h2>
-    {result?.state === 'value' && <div className="redis-actions">
-      <button type="button" onClick={() => setView('bitmap')}>{t('bitmap.open')}</button>
-      <button type="button" onClick={() => setView('hll')}>{t('hll.open')}</button>
-    </div>}
-    <form onSubmit={event => {
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => setRequest(value => ({ ...value, attempt: value.attempt + 1 }))} cancel={cancelRead}>
+      <button type="button" className="redis-icon-button" title={t('value.next')} aria-label={t('value.next')} disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
+        if (result?.nextOffset === null || result?.nextOffset === undefined) return
+        setOffset(result.nextOffset); setCount(request.count); browsing.update({ stringOffset: result.nextOffset, stringCount: request.count }); setRequest({ offset: result.nextOffset, count: request.count, attempt: request.attempt + 1 })
+      }}><Icon name="right" /></button>
+      <QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(value => !value)} />
+    </ReadActions></div>
+    {optionsOpen && <form onSubmit={event => {
       event.preventDefault()
-      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); browsing.update({ stringOffset: offset, stringCount: count }); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); browsing.update({ stringOffset: offset, stringCount: count }); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -86,27 +94,21 @@ export function KeyDetails(props: Props) {
         </select></label>
       </div>
       <div className="redis-actions">
-        <button type="submit">{t('value.refresh')}</button>
-        <button type="button" disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
-          if (result?.nextOffset === null || result?.nextOffset === undefined) return
-          setOffset(result.nextOffset); browsing.update({ stringOffset: result.nextOffset, stringCount: count }); setRequest({ offset: result.nextOffset, count, attempt: request.attempt + 1 })
-        }}>{t('value.next')}</button>
-        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
+        <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
+        {result?.state === 'value' && <><button type="button" onClick={() => setView('bitmap')}>{t('bitmap.open')}</button><button type="button" onClick={() => setView('hll')}>{t('hll.open')}</button></>}
       </div>
-    </form>
+    </form>}
     {rangeError && <p role="alert" className="redis-error">{t('value.error.range')}</p>}
-    {busy && <p role="status">{t('value.loading')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
     {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata">
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata">
         <dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>
         {result.metadata.length !== null && <><dt>{t('value.length')}</dt><dd>{result.metadata.length} {t('keys.bytes')}</dd></>}
       </dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'value' && <p role="status">{t(`value.state.${result.state}`)}</p>}
       {result.state === 'value' && <>
-        <p role="status" data-value-coverage>{t(result.complete ? 'value.complete' : 'value.partial')} · {t('value.offset')} {result.offset} · {result.byteLength} {t('keys.bytes')}</p>
+        <div className="redis-collection-state" data-value-coverage title={`${t(result.complete ? 'value.complete' : 'value.partial')} · ${t('value.offset')} ${result.offset} · ${result.byteLength} ${t('keys.bytes')}`}><span className={result.complete ? '' : 'redis-warning'}><Icon name={result.complete ? 'check' : 'warning'} />{!result.complete && t('read.partial')}</span><span>#{result.offset} · {result.byteLength}{result.metadata?.length === null || result.metadata?.length === undefined ? '' : ` / ${result.metadata.length}`} {t('keys.bytes')}</span></div>
         <BytePreview value={result} t={t} format={format} onFormatChange={setFormat} />
       </>}
     </>}

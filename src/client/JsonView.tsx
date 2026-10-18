@@ -1,5 +1,4 @@
 import { useAutoRefreshReader } from './AutoRefresh.tsx'
-import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
@@ -8,6 +7,8 @@ import { jsonReadRequestSchema } from '../typert.shared.ts'
 import { BytePreview } from './BytePreview.tsx'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle } from './ReadControls.tsx'
 
 export interface JsonActions { readonly readJson: (request: JsonReadRequest, signal: AbortSignal) => Promise<RemoteResult<JsonReadResult>> }
 type Props = JsonActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -21,6 +22,7 @@ export function JsonView(props: Props) {
   const [result, setResult] = useState<JsonReadResult | null>(null), [format, setFormat] = useBrowsingFormat('json')
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false), [pathError, setPathError] = useState(false)
   const active = useRef<AbortController | null>(null)
+  const [optionsOpen, setOptionsOpen] = useState(false)
   const auto = useAutoRefreshReader({ active: true, busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
   function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
@@ -36,36 +38,35 @@ export function JsonView(props: Props) {
     return () => controller.abort()
   }, [props.readJson, props.target.id, props.target.generation, props.target.db, props.selected.base64, request])
   return <section className="redis-details" aria-label={t('json.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('json.title')} · <span>{props.selected.label}</span></h2>
-    <form onSubmit={event => {
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => setRequest(value => ({ ...value, attempt: value.attempt + 1 }))} cancel={cancelRead}>
+      <QueryToggle label={t('json.path')} open={optionsOpen} active={request.path !== '$'} toggle={() => setOptionsOpen(value => !value)} />
+    </ReadActions><button type="button" className="redis-chip" title={t('json.submittedPath')} onClick={() => setOptionsOpen(true)}><code data-json-path>{request.path}</code></button></div>
+    {optionsOpen && <form onSubmit={event => {
       event.preventDefault()
-      try { jsonReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, path }); setPathError(false); setRequest({ path, attempt: request.attempt + 1 }) }
+      try { jsonReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, path }); setPathError(false); setRequest({ path, attempt: request.attempt + 1 }); setOptionsOpen(false) }
       catch { setPathError(true) }
     }}>
       <label>{t('json.path')}<input name="jsonPath" required maxLength={1024} value={path} onChange={event => setPath(event.target.value)} /></label>
       <div className="redis-actions">
-        <button type="submit">{t('value.refresh')}</button>
-        {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
+        <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
       </div>
-    </form>
+    </form>}
 
     {pathError && <p role="alert" className="redis-error">{t('json.pathError')}</p>}
-    {busy && <p role="status">{t('json.loading')}</p>}
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
     {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      <p>{t('json.submittedPath')}: <code data-json-path>{result.path}</code></p>
-      {result.metadata !== null && <dl className="redis-metadata">
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata">
         <dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>
       </dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(result.error === 'oversize' ? 'json.oversize' : `connection.error.${result.error}`)}</p> : result.state !== 'value' && <p role="status">{t(`json.state.${result.state}`)}</p>}
       {result.state === 'value' && <>
-        <p role="status" data-json-matches>{t('json.matches')}: {result.matchTypes.length} · {t('json.bytes')}: {result.byteLength}</p>
-        <p>{t('json.types')}: {[...new Set(result.matchTypes)].join(', ')}</p>
+        <div className="redis-collection-state" data-json-matches><b>{result.matchTypes.length}</b> {t('json.matches')} · {result.byteLength} {t('keys.bytes')}</div>
+        <dl className="redis-metadata redis-secondary-metadata"><dt>{t('json.types')}</dt><dd>{[...new Set(result.matchTypes)].join(', ')}</dd><dt>{t('json.submittedPath')}</dt><dd>{result.path}</dd></dl>
         <BytePreview value={{ base64: result.base64, prefix: '', suffix: '', offset: '0', complete: true }} t={t} format={format} onFormatChange={setFormat} />
       </>}
     </>}
-    <HelpDetails label={t('ui.help')}><p>{t('json.hint')}</p><p>{t('json.budget')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }
