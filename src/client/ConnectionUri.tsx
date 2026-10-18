@@ -20,7 +20,7 @@ export function ConnectionUri(props: Props) {
       }}>{props.t('connection.applyUri')}</button></div>
     </fieldset>
     {error && <p role="alert" className="redis-error">{props.t('connection.uriError')}</p>}
-    {db !== null && <p role="status">{props.t('connection.uriDb')} {db}</p>}
+    {db !== null && <span className="redis-chip" role="status">{props.t('connection.uriDb')} {db}</span>}
     <p>{props.t('connection.uriHint')}</p>
   </details>
 }

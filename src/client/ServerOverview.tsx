@@ -26,7 +26,7 @@ export function ServerOverview({ target, t, readOverview }: Props) {
     if (field === 'expired_keys' || field === 'evicted_keys') return t('overview.keys')
     return t(field === 'instantaneous_ops_per_sec' ? 'overview.ops' : 'overview.count')
   }
-  return <SnapshotDialog t={t} title={t('overview.title')} className="redis-overview-dialog" icon="info" hint={t('overview.hint')} readSnapshot={signal => readOverview({ target }, signal)}>{snapshot => snapshot.fields === null ? null :
+  return <SnapshotDialog t={t} title={t('overview.title')} className="redis-overview-dialog" icon="info" readSnapshot={signal => readOverview({ target }, signal)}>{snapshot => snapshot.fields === null ? null :
     <div className="redis-overview-grid">{groups.map(group => <section className="redis-overview-card" key={group.name} aria-label={t(`overview.${group.name}`)}><h2>{t(`overview.${group.name}`)}</h2><dl>{group.fields.map(field => <Fragment key={field}><dt title={field}>{t(`overview.field.${field}`)}</dt><dd data-info-field={field}>{snapshot.fields?.[field] === null ? t('overview.unreported') : <>{snapshot.fields?.[field]} <small>{unit(field)}</small></>}</dd></Fragment>)}</dl></section>)}</div>
   }</SnapshotDialog>
 }

@@ -5,6 +5,7 @@ import type { ClientListEntry, ClientListField, ClientListReadRequest, ClientLis
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { SnapshotDialog } from './SnapshotDialog.tsx'
 import { NS } from './locales.ts'
+import { Icon } from './Icon.tsx'
 export interface ClientListActions { readonly readClients: (request: ClientListReadRequest, signal: AbortSignal) => Promise<RemoteResult<ClientListReadResult>> }
 type Props = ClientListActions & { readonly target: DatabaseTarget; readonly t: TranslateNS<typeof NS> }
 const detailFields = ['user', 'flags', 'qbuf', 'omem', 'sub', 'psub', 'ssub'] as const
@@ -27,11 +28,11 @@ function ClientTable({ snapshot, t }: { readonly snapshot: ClientListReadResult;
   ]
   const entry = selected === null ? null : snapshot.entries[selected]
   return <>
-    <p role="status" data-client-coverage>{snapshot.entries.length} / {snapshot.total} {t('clients.returned')} · {t(snapshot.limited ? 'clients.limited' : 'clients.complete')}</p>
+    <div className="redis-collection-state" data-client-coverage><span className={snapshot.limited ? 'redis-warning' : ''} title={t(snapshot.limited ? 'clients.limited' : 'clients.complete')} role="img" aria-label={t(snapshot.limited ? 'clients.limited' : 'clients.complete')}><Icon name={snapshot.limited ? 'warning' : 'check'} />{snapshot.limited && t('read.partial')}</span><span><b>{snapshot.entries.length}</b> / {snapshot.total} {t('read.items')}</span></div>
     {snapshot.entries.length === 0 ? <p>{t('clients.empty')}</p> : <CollectionTable rows={rows} identity={row => String(row.index)} columns={columns} label={t('clients.title')} />}
     {entry !== null && entry !== undefined && <section className="redis-client-details" aria-label={t('clients.details')}><h2>{t('clients.details')} · {value(entry, 'id')}</h2><dl className="redis-metadata">{detailFields.map(field => <Fragment key={field}><dt>{t(`clients.field.${field}`)}</dt><dd data-client-field={field}>{value(entry, field)}</dd></Fragment>)}</dl></section>}
   </>
 }
 export function ClientListView({ target, t, readClients }: Props) {
-  return <SnapshotDialog t={t} title={t('clients.title')} className="redis-clients-dialog" icon="clients" hint={t('clients.hint')} readSnapshot={signal => readClients({ target }, signal)}>{snapshot => snapshot.state !== 'page' ? <p role="status">{t('clients.unavailable')}</p> : <ClientTable key={snapshot.sampledAt} snapshot={snapshot} t={t} />}</SnapshotDialog>
+  return <SnapshotDialog t={t} title={t('clients.title')} className="redis-clients-dialog" icon="clients" readSnapshot={signal => readClients({ target }, signal)}>{snapshot => snapshot.state !== 'page' ? <p role="status">{t('clients.unavailable')}</p> : <ClientTable key={snapshot.sampledAt} snapshot={snapshot} t={t} />}</SnapshotDialog>
 }

@@ -101,6 +101,6 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
       const label = t(piece.collapsed ? 'content.expandBlock' : 'content.collapseBlock') + ` ${piece.block.line + 1}`
       return <button type="button" key={index} className="redis-json-toggle" data-json-fold={piece.block.start} aria-label={label} title={label} aria-expanded={!piece.collapsed} onClick={() => setCollapsed(previous => { const next = new Set(previous); if (next.has(piece.block.start)) next.delete(piece.block.start); else next.add(piece.block.start); return next })}><Icon name={piece.collapsed ? 'right' : 'down'} /></button>
     })}</pre>}
-    {preview.contextBytes > 0 && <p>{t('value.context')} {preview.contextBytes} {t('keys.bytes')}</p>}
+    {preview.contextBytes > 0 && <small className="redis-chip" title={`${t('value.context')} ${preview.contextBytes} ${t('keys.bytes')}`} aria-label={`${t('value.context')} ${preview.contextBytes} ${t('keys.bytes')}`}>+{preview.contextBytes} B</small>}
   </section>
 }

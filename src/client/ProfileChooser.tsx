@@ -109,11 +109,10 @@ export function ProfileChooser(props: Props) {
           const id = selectedId
           void run(signal => props.removeProfile({ id }, signal), 'follow')
         }}>{t('profile.remove')}</button>
-        <button type="button" onClick={() => { void run(props.listProfiles) }}>{t('profile.reload')}</button>
+        <button type="button" className={`redis-icon-button${busy ? ' redis-spinning' : ''}`} title={t('profile.reload')} aria-label={t('profile.reload')} aria-busy={busy} onClick={() => { void run(props.listProfiles) }}><Icon name="refresh" /></button>
       </div>
     </fieldset>
     {error && <p className="redis-error" role="alert">{t('profile.error')}</p>}
-      <p className="redis-profile-privacy">{t('profile.privacy')}</p>
       </aside>
       <div className="redis-connection-editor">
       <ConnectionUri t={t} open={props.open} disabled={busy || props.disabled} apply={value => { choose(undefined); props.applyUri(value) }} />

@@ -4,6 +4,7 @@ import { MAX_PROFILE_DOCUMENT_BYTES, MAX_PROFILES, type ImportProfilesRequest, t
 import { importProfilesSchema } from '../typert.shared.ts'
 import { conflictingProfiles, parseProfileDocument, serializeProfileDocument } from '../profile-transfer.ts'
 import { NS } from './locales.ts'
+import { Icon } from './Icon.tsx'
 
 type Row = { readonly value: PortableConnection; readonly include: boolean }
 type Props = { readonly t: TranslateNS<typeof NS>; readonly open: boolean; readonly disabled: boolean; readonly profiles: readonly SavedConnection[]; readonly import: (request: ImportProfilesRequest) => Promise<boolean> }
@@ -57,7 +58,7 @@ export function ProfileTransfer(props: Props) {
         } catch { setError(true) }
         finally { anchor.remove(); if (url !== null) URL.revokeObjectURL(url) }
       }}>{props.t('profile.export')}</button></div>
-      <label>{props.t('profile.file')}<input name="profilesFile" type="file" accept="application/json,.json" onChange={event => {
+      <label>{props.t('profile.file')}{reading && <span className="redis-spinning" role="img" aria-label={props.t('read.busy')}><Icon name="refresh" /></span>}<input name="profilesFile" type="file" aria-busy={reading} accept="application/json,.json" onChange={event => {
         const file = event.currentTarget.files?.[0]
         event.currentTarget.value = ''
         if (file !== undefined) void read(file)
@@ -82,7 +83,6 @@ export function ProfileTransfer(props: Props) {
     {(error || !valid) && <p className="redis-error" role="alert">{props.t('profile.invalidDocument')}</p>}
     {conflicts.size !== 0 && <p className="redis-error" role="alert">{props.t('profile.conflict')} {conflicts.size}</p>}
     {props.profiles.length + selected.length > MAX_PROFILES && <p className="redis-error" role="alert">{props.t('profile.limit')}</p>}
-    {reading && <p role="status">{props.t('connection.busy')}</p>}
     {imported && <p role="status">{props.t('profile.imported')}</p>}
     <p>{props.t('profile.transferHint')}</p>
   </details>
