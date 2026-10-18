@@ -29,7 +29,16 @@
 
 证据目录：[本轮合成验收产物](artifacts/slim-2026-10-19/)。保存Host专项JSON、CUA检查摘要、夹具清理/只读报告和四张合成截图；不保存临时token/密码文件或业务内容。
 
-最终包与日常安装：待最后打包、备份和实机复查后补录。
+## 最终包及日常安装
+
+- 最终包SHA256：`57e4d6a34e199a97c63e884596f88dc64b5cea10c11f480bed0aef4534cfac71`，应用源码检查点`7b8f15f`。默认prepack再次通过三层类型、全新构建、19文件187回归。
+- 日常profile：`C:\Users\admin\.dsh\profiles\web`。按唯一SHA文件名安装；67个发布文件、56个lib、12项宿主peer和3项运行依赖核对一致。发布manifest归档为`final-release-manifest.json`。
+- 安装前备份package.json、pnpm-lock.yaml、pnpm-workspace.yaml、cordis.yml、cordis.patch.yml。仅前两份插件引用/锁文件变化；其他manifest项、workspace及cordis配置保持一致。备份和包含临时token的运行文件留在被忽略的本机scratch，不入Git。
+- 仅停止已核对的原7198 DSH进程树。首次启动因重复选择web profile被CLI拒绝；改成与原进程一致的单个`--profile web`参数后恢复，监听为127.0.0.1:7198、PID23752（本次快照），实际版本仍为已确认的0.2.0-rc.2。
+- CUA重载原有日常页面，确认新Lucide图标、TLS折叠及无独立测试入口；手动以原本机6379设置连接，只读自动加载DB0 **760/760**，真实Hash显示20字段、1行选中、字段/值两个预览，无就地错误，自动刷新关闭。未保存业务截图、Key/字段正文、认证或业务DUMP。
+- 当前日常DSH和原浏览器页保留，用户可直接查看。隔离服务与所有开发验收进程已结束；没有npm dev/start:dev、网页GPT评审或Git推送。
+
+`verify-release-package.mjs`增加`REDIS_VERIFY_PACKAGE_ROOT`显式读取目标，未设置时仍检查项目隔离安装。它只比较文件和版本，不修改安装或配置；本轮用它实际复核日常包。
 
 专项只使用项目内独立DSH profile与自建Redis，合成数据；不向业务Redis写入，不将凭据或业务截图提交Git。临时服务结束后关闭；日常DSH按用户要求保持运行。
 

@@ -1,0 +1,24 @@
+{
+  "packedFiles": 67,
+  "origin": "http://127.0.0.1:7198/",
+  "currentPid": 23752,
+  "businessContentRecorded": false,
+  "dshVersion": "0.2.0-rc.2",
+  "verifiedAt": "2026-10-18T18:25:02.4948122Z",
+  "oldPid": 39180,
+  "backedUpFiles": 5,
+  "libFiles": 56,
+  "nativeReadOnlyCheck": {
+    "previews": 2,
+    "db0Loaded": 760,
+    "alerts": 0,
+    "selectedRows": 1,
+    "autoRefresh": "off",
+    "hashFields": 20,
+    "db0Total": 760
+  },
+  "installedAllFilesMatch": true,
+  "temporaryServicesStopped": true,
+  "dailyServiceRetained": true,
+  "packageSha256": "57e4d6a34e199a97c63e884596f88dc64b5cea10c11f480bed0aef4534cfac71"
+}

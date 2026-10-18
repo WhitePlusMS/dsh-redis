@@ -1496,3 +1496,9 @@
 - `scripts/smoke-dsh.mjs`由原12类型大入口收敛成自有DSH/Redis原生验收夹具，仅提供合成种子和loopback hold/verify/stop，UI一律由CUA操作；删除已失效的smoke-auto-refresh/sidebar-layout/resp-workbench三入口，保留其历史报告。旧release-boundary辅助脚本只更新16方法语法，本轮没有执行该headless驱动，不冒充原生decoder专项。
 - CUA实际通过连接错误/保存后直接连接、草稿与实际连接隔离、关闭等待后socket基线、已连接资料管理/删除取消；String正常刷新查找折叠保留，长hold等待中128px滚动保留、超时后正确停止并手动重连。五集合均加载200行选第106行，定时刷新后行数/选中身份/表格滚动/查找词/折叠保持，成功时间更新；Stream重复字段未合并。
 - 手动DB1/DB0、六视图约464px（实际463）33px工具带无整体溢出、原生明暗主题及1279px Hash全宽均检查；保留Phosphor青紫橘、操作为官方Lucide。六DUMP与Stream消费组不变，代理未见写命令/KEYS或协议错误；隔离DSH/代理/WSL已停止清理。`docs/verification/slim-viewer-2026-10-19.md`与实施状态同步，并归档脱敏合成截图/JSON；最终提示文案和日常安装仍待最终包核对。
+
+- 最终发布小目标：最终包SHA256 57e4d6a34e199a97c63e884596f88dc64b5cea10c11f480bed0aef4534cfac71（应用检查点7b8f15f）默认prepack再通过严格类型/全新构建/19文件187项；按唯一SHA文件名装入日常web profile。67发布文件、56lib、12宿主peer及3运行依赖逐一核对，Lucide已内联且许可随包发布。
+- 安装前五清单已备份；只有package.json插件引用和pnpm-lock.yaml变化，其他manifest内容、workspace、cordis配置不变。`scripts/verify-release-package.mjs`增加显式REDIS_VERIFY_PACKAGE_ROOT以同一只读核对工具检查日常安装；默认仍隔离目录，实际执行通过。归档final-release-manifest/daily-config-check/daily-install-summary，私有备份与token日志不入Git。
+- 仅停止已核对旧DSH7198进程树39180；首次启动重复web profile参数被CLI拒绝，已改成原命令同样的单个--profile web，隐藏重启后127.0.0.1:7198/PID23752就绪。没有为启动问题更改插件、宿主版本或用户配置。
+- CUA在用户原页面重载新版：连接表单官方Lucide、TLS按需展开、无独立测试；按原本机6379设置手动连接，真实DB0自动加载760/760，Hash20字段/1选行/2预览，无就地错误、自动刷新关闭。只记录数量，不保存业务内容、认证、真实截图或业务DUMP；原页标记保留供用户查看。
+- `docs/SLIM_VIEWER_IMPLEMENTATION.md`全部检查点完成，当前41项清单和精简验收同步最终SHA及候选/最终证据边界。临时DSH/代理/Redis及所有验收进程已结束，明确要求使用的日常DSH保留；无npm dev/start:dev、网页GPT评审、推送。最终差异及文档检查后本地提交安装小目标。

@@ -11,7 +11,9 @@ import { resolve } from 'node:path'
 import { promisify } from 'node:util'
 
 const root = resolve(import.meta.dirname, '..')
-const installed = resolve(root, '.scratch/runtime/dsh-home/profiles/web/node_modules/dsh-redis')
+// Explicit target lets the same read-only check verify the authorized daily
+// installation too. Without it, verification stays in the isolated profile.
+const installed = resolve(process.env.REDIS_VERIFY_PACKAGE_ROOT ?? resolve(root, '.scratch/runtime/dsh-home/profiles/web/node_modules/dsh-redis'))
 const artifact = resolve(root, '.scratch/artifacts/dsh-redis-0.1.0.tgz')
 const run = promisify(execFile)
 const sha256 = bytes => createHash('sha256').update(bytes).digest('hex')
