@@ -1480,3 +1480,9 @@
 - `KeyDetails.tsx`同一字节窗口刷新保留String预览，仅明确换窗口重置；取消保留上次已提交画面。五集合视图与中英`locales.ts`对刷新后未包含原选行显示准确提示，不把扫描批次未包含误判为Redis删除。BytePreview本地查找/折叠在相同内容刷新中不再被父组件卸载；内容实际变化时原有格式器重算规则保留。立即检查编译，随后隔离真实页面验证选行/查找/滚动。
 
 - 小目标3三层严格类型、重新构建与19文件187项现有回归通过；原生查找栏/折叠/延迟刷新专项留在安装前执行。此提交不改变只读命令、Host reader预算和自动刷新时钟的会话/可见性停止机制。
+
+- 小目标4：`Icon.tsx`移除27个本地手绘操作path，改为`lucide-react@1.59.0`官方静态组件；保留原`NavigationIcon.tsx`四个Phosphor双色SVG及青紫橘配色。操作图标16px/1.75描边，普通图标按钮28px热区；`ReadControls.tsx`与Hash/Set/ZSet区分Funnel筛选与SlidersHorizontal范围设置。
+- `package.json`/`pnpm-lock.yaml`固定Lucide与`esbuild@0.28.2`；`scripts/build.mjs`用esbuild打包Client依赖，仍以DSH原生ModuleLoader注册，只将react及react/jsx-runtime外部化。Host ESM/声明文件流程不变；继续先清本项目lib，避免删除功能残留。许可证复制到`licenses/lucide-react-LICENSE.txt`，`THIRD_PARTY_NOTICES.md`记入来源。
+- `locales.ts`清理退出功能的中英文键，保留普通JSON和原始字节解析；编译发现字节解析错误仍在使用，已保留并改为准确简短提示。`styles.ts`删除专用视图、快照、URI/导入等失效样式，保留共享连接dialog，补分组/TLS展开和删除确认样式；`tsconfig.client.json`删去不存在的旧文件输入。逐轮编译优先，随后验证真实浏览器bundle与隔离界面。
+
+- 小目标4三层严格类型与esbuild实际浏览器产物通过19文件187项回归；bundle加载测试确认仅使用宿主react/react-jsx外部依赖，16方法严格decode和注册/卸载仍正常。导航源码未改，退出功能文案/专用样式已清；实际原生深浅与窄栏检查待后续隔离验收。

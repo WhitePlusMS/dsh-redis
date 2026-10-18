@@ -36,7 +36,7 @@ export function SetView(props: Props) {
   return <section className="redis-details redis-collection-workbench" aria-label={t('set.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('set.title')} · <span>{props.selected.label}</span></h2>
-    <div className="redis-view-tools"><ReadActions t={t} busy={busy} label={t('keys.scan')} refresh={() => { void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle label={t('set.pattern')} open={optionsOpen} active={pattern !== '*'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} label={t('keys.scan')} refresh={() => { void scanState.scan(false) }} cancel={scanState.cancel}><QueryToggle icon="filter" label={t('set.pattern')} open={optionsOpen} active={pattern !== '*'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
     {optionsOpen && <form className="redis-collection-controls" onSubmit={event => { event.preventDefault(); setSelected(null); setOptionsOpen(false); if (draft === pattern) void scanState.scan(false); else setPattern(draft) }}>
       <label>{t('set.pattern')}<input name="setPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
       <div className="redis-actions">

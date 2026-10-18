@@ -64,7 +64,7 @@ export function HashView(props: Props) {
     <div className="redis-hash-controls">
       <input name="hashSearch" maxLength={256} aria-label={t('hash.search')} placeholder={t('hash.search')} value={search} spellCheck={false} onChange={event => setSearch(event.target.value)} />
       {search !== '' && <button type="button" className="redis-icon-button" title={t('hash.clearSearch')} aria-label={t('hash.clearSearch')} onClick={() => setSearch('')}><Icon name="close" /></button>}
-      <ReadActions t={t} busy={busy} refresh={refresh} cancel={scanState.cancel} label={t('hash.refresh')}><QueryToggle label={t('hash.filter')} open={filterOpen} active={pattern !== '*'} toggle={() => setFilterOpen(!filterOpen)} /></ReadActions>
+      <ReadActions t={t} busy={busy} refresh={refresh} cancel={scanState.cancel} label={t('hash.refresh')}><QueryToggle icon="filter" label={t('hash.filter')} open={filterOpen} active={pattern !== '*'} toggle={() => setFilterOpen(!filterOpen)} /></ReadActions>
     </div>
     {filterOpen && <form className="redis-hash-filter" onSubmit={event => { event.preventDefault(); applyPattern(draft) }}>
       <label>{t('hash.pattern')}<input name="hashPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>

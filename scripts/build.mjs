@@ -7,6 +7,7 @@
 import { createRequire } from 'node:module'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
+import { build } from 'esbuild'
 
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
@@ -122,43 +123,25 @@ function indent(text, spaces) {
   return text.split('\n').map(line => line.length === 0 ? line : pad + line).join('\n')
 }
 
-function buildClient() {
-  const postOrder = []
-  const seen = new Set()
-  const visit = file => {
-    if (seen.has(file)) return
-    seen.add(file)
-    for (const { target } of localImports(file)) visit(target)
-    postOrder.push(file)
-  }
-  visit(CLIENT_ENTRY)
-  const factories = postOrder.map(file => {
-    let body = transpile(readFileSync(file, 'utf8'), file, ts.ModuleKind.CommonJS)
-    body = body.replace(/require\((['"])(\.[^'"]+)\1\)/g, (_all, quote, specifier) => {
-      const target = resolveLocal(file, specifier)
-      const id = target === undefined ? undefined : postOrder.indexOf(target)
-      return id === undefined ? `require(${quote}${specifier}${quote})` : `require(${id})`
-    })
-    return `  (function (module, exports, require) {\n${indent(body, 2)}\n  })`
+async function buildClient() {
+  // Bundle official Lucide components and the client codecs, preserving DSH's
+  // single React identity and its native registration/disposal contract.
+  const bundle = await build({
+    entryPoints: [CLIENT_ENTRY], bundle: true, write: false, platform: 'browser',
+    format: 'cjs', target: 'es2022', jsx: 'automatic', treeShaking: true,
+    external: ['react', 'react/jsx-runtime'],
+    define: { 'process.env.NODE_ENV': '"production"' },
+    legalComments: 'inline',
   })
-  const entryId = postOrder.indexOf(CLIENT_ENTRY)
+  const body = bundle.outputFiles[0]?.text
+  if (body === undefined) throw new Error('Client bundle was not emitted')
   const output = [
     'window.__ModuleLoader__.load({',
     `  id: ${JSON.stringify(CLIENT_ID)},`,
     '  factory: (require) => {',
-    '    var cache = {};',
-    '    var factories = [',
-    factories.join(',\n'),
-    '    ];',
-    '    function __r(id) {',
-    "      if (typeof id !== 'number') return require(id);",
-    '      if (cache[id]) return cache[id].exports;',
     '      var module = { exports: {} };',
-    '      cache[id] = module;',
-    '      factories[id](module, module.exports, __r);',
-    '      return module.exports;',
-    '    }',
-    `    return __r(${entryId});`,
+    indent(body, 4),
+    '    return module.exports;',
     '  }',
     '});',
     '',
@@ -180,5 +163,5 @@ if (relative(ROOT, LIB) !== 'lib') throw new Error('Unexpected build output dire
 rmSync(LIB, { recursive: true, force: true })
 mkdirSync(LIB, { recursive: true })
 buildHost()
-buildClient()
+await buildClient()
 console.log('[build] standalone Host and Client artifacts written to lib/')

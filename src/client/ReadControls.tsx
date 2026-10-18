@@ -13,8 +13,8 @@ export function ReadActions({ t, busy, refresh, cancel, children, label }: { rea
   </div>
 }
 
-export function QueryToggle({ label, open, active = false, toggle }: { readonly label: string; readonly open: boolean; readonly active?: boolean; readonly toggle: () => void }) {
-  return <button type="button" className="redis-icon-button" title={label} aria-label={label} aria-expanded={open} aria-pressed={active} onClick={toggle}><Icon name="filter" /></button>
+export function QueryToggle({ label, open, active = false, toggle, icon = 'range' }: { readonly label: string; readonly open: boolean; readonly active?: boolean; readonly toggle: () => void; readonly icon?: 'filter' | 'range' }) {
+  return <button type="button" className="redis-icon-button" title={label} aria-label={label} aria-expanded={open} aria-pressed={active} onClick={toggle}><Icon name={icon} /></button>
 }
 
 /** Completion refers to the submitted scan/range, never to all server data. */
