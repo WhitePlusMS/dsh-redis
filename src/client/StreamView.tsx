@@ -10,7 +10,8 @@ import { appendStreamMessages, emptyStreamCache, type StreamCache } from './stre
 import { useCollectionScan } from './use-collection-scan.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
-import { Icon } from './Icon.tsx'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 
 export interface StreamActions { readonly readStream: (request: StreamReadRequest, signal: AbortSignal) => Promise<RemoteResult<StreamReadResult>> }
 type Props = StreamActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -46,13 +47,11 @@ export function StreamView(props: Props) {
     { id: 'value', title: t('hash.value'), render: row => <span data-stream-value={row.index} title={cellLabel(row.value)}>{row.value.fullByteLength === 0 ? t('hash.emptyValue') : cellLabel(row.value)}</span> },
   ]
   return <section className="redis-details redis-collection-workbench redis-stream-workbench" aria-label={t('stream.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('stream.title')} · <span>{props.selected.label}</span></h2>
     <div className="redis-stream-controls">
-      <strong>STREAM</strong>
-      <label>{t('stream.direction')}<select name="streamDirection" value={direction} onChange={event => { setSelected(null); setPairIndex(0); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('stream.forward')}</option><option value="reverse">{t('stream.reverse')}</option></select></label>
-      <button type="button" className="redis-icon-button" aria-label={t('stream.refresh')} title={t('stream.refresh')} disabled={busy} onClick={refresh}><Icon name="refresh" /></button>
-      <button type="button" className="redis-icon-button" aria-label={t('stream.range')} title={t('stream.range')} aria-expanded={optionsOpen} onClick={() => setOptionsOpen(!optionsOpen)}><Icon name="filter" /></button>
-      {busy && <button type="button" className="redis-icon-button" aria-label={t('keys.cancel')} title={t('keys.cancel')} onClick={page.cancel}><Icon name="close" /></button>}
+      <label><span className="redis-sr-only">{t('stream.direction')}</span><select name="streamDirection" title={t('stream.direction')} value={direction} onChange={event => { setSelected(null); setPairIndex(0); setDirection(event.target.value === 'reverse' ? 'reverse' : 'forward') }}><option value="forward">{t('stream.forward')}</option><option value="reverse">{t('stream.reverse')}</option></select></label>
+      <ReadActions t={t} busy={busy} label={t('stream.refresh')} refresh={refresh} cancel={page.cancel}><QueryToggle label={t('stream.range')} open={optionsOpen} active={range.start !== '-' || range.end !== '+'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions>
     </div>
     {optionsOpen && <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
@@ -72,15 +71,15 @@ export function StreamView(props: Props) {
     {rangeError && <p role="alert" className="redis-error">{t('stream.rangeError')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
-      <small className="redis-collection-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('stream.total')}</dt><dd>{result.metadata.length}</dd></dl>}
+
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('stream.total')}</dt><dd>{result.metadata.length}</dd></dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'stream.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    <div className="redis-collection-summary" role="status"><span>{t('stream.loaded')}: <b data-loaded-messages>{cache.messages.length}</b> / {result?.metadata?.length ?? t('workbench.unknown')}</span><span>{range.start} … {range.end}</span>{result?.metadata && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{busy ? t('connection.busy') : t(`stream.${progress === 'more' ? 'moreState' : progress}`)}</span></div>
+    <div className="redis-collection-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('stream.loaded')} · ${t('stream.total')}`}><b data-loaded-messages>{cache.messages.length}</b>{range.start === '-' && range.end === '+' ? ' / ' : ' · ' + t('stream.total') + ' '}{result?.metadata?.length ?? '—'}</span>{(range.start !== '-' || range.end !== '+') && <button type="button" className="redis-chip" title={t('stream.bounds')} onClick={() => setOptionsOpen(true)}>{range.start} … {range.end}</button>}</div>
     <div className="redis-collection-body redis-stream-body">
       <CollectionTable rows={cache.messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'stream.empty')} selection={{ id: message?.id ?? null, onSelect: item => { setSelected(item.id); setPairIndex(0) } }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
       <section className="redis-stream-pairs" aria-label={t('stream.fields')}>
-        <strong>{message === undefined ? t('stream.selectMessage') : `${t('stream.id')} ${message.id}`}</strong>
+        <strong>{message === undefined ? t('stream.fields') : `${t('stream.id')} ${message.id}`}</strong>
         <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(message === undefined ? 'stream.selectMessage' : 'stream.noFields')} selection={{ id: pair === undefined ? null : String(pairIndex), onSelect: row => setPairIndex(row.index) }} />
       </section>
       <section className="redis-collection-preview redis-stream-field" aria-label={t('hash.field')}>

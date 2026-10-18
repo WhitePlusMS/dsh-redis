@@ -10,6 +10,8 @@ import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { prefixWindow, cellLabel } from './collection-value.ts'
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 
 export interface ListActions { readonly readList: (request: ListReadRequest, signal: AbortSignal) => Promise<RemoteResult<ListReadResult>> }
 type Props = ListActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -20,6 +22,7 @@ export function ListView(props: Props) {
   const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [request, setRequest] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 })
   const [rangeError, setRangeError] = useState(false), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('list')
+  const [optionsOpen, setOptionsOpen] = useState(false)
   const page = useCollectionScan<RowCache<ListEntry>, ListReadResult & { readonly cursor: string | null }>({
     target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify(request), empty: emptyRowCache,
     append: (previous, value) => appendRows(previous, value.entries, row => row.index),
@@ -36,10 +39,12 @@ export function ListView(props: Props) {
     { id: 'value', title: t('hash.value'), render: entry => <span data-list-index={entry.index} title={cellLabel(entry.value)}>{entry.value.fullByteLength === 0 ? t('hash.emptyValue') : cellLabel(entry.value)}</span> },
   ]
   return <section className="redis-details redis-collection-workbench" aria-label={t('list.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('list.title')} · <span>{props.selected.label}</span></h2>
-    <form className="redis-collection-controls" onSubmit={event => {
+    <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => { setSelected(null); void page.scan(false) }} cancel={page.cancel}><QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(!optionsOpen)} /></ReadActions></div>
+    {optionsOpen && <form className="redis-collection-controls" onSubmit={event => {
       event.preventDefault()
-      try { listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setSelected(null); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }) }
+      try { listReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setSelected(null); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -47,19 +52,18 @@ export function ListView(props: Props) {
         <label>{t('list.count')}<select name="listCount" value={count} onChange={event => setCount(Number(event.target.value))}>{[1, 10, 25, MAX_LIST_ITEMS].map(size => <option key={size} value={size}>{size}</option>)}</select></label>
       </div>
       <div className="redis-actions">
-        <button type="submit">{t('value.refresh')}</button>
-        {busy && <button type="button" onClick={page.cancel}>{t('keys.cancel')}</button>}
+        <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
       </div>
-    </form>
+    </form>}
 
     {rangeError && <p role="alert" className="redis-error">{t('list.rangeError')}</p>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     {result !== null && <>
-      <small className="redis-collection-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('list.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
+
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('list.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    <div className="redis-collection-summary" role="status" data-list-coverage><span>{t('list.start')}: <b data-list-start>{request.offset}</b></span><span>{t('list.returned')}: <b data-list-count>{cache.rows.length}</b> / {result?.metadata?.length ?? t('workbench.unknown')}</span>{result?.metadata && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{busy ? t('connection.busy') : t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</span></div>
+    <div className="redis-collection-summary" data-list-coverage><ScanProgress t={t} busy={busy} progress={progress} /><span title={t('list.returned')}><b data-list-count>{cache.rows.length}</b>{request.offset === '0' ? ' / ' + (result?.metadata?.length ?? '—') : ' ' + t('read.items')}</span><span title={t('list.index')}>#<b data-list-start>{request.offset}</b>{cache.rows.length > 0 ? '–' + cache.rows[cache.rows.length - 1]!.index : ''}</span></div>
     <div className="redis-collection-body">
       <CollectionTable rows={cache.rows} identity={entry => entry.index} columns={columns} label={t('list.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'list.empty')} selection={{ id: row?.index ?? null, onSelect: entry => setSelected(entry.index) }} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
       <section className="redis-collection-preview" aria-label={t('hash.value')}>

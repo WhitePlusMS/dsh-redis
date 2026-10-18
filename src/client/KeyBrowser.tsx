@@ -10,6 +10,7 @@ import { KeyDetails, type StringActions } from './KeyDetails.tsx'
 import { Icon } from './Icon.tsx'
 import { KeyAutoRefresh, RefreshControls, RefreshReadInfo, RefreshVisibility } from './AutoRefresh.tsx'
 import { KeyCatalog } from './KeyCatalog.tsx'
+import { KeyPresentation, KeyMetadataSummary } from './KeyPresentation.tsx'
 import type { HashActions } from './HashView.tsx'
 import type { ListActions } from './ListView.tsx'
 import type { SetActions } from './SetView.tsx'
@@ -106,19 +107,19 @@ export function KeyBrowser(props: Props) {
   }
   const total = databases?.currentKeys ?? databases?.keyspace?.find(row => row.db === connection.db)?.keys ?? (databases?.keyspace === null || databases === null ? null : '0')
   const percent = keyLoadPercent(load.cache.keys.length, total, pattern, load.phase), busy = load.phase === 'loading'
+  function applyFilter(value: string): void { setPattern(value); setDraft(value); setFilters(false); browsing.update({ pattern: value }); void scan(value, true) }
   return <section className="redis-keys" data-focused={focused} aria-label={t('keys.title')} onKeyDown={event => {
     if (event.key === 'Escape' && focused && !event.defaultPrevented) { event.preventDefault(); setFocused(false) }
   }}>
     <div ref={catalog} className="redis-key-catalog">
       <div className="redis-tree-connection"><Icon name="database" /><strong title={connection.target?.host}>{connection.target?.host}:{connection.target?.port}</strong><button type="button" className="redis-icon-button" title={t('connection.settings')} aria-label={t('connection.settings')} onClick={props.configure}><Icon name="settings" /></button></div>
       <div className="redis-catalog-actions">
-        <button type="button" className="redis-icon-button" aria-label={t('workbench.filter')} title={t('workbench.filter')} aria-pressed={filters} onClick={() => setFilters(!filters)}><Icon name="search" /></button>
-        <button type="button" className="redis-icon-button" aria-label={t('keys.scan')} title={t('keys.scan')} disabled={selectingDb} onClick={() => { void scan(pattern, false) }}><Icon name="refresh" /></button>
+        <button type="button" className="redis-icon-button" aria-label={t('workbench.filter')} title={t('workbench.filter')} aria-expanded={filters} aria-pressed={pattern !== '*'} onClick={() => setFilters(!filters)}><Icon name="filter" /></button>
+        <button type="button" className={`redis-icon-button${busy ? ' redis-spinning' : ''}`} aria-label={t('keys.scan')} title={t('keys.scan')} aria-busy={busy} disabled={selectingDb} onClick={() => { void scan(pattern, false) }}><Icon name="refresh" /></button>
         {busy && <button type="button" className="redis-icon-button" aria-label={t('keys.cancel')} title={t('keys.cancel')} onClick={cancel}><Icon name="close" /></button>}
-        <span className="redis-db-summary">DB {connection.db}</span>
       </div>
       {filters && <div className="redis-catalog-filters">
-        <form onSubmit={event => { event.preventDefault(); setPattern(draft); browsing.update({ pattern: draft }); void scan(draft, true) }}>
+        <form onSubmit={event => { event.preventDefault(); applyFilter(draft) }}>
           <label>{t('keys.pattern')}<input name="pattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
           <button type="submit" disabled={selectingDb}>{t('workbench.apply')}</button>
         </form>
@@ -129,15 +130,21 @@ export function KeyBrowser(props: Props) {
         setSelected(key); setOpened(true); setDetailTab('data')
       }} />
       <div className="redis-load-status" role="status" data-key-load-phase={load.phase} data-db-total={total ?? ''}>
-        <span>{t('workbench.total')}: {total ?? t('workbench.unknown')} · {t('keys.loaded')}: <b data-loaded-keys>{load.cache.keys.length}</b>{percent === null ? '' : ' · ' + percent + '%'}</span>
+        <div className="redis-load-count" title={`${t('keys.loaded')}: ${load.cache.keys.length} · ${t('workbench.total')}: ${total ?? t('workbench.unknown')} · ${t(`workbench.${load.phase}`)}`}>
+          <span role="img" aria-label={t(`workbench.${load.phase}`)}><Icon name={busy ? 'refresh' : load.phase === 'complete' ? 'check' : load.phase === 'cancelled' ? 'pause' : 'warning'} /></span>
+          <span><b data-loaded-keys>{load.cache.keys.length}</b>{pattern === '*' && total !== null ? ` / ${total}` : ` ${t('read.loaded')}`}</span>
+          {percent !== null && busy && <span>{percent}%</span>}
+          {(load.phase === 'limited' || load.phase === 'paused') && <button type="button" className="redis-chip redis-warning" title={t(`workbench.${load.phase}`)} onClick={() => setFilters(true)}>{t('read.partial')}<Icon name="filter" /></button>}
+          {load.phase === 'cancelled' && <span>{t('read.stopped')}</span>}
+        </div>
         {busy && <progress aria-label={t('workbench.progress')} max={100} value={percent ?? undefined} />}
-        <small>{t(`workbench.${load.phase}`)}{pattern === '*' ? '' : ' · MATCH ' + pattern}</small>
+        {pattern !== '*' && <span className="redis-filter-chip"><button type="button" title={`${t('keys.pattern')}: ${pattern}`} onClick={() => setFilters(true)}><Icon name="filter" /><span>{pattern}</span></button><button type="button" className="redis-icon-button" title={t('read.clearFilter')} aria-label={t('read.clearFilter')} onClick={() => applyFilter('*')}><Icon name="close" /></button></span>}
       </div>
       {(load.error !== null || catalogError !== null) && <p role="alert" className="redis-error">{t(`connection.error.${load.error ?? catalogError!}`)}</p>}
     </div>
     <div ref={detail} className="redis-key-detail" tabIndex={-1}>
-      {selected !== null ? <KeyAutoRefresh key={selected.base64}>
-        <div className="redis-inspector-heading"><Icon name="key" /><strong title={displayLabel(selected.label)}>{displayLabel(selected.label)}</strong><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>
+      {selected !== null ? <KeyPresentation key={selected.base64}><KeyAutoRefresh>
+        <div className="redis-inspector-heading"><Icon name="key" />{focused && <span className="redis-chip">db{connection.db}</span>}<strong title={displayLabel(selected.label)}>{displayLabel(selected.label)}</strong><KeyMetadataSummary t={t} inspect={() => setDetailTab('metadata')} /><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>
         <div className="redis-inspector-toolbar"><div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
           <button type="button" role="tab" aria-selected={detailTab === 'data'} onClick={() => setDetailTab('data')}>{t('ui.data')}</button>
           <button type="button" role="tab" aria-selected={detailTab === 'metadata'} onClick={() => setDetailTab('metadata')}>{t('ui.metadata')}</button>
@@ -148,7 +155,7 @@ export function KeyBrowser(props: Props) {
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
           {opened && <KeyDetails {...props} target={target()} selected={selected} />}
         </div>
-      </KeyAutoRefresh> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
+      </KeyAutoRefresh></KeyPresentation> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
     </div>
   </section>
 }

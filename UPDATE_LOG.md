@@ -1418,3 +1418,6 @@
 - 小目标1：`AutoRefresh.tsx`移除自动刷新的正常状态/时间行，提供组合图标开关+秒数选择和正常文档流中的按需读取详情；`KeyBrowser.tsx`将provider提升到当前Key整个详情区，控件放在页签右侧，保持原始身份卸载边界。没有修改AutoRefreshClock或增加计时器/RPC。
 - `BytePreview.tsx`复制成功改为原按钮1600ms对勾，失败保持可见短提示；每实例独立，切行/格式/卸载清定时和迟到结果。`Icon.tsx`补时钟/暂停/勾/警告/锁，`styles.ts`重排控件与内联详情/无障碍隐藏反馈，`locales.ts`中英同步。立即检查三层严格类型，再本地提交本小目标。
 - 小目标1 Host/Client/tests 三层严格类型检查通过；时钟状态机/协议接口未改，原生交互稍后使用同一最终包验证。
+- 小目标2：新增 `KeyPresentation.tsx` 只提升当前叶视图元信息到Key标题，按渲染所有者清理，不改变读取结果；`ReadControls.tsx`共用手动读取/取消、范围开关、范围进度和按需时间。`KeyBrowser.tsx`收纳数量/真实进度/筛选标签，避免MATCH分母误报，聚焦时保留DB身份。
+- Hash/List/Set/ZSet/Stream移除常驻读取时间、重复TYPE/TTL和正常长状态；保留数量、范围、分数、原始身份、部分状态、错误和触底加载。List/Set/ZSet范围/MATCH按需展开，独立刷新读取已提交条件；Stream移除重复未选消息提示。`styles.ts`和中英文文案同步，立即执行严格类型检查。
+- 小目标2首次检查发现Stream残留无调用Icon导入，立即删除；随后Host/Client/tests三层严格类型通过，差异空白检查通过。本地提交当前小目标，暂不将中间包安装到日常环境。

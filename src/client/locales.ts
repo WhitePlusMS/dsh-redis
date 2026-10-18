@@ -1,6 +1,7 @@
 export const NS = 'redis-viewer'
 export const zh = {
   'auto.off': '自动刷新已关闭', 'read.details': '最近读取', 'read.none': '尚无成功读取', 'read.busy': '读取中',
+  'read.loaded': '已加载', 'read.partial': '部分', 'read.partialRange': '当前结果不完整，请缩小范围后刷新', 'read.rangeDone': '本轮范围已读完', 'read.more': '滚动到底继续加载', 'read.stopped': '已停止', 'read.clearFilter': '清除筛选', 'read.range': '范围与批量大小', 'read.items': '项', 'read.applied': '已提交条件', 'read.local': '本地', 'read.options': '查看选项',
   'collection.selectRow': '选择一行，查看内容。', 'collection.emptyMember': '（空成员）',
   'stream.selectMessage': '选择一条消息，查看字段和值。', 'stream.noFields': '这条消息没有字段。', 'stream.refresh': '刷新 Stream', 'stream.range': '消息范围与批量大小',
   'hash.search': '搜索已加载字段和值', 'hash.clearSearch': '清除表格搜索', 'hash.refresh': '刷新 Hash',
@@ -227,6 +228,7 @@ export const zh = {
 } as const
 export const en: Record<keyof typeof zh, string> = {
   'auto.off': 'Auto refresh off', 'read.details': 'Last read', 'read.none': 'No successful read yet', 'read.busy': 'Reading',
+  'read.loaded': 'loaded', 'read.partial': 'Partial', 'read.partialRange': 'Incomplete results; narrow the range and refresh', 'read.rangeDone': 'Submitted range finished', 'read.more': 'Scroll down to load more', 'read.stopped': 'Stopped', 'read.clearFilter': 'Clear filter', 'read.range': 'Range and batch size', 'read.items': 'items', 'read.applied': 'Submitted query', 'read.local': 'Local', 'read.options': 'View options',
   'collection.selectRow': 'Select a row to inspect its content.', 'collection.emptyMember': '(empty member)',
   'stream.selectMessage': 'Select a message to inspect its fields and values.', 'stream.noFields': 'This message has no fields.', 'stream.refresh': 'Refresh Stream', 'stream.range': 'Message range and batch size',
   'hash.search': 'Search loaded fields and values', 'hash.clearSearch': 'Clear table search', 'hash.refresh': 'Refresh Hash',

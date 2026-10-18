@@ -8,6 +8,8 @@ import { appendHashEntries, emptyHashCache, type HashCache } from './hash-cache.
 import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { prefixWindow, cellLabel, displayLabel } from './collection-value.ts'
 import { NS } from './locales.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { previewValue } from './value-preview.ts'
 import { Icon } from './Icon.tsx'
@@ -57,26 +59,24 @@ export function HashView(props: Props) {
   const searching = search.trim() !== ''
   const empty = t(busy ? 'connection.busy' : error !== null ? 'hash.noRead' : searching ? 'hash.noMatches' : 'hash.empty')
   return <section className="redis-details redis-hash-workbench" aria-label={t('hash.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('hash.title')} · <span>{props.selected.label}</span></h2>
     <div className="redis-hash-controls">
-      <strong>HASH</strong>
       <input name="hashSearch" maxLength={256} aria-label={t('hash.search')} placeholder={t('hash.search')} value={search} spellCheck={false} onChange={event => setSearch(event.target.value)} />
       {search !== '' && <button type="button" className="redis-icon-button" title={t('hash.clearSearch')} aria-label={t('hash.clearSearch')} onClick={() => setSearch('')}><Icon name="close" /></button>}
-      <button type="button" className="redis-icon-button" title={t('hash.refresh')} aria-label={t('hash.refresh')} disabled={busy} onClick={refresh}><Icon name="refresh" /></button>
-      <button type="button" className="redis-icon-button" title={t('hash.filter')} aria-label={t('hash.filter')} aria-expanded={filterOpen} aria-pressed={pattern !== '*'} onClick={() => setFilterOpen(!filterOpen)}><Icon name="filter" /></button>
-      {busy && <button type="button" className="redis-icon-button" title={t('keys.cancel')} aria-label={t('keys.cancel')} onClick={scanState.cancel}><Icon name="close" /></button>}
+      <ReadActions t={t} busy={busy} refresh={refresh} cancel={scanState.cancel} label={t('hash.refresh')}><QueryToggle label={t('hash.filter')} open={filterOpen} active={pattern !== '*'} toggle={() => setFilterOpen(!filterOpen)} /></ReadActions>
     </div>
     {filterOpen && <form className="redis-hash-filter" onSubmit={event => { event.preventDefault(); applyPattern(draft) }}>
       <label>{t('hash.pattern')}<input name="hashPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
       <div className="redis-actions"><button type="submit" disabled={busy}>{t('workbench.apply')}</button><button type="button" disabled={busy} onClick={() => { setDraft('*'); applyPattern('*') }}>{t('hash.resetFilter')}</button></div>
     </form>}
     {result !== null && <>
-      <small className="redis-hash-time">{t('hash.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('hash.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
+
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('hash.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
       {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'hash.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
-    <div className="redis-hash-summary" role="status"><span>{t('hash.loaded')}: <b data-loaded-fields>{cache.rows.length}</b></span><span>{t('hash.total')}: {result?.metadata?.length ?? t('workbench.unknown')}</span>{searching && <span>{t('hash.shown')}: {rows.length}</span>}{result?.metadata !== null && result?.metadata !== undefined && <span>TTL: {result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs + ' ms'}</span>}<span>{searching ? t('hash.localSearch') : t(`keys.${progress === 'more' ? 'moreState' : progress}`)}</span>{pattern !== '*' && <span>MATCH {pattern}</span>}</div>
+    <div className="redis-hash-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('hash.loaded')}: ${cache.rows.length} · ${t('hash.total')}: ${result?.metadata?.length ?? t('workbench.unknown')}`}><b data-loaded-fields>{cache.rows.length}</b>{pattern === '*' ? ' / ' : ' · ' + t('hash.total') + ' '}{result?.metadata?.length ?? '—'}</span>{searching && <span className="redis-chip" title={t('hash.localSearch')}>{t('read.local')} {rows.length}</span>}{pattern !== '*' && <span className="redis-filter-chip"><button type="button" title={t('hash.pattern')} onClick={() => setFilterOpen(true)}><Icon name="filter" /><span>{pattern}</span></button><button type="button" className="redis-icon-button" title={t('read.clearFilter')} aria-label={t('read.clearFilter')} onClick={() => { setDraft('*'); applyPattern('*') }}><Icon name="close" /></button></span>}</div>
     <div className="redis-hash-body">
       <CollectionTable rows={rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} emptyMessage={empty} selection={{ id: selected?.field.base64 ?? null, onSelect: row => setSelectedField(row.field.base64) }} onEnd={searching || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       <section className="redis-hash-preview redis-hash-field" aria-label={t('hash.field')}>
