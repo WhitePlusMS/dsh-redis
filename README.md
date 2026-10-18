@@ -11,6 +11,7 @@
 ## 文档入口
 
 - [当前功能清单与界面说明：10 个模块、56 项条目](E:/项目demo/dsh-redis/docs/FEATURE_INVENTORY.md)
+- [56 项功能与界面操作审查：连接、快照及小图标问题](E:/项目demo/dsh-redis/docs/FEATURE_OPERATION_AUDIT.md)
 - [正式任务索引：21 张 P0、8 张 P1](E:/项目demo/dsh-redis/.scratch/redis-viewer/README.md)
 - [开发路线与实施方案](E:/项目demo/dsh-redis/docs/DSH_Redis_开发路线与实施方案.md)
 - [已确认的任务拆分记录](E:/项目demo/dsh-redis/docs/TICKET_BREAKDOWN_DRAFT.md)
