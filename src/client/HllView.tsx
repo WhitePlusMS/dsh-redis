@@ -1,10 +1,11 @@
 import { useAutoRefreshReader } from './AutoRefresh.tsx'
-import { HelpDetails } from './HelpDetails.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseTarget, HllReadRequest, HllReadResult, RedisKey } from '../domain.ts'
 import { NS } from './locales.ts'
+import { PresentKeyMetadata } from './KeyPresentation.tsx'
+import { ReadActions } from './ReadControls.tsx'
 
 export interface HllActions { readonly readHll: (request: HllReadRequest, signal: AbortSignal) => Promise<RemoteResult<HllReadResult>> }
 type Props = HllActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -32,23 +33,18 @@ export function HllView(props: Props) {
     return () => controller.abort()
   }, [props.readHll, props.target.id, props.target.generation, props.target.db, props.selected.base64, attempt])
   return <section className="redis-details" aria-label={t('hll.title')}>
+    <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('hll.title')} · <span>{props.selected.label}</span></h2>
-    <div className="redis-actions">
-      <button type="button" disabled={busy} onClick={() => setAttempt(attempt + 1)}>{t('value.refresh')}</button>
-      {busy && <button type="button" onClick={cancelRead}>{t('keys.cancel')}</button>}
-    </div>
-    {busy && <p role="status">{t('connection.busy')}</p>}
+    <div className="redis-view-tools"><span className="redis-chip">HyperLogLog</span><ReadActions t={t} busy={busy} refresh={() => setAttempt(value => value + 1)} cancel={cancelRead} /></div>
     {rpcError && <p role="alert" className="redis-error">{t('connection.error.rpc')}</p>}
     {cancelled && <p role="status">{t('connection.error.cancelled')}</p>}
     {result !== null && <>
-      <small>{t('connection.sampledAt')} <time dateTime={result.sampledAt}>{new Date(result.sampledAt).toLocaleTimeString()}</time></small>
-      {result.metadata !== null && <dl className="redis-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('value.length')}</dt><dd>{result.metadata.length} {t('keys.bytes')}</dd></dl>}
-      {result.state === 'value' ? <dl className="redis-metadata">
-        <dt>{t('hll.estimate')}</dt><dd data-hll-estimate>{result.estimate}</dd>
+      {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('value.length')}</dt><dd>{result.metadata.length} {t('keys.bytes')}</dd></dl>}
+      {result.state === 'value' ? <><div className="redis-estimate" title={t('hll.accuracy')}><span>{t('hll.estimate')}</span><strong data-hll-estimate>≈ {result.estimate}</strong></div><dl className="redis-metadata redis-secondary-metadata">
+        <dt>{t('hll.estimate')}</dt><dd>{result.estimate}</dd>
         <dt>{t('hll.encoding')}</dt><dd data-hll-encoding>{t(result.encoding === 'dense' ? 'hll.dense' : 'hll.sparse')}</dd>
         <dt>{t('hll.cache')}</dt><dd data-hll-cache>{t(result.cacheValid ? 'hll.valid' : 'hll.invalidCache')}</dd>
-      </dl> : result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : <p role="status">{t(result.state === 'invalid' ? 'hll.invalid' : result.state === 'unavailable' ? 'hll.unavailable' : result.state === 'unsupported' ? 'hll.unsupported' : `value.state.${result.state}`)}</p>}
+      </dl></> : result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : <p role="status">{t(result.state === 'invalid' ? 'hll.invalid' : result.state === 'unavailable' ? 'hll.unavailable' : result.state === 'unsupported' ? 'hll.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
-    <HelpDetails label={t('ui.help')}><p>{t('hll.hint')}</p><p>{t('value.live')}</p></HelpDetails>
   </section>
 }

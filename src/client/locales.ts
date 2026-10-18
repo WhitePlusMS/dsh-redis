@@ -1,6 +1,7 @@
 export const NS = 'redis-viewer'
 export const zh = {
   'auto.off': '自动刷新已关闭', 'read.details': '最近读取', 'read.none': '尚无成功读取', 'read.busy': '读取中',
+  'geo.interpretation': '按 ZSet 分数解释坐标，不能据此判定业务类型；坐标经过量化。', 'geo.quantized': '坐标解释', 'hll.accuracy': '估算基数，标准误差约0.81%；源数据不写回。', 'bloom.recorded': '记录插入数（非精确）',
   'read.loaded': '已加载', 'read.partial': '部分', 'read.partialRange': '当前结果不完整，请缩小范围后刷新', 'read.rangeDone': '本轮范围已读完', 'read.more': '滚动到底继续加载', 'read.stopped': '已停止', 'read.clearFilter': '清除筛选', 'read.range': '范围与批量大小', 'read.items': '项', 'read.applied': '已提交条件', 'read.local': '本地', 'read.options': '查看选项',
   'collection.selectRow': '选择一行，查看内容。', 'collection.emptyMember': '（空成员）',
   'stream.selectMessage': '选择一条消息，查看字段和值。', 'stream.noFields': '这条消息没有字段。', 'stream.refresh': '刷新 Stream', 'stream.range': '消息范围与批量大小',
@@ -228,6 +229,7 @@ export const zh = {
 } as const
 export const en: Record<keyof typeof zh, string> = {
   'auto.off': 'Auto refresh off', 'read.details': 'Last read', 'read.none': 'No successful read yet', 'read.busy': 'Reading',
+  'geo.interpretation': 'Coordinates interpret ZSet scores, not the business type; positions are quantized.', 'geo.quantized': 'Interpretation', 'hll.accuracy': 'Approximate cardinality, about 0.81% standard error; source is not updated.', 'bloom.recorded': 'Recorded insertions (approx.)',
   'read.loaded': 'loaded', 'read.partial': 'Partial', 'read.partialRange': 'Incomplete results; narrow the range and refresh', 'read.rangeDone': 'Submitted range finished', 'read.more': 'Scroll down to load more', 'read.stopped': 'Stopped', 'read.clearFilter': 'Clear filter', 'read.range': 'Range and batch size', 'read.items': 'items', 'read.applied': 'Submitted query', 'read.local': 'Local', 'read.options': 'View options',
   'collection.selectRow': 'Select a row to inspect its content.', 'collection.emptyMember': '(empty member)',
   'stream.selectMessage': 'Select a message to inspect its fields and values.', 'stream.noFields': 'This message has no fields.', 'stream.refresh': 'Refresh Stream', 'stream.range': 'Message range and batch size',

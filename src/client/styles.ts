@@ -147,6 +147,12 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-view-tools { display:flex; align-items:center; justify-content:space-between; gap:4px; padding:5px 7px; border-bottom:1px solid var(--dsw-alias-border-l2); flex-shrink:0; }
 .dsh-redis .redis-view-tools > label { min-width:0; }
 .dsh-redis .redis-view-tools select { width:auto; max-width:150px; font-size:11px; }
+.dsh-redis .redis-interpretation-back { align-self:flex-start; margin:5px 8px; flex-shrink:0; }
+.dsh-redis .redis-estimate { display:flex; flex-direction:column; gap:8px; padding:20px 12px; flex-shrink:0; color:var(--dsw-alias-label-secondary); }
+.dsh-redis .redis-estimate strong { font:600 30px/1.3 Consolas,monospace; color:var(--redis-accent); }
+.dsh-redis .redis-verdict { display:flex; align-items:flex-start; gap:6px; padding:9px; border-left:2px solid var(--redis-accent); background:var(--redis-selected); }
+.dsh-redis .redis-verdict[data-bloom-membership=maybe-present] { border-left-color:var(--redis-key); }
+.dsh-redis .redis-collection-state > span { display:inline-flex; align-items:center; gap:4px; }
 .dsh-redis .redis-key-facts { margin-left:auto; border:0; background:transparent; padding:2px 4px; gap:7px; flex-shrink:0; }
 .dsh-redis .redis-type { color:var(--redis-key); font-size:10px; text-transform:uppercase; max-width:86px; overflow:hidden; text-overflow:ellipsis; }
 .dsh-redis .redis-ttl { display:inline-flex; align-items:center; gap:3px; font:10px Consolas,monospace; color:var(--dsw-alias-label-secondary); }

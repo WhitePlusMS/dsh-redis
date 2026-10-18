@@ -28,8 +28,7 @@ export function TimeSeriesChart({ samples, t }: { readonly samples: readonly Tim
   if (plot.state === 'invalid') return <p role="alert" className="redis-error">{t('chart.invalid')}</p>
   if (plot.state === 'empty') return <p data-ts-chart-empty>{t('chart.empty')}</p>
   return <div className="redis-ts-chart">
-    <p data-ts-chart-coverage>{t('chart.drawn')} <span data-ts-chart-count>{plot.points.length}</span> / {plot.loaded} · {t('chart.scope')}</p>
-    {plot.omitted > 0 && <p role="status" data-ts-chart-omitted>{t('chart.notDrawn')} {plot.omitted} · {t('chart.prefix')} {MAX_CHART_POINTS}</p>}
+    <div className="redis-collection-state" data-ts-chart-coverage><span className="redis-chip">{t('chart.scope')}</span><span title={t('chart.drawn')}><b data-ts-chart-count>{plot.points.length}</b> / {plot.loaded}</span>{plot.omitted > 0 && <span className="redis-warning" data-ts-chart-omitted title={`${t('chart.prefix')} ${MAX_CHART_POINTS}`}>{t('chart.notDrawn')} {plot.omitted}</span>}</div>
     <div ref={viewport} className="redis-chart-viewport">
       <svg data-ts-chart-svg viewBox="0 0 600 300" role="group" tabIndex={0} aria-label={t('chart.title') + '. ' + t('chart.keyboard')} onKeyDown={navigate}>
         <path className="redis-chart-grid" d="M24 20H576M24 150H576M24 280H576M24 20V280" />
