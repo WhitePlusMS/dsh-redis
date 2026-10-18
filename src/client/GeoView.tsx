@@ -59,10 +59,10 @@ export function GeoView(props: Props) {
     </form>}
 
     {rangeError && <p role="alert" className="redis-error">{t('zset.rangeError')}</p>}
-    {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
+    {error !== null && <p role="alert" className="redis-error">{t(error === 'oversize' ? 'geo.oversize' : `connection.error.${error}`)}</p>}
     {result !== null && <>
       {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd><dt>{t('zset.total')}</dt><dd>{result.metadata.length}</dd></dl>}
-      {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(result.error === 'oversize' ? 'geo.oversize' : `connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unavailable' ? 'geo.unavailable' : result.state === 'unsupported' ? 'geo.unsupported' : `value.state.${result.state}`)}</p>}
+      {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unavailable' ? 'geo.unavailable' : result.state === 'unsupported' ? 'geo.unsupported' : `value.state.${result.state}`)}</p>}
       {result.state === 'page' && <>
         <div className="redis-collection-state"><ScanProgress t={t} busy={busy} progress={progress} /><b data-loaded-geo>{cache.rows.length}</b> {t('read.items')}<span className="redis-chip">#<span data-geo-start>{request.offset}</span></span></div>
         {cache.rows.length === 0 && cursor === null ? <p>{t('geo.empty')}</p> : <CollectionTable rows={cache.rows} identity={entry => entry.member.base64} columns={columns} label={t('geo.title')} loading={busy} onEnd={cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />}

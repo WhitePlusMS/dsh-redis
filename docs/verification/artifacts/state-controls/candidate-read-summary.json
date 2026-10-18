@@ -1,0 +1,43 @@
+{
+  "counts": {
+    "PING": 3,
+    "DBSIZE": 17,
+    "INFO": 18,
+    "CONFIG": 17,
+    "SCAN": 136,
+    "TYPE": 125,
+    "PTTL": 125,
+    "HLEN": 40,
+    "HSCAN": 20,
+    "LLEN": 6,
+    "LRANGE": 3,
+    "SCARD": 6,
+    "SSCAN": 3,
+    "ZCARD": 10,
+    "ZRANGE": 5,
+    "XLEN": 7,
+    "XRANGE": 4,
+    "STRLEN": 12,
+    "GETRANGE": 7,
+    "PFCOUNT": 1,
+    "JSON.TYPE": 6,
+    "JSON.GET": 2,
+    "GEOPOS": 1,
+    "BF.INFO": 5,
+    "BF.EXISTS": 3,
+    "TS.INFO": 8,
+    "TS.RANGE": 8,
+    "CLIENT": 1,
+    "SLOWLOG": 1,
+    "AUTH": 1
+  },
+  "unchangedValueSnapshots": 14,
+  "consumerGroupsUnchanged": true,
+  "noWritesOrKeys": true,
+  "sizes": {
+    "list": 241,
+    "set": 238,
+    "zset": 237,
+    "stream": 235
+  }
+}

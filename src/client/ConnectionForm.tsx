@@ -32,7 +32,7 @@ export function ConnectionForm(props: Props) {
   const [caPem, setCaPem] = useState('')
   const [connection, setConnection] = useState<ConnectionView | null>(null)
   const [sampledAt, setSampledAt] = useState<Date | null>(null)
-  const [tested, setTested] = useState(false)
+  const [testOutcome, setTestOutcome] = useState<'passed' | 'failed' | null>(null)
   const [error, setError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [operation, setOperation] = useState<'test' | 'connect' | 'disconnect' | 'status' | null>(null)
   const busy = operation !== null
@@ -53,13 +53,13 @@ export function ConnectionForm(props: Props) {
     const controller = new AbortController()
     active.current = controller
     const current = ++sequence.current
-    setOperation(action); setError(null); setTested(false)
+    setOperation(action); setError(null); setTestOutcome(null)
     try {
       const result = await operation(controller.signal)
       if (controller.signal.aborted || current !== sequence.current) return
       if (result.ok) accept(result.value)
-      else setError('rpc')
-    } catch { if (!controller.signal.aborted && current === sequence.current) setError('rpc') }
+      else { setError('rpc'); if (action === 'test') setTestOutcome('failed') }
+    } catch { if (!controller.signal.aborted && current === sequence.current) { setError('rpc'); if (action === 'test') setTestOutcome('failed') } }
     finally { if (current === sequence.current && !controller.signal.aborted) setOperation(null) }
   }
   useEffect(() => {
@@ -80,16 +80,16 @@ export function ConnectionForm(props: Props) {
     <ProfileChooser {...props} disabled={busy || connected} settings={settings} open={settingsOpen} onClose={() => { setSettingsOpen(false); setPassword('') }} applyUri={({ request, db }) => {
         setHost(request.host); setPort(String(request.port)); setUsername(request.username); setPassword(request.password)
         setTls(request.tls !== null); setCaPem(request.tls?.caPem ?? '')
-        setError(null); setTested(false)
+        setError(null); setTestOutcome(null)
         // DB remains a preference draft until the existing explicit Select DB action.
         browsing.update({ db, keyBase64: null })
       }} select={value => {
         setHost(value?.host ?? '127.0.0.1'); setPort(String(value?.port ?? 6379)); setUsername(value?.username ?? '')
         setTls(value?.tls !== null && value?.tls !== undefined); setCaPem(value?.tls?.caPem ?? '')
-        setPassword(''); setError(null); setTested(false)
+        setPassword(''); setError(null); setTestOutcome(null)
       }}>
     {connected && <div className="redis-connection-notice"><p>{t('connection.editHint')}</p><button type="button" disabled={busy} onClick={disconnectCurrent}><Icon name="disconnect" />{t('connection.disconnect')}</button></div>}
-    <form className="redis-connect-form" autoComplete="off" onChange={() => setTested(false)} onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection, 'connect') }}>
+    <form className="redis-connect-form" autoComplete="off" onChange={() => setTestOutcome(null)} onSubmit={event => { event.preventDefault(); void run(signal => props.connect(request(), signal), acceptConnection, 'connect') }}>
       <fieldset disabled={busy || connected}>
         <div className="redis-form-section"><h3>{t('connection.serverSection')}</h3>
         <div className="redis-address">
@@ -105,10 +105,10 @@ export function ConnectionForm(props: Props) {
         {tls && <label>{t('connection.ca')}<textarea name="caPem" rows={5} maxLength={65536} value={caPem} onChange={event => setCaPem(event.target.value)} spellCheck={false} /><small>{t('connection.tlsVerification')}</small></label>}
         </div>
         <div className="redis-actions redis-connect-actions">
-          <button type="button" className={operation === 'test' ? 'redis-spinning' : ''} aria-label={t('connection.test')} aria-busy={operation === 'test'} data-test-state={tested ? 'passed' : operation === 'test' ? 'busy' : 'idle'} title={tested ? t('connection.testPassed') : t('connection.test')} onClick={event => {
+          <button type="button" className={operation === 'test' ? 'redis-spinning' : ''} aria-label={t('connection.test')} aria-busy={operation === 'test'} data-test-state={testOutcome ?? (operation === 'test' ? 'busy' : 'idle')} title={testOutcome === 'passed' ? t('connection.testPassed') : testOutcome === 'failed' && error !== null ? t(`connection.error.${error}`) : t('connection.test')} onClick={event => {
             if (!event.currentTarget.form?.reportValidity()) return
-            void run(signal => props.testConnection(request(), signal), value => { setTested(value.outcome === 'passed'); setError(value.error) }, 'test')
-          }}><Icon name={tested ? 'check' : operation === 'test' ? 'refresh' : 'locate'} />{t('connection.test')}{tested && <span className="redis-sr-only" role="status">{t('connection.testPassed')}</span>}</button>
+            void run(signal => props.testConnection(request(), signal), value => { setTestOutcome(value.outcome); setError(value.error) }, 'test')
+          }}><Icon name={testOutcome === 'passed' ? 'check' : testOutcome === 'failed' ? 'warning' : operation === 'test' ? 'refresh' : 'locate'} />{t('connection.test')}{testOutcome === 'passed' && <span className="redis-sr-only" role="status">{t('connection.testPassed')}</span>}</button>
           <button type="submit" className={`redis-primary-button${operation === 'connect' ? ' redis-spinning' : ''}`} aria-busy={operation === 'connect'}><Icon name={operation === 'connect' ? 'refresh' : 'database'} />{t('connection.connect')}</button>
         </div>
       </fieldset>

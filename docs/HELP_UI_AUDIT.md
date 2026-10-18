@@ -108,3 +108,7 @@
 Hash 以已加载/全部字段、实际部分覆盖、读取时间、错误代替帮助；服务器 MATCH 和本地搜索作用域分别标明。具体改动及验证见 [本轮跟进](E:/项目demo/dsh-redis/docs/RESP_OPERATION_REFINEMENT.md)。
 
 随后用户要求统一 List / Set / ZSet / Stream，四页已删除帮助入口及十组无调用中英文长正文，以范围/方向、已加载/全部数量、原始分数、读取时间、实际部分覆盖和错误表达状态。当前保留 8 个源码级 HelpDetails / 10 个功能场景；其他特殊类型、连接与诊断尚未全量清理。`set.identity` 仍由 GEO 使用，`value.live` 仍有专用类型调用，继续保留；已无调用的 `hash.identity` 与详情返回文案删除。见 [集合统一跟进](E:/项目demo/dsh-redis/docs/COLLECTION_INLINE_PLAN.md)。
+
+### A方案P0+P1后续实施
+
+剩余8处JSX/10场景已清理，确认无调用后删除HelpDetails组件和CSS。删除17组无调用中英文长正文；密码/TLS在字段旁各保留一次，URI/导入导出仅保留有操作意义的短说明。特殊结果的估算、概率、GEO解释、图表已读范围、部分/权限状态继续可见。读取时间改为统一按需入口，完整技术机制仍在README和原研究文档；上文旧计数仅描述历史版本。见[状态控件实施与验证](E:/项目demo/dsh-redis/docs/verification/state-controls-2026-10-18.md)。

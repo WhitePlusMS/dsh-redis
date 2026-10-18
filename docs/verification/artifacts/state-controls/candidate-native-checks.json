@@ -1,0 +1,113 @@
+{
+  "packageSha256": "2e8238dac92f3f14a9bdb8bdd40fbf10e278571750a289b510012f5acc2e5d23",
+  "checks": [
+    {
+      "id": "connection-test",
+      "passed": true,
+      "detail": "测试通过在原按钮上显示，尚未连接"
+    },
+    {
+      "id": "copy-independent",
+      "passed": true,
+      "detail": [
+        "copied",
+        "idle"
+      ]
+    },
+    {
+      "id": "auto-refresh",
+      "passed": true,
+      "detail": {
+        "before": 1,
+        "after": 17,
+        "toolbarHeight": 33
+      }
+    },
+    {
+      "id": "list-range",
+      "passed": true,
+      "detail": "100 项\n#100–199"
+    },
+    {
+      "id": "set-scroll",
+      "passed": true,
+      "detail": "选行后仍触底追加到238项"
+    },
+    {
+      "id": "zset-scroll",
+      "passed": true,
+      "detail": "237项，选中成员与分数同屏"
+    },
+    {
+      "id": "stream-inline",
+      "passed": true,
+      "detail": "235条，重复字段第二次出现值second；空态指引一次"
+    },
+    {
+      "id": "cancel-late",
+      "passed": true,
+      "detail": "忙态在按钮，取消一条提示；延迟回复稍后核对"
+    },
+    {
+      "id": "string-partial",
+      "passed": true,
+      "detail": "65536/131073字节；迟到Stream未污染新Key"
+    },
+    {
+      "id": "bitmap",
+      "passed": true,
+      "detail": {
+        "bits": [
+          "100000000000000111111110"
+        ],
+        "coverage": "#0–2324 bits · String 总位数 24"
+      }
+    },
+    {
+      "id": "hll-estimate",
+      "passed": true,
+      "detail": "≈ 3"
+    },
+    {
+      "id": "json-path",
+      "passed": true,
+      "detail": "根值保留9007199254740993；null有匹配，missing无预览，草稿不替换路径标签"
+    },
+    {
+      "id": "geo",
+      "passed": true,
+      "detail": "ZSet元信息与显式坐标解释同屏，坐标原文可读，范围默认收起"
+    },
+    {
+      "id": "bloom-verdicts",
+      "passed": true,
+      "detail": "可能存在/本次阴性区分；提交Base64默认折叠"
+    },
+    {
+      "id": "timeseries-chart",
+      "passed": true,
+      "detail": "700已读，512绘制，188未绘制，明确仅已读样本"
+    },
+    {
+      "id": "snapshots",
+      "passed": true,
+      "detail": {
+        "clientCov": "2\n/ 2 项",
+        "slowCov": "部分\n10\n/ 10 项",
+        "fields": 16,
+        "timeOnDemand": true
+      }
+    },
+    {
+      "id": "module-info-permission",
+      "passed": true,
+      "detail": "BF.INFO/TS.INFO拒绝仍明确，BF.EXISTS和TS.RANGE仍可读"
+    },
+    {
+      "id": "narrow-themes",
+      "passed": true,
+      "detail": "464px浅/深，无工作区溢出，自动刷新条33px，字段和值局部滚动"
+    }
+  ],
+  "recordedAt": "2026-10-18T15:41:39.039Z"
+}

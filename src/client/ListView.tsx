@@ -61,7 +61,7 @@ export function ListView(props: Props) {
     {result !== null && <>
 
       {result.metadata !== null && <dl className="redis-metadata redis-key-metadata"><dt>TYPE</dt><dd>{result.metadata.type}</dd><dt>TTL (ms)</dt><dd>{result.metadata.ttlMs === '-1' ? t('value.persistent') : result.metadata.ttlMs}</dd>{result.metadata.length !== null && <><dt>{t('list.total')}</dt><dd>{result.metadata.length}</dd></>}</dl>}
-      {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'page' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
+      {result.state !== 'page' && result.state !== 'failed' && <p role="status">{t(result.state === 'unsupported' ? 'list.unsupported' : `value.state.${result.state}`)}</p>}
     </>}
     <div className="redis-collection-summary" data-list-coverage><ScanProgress t={t} busy={busy} progress={progress} /><span title={t('list.returned')}><b data-list-count>{cache.rows.length}</b>{request.offset === '0' ? ' / ' + (result?.metadata?.length ?? '—') : ' ' + t('read.items')}</span><span title={t('list.index')}>#<b data-list-start>{request.offset}</b>{cache.rows.length > 0 ? '–' + cache.rows[cache.rows.length - 1]!.index : ''}</span></div>
     <div className="redis-collection-body">

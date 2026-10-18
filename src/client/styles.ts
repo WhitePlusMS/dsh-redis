@@ -28,6 +28,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-plugin-info { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:6px 9px; border-bottom:1px solid var(--dsw-alias-border-l2); font-size:10px; color:var(--dsw-alias-label-secondary); flex-shrink:0; }
 .dsh-redis .redis-connection-indicator { display:flex; align-items:center; gap:4px; }
 .dsh-redis .redis-connection-indicator.redis-connected, .dsh-redis [data-test-state=passed] { color:var(--redis-accent); }
+.dsh-redis [data-test-state=failed] { color:var(--redis-error); }
 .dsh-redis .redis-empty, .dsh-redis .redis-connect-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:16px; min-height:0; text-align:center; }
 .dsh-redis .redis-empty { flex:1; }
 .dsh-redis .redis-connect-empty { grid-area:browser; }
