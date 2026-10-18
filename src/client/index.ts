@@ -6,7 +6,6 @@ import type {} from '@deepseek-ai/dsh-client-locale/client'
 import type {} from '@deepseek-ai/dsh-client-ui-renderer/client'
 import type {} from '@deepseek-ai/dsh-client-ui-session/client'
 import { TYPERT_REMOTE } from '../typert.remote-client.ts'
-import { SessionStateQueue } from './session-state-queue.ts'
 import { RedisWorkspace, type RedisWorkspaceInjected } from './RedisWorkspace.tsx'
 import { installRedisStyles } from './styles.ts'
 import { en, NS, zh } from './locales.ts'
@@ -17,7 +16,6 @@ export function apply(ctx: Context): void {
   ctx.effect(installRedisStyles)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'redis dictionaries')
   const t = ctx.locale.bind(NS)
-  const browsingQueue = new SessionStateQueue()
   let remoteReady: ReturnType<typeof ctx.remote.$mount> | undefined
   // Rejected mounts are not cached, so an explicit retry can discover a recovered Host.
   const remote = async () => {
@@ -40,34 +38,22 @@ export function apply(ctx: Context): void {
     name: 'sidebar.right.pane.tab', key: 'dsh-redis', locale: NS,
     inject: (sessionId): RedisWorkspaceInjected => ({
       sessionKey: sessionId,
-      loadBrowsingState: signal => browsingQueue.run(sessionId, async () => { signal.throwIfAborted(); return (await remote()).loadBrowsingState(sessionId, {}, signal) }),
-      saveBrowsingState: (state, signal) => browsingQueue.run(sessionId, async () => { signal.throwIfAborted(); return (await remote()).saveBrowsingState(sessionId, state, signal) }),
       status: async signal => (await remote()).status(sessionId, {}, signal),
-      testConnection: async (request, signal) => (await remote()).testConnection(sessionId, request, signal),
       connect: async (request, signal) => (await remote()).connect(sessionId, request, signal),
       disconnect: async (request, signal) => (await remote()).disconnect(sessionId, request, signal),
       connectionStatus: async signal => (await remote()).connectionStatus(sessionId, {}, signal),
-      importProfiles: async (request, signal) => (await remote()).importProfiles(sessionId, request, signal),
       listProfiles: async signal => (await remote()).listProfiles(sessionId, {}, signal),
       saveProfile: async (request, signal) => (await remote()).saveProfile(sessionId, request, signal),
       removeProfile: async (request, signal) => (await remote()).removeProfile(sessionId, request, signal),
       selectDatabase: async (request, signal) => (await remote()).selectDatabase(sessionId, request, signal),
       readDatabases: async (request, signal) => (await remote()).readDatabases(sessionId, request, signal),
       scanKeys: async (request, signal) => (await remote()).scanKeys(sessionId, request, signal),
-      readClients: async (request, signal) => (await remote()).readClients(sessionId, request, signal),
-      readSlowLog: async (request, signal) => (await remote()).readSlowLog(sessionId, request, signal),
-      readOverview: async (request, signal) => (await remote()).readOverview(sessionId, request, signal),
       readString: async (request, signal) => (await remote()).readString(sessionId, request, signal),
       scanHash: async (request, signal) => (await remote()).scanHash(sessionId, request, signal),
       readList: async (request, signal) => (await remote()).readList(sessionId, request, signal),
       scanSet: async (request, signal) => (await remote()).scanSet(sessionId, request, signal),
       readZSet: async (request, signal) => (await remote()).readZSet(sessionId, request, signal),
       readStream: async (request, signal) => (await remote()).readStream(sessionId, request, signal),
-      readJson: async (request, signal) => (await remote()).readJson(sessionId, request, signal),
-      readGeo: async (request, signal) => (await remote()).readGeo(sessionId, request, signal),
-      readBloom: async (request, signal) => (await remote()).readBloom(sessionId, request, signal),
-      readTimeSeries: async (request, signal) => (await remote()).readTimeSeries(sessionId, request, signal),
-      readHll: async (request, signal) => (await remote()).readHll(sessionId, request, signal),
     }),
   }, RedisWorkspace)), 'redis tab body')
   console.info('[dsh-redis] Native sidebar registered')

@@ -5,7 +5,7 @@
 // profile can consume the package without a Harness checkout.
 
 import { createRequire } from 'node:module'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { dirname, relative, resolve, sep } from 'node:path'
 
 const require = createRequire(import.meta.url)
@@ -174,6 +174,10 @@ function buildClient() {
   }
 }
 
+// Deleted source modules must not survive in a newly published package.
+// Verify this exact owned output directory before recursive removal.
+if (relative(ROOT, LIB) !== 'lib') throw new Error('Unexpected build output directory: ' + LIB)
+rmSync(LIB, { recursive: true, force: true })
 mkdirSync(LIB, { recursive: true })
 buildHost()
 buildClient()

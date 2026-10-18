@@ -2,8 +2,7 @@ import { useContext, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ConnectionErrorCode, ConnectionView, DatabaseCatalog, DatabasesReadRequest, DatabasesReadResult, DatabaseTarget, ScanKeysRequest, ScanKeysResult, RedisKey } from '../domain.ts'
-import { useBrowsingState } from './BrowsingSession.tsx'
-import { displayLabel, prefixLabel } from './collection-value.ts'
+import { displayLabel } from './collection-value.ts'
 import { emptyKeyLoad, keyLoadPercent, loadKeysAutomatically } from './key-loading.ts'
 import { NS } from './locales.ts'
 import { KeyDetails, type StringActions } from './KeyDetails.tsx'
@@ -16,12 +15,8 @@ import type { ListActions } from './ListView.tsx'
 import type { SetActions } from './SetView.tsx'
 import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
-import type { JsonActions } from './JsonView.tsx'
-import type { BloomActions } from './BloomView.tsx'
-import type { TimeSeriesActions } from './TimeSeriesView.tsx'
-import type { HllActions } from './HllView.tsx'
 
-export interface KeyActions extends BloomActions, TimeSeriesActions, StringActions, HllActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions, JsonActions {
+export interface KeyActions extends StringActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions {
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
   readonly readDatabases: (request: DatabasesReadRequest, signal: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
@@ -30,19 +25,14 @@ type Props = KeyActions & { readonly connection: ConnectionView; readonly accept
 
 /** An already-connected session owns one sequential scan. DB/session/unmount abort it. */
 export function KeyBrowser(props: Props) {
-  const { t, connection } = props, browsing = useBrowsingState(), visibility = useContext(RefreshVisibility)
-  const [pattern, setPattern] = useState(browsing.state.pattern), [draft, setDraft] = useState(pattern)
+  const { t, connection } = props, visibility = useContext(RefreshVisibility)
+  const [pattern, setPattern] = useState('*'), [draft, setDraft] = useState(pattern)
   const [dbDraft, setDbDraft] = useState(String(connection.db)), [filters, setFilters] = useState(false)
   const [load, setLoad] = useState(emptyKeyLoad), [databases, setDatabases] = useState<DatabaseCatalog | null>(null)
   const [catalogError, setCatalogError] = useState<ConnectionErrorCode | 'rpc' | null>(null)
   const [selectingDb, setSelectingDb] = useState(false)
-  const [selected, setSelected] = useState<RedisKey | null>(() => {
-    const base64 = browsing.state.keyBase64
-    if (base64 === null || browsing.state.db !== connection.db) return null
-    const byteLength = atob(base64).length
-    return { base64, byteLength, label: prefixLabel({ base64, byteLength, fullByteLength: byteLength, suffix: '' }) }
-  })
-  const [opened, setOpened] = useState(false), [detailTab, setDetailTab] = useState<'data' | 'metadata'>('data'), [focused, setFocused] = useState(false)
+  const [selected, setSelected] = useState<RedisKey | null>(null)
+  const [detailTab, setDetailTab] = useState<'data' | 'metadata'>('data'), [focused, setFocused] = useState(false)
   const catalog = useRef<HTMLDivElement>(null), detail = useRef<HTMLDivElement>(null)
   const catalogPosition = useRef(0), returnToCatalog = useRef(false), sequence = useRef(0), active = useRef<AbortController | null>(null)
   const target = (): DatabaseTarget => {
@@ -57,7 +47,7 @@ export function KeyBrowser(props: Props) {
     active.current?.abort()
     const controller = new AbortController(), current = ++sequence.current
     active.current = controller; setLoad(emptyKeyLoad()); setCatalogError(null); setDatabases(null)
-    if (clearSelection) { setSelected(null); setOpened(false); setDetailTab('data'); browsing.update({ db: connection.db, pattern: query, keyBase64: null }) }
+    if (clearSelection) { setSelected(null); setDetailTab('data'); }
     try {
       const result = await props.readDatabases({ target: target() }, controller.signal)
       if (controller.signal.aborted || current !== sequence.current) return
@@ -77,10 +67,7 @@ export function KeyBrowser(props: Props) {
       const result = await props.selectDatabase({ ...target(), db }, controller.signal)
       if (controller.signal.aborted || current !== sequence.current) return
       if (!result.ok) setCatalogError('rpc')
-      else {
-        if (result.value.state === 'connected' && result.value.db === db) browsing.update({ db, keyBase64: null })
-        props.acceptConnection(result.value)
-      }
+      else props.acceptConnection(result.value)
     } catch { if (!controller.signal.aborted && current === sequence.current) setCatalogError('rpc') }
     finally { if (current === sequence.current) setSelectingDb(false) }
   }
@@ -107,7 +94,7 @@ export function KeyBrowser(props: Props) {
   }
   const total = databases?.currentKeys ?? databases?.keyspace?.find(row => row.db === connection.db)?.keys ?? (databases?.keyspace === null || databases === null ? null : '0')
   const percent = keyLoadPercent(load.cache.keys.length, total, pattern, load.phase), busy = load.phase === 'loading'
-  function applyFilter(value: string): void { setPattern(value); setDraft(value); setFilters(false); browsing.update({ pattern: value }); void scan(value, true) }
+  function applyFilter(value: string): void { setPattern(value); setDraft(value); setFilters(false); void scan(value, true) }
   return <section className="redis-keys" data-focused={focused} aria-label={t('keys.title')} onKeyDown={event => {
     if (event.key === 'Escape' && focused && !event.defaultPrevented) { event.preventDefault(); setFocused(false) }
   }}>
@@ -126,8 +113,7 @@ export function KeyBrowser(props: Props) {
         {databases?.databaseCount == null && <form onSubmit={event => { event.preventDefault(); void selectDb(Number(dbDraft)) }}><label>{t('workbench.openDb')}<input name="db" type="number" min={0} max={65535} required value={dbDraft} onChange={event => setDbDraft(event.target.value)} /></label><button type="submit" disabled={selectingDb}>{t('keys.selectDatabase')}</button></form>}
       </div>}
       <KeyCatalog keys={load.cache.keys} selected={selected} t={t} databases={databases} db={connection.db} selectingDb={selectingDb} selectDb={db => { void selectDb(db) }} select={key => {
-        browsing.update({ db: connection.db, keyBase64: key.base64, ...(selected?.base64 === key.base64 ? {} : { stringOffset: '0', stringCount: 65536 }) })
-        setSelected(key); setOpened(true); setDetailTab('data')
+        setSelected(key); setDetailTab('data')
       }} />
       <div className="redis-load-status" role="status" data-key-load-phase={load.phase} data-db-total={total ?? ''}>
         <div className="redis-load-count" title={`${t('keys.loaded')}: ${load.cache.keys.length} · ${t('workbench.total')}: ${total ?? t('workbench.unknown')} · ${t(`workbench.${load.phase}`)}`}>
@@ -148,12 +134,11 @@ export function KeyBrowser(props: Props) {
         <div className="redis-inspector-toolbar"><div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
           <button type="button" role="tab" aria-selected={detailTab === 'data'} onClick={() => setDetailTab('data')}>{t('ui.data')}</button>
           <button type="button" role="tab" aria-selected={detailTab === 'metadata'} onClick={() => setDetailTab('metadata')}>{t('ui.metadata')}</button>
-        </div>{opened && <RefreshControls t={t} />}</div>
-        {opened && <RefreshReadInfo t={t} />}
-        {!opened && <><p>{t('session.restored')}</p><button type="button" disabled={selectingDb} onClick={() => setOpened(true)}>{t('session.readKey')}</button></>}
+        </div><RefreshControls t={t} /></div>
+        <RefreshReadInfo t={t} />
         <div className="redis-inspector" data-view={detailTab} role="tabpanel" aria-label={t(detailTab === 'data' ? 'ui.data' : 'ui.metadata')}>
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
-          {opened && <KeyDetails {...props} target={target()} selected={selected} />}
+          <KeyDetails {...props} target={target()} selected={selected} />
         </div>
       </KeyAutoRefresh></KeyPresentation> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
     </div>

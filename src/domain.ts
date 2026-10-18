@@ -29,10 +29,6 @@ export interface ConnectionView {
   readonly error: ConnectionErrorCode | null
   readonly target: { readonly host: string; readonly port: number; readonly username: string; readonly tls: boolean } | null
 }
-export interface ConnectionTestResult {
-  readonly outcome: 'passed' | 'failed'
-  readonly error: ConnectionErrorCode | null
-}
 
 /** Saved connection settings contain no password or live socket identity. */
 export type ConnectionSettings = Omit<ConnectionRequest, 'password'>
@@ -41,38 +37,7 @@ export interface SaveProfileRequest { readonly id: string | null; readonly name:
 export interface ProfileId { readonly id: string }
 export interface ProfileCollection { readonly profiles: readonly SavedConnection[]; readonly selectedId: string | null }
 export const MAX_PROFILES = 50
-
-/** Portable data deliberately excludes credentials, certificates and runtime IDs. */
-export interface PortableConnection { readonly name: string; readonly group?: string; readonly settings: { readonly host: string; readonly port: number; readonly username: string; readonly tls: boolean } }
-export interface ImportProfilesRequest { readonly profiles: readonly PortableConnection[] }
-export const PROFILE_DOCUMENT_FORMAT = 'dsh-redis-connections' as const
-export interface ProfileDocument { readonly format: typeof PROFILE_DOCUMENT_FORMAT; readonly version: 1; readonly profiles: readonly PortableConnection[] }
-export const MAX_PROFILE_DOCUMENT_BYTES = 256 * 1024
-
-/** Selected INFO fields are exact text; counters must not pass through Number. */
-export const OVERVIEW_FIELDS = ['redis_version', 'redis_mode', 'uptime_in_seconds', 'used_memory', 'used_memory_rss', 'used_memory_peak', 'maxmemory', 'connected_clients', 'blocked_clients', 'total_connections_received', 'total_commands_processed', 'instantaneous_ops_per_sec', 'keyspace_hits', 'keyspace_misses', 'expired_keys', 'evicted_keys'] as const
-export type OverviewField = typeof OVERVIEW_FIELDS[number]
-export type OverviewFields = Readonly<Record<OverviewField, string | null>>
-export interface OverviewReadRequest { readonly target: DatabaseTarget }
-export interface OverviewReadResult { readonly state: 'value' | 'failed'; readonly error: ConnectionErrorCode | null; readonly fields: OverviewFields | null; readonly sampledAt: string }
 export const MAX_INFO_BYTES = 128 * 1024
-
-/** SLOWLOG summaries never contain argument bodies or client addresses/names. */
-export const MAX_SLOWLOG_ENTRIES = 100
-export const MAX_SLOWLOG_ARGUMENTS = 128
-export const MAX_SLOWLOG_SUMMARY_ARGS = 8
-export interface SlowLogEntry { readonly id: string; readonly timestampSeconds: string; readonly durationUs: string; readonly command: string | null; readonly loggedArgumentCount: number; readonly argumentBytes: readonly number[]; readonly originalArgumentCount: string | null }
-export interface SlowLogReadRequest { readonly target: DatabaseTarget; readonly count: number }
-export interface SlowLogReadResult { readonly state: 'page' | 'unavailable' | 'failed'; readonly error: ConnectionErrorCode | null; readonly entries: readonly SlowLogEntry[]; readonly count: number; readonly more: boolean; readonly sampledAt: string }
-
-/** CLIENT LIST is a bounded server snapshot, separate from owned socket IDs. */
-export const CLIENT_LIST_FIELDS = ['id', 'addr', 'name', 'user', 'age', 'idle', 'flags', 'db', 'cmd', 'qbuf', 'omem', 'sub', 'psub', 'ssub'] as const
-export type ClientListField = typeof CLIENT_LIST_FIELDS[number]
-export type ClientListEntry = Readonly<Record<ClientListField, string | null>>
-export const MAX_CLIENT_LIST_BYTES = 256 * 1024
-export const MAX_CLIENT_LIST_ROWS = 200
-export interface ClientListReadRequest { readonly target: DatabaseTarget }
-export interface ClientListReadResult { readonly state: 'page' | 'unavailable' | 'failed'; readonly error: ConnectionErrorCode | null; readonly entries: readonly ClientListEntry[]; readonly total: number; readonly limited: boolean; readonly sampledAt: string }
 
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
@@ -208,103 +173,10 @@ export interface StreamReadResult {
 }
 export const MAX_STREAM_MESSAGES = 100
 
-/** JSON.GET returns a complete JSONPath match array, never a byte-window page. */
-export const JSON_VALUE_TYPES = ['null', 'boolean', 'integer', 'number', 'string', 'object', 'array'] as const
-export type JsonValueType = typeof JSON_VALUE_TYPES[number]
-export interface JsonReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly path: string }
-export interface JsonReadResult {
-  readonly state: 'value' | 'missing' | 'unsupported' | 'changed' | 'path-missing' | 'unavailable' | 'invalid-path' | 'failed'
-  readonly error: ConnectionErrorCode | null
-  readonly metadata: KeyMetadata | null
-  readonly path: string
-  readonly matchTypes: readonly JsonValueType[]
-  readonly base64: string
-  readonly byteLength: number
-  readonly sampledAt: string
-}
-
-/** Explicit coordinate interpretation, never a new Redis TYPE or Geo detection. */
-export interface GeoPosition { readonly longitude: string; readonly latitude: string }
-export interface GeoEntry extends ZSetEntry { readonly rank: string; readonly position: GeoPosition | null }
-export interface GeoReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly offset: string; readonly count: number }
-export interface GeoReadResult {
-  readonly state: 'page' | 'missing' | 'unsupported' | 'changed' | 'unavailable' | 'failed'
-  readonly error: ConnectionErrorCode | null
-  readonly metadata: KeyMetadata | null
-  readonly entries: readonly GeoEntry[]
-  readonly offset: string
-  readonly nextOffset: string | null
-  readonly sampledAt: string
-}
-export const MAX_GEO_ARGUMENT_BYTES = 96 * 1024
-
-/** HLL is a String interpretation; only a successful server merge validates it. */
-export interface HllReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string }
-export interface HllReadResult {
-  readonly state: 'value' | 'missing' | 'unsupported' | 'changed' | 'invalid' | 'unavailable' | 'failed'
-  readonly error: ConnectionErrorCode | null
-  readonly metadata: KeyMetadata | null
-  readonly estimate: string | null
-  readonly encoding: 'dense' | 'sparse' | null
-  readonly cacheValid: boolean | null
-  readonly sampledAt: string
-}
-
-/** Inclusive Unix-millisecond bounds and decimal strings never pass through Number. */
-export interface TimeSeriesSample { readonly timestamp: string; readonly value: string }
-export interface TimeSeriesInfo { readonly totalSamples: string; readonly firstTimestamp: string; readonly lastTimestamp: string; readonly retentionTime: string }
-export interface TimeSeriesReadRequest {
-  readonly target: DatabaseTarget
-  readonly keyBase64: string
-  readonly direction: 'forward' | 'reverse'
-  readonly start: string
-  readonly end: string
-  readonly count: number
-  readonly cursor: string | null
-}
-export interface TimeSeriesReadResult {
-  readonly state: 'page' | 'missing' | 'unsupported' | 'changed' | 'unavailable' | 'failed'
-  readonly error: ConnectionErrorCode | null
-  readonly metadata: KeyMetadata | null
-  readonly direction: 'forward' | 'reverse'
-  readonly start: string
-  readonly end: string
-  readonly samples: readonly TimeSeriesSample[]
-  readonly info: TimeSeriesInfo | null
-  readonly infoState: 'available' | 'permission' | 'unavailable' | null
-  readonly cursor: string | null
-  readonly sampledAt: string
-}
-export const MAX_TIMESERIES_SAMPLES = 100
-
-/** One explicit item per query, separate from the information-only first read. */
-export const MAX_BLOOM_ITEM_BYTES = 4096
-export interface BloomInfo { readonly capacity: string; readonly size: string; readonly filters: string; readonly inserted: string; readonly expansion: string | null }
-export interface BloomReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly itemBase64: string | null }
-export interface BloomReadResult {
-  readonly state: 'value' | 'missing' | 'unsupported' | 'changed' | 'unavailable' | 'failed'
-  readonly error: ConnectionErrorCode | null
-  readonly metadata: KeyMetadata | null
-  readonly info: BloomInfo | null
-  readonly infoState: 'available' | 'permission' | 'unavailable' | null
-  readonly itemBase64: string | null
-  readonly membership: 'absent' | 'maybe-present' | null
-  readonly sampledAt: string
-}
-
 /** UI preferences belong to the trusted Host session, never to a live socket.
  * Only selections survive a sidebar remount; values, credentials and cursors do not.
  */
-export const PREVIEW_FORMATS = ['text', 'json', 'hex', 'base64', 'decode-text', 'decode-json'] as const
+export const PREVIEW_FORMATS = ['text', 'json', 'hex', 'base64'] as const
 export type PreviewFormat = typeof PREVIEW_FORMATS[number]
-export const PREVIEW_VIEWS = ['string', 'hash', 'list', 'set', 'zset', 'stream', 'geo', 'json'] as const
+export const PREVIEW_VIEWS = ['string', 'hash', 'list', 'set', 'zset', 'stream'] as const
 export type PreviewView = typeof PREVIEW_VIEWS[number]
-export interface SessionBrowsingState {
-  readonly profileId: string | null
-  readonly db: number
-  readonly pattern: string
-  readonly keyBase64: string | null
-  readonly formats: Readonly<Record<PreviewView, PreviewFormat>>
-  readonly stringOffset: string
-  readonly stringCount: number
-}

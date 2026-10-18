@@ -5,7 +5,7 @@ import type { DatabaseTarget, HashEntry, PreviewFormat, RedisKey, ScanHashReques
 import { BytePreview } from './BytePreview.tsx'
 import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { appendHashEntries, emptyHashCache, type HashCache } from './hash-cache.ts'
-import { useBrowsingFormat } from './BrowsingSession.tsx'
+import { useBrowsingFormat } from './PreviewFormats.tsx'
 import { prefixWindow, cellLabel, displayLabel } from './collection-value.ts'
 import { NS } from './locales.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'

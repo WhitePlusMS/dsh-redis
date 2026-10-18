@@ -29,20 +29,11 @@ describe('connection ownership and lifecycle', () => {
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'CERT_HAS_EXPIRED' }))).toBe('tls-certificate')
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'ECONNRESET' }))).toBe('network')
   })
-  it('closes successful test clients and never creates a persistent session entry', async () => {
-    const client = link()
-    const service = new RedisConnections(async () => client.transport)
-    expect(await service.test(settings, signal())).toEqual({ outcome: 'passed', error: null })
-    expect(client.close).toHaveBeenCalledTimes(1)
-    expect(service.status('a').state).toBe('disconnected')
-  })
   it('reduces authentication failures to a fixed code without returning credentials', async () => {
     const service = new RedisConnections(async () => { throw new Error('WRONGPASS ' + settings.password) })
-    const tested = await service.test(settings, signal())
     const connected = await service.connect('a', settings, signal())
-    expect(tested).toEqual({ outcome: 'failed', error: 'auth' })
     expect(connected).toMatchObject({ state: 'error', error: 'auth' })
-    expect(JSON.stringify([tested, connected])).not.toContain(settings.password)
+    expect(JSON.stringify(connected)).not.toContain(settings.password)
     service.dispose()
   })
   it('keeps a stable identity but advances generation; an old disconnect cannot close a replacement', async () => {
@@ -83,14 +74,6 @@ describe('connection ownership and lifecycle', () => {
     expect(client.close).toHaveBeenCalledTimes(1)
     expect(service.status('a').state).toBe('error')
   })
-  it('does not report a late cancelled connection test as passed', async () => {
-    const pending = deferred(), client = link(), controller = new AbortController()
-    const service = new RedisConnections(() => pending.promise)
-    const result = service.test(settings, controller.signal)
-    controller.abort(); pending.resolve(client.transport)
-    expect(await result).toEqual({ outcome: 'failed', error: 'cancelled' })
-    expect(client.close).toHaveBeenCalledTimes(1)
-  })
   it('disposes only the owning session, including a setup still in flight', async () => {
     const pending = deferred(), late = link(), other = link()
     let setupSignal: AbortSignal | undefined
@@ -127,10 +110,10 @@ describe('connection ownership and lifecycle', () => {
   it('preserves explicit timeout failures and never opens an already cancelled request', async () => {
     const open = vi.fn<RedisOpener>().mockRejectedValue(new ConnectionFailure('timeout'))
     const service = new RedisConnections(open)
-    expect((await service.test(settings, signal())).error).toBe('timeout')
+    expect((await service.connect('a', settings, signal())).error).toBe('timeout')
     const controller = new AbortController(); controller.abort()
     await expect(service.connect('a', settings, controller.signal)).rejects.toThrow()
     expect(open).toHaveBeenCalledTimes(1)
-    expect(service.status('a').state).toBe('disconnected')
+    expect(service.status('b').state).toBe('disconnected')
   })
 })

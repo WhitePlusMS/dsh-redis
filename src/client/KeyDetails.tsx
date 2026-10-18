@@ -1,22 +1,15 @@
+import { useBrowsingFormat } from './PreviewFormats.tsx'
 import { useAutoRefreshReader } from './AutoRefresh.tsx'
 import { useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { MAX_VALUE_BYTES, type DatabaseTarget, type RedisKey, type StringReadRequest, type StringReadResult } from '../domain.ts'
 import { BytePreview } from './BytePreview.tsx'
-import { useBrowsingFormat, useBrowsingState } from './BrowsingSession.tsx'
 import { HashView, type HashActions } from './HashView.tsx'
 import { ListView, type ListActions } from './ListView.tsx'
 import { SetView, type SetActions } from './SetView.tsx'
 import { ZSetView, type ZSetActions } from './ZSetView.tsx'
 import { StreamView, type StreamActions } from './StreamView.tsx'
-import { JsonView, type JsonActions } from './JsonView.tsx'
-import { isRedisJsonType } from '../redis-json.ts'
-import { BitmapView } from './BitmapView.tsx'
-import { BloomView, type BloomActions } from './BloomView.tsx'
-import { TimeSeriesView, type TimeSeriesActions } from './TimeSeriesView.tsx'
-import { isTimeSeriesType } from '../redis-timeseries.ts'
-import { HllView, type HllActions } from './HllView.tsx'
 import { NS } from './locales.ts'
 import { stringReadRequestSchema } from '../typert.shared.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
@@ -24,25 +17,23 @@ import { ReadActions, QueryToggle } from './ReadControls.tsx'
 import { Icon } from './Icon.tsx'
 
 export interface StringActions { readonly readString: (request: StringReadRequest, signal: AbortSignal) => Promise<RemoteResult<StringReadResult>> }
-type Props = BloomActions & TimeSeriesActions & StringActions & HllActions & HashActions & ListActions & SetActions & ZSetActions & StreamActions & JsonActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
+type Props = StringActions & HashActions & ListActions & SetActions & ZSetActions & StreamActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
 /** Selection is an explicit read. Offset/count/retry owns a cancellable request;
  * stale replies cannot replace the selected key or any newer byte window.
  */
 export function KeyDetails(props: Props) {
   const { t } = props
-  const browsing = useBrowsingState()
-  const [offset, setOffset] = useState(browsing.state.stringOffset), [count, setCount] = useState(browsing.state.stringCount)
-  const [request, setRequest] = useState({ offset: browsing.state.stringOffset, count: browsing.state.stringCount, attempt: 0 })
+  const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_VALUE_BYTES)
+  const [request, setRequest] = useState({ offset: '0', count: MAX_VALUE_BYTES, attempt: 0 })
   // The formatter survives the loading state between byte windows.
   const [format, setFormat] = useBrowsingFormat('string')
   const [result, setResult] = useState<StringReadResult | null>(null)
   const [busy, setBusy] = useState(false), [rpcError, setRpcError] = useState(false), [cancelled, setCancelled] = useState(false)
   const [rangeError, setRangeError] = useState(false)
   const [optionsOpen, setOptionsOpen] = useState(false)
-  const [view, setView] = useState<'string' | 'bitmap' | 'hll'>('string')
   const active = useRef<AbortController | null>(null)
-  const auto = useAutoRefreshReader({ active: view === 'string' && result?.state !== 'unsupported', busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
+  const auto = useAutoRefreshReader({ active: result?.state !== 'unsupported', busy, result, failed: rpcError, refresh: () => setRequest(value => ({ ...value, attempt: value.attempt + 1 })), cancel: cancelRead })
   function cancelRead(): void { auto.reset('cancelled'); active.current?.abort(); setBusy(false); setCancelled(true); setResult(null) }
   useEffect(() => {
     if (!auto.begin()) return
@@ -61,30 +52,19 @@ export function KeyDetails(props: Props) {
   if (result?.state === 'unsupported' && result.metadata?.type === 'set') return <SetView {...props} />
   if (result?.state === 'unsupported' && result.metadata?.type === 'zset') return <ZSetView {...props} />
   if (result?.state === 'unsupported' && result.metadata?.type === 'stream') return <StreamView {...props} />
-  if (result?.state === 'unsupported' && result.metadata !== null && isRedisJsonType(result.metadata.type)) return <JsonView {...props} />
-  if (result?.state === 'unsupported' && result.metadata !== null && isTimeSeriesType(result.metadata.type)) return <TimeSeriesView {...props} />
-  if (result?.state === 'unsupported' && result.metadata?.type === 'MBbloom--') return <BloomView {...props} />
-  if (view === 'hll') return <>
-    <button type="button" className="redis-interpretation-back" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}><Icon name="back" />{t('bitmap.back')}</button>
-    <HllView {...props} />
-  </>
-  if (view === 'bitmap') return <>
-    <button type="button" className="redis-interpretation-back" onClick={() => { setView('string'); setResult(null); setRequest({ ...request, attempt: request.attempt + 1 }) }}><Icon name="back" />{t('bitmap.back')}</button>
-    <BitmapView {...props} />
-  </>
   return <section className="redis-details" aria-label={t('value.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('value.title')} · <span>{props.selected.label}</span></h2>
     <div className="redis-view-tools"><ReadActions t={t} busy={busy} refresh={() => setRequest(value => ({ ...value, attempt: value.attempt + 1 }))} cancel={cancelRead}>
       <button type="button" className="redis-icon-button" title={t('value.next')} aria-label={t('value.next')} disabled={busy || result?.nextOffset === null || result?.nextOffset === undefined} onClick={() => {
         if (result?.nextOffset === null || result?.nextOffset === undefined) return
-        setOffset(result.nextOffset); setCount(request.count); browsing.update({ stringOffset: result.nextOffset, stringCount: request.count }); setRequest({ offset: result.nextOffset, count: request.count, attempt: request.attempt + 1 })
+        setOffset(result.nextOffset); setCount(request.count); setRequest({ offset: result.nextOffset, count: request.count, attempt: request.attempt + 1 })
       }}><Icon name="right" /></button>
       <QueryToggle label={t('read.range')} open={optionsOpen} active={request.offset !== '0'} toggle={() => setOptionsOpen(value => !value)} />
     </ReadActions></div>
     {optionsOpen && <form onSubmit={event => {
       event.preventDefault()
-      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); browsing.update({ stringOffset: offset, stringCount: count }); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
+      try { stringReadRequestSchema.parse({ target: props.target, keyBase64: props.selected.base64, offset, count }); setRangeError(false); setRequest({ offset, count, attempt: request.attempt + 1 }); setOptionsOpen(false) }
       catch { setRangeError(true) }
     }}>
       <div className="redis-address">
@@ -95,7 +75,6 @@ export function KeyDetails(props: Props) {
       </div>
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
-        {result?.state === 'value' && <><button type="button" onClick={() => setView('bitmap')}>{t('bitmap.open')}</button><button type="button" onClick={() => setView('hll')}>{t('hll.open')}</button></>}
       </div>
     </form>}
     {rangeError && <p role="alert" className="redis-error">{t('value.error.range')}</p>}

@@ -5,7 +5,6 @@ import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
-import { emptyBrowsingState } from '../src/host/browsing-state.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
 
 interface BundleRegistration { id: string; factory: (require: (name: string) => unknown) => { apply: (ctx: Context) => void } }
@@ -20,8 +19,6 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
   const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
-  const loadBrowsingState = vi.fn(async (_sessionId: string) => ({ ok: true as const, value: emptyBrowsingState() }))
-  const saveBrowsingState = vi.fn(async (_sessionId: string, value: ReturnType<typeof emptyBrowsingState>) => ({ ok: true as const, value }))
   const mount = vi.fn(async (_contribution: TypertRemoteContribution) => unmount).mockRejectedValueOnce(new Error('Host not ready'))
   function register(id: string): () => void {
     if (contributions.has(id)) throw new Error('Duplicate contribution: ' + id)
@@ -55,7 +52,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
       register: (entry: SlotEntry) => { slot = entry; return register('slot:' + entry.key) },
     },
     remote: { $mount: mount },
-    get: () => ({ status, loadBrowsingState, saveBrowsingState }),
+    get: () => ({ status }),
   } as unknown as Context
   client.apply(context)
   if (slot === undefined) throw new Error('Missing sidebar body')
@@ -66,7 +63,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   // Inspect the actual emitted browser contribution, not only TS source schemas.
   // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
   const descriptors = mount.mock.calls[1]?.[0].descriptors
-  expect(descriptors).toHaveLength(28)
+  expect(descriptors).toHaveLength(16)
   for (const descriptor of descriptors ?? []) {
     const codec = descriptor.result
     if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)
@@ -81,10 +78,6 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')
   expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')
-  await api.saveBrowsingState({ ...emptyBrowsingState(), db: 2 }, new AbortController().signal)
-  await other.loadBrowsingState(new AbortController().signal)
-  expect(saveBrowsingState.mock.calls[0]?.[0]).toBe('trusted-session')
-  expect(loadBrowsingState.mock.calls[0]?.[0]).toBe('another-session')
   expect(importNames.every(name => !name.startsWith('node:'))).toBe(true)
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   expect(unmount).toHaveBeenCalledTimes(1)

@@ -1,16 +1,9 @@
 import { MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
-import { CLIENT_LIST_FIELDS, MAX_CLIENT_LIST_BYTES, MAX_CLIENT_LIST_ROWS, type ClientListEntry, type ClientListReadRequest, type ClientListReadResult } from './domain.ts'
-import { isClientListValue } from './redis-client-list.ts'
-import { MAX_SLOWLOG_ENTRIES, MAX_SLOWLOG_ARGUMENTS, MAX_SLOWLOG_SUMMARY_ARGS, type SlowLogEntry, type SlowLogReadRequest, type SlowLogReadResult } from './domain.ts'
-import { isSlowLogCommand } from './redis-slowlog.ts'
-import { OVERVIEW_FIELDS, type OverviewFields, type OverviewReadRequest, type OverviewReadResult } from './domain.ts'
-import { isOverviewValue } from './redis-info.ts'
-import { PREVIEW_FORMATS, PREVIEW_VIEWS, type SessionBrowsingState, type PreviewFormat, type PreviewView } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
-import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionTestResult, ConnectionErrorCode } from './domain.ts'
+import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
 import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
-import { MAX_PROFILES, PROFILE_DOCUMENT_FORMAT, type PortableConnection, type ImportProfilesRequest, type ProfileDocument, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
+import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
 import { MAX_KEY_BYTES, MAX_SCAN_KEYS, MAX_SCAN_JSON_BYTES, type DatabaseTarget, type RedisKey, type ScanKeysRequest, type ScanKeysResult } from './domain.ts'
 import { MAX_VALUE_BYTES, type StringReadRequest, type StringReadResult, type KeyMetadata } from './domain.ts'
 import type { BytePrefix, ScanHashRequest, ScanHashResult } from './domain.ts'
@@ -20,13 +13,6 @@ import type { ZSetReadRequest, ZSetReadResult } from './domain.ts'
 import { isRedisScore } from './redis-score.ts'
 import { MAX_STREAM_MESSAGES, type StreamReadRequest, type StreamReadResult } from './domain.ts'
 import { compareStreamIds, isStreamId, isStreamRange, withinStreamRange } from './stream-id.ts'
-import { JSON_VALUE_TYPES, type JsonReadRequest, type JsonReadResult } from './domain.ts'
-import { isJsonPath, isRedisJsonType, jsonMatchCount } from './redis-json.ts'
-import type { GeoReadRequest, GeoReadResult, HllReadRequest, HllReadResult } from './domain.ts'
-import { isGeoPosition } from './redis-geo.ts'
-import { MAX_TIMESERIES_SAMPLES, type TimeSeriesReadRequest, type TimeSeriesReadResult, type TimeSeriesInfo } from './domain.ts'
-import { isTimeSeriesRange, isTimeSeriesTimestamp, isTimeSeriesType, isTimeSeriesValue, withinTimeSeriesRange } from './redis-timeseries.ts'
-import { MAX_BLOOM_ITEM_BYTES, type BloomInfo, type BloomReadRequest, type BloomReadResult } from './domain.ts'
 
 export const TYPERT_PACKAGE = 'dsh-redis'
 
@@ -109,13 +95,6 @@ export const connectionViewSchema: TypertSchema<ConnectionView> = { parse(value)
   if (state !== 'connecting' && state !== 'connected' && state !== 'disconnected' && state !== 'error') throw new TypeError('Redis RPC: invalid state')
   return { id: object.id === null ? null : stringAt(object.id, 128), generation: integerAt(object.generation, 0, Number.MAX_SAFE_INTEGER), db: integerAt(object.db, 0, 65535), state, error: errorAt(object.error), target: object.target === null ? null : publicTarget(object.target) }
 } }
-export const connectionTestSchema: TypertSchema<ConnectionTestResult> = { parse(value) {
-  const object = objectAt(value, ['outcome', 'error'])
-  const outcome = object.outcome
-  const error = errorAt(object.error)
-  if ((outcome !== 'passed' && outcome !== 'failed') || (outcome === 'passed') !== (error === null)) throw new TypeError('Redis RPC: invalid test result')
-  return { outcome, error }
-} }
 
 function profileIdentity(value: unknown): string {
   const id = stringAt(value, 128)
@@ -149,27 +128,6 @@ export const profileCollectionSchema: TypertSchema<ProfileCollection> = { parse(
   const selectedId = object.selectedId === null ? null : profileIdentity(object.selectedId)
   if (new Set(profiles.map(value => value.id)).size !== profiles.length || (selectedId !== null && !profiles.some(value => value.id === selectedId))) throw new TypeError('Redis RPC: invalid profile identities')
   return { profiles, selectedId }
-} }
-
-/** One strict document format; extra fields (including secrets) are refused. */
-export const portableConnectionSchema: TypertSchema<PortableConnection> = { parse(value) {
-  const object = objectAt(value, ['name', 'group', 'settings'])
-  return { name: profileName(object.name), ...(object.group === undefined ? {} : { group: profileName(object.group) }), settings: publicTarget(object.settings) }
-} }
-function portableProfiles(value: unknown): readonly PortableConnection[] {
-  if (!Array.isArray(value) || value.length > MAX_PROFILES) throw new TypeError('Redis profiles: invalid document')
-  return value.map((item: unknown) => portableConnectionSchema.parse(item))
-}
-export const importProfilesSchema: TypertSchema<ImportProfilesRequest> = { parse(value) {
-  const object = objectAt(value, ['profiles'])
-  const profiles = portableProfiles(object.profiles)
-  if (profiles.length === 0) throw new TypeError('Redis profiles: no selected entries')
-  return { profiles }
-} }
-export const profileDocumentSchema: TypertSchema<ProfileDocument> = { parse(value) {
-  const object = objectAt(value, ['format', 'version', 'profiles'])
-  if (object.format !== PROFILE_DOCUMENT_FORMAT || object.version !== 1) throw new TypeError('Redis profiles: invalid document')
-  return { format: PROFILE_DOCUMENT_FORMAT, version: 1, profiles: portableProfiles(object.profiles) }
 } }
 
 export const databaseTargetSchema: TypertSchema<DatabaseTarget> = { parse(value) {
@@ -409,203 +367,6 @@ export const streamReadResultSchema: TypertSchema<StreamReadResult> = { parse(va
   return result
 } }
 
-export const jsonReadRequestSchema: TypertSchema<JsonReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'keyBase64', 'path']), path = stringAt(object.path, 1024)
-  if (!isJsonPath(path)) throw new TypeError('Redis RPC: invalid JSONPath')
-  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), path }
-} }
-export const jsonReadResultSchema: TypertSchema<JsonReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'metadata', 'path', 'matchTypes', 'base64', 'byteLength', 'sampledAt'])
-  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata), path = stringAt(object.path, 1024)
-  if (state !== 'value' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'path-missing' && state !== 'unavailable' && state !== 'invalid-path' && state !== 'failed') throw new TypeError('Redis RPC: invalid JSON state')
-  if (!isJsonPath(path) || (state === 'failed') !== (error !== null) || !Array.isArray(object.matchTypes) || object.matchTypes.length > MAX_SCAN_KEYS) throw new TypeError('Redis RPC: invalid JSON result')
-  const matchTypes = object.matchTypes.map((type: unknown) => {
-    const found = JSON_VALUE_TYPES.find(value => value === type)
-    if (found === undefined) throw new TypeError('Redis RPC: invalid JSON type')
-    return found
-  })
-  const base64 = byteStringAt(object.base64, MAX_VALUE_BYTES), byteLength = integerAt(object.byteLength, 0, MAX_VALUE_BYTES)
-  if (atob(base64).length !== byteLength) throw new TypeError('Redis RPC: invalid JSON bytes')
-  if (state === 'value' || state === 'path-missing') {
-    if (metadata === null || !isRedisJsonType(metadata.type) || metadata.length !== null) throw new TypeError('Redis RPC: missing JSON metadata')
-    if (state === 'value') {
-      if (matchTypes.length === 0 || jsonMatchCount(Uint8Array.from(atob(base64), char => char.charCodeAt(0))) !== matchTypes.length) throw new TypeError('Redis RPC: invalid JSON match array')
-    } else if (matchTypes.length !== 0 || byteLength !== 0) throw new TypeError('Redis RPC: missing path contains JSON')
-  } else {
-    if (byteLength !== 0 || matchTypes.length !== 0) throw new TypeError('Redis RPC: non-value contains JSON')
-    if (state === 'unsupported' ? metadata === null || isRedisJsonType(metadata.type) || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid JSON metadata')
-  }
-  const result: JsonReadResult = { state, error, metadata, path, matchTypes, base64, byteLength, sampledAt: sampleTimeAt(object.sampledAt) }
-  if (new TextEncoder().encode(JSON.stringify(result)).length > MAX_SCAN_JSON_BYTES) throw new TypeError('Redis RPC: JSON result budget exceeded')
-  return result
-} }
-
-export const geoReadRequestSchema: TypertSchema<GeoReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'keyBase64', 'offset', 'count'])
-  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), offset: unsignedIntegerAt(object.offset), count: integerAt(object.count, 1, MAX_LIST_ITEMS) }
-} }
-export const geoReadResultSchema: TypertSchema<GeoReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'metadata', 'entries', 'offset', 'nextOffset', 'sampledAt'])
-  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata)
-  if (state !== 'page' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'unavailable' && state !== 'failed') throw new TypeError('Redis RPC: invalid GEO state')
-  if ((state === 'failed') !== (error !== null) || !Array.isArray(object.entries) || object.entries.length > MAX_LIST_ITEMS) throw new TypeError('Redis RPC: invalid GEO rows')
-  const entries = object.entries.map((value: unknown) => {
-    const item = objectAt(value, ['member', 'score', 'rank', 'position']), score = stringAt(item.score, 128)
-    if (!isRedisScore(score)) throw new TypeError('Redis RPC: invalid GEO score')
-    const position = item.position === null ? null : (() => {
-      const pair = objectAt(item.position, ['longitude', 'latitude'])
-      return { longitude: stringAt(pair.longitude, 128), latitude: stringAt(pair.latitude, 128) }
-    })()
-    if (position !== null && !isGeoPosition(position)) throw new TypeError('Redis RPC: invalid GEO position')
-    return { member: identityAt(item.member), score, rank: unsignedIntegerAt(item.rank), position }
-  })
-  const offset = unsignedIntegerAt(object.offset), nextOffset = object.nextOffset === null ? null : unsignedIntegerAt(object.nextOffset)
-  if (state === 'page') {
-    if (metadata?.type !== 'zset' || metadata.length === null || entries.some((entry, index) => entry.rank !== String(BigInt(offset) + BigInt(index))) || new Set(entries.map(entry => entry.member.base64)).size !== entries.length) throw new TypeError('Redis RPC: invalid GEO metadata')
-    const end = BigInt(offset) + BigInt(entries.length), length = BigInt(metadata.length)
-    if ((entries.length > 0 && end > length) || (entries.length === 0 && BigInt(offset) < length) || nextOffset !== (entries.length > 0 && end < length ? String(end) : null)) throw new TypeError('Redis RPC: invalid GEO range')
-  } else {
-    if (entries.length !== 0 || nextOffset !== null) throw new TypeError('Redis RPC: non-page contains GEO rows')
-    if (state === 'unsupported' ? metadata === null || metadata.type === 'zset' || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid GEO metadata')
-  }
-  const result: GeoReadResult = { state, error, metadata, entries, offset, nextOffset, sampledAt: sampleTimeAt(object.sampledAt) }
-  if (new TextEncoder().encode(JSON.stringify(result)).length > MAX_SCAN_JSON_BYTES) throw new TypeError('Redis RPC: GEO result budget exceeded')
-  return result
-} }
-
-export const hllReadRequestSchema: TypertSchema<HllReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'keyBase64'])
-  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES) }
-} }
-export const hllReadResultSchema: TypertSchema<HllReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'metadata', 'estimate', 'encoding', 'cacheValid', 'sampledAt'])
-  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata)
-  if (state !== 'value' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'invalid' && state !== 'unavailable' && state !== 'failed') throw new TypeError('Redis RPC: invalid HLL state')
-  if ((state === 'failed') !== (error !== null)) throw new TypeError('Redis RPC: invalid HLL error')
-  const estimate = object.estimate === null ? null : unsignedIntegerAt(object.estimate)
-  const encoding = object.encoding
-  if (encoding !== null && encoding !== 'dense' && encoding !== 'sparse') throw new TypeError('Redis RPC: invalid HLL encoding')
-  const cacheValid = object.cacheValid
-  if (cacheValid !== null && typeof cacheValid !== 'boolean') throw new TypeError('Redis RPC: invalid HLL cache flag')
-  if (state === 'value') {
-    if (estimate === null || encoding === null || cacheValid === null || metadata?.type !== 'string' || metadata.length === null || (encoding === 'dense' ? metadata.length !== '12304' : BigInt(metadata.length) < 18n)) throw new TypeError('Redis RPC: invalid HLL value')
-  } else {
-    if (estimate !== null || encoding !== null || cacheValid !== null) throw new TypeError('Redis RPC: non-value contains HLL count')
-    if (state === 'invalid' ? metadata?.type !== 'string' || metadata.length === null : state === 'unsupported' ? metadata === null || metadata.type === 'string' || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid HLL metadata')
-  }
-  return { state, error, metadata, estimate, encoding, cacheValid, sampledAt: sampleTimeAt(object.sampledAt) }
-} }
-
-function timeSeriesRangeAt(object: Record<string, unknown>): Pick<TimeSeriesReadRequest, 'direction' | 'start' | 'end'> {
-  const direction = object.direction, start = stringAt(object.start, 19), end = stringAt(object.end, 19)
-  if ((direction !== 'forward' && direction !== 'reverse') || !isTimeSeriesRange(start, end)) throw new TypeError('Redis RPC: invalid TimeSeries range')
-  return { direction, start, end }
-}
-export const timeSeriesReadRequestSchema: TypertSchema<TimeSeriesReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'keyBase64', 'direction', 'start', 'end', 'count', 'cursor'])
-  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), ...timeSeriesRangeAt(object), count: integerAt(object.count, 1, MAX_TIMESERIES_SAMPLES), cursor: scanToken(object.cursor) }
-} }
-export const timeSeriesReadResultSchema: TypertSchema<TimeSeriesReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'metadata', 'direction', 'start', 'end', 'samples', 'info', 'infoState', 'cursor', 'sampledAt'])
-  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata), range = timeSeriesRangeAt(object)
-  if (state !== 'page' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'unavailable' && state !== 'failed') throw new TypeError('Redis RPC: invalid TimeSeries state')
-  if ((state === 'failed') !== (error !== null) || !Array.isArray(object.samples) || object.samples.length > MAX_TIMESERIES_SAMPLES) throw new TypeError('Redis RPC: invalid TimeSeries result')
-  let previous: bigint | null = null
-  const samples = object.samples.map((value: unknown) => {
-    const item = objectAt(value, ['timestamp', 'value']), timestamp = stringAt(item.timestamp, 19), text = stringAt(item.value, 128)
-    if (!isTimeSeriesTimestamp(timestamp) || !withinTimeSeriesRange(timestamp, range.start, range.end) || !isTimeSeriesValue(text) || (previous !== null && (range.direction === 'forward' ? BigInt(timestamp) <= previous : BigInt(timestamp) >= previous))) throw new TypeError('Redis RPC: invalid TimeSeries sample')
-    previous = BigInt(timestamp)
-    return { timestamp, value: text }
-  })
-  const info: TimeSeriesInfo | null = object.info === null ? null : (() => {
-    const item = objectAt(object.info, ['totalSamples', 'firstTimestamp', 'lastTimestamp', 'retentionTime'])
-    const info = { totalSamples: unsignedIntegerAt(item.totalSamples), firstTimestamp: unsignedIntegerAt(item.firstTimestamp), lastTimestamp: unsignedIntegerAt(item.lastTimestamp), retentionTime: unsignedIntegerAt(item.retentionTime) }
-    if (BigInt(info.firstTimestamp) > BigInt(info.lastTimestamp) || (info.totalSamples === '0' && (info.firstTimestamp !== '0' || info.lastTimestamp !== '0'))) throw new TypeError('Redis RPC: invalid TimeSeries info')
-    return info
-  })()
-  const infoState = object.infoState, cursor = scanToken(object.cursor)
-  if (infoState !== null && infoState !== 'available' && infoState !== 'permission' && infoState !== 'unavailable') throw new TypeError('Redis RPC: invalid TimeSeries info status')
-  if ((infoState === 'available') !== (info !== null)) throw new TypeError('Redis RPC: inconsistent TimeSeries info')
-  if (state === 'page') {
-    if (metadata === null || !isTimeSeriesType(metadata.type) || metadata.length !== null || infoState === null || (samples.length === 0 && cursor !== null)) throw new TypeError('Redis RPC: invalid TimeSeries page')
-  } else {
-    if (samples.length !== 0 || cursor !== null || info !== null || infoState !== null) throw new TypeError('Redis RPC: non-page contains TimeSeries data')
-    if (state === 'unsupported' ? metadata === null || isTimeSeriesType(metadata.type) || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid TimeSeries metadata')
-  }
-  const result: TimeSeriesReadResult = { state, error, metadata, ...range, samples, info, infoState, cursor, sampledAt: sampleTimeAt(object.sampledAt) }
-  if (new TextEncoder().encode(JSON.stringify(result)).length > MAX_SCAN_JSON_BYTES) throw new TypeError('Redis RPC: TimeSeries result budget exceeded')
-  return result
-} }
-
-export const bloomReadRequestSchema: TypertSchema<BloomReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'keyBase64', 'itemBase64'])
-  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), itemBase64: object.itemBase64 === null ? null : byteStringAt(object.itemBase64, MAX_BLOOM_ITEM_BYTES) }
-} }
-export const bloomReadResultSchema: TypertSchema<BloomReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'metadata', 'info', 'infoState', 'itemBase64', 'membership', 'sampledAt'])
-  const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata)
-  if (state !== 'value' && state !== 'missing' && state !== 'unsupported' && state !== 'changed' && state !== 'unavailable' && state !== 'failed') throw new TypeError('Redis RPC: invalid Bloom state')
-  if ((state === 'failed') !== (error !== null)) throw new TypeError('Redis RPC: invalid Bloom error')
-  const info: BloomInfo | null = object.info === null ? null : (() => {
-    const item = objectAt(object.info, ['capacity', 'size', 'filters', 'inserted', 'expansion'])
-    return { capacity: unsignedIntegerAt(item.capacity), size: unsignedIntegerAt(item.size), filters: unsignedIntegerAt(item.filters), inserted: unsignedIntegerAt(item.inserted), expansion: item.expansion === null ? null : unsignedIntegerAt(item.expansion) }
-  })()
-  const infoState = object.infoState, membership = object.membership
-  const itemBase64 = object.itemBase64 === null ? null : byteStringAt(object.itemBase64, MAX_BLOOM_ITEM_BYTES)
-  if (infoState !== null && infoState !== 'available' && infoState !== 'permission' && infoState !== 'unavailable') throw new TypeError('Redis RPC: invalid Bloom info state')
-  if ((infoState === 'available') !== (info !== null) || (membership !== null && membership !== 'absent' && membership !== 'maybe-present')) throw new TypeError('Redis RPC: invalid Bloom result')
-  if (state === 'value') {
-    if (metadata?.type !== 'MBbloom--' || metadata.length !== null || infoState === null || (itemBase64 === null) !== (membership === null)) throw new TypeError('Redis RPC: invalid Bloom value')
-  } else {
-    if (info !== null || infoState !== null || membership !== null) throw new TypeError('Redis RPC: non-value contains Bloom data')
-    if (state === 'unsupported' ? metadata === null || metadata.type === 'MBbloom--' || metadata.type === 'none' || metadata.length !== null : metadata !== null) throw new TypeError('Redis RPC: invalid Bloom metadata')
-  }
-  return { state, error, metadata, info, infoState, itemBase64, membership, sampledAt: sampleTimeAt(object.sampledAt) }
-} }
-
-export const clientListReadRequestSchema: TypertSchema<ClientListReadRequest> = { parse(value) {
-  return { target: databaseTargetSchema.parse(objectAt(value, ['target']).target) }
-} }
-export const clientListReadResultSchema: TypertSchema<ClientListReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'entries', 'total', 'limited', 'sampledAt']), state = object.state, error = errorAt(object.error)
-  if ((state !== 'page' && state !== 'unavailable' && state !== 'failed') || (state === 'failed') !== (error !== null) || !Array.isArray(object.entries) || object.entries.length > MAX_CLIENT_LIST_ROWS || typeof object.limited !== 'boolean') throw new TypeError('Redis RPC: invalid client list state')
-  const entries: ClientListEntry[] = object.entries.map((value: unknown) => {
-    const raw = objectAt(value, CLIENT_LIST_FIELDS)
-    return Object.fromEntries(CLIENT_LIST_FIELDS.map(field => {
-      const value = raw[field]
-      if (value !== null && !isClientListValue(field, value)) throw new TypeError('Redis RPC: invalid client field')
-      return [field, value]
-    })) as ClientListEntry
-  })
-  const total = integerAt(object.total, 0, MAX_CLIENT_LIST_BYTES), ids = entries.flatMap(entry => entry.id === null ? [] : [entry.id])
-  if (entries.length !== Math.min(total, MAX_CLIENT_LIST_ROWS) || object.limited !== (total > entries.length) || new Set(ids).size !== ids.length || (state !== 'page' && (total !== 0 || entries.length !== 0 || object.limited))) throw new TypeError('Redis RPC: inconsistent client list coverage')
-  return { state, error, entries, total, limited: object.limited, sampledAt: sampleTimeAt(object.sampledAt) }
-} }
-
-export const slowLogReadRequestSchema: TypertSchema<SlowLogReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target', 'count'])
-  return { target: databaseTargetSchema.parse(object.target), count: integerAt(object.count, 1, MAX_SLOWLOG_ENTRIES) }
-} }
-export const slowLogReadResultSchema: TypertSchema<SlowLogReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'entries', 'count', 'more', 'sampledAt']), state = object.state, error = errorAt(object.error)
-  if ((state !== 'page' && state !== 'unavailable' && state !== 'failed') || (state === 'failed') !== (error !== null) || !Array.isArray(object.entries) || typeof object.more !== 'boolean') throw new TypeError('Redis RPC: invalid slow log state')
-  const count = integerAt(object.count, 1, MAX_SLOWLOG_ENTRIES)
-  if (object.entries.length > count) throw new TypeError('Redis RPC: slow log budget exceeded')
-  const entries: SlowLogEntry[] = object.entries.map((value: unknown) => {
-    const entry = objectAt(value, ['id', 'timestampSeconds', 'durationUs', 'command', 'loggedArgumentCount', 'argumentBytes', 'originalArgumentCount'])
-    const command = entry.command
-    if (command !== null && !isSlowLogCommand(command)) throw new TypeError('Redis RPC: invalid command summary')
-    const loggedArgumentCount = integerAt(entry.loggedArgumentCount, 1, MAX_SLOWLOG_ARGUMENTS)
-    if (!Array.isArray(entry.argumentBytes) || entry.argumentBytes.length !== Math.min(MAX_SLOWLOG_SUMMARY_ARGS, loggedArgumentCount - 1)) throw new TypeError('Redis RPC: invalid argument summary')
-    const argumentBytes = entry.argumentBytes.map((value: unknown) => integerAt(value, 0, 1024 * 1024))
-    const originalArgumentCount = entry.originalArgumentCount === null ? null : unsignedIntegerAt(entry.originalArgumentCount)
-    if (originalArgumentCount !== null && BigInt(originalArgumentCount) < BigInt(loggedArgumentCount)) throw new TypeError('Redis RPC: invalid argument total')
-    return { id: unsignedIntegerAt(entry.id), timestampSeconds: unsignedIntegerAt(entry.timestampSeconds), durationUs: unsignedIntegerAt(entry.durationUs), command, loggedArgumentCount, argumentBytes, originalArgumentCount }
-  })
-  if (entries.some((entry, index) => index > 0 && BigInt(entry.id) >= BigInt(entries[index - 1]?.id ?? '0')) || (object.more && entries.length !== count) || (state !== 'page' && (entries.length !== 0 || object.more))) throw new TypeError('Redis RPC: inconsistent slow log page')
-  return { state, error, entries, count, more: object.more, sampledAt: sampleTimeAt(object.sampledAt) }
-} }
-
 export const databasesReadRequestSchema: TypertSchema<DatabasesReadRequest> = { parse(value) {
   const object = objectAt(value, ['target'])
   return { target: databaseTargetSchema.parse(object.target) }
@@ -629,48 +390,14 @@ export const databasesReadResultSchema: TypertSchema<DatabasesReadResult> = { pa
   return { state, error, catalog, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
-export const overviewReadRequestSchema: TypertSchema<OverviewReadRequest> = { parse(value) {
-  const object = objectAt(value, ['target'])
-  return { target: databaseTargetSchema.parse(object.target) }
-} }
-export const overviewReadResultSchema: TypertSchema<OverviewReadResult> = { parse(value) {
-  const object = objectAt(value, ['state', 'error', 'fields', 'sampledAt']), state = object.state, error = errorAt(object.error)
-  if ((state !== 'value' && state !== 'failed') || (state === 'value') !== (error === null) || (state === 'value') !== (object.fields !== null)) throw new TypeError('Redis RPC: invalid overview state')
-  const fields: OverviewFields | null = object.fields === null ? null : (() => {
-    const raw = objectAt(object.fields, OVERVIEW_FIELDS)
-    return Object.fromEntries(OVERVIEW_FIELDS.map(field => {
-      const value = raw[field]
-      if (value !== null && !isOverviewValue(field, value)) throw new TypeError('Redis RPC: invalid overview field')
-      return [field, value]
-    })) as OverviewFields
-  })()
-  return { state, error, fields, sampledAt: sampleTimeAt(object.sampledAt) }
-} }
-
-/** Explicit allowlist excludes values, credentials, connection identities and sessionId. */
-export const browsingStateSchema: TypertSchema<SessionBrowsingState> = { parse(value) {
-  const object = objectAt(value, ['profileId', 'db', 'pattern', 'keyBase64', 'formats', 'stringOffset', 'stringCount'])
-  const rawFormats = objectAt(object.formats, PREVIEW_VIEWS)
-  const formats = Object.fromEntries(PREVIEW_VIEWS.map(view => {
-    const format = rawFormats[view]
-    if (!PREVIEW_FORMATS.some(value => value === format)) throw new TypeError('Redis RPC: invalid preview format')
-    return [view, format as PreviewFormat]
-  })) as Record<PreviewView, PreviewFormat>
-  const stringCount = integerAt(object.stringCount, 1, MAX_VALUE_BYTES)
-  if (![256, 4096, 16384, MAX_VALUE_BYTES].includes(stringCount)) throw new TypeError('Redis RPC: invalid saved window')
-  return { profileId: object.profileId === null ? null : profileIdentity(object.profileId), db: integerAt(object.db, 0, 65535), pattern: stringAt(object.pattern, 256), keyBase64: object.keyBase64 === null ? null : byteStringAt(object.keyBase64, MAX_KEY_BYTES), formats, stringOffset: unsignedIntegerAt(object.stringOffset), stringCount }
-} }
-
 export const redisDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
-  createRedisInvocation('testConnection', 'ConnectionRequest', 'ConnectionTestResult', connectionRequestSchema, connectionTestSchema, sessionIdSchema),
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', connectionTargetSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', emptyRequestSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema, sessionIdSchema),
-  createRedisInvocation('importProfiles', 'ImportProfilesRequest', 'ProfileCollection', importProfilesSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('selectDatabase', 'DatabaseTarget', 'ConnectionView', databaseTargetSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scanKeysRequestSchema, scanKeysResultSchema, sessionIdSchema),
   createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringReadRequestSchema, stringReadResultSchema, sessionIdSchema),
@@ -679,15 +406,5 @@ export const redisDescriptors = [
   createRedisInvocation('scanSet', 'ScanSetRequest', 'ScanSetResult', scanSetRequestSchema, scanSetResultSchema, sessionIdSchema),
   createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetReadRequestSchema, zsetReadResultSchema, sessionIdSchema),
   createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamReadRequestSchema, streamReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readJson', 'JsonReadRequest', 'JsonReadResult', jsonReadRequestSchema, jsonReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readGeo', 'GeoReadRequest', 'GeoReadResult', geoReadRequestSchema, geoReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readHll', 'HllReadRequest', 'HllReadResult', hllReadRequestSchema, hllReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readTimeSeries', 'TimeSeriesReadRequest', 'TimeSeriesReadResult', timeSeriesReadRequestSchema, timeSeriesReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readBloom', 'BloomReadRequest', 'BloomReadResult', bloomReadRequestSchema, bloomReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readSlowLog', 'SlowLogReadRequest', 'SlowLogReadResult', slowLogReadRequestSchema, slowLogReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readClients', 'ClientListReadRequest', 'ClientListReadResult', clientListReadRequestSchema, clientListReadResultSchema, sessionIdSchema),
   createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readOverview', 'OverviewReadRequest', 'OverviewReadResult', overviewReadRequestSchema, overviewReadResultSchema, sessionIdSchema),
-  createRedisInvocation('loadBrowsingState', 'EmptyRequest', 'SessionBrowsingState', emptyRequestSchema, browsingStateSchema, sessionIdSchema),
-  createRedisInvocation('saveBrowsingState', 'SessionBrowsingState', 'SessionBrowsingState', browsingStateSchema, browsingStateSchema, sessionIdSchema),
 ] as const

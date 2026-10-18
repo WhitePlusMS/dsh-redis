@@ -2,10 +2,8 @@
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { MAX_PROFILES, type ProfileCollection, type ProfileId, type SaveProfileRequest, type ImportProfilesRequest } from '../domain.ts'
-import { profileCollectionSchema, profileIdSchema, saveProfileSchema, importProfilesSchema } from '../typert.shared.ts'
-
-import { conflictingProfiles } from '../profile-transfer.ts'
+import { MAX_PROFILES, type ProfileCollection, type ProfileId, type SaveProfileRequest } from '../domain.ts'
+import { profileCollectionSchema, profileIdSchema, saveProfileSchema } from '../typert.shared.ts'
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024
 const storageError = () => new Error('Redis connection profiles could not be read or saved.')
@@ -60,30 +58,13 @@ export class RedisProfiles {
       const id = input.id ?? randomUUID()
       if (input.id !== null && !current.profiles.some(value => value.id === id)) throw new Error('The saved Redis connection no longer exists.')
       if (input.id === null && current.profiles.length >= MAX_PROFILES) throw new Error('The saved Redis connection limit was reached.')
-      if (conflictingProfiles(current.profiles.filter(value => value.id !== id), [input]).size !== 0) throw new Error('A Redis connection with this group and name already exists.')
+      if (current.profiles.some(value => value.id !== id && value.name === input.name && (value.group ?? '') === (input.group ?? ''))) throw new Error('A Redis connection with this group and name already exists.')
       const value = { id, name: input.name, ...(input.group === undefined ? {} : { group: input.group }), settings: input.settings }
       const profiles = input.id === null ? [...current.profiles, value] : current.profiles.map(item => item.id === id ? value : item)
       signal.throwIfAborted()
       const result = { profiles, selectedId: id }
       await this.write(result)
       console.info('[dsh-redis] Connection profile saved')
-      return result
-    })
-  }
-  /** Revalidate against the current queued snapshot and commit one complete batch.
-   * Import only creates new identities; a concurrent conflict cannot overwrite data.
-   */
-  import(request: ImportProfilesRequest, signal: AbortSignal): Promise<ProfileCollection> {
-    const input = importProfilesSchema.parse(request)
-    return this.queue(signal, async () => {
-      const current = await this.read()
-      if (current.profiles.length + input.profiles.length > MAX_PROFILES) throw new Error('The saved Redis connection limit was reached.')
-      if (conflictingProfiles(current.profiles, input.profiles).size !== 0) throw new Error('A Redis connection with this group and name already exists.')
-      const added = input.profiles.map(value => ({ id: randomUUID(), name: value.name, ...(value.group === undefined ? {} : { group: value.group }), settings: { ...value.settings, tls: value.settings.tls ? { caPem: '' } : null } }))
-      signal.throwIfAborted()
-      const result = { profiles: [...current.profiles, ...added], selectedId: null }
-      await this.write(result)
-      console.info('[dsh-redis] Connection profiles imported')
       return result
     })
   }

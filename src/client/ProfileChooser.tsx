@@ -1,127 +1,94 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
-import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
-import type { ConnectionSettings, ProfileCollection, ImportProfilesRequest, ProfileId, SaveProfileRequest, SavedConnection } from '../domain.ts'
+import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
+import { MAX_PROFILES, type ConnectionSettings, type ProfileCollection, type ProfileId, type SaveProfileRequest, type SavedConnection } from '../domain.ts'
 import { connectionSettingsSchema } from '../typert.shared.ts'
-import { useBrowsingState } from './BrowsingSession.tsx'
-import { NS } from './locales.ts'
 import { Icon } from './Icon.tsx'
-import { ProfileTransfer } from './ProfileTransfer.tsx'
-import { ConnectionUri } from './ConnectionUri.tsx'
-import type { ParsedConnectionUri } from '../connection-uri.ts'
+import { NS } from './locales.ts'
 
 export interface ProfileActions {
-  readonly importProfiles: (request: ImportProfilesRequest, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly listProfiles: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly saveProfile: (request: SaveProfileRequest, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
   readonly removeProfile: (request: ProfileId, signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>
 }
 type Props = ProfileActions & {
-  readonly t: TranslateNS<typeof NS>
-  readonly disabled: boolean
-  readonly settings: () => ConnectionSettings
+  readonly t: TranslateNS<typeof NS>; readonly disabled: boolean; readonly settings: () => ConnectionSettings
   readonly select: (settings: ConnectionSettings | null) => void
-  readonly applyUri: (value: ParsedConnectionUri) => void
-  readonly open: boolean
-  readonly onClose: () => void
-  readonly children: ReactNode
+  readonly open: boolean; readonly onClose: () => void; readonly children: ReactNode
 }
 
-/** This component manages configuration only; selecting a profile never calls connect. */
+/** List/save replies update metadata only. Only a user's explicit choice fills a
+ * profile draft; saving never replaces credentials or the live Redis identity.
+ */
 export function ProfileChooser(props: Props) {
-  const browsing = useBrowsingState()
-  const [profiles, setProfiles] = useState<readonly SavedConnection[]>([])
-  const [selectedId, setSelectedId] = useState<string | null>(browsing.state.profileId)
-  const [name, setName] = useState(''), [group, setGroup] = useState('')
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState(false)
-  const active = useRef<AbortController | null>(null)
-  const sequence = useRef(0)
   const { t } = props
-  const dialog = useRef<HTMLDialogElement | null>(null)
+  const [profiles, setProfiles] = useState<readonly SavedConnection[]>([])
+  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [name, setName] = useState(''), [group, setGroup] = useState('')
+  const [busy, setBusy] = useState(false), [error, setError] = useState<'profile.error' | 'profile.conflict' | 'profile.limit' | null>(null)
+  const [confirmRemove, setConfirmRemove] = useState(false)
+  const active = useRef<AbortController | null>(null), sequence = useRef(0), dialog = useRef<HTMLDialogElement | null>(null)
   const descriptionId = useId()
   useEffect(() => {
     const element = dialog.current
-    if (element === null) return
-    if (props.open && !element.open) element.showModal()
-    else if (!props.open && element.open) element.close()
+    if (props.open && !element?.open) element?.showModal()
+    else if (!props.open && element?.open) element.close()
+    if (!props.open) setConfirmRemove(false)
   }, [props.open])
-
-  function choose(profile: SavedConnection | undefined): void {
-    setSelectedId(profile?.id ?? null); setName(profile?.name ?? ''); setGroup(profile?.group ?? ''); setError(false)
-    browsing.update({ profileId: profile?.id ?? null })
-    props.select(profile?.settings ?? null)
-  }
-
-  async function run(operation: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>, selection: 'refresh' | 'follow' | 'keep' = 'refresh'): Promise<boolean> {
+  async function run(execute: (signal: AbortSignal) => Promise<RemoteResult<ProfileCollection>>, follow = false): Promise<void> {
     active.current?.abort()
-    const controller = new AbortController()
-    active.current = controller
-    const current = ++sequence.current
-    setBusy(true); setError(false)
+    const controller = new AbortController(), current = ++sequence.current
+    active.current = controller; setBusy(true); setError(null)
     try {
-      const result = await operation(controller.signal)
-      if (controller.signal.aborted || current !== sequence.current) return false
-      if (!result.ok) { setError(true); return false }
-      setProfiles(result.value.profiles)
-      if (selection === 'keep') return true
-      const profile = result.value.profiles.find(value => value.id === (selection === 'follow' ? result.value.selectedId : selectedId))
-      const id = profile?.id ?? null
-      setSelectedId(id); setName(profile?.name ?? ''); setGroup(profile?.group ?? '')
-      if (id !== browsing.state.profileId) browsing.update({ profileId: id })
-      if (profile !== undefined) props.select(profile.settings)
-      return true
-    } catch { if (!controller.signal.aborted && current === sequence.current) setError(true); return false }
+      const response = await execute(controller.signal)
+      if (controller.signal.aborted || current !== sequence.current) return
+      if (!response.ok) { setError('profile.error'); return }
+      setProfiles(response.value.profiles)
+      const id = follow ? response.value.selectedId : selectedId
+      const saved = response.value.profiles.find(value => value.id === id)
+      if (follow || id !== null && saved === undefined) {
+        setSelectedId(saved?.id ?? null); setName(saved?.name ?? ''); setGroup(saved?.group ?? '')
+      }
+      setConfirmRemove(false)
+    } catch { if (!controller.signal.aborted && current === sequence.current) setError('profile.error') }
     finally { if (!controller.signal.aborted && current === sequence.current) setBusy(false) }
   }
   useEffect(() => {
     void run(props.listProfiles)
     return () => { ++sequence.current; active.current?.abort() }
   }, [props.listProfiles])
-
   const groups = new Map<string, SavedConnection[]>()
-  for (const profile of profiles) {
-    const label = profile.group ?? ''
-    const values = groups.get(label) ?? []
-    values.push(profile); groups.set(label, values)
-  }
-  return <>
-    <dialog ref={dialog} className="redis-connection-dialog" aria-label={t('connection.settings')} aria-describedby={descriptionId} onClose={props.onClose} onCancel={props.onClose}>
-      <div className="redis-dialog-heading"><div className="redis-connection-title"><Icon name="database" /><div><h2>{t('connection.settings')}</h2><p id={descriptionId}>{t('connection.subtitle')}</p></div></div><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={props.onClose}><Icon name="close" /></button></div>
-      <div className="redis-dialog-content redis-connection-layout">
-      <aside className="redis-profiles" aria-label={t('ui.connections')}>
-      <h2>{t('ui.connections')}</h2>
-    <fieldset disabled={busy || props.disabled}>
-      <label>{t('profile.choose')}<select name="profile" value={selectedId ?? ''} onChange={event => {
-        choose(profiles.find(value => value.id === event.target.value))
-      }}><option value="">{t('profile.new')}</option>{[...groups].map(([label, values]) => <optgroup key={label} label={label || t('profile.ungrouped')}>{values.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</optgroup>)}</select></label>
-      <label>{t('profile.name')}<input name="profileName" value={name} maxLength={80} onChange={event => setName(event.target.value)} autoComplete="off" /></label>
-      <label>{t('profile.group')}<input name="profileGroup" value={group} maxLength={80} onChange={event => setGroup(event.target.value)} autoComplete="off" placeholder={t('profile.ungrouped')} /></label>
-      <div className="redis-actions">
-        <button type="button" disabled={name.trim() === ''} onClick={() => {
-          try {
-            const settings = connectionSettingsSchema.parse(props.settings())
-            void run(signal => props.saveProfile({ id: selectedId, name: name.trim(), ...(group.trim() ? { group: group.trim() } : {}), settings }, signal), 'follow')
-          } catch { setError(true) }
-        }}>{t(selectedId === null ? 'profile.save' : 'profile.update')}</button>
-        <button type="button" disabled={selectedId === null} onClick={() => {
-          if (selectedId === null) return
-          const id = selectedId
-          void run(signal => props.removeProfile({ id }, signal), 'follow')
-        }}>{t('profile.remove')}</button>
-        <button type="button" className={`redis-icon-button${busy ? ' redis-spinning' : ''}`} title={t('profile.reload')} aria-label={t('profile.reload')} aria-busy={busy} onClick={() => { void run(props.listProfiles) }}><Icon name="refresh" /></button>
-      </div>
-    </fieldset>
-    {error && <p className="redis-error" role="alert">{t('profile.error')}</p>}
+  for (const saved of profiles) { const label = saved.group ?? ''; groups.set(label, [...groups.get(label) ?? [], saved]) }
+  return <dialog ref={dialog} className="redis-connection-dialog" aria-label={t('connection.settings')} aria-describedby={descriptionId} onClose={props.onClose} onCancel={event => { event.preventDefault(); props.onClose() }}>
+    <div className="redis-dialog-heading"><div className="redis-connection-title"><Icon name="database" /><div><h2>{t('connection.settings')}</h2><p id={descriptionId}>{t('connection.subtitle')}</p></div></div><button type="button" className="redis-icon-button" title={t('ui.close')} aria-label={t('ui.close')} onClick={props.onClose}><Icon name="close" /></button></div>
+    <div className="redis-dialog-content redis-connection-layout">
+      <aside className="redis-profiles" aria-label={t('ui.connections')}><h2>{t('ui.connections')}</h2>
+        <fieldset disabled={busy || props.disabled}>
+          <label>{t('profile.choose')}<select name="profile" value={selectedId ?? ''} onChange={event => {
+            const saved = profiles.find(value => value.id === event.target.value)
+            setSelectedId(saved?.id ?? null); setName(saved?.name ?? ''); setGroup(saved?.group ?? ''); setError(null); setConfirmRemove(false)
+            props.select(saved?.settings ?? null)
+          }}><option value="">{t('profile.new')}</option>{[...groups].map(([label, values]) => <optgroup key={label} label={label || t('profile.ungrouped')}>{values.map(value => <option key={value.id} value={value.id}>{value.name}</option>)}</optgroup>)}</select></label>
+          <label>{t('profile.name')}<input name="profileName" value={name} maxLength={80} onChange={event => setName(event.target.value)} autoComplete="off" /></label>
+          <details><summary>{t('profile.group')}</summary><label><span className="redis-sr-only">{t('profile.group')}</span><input name="profileGroup" value={group} maxLength={80} onChange={event => setGroup(event.target.value)} autoComplete="off" placeholder={t('profile.ungrouped')} /></label></details>
+          <div className="redis-actions">
+            <button type="button" disabled={name.trim() === ''} onClick={() => {
+              const trimmed = name.trim(), trimmedGroup = group.trim()
+              if (profiles.some(value => value.id !== selectedId && value.name === trimmed && (value.group ?? '') === trimmedGroup)) { setError('profile.conflict'); return }
+              if (selectedId === null && profiles.length >= MAX_PROFILES) { setError('profile.limit'); return }
+              try {
+                const settings = connectionSettingsSchema.parse(props.settings())
+                void run(signal => props.saveProfile({ id: selectedId, name: trimmed, ...(trimmedGroup ? { group: trimmedGroup } : {}), settings }, signal), true)
+              } catch { setError('profile.error') }
+            }}>{t(selectedId === null ? 'profile.save' : 'profile.update')}</button>
+            <button type="button" disabled={selectedId === null} onClick={() => setConfirmRemove(true)}>{t('profile.remove')}</button>
+            <button type="button" className={'redis-icon-button' + (busy ? ' redis-spinning' : '')} title={t('profile.reload')} aria-label={t('profile.reload')} onClick={() => { void run(props.listProfiles) }}><Icon name="refresh" /></button>
+          </div>
+          {confirmRemove && selectedId !== null && <div className="redis-profile-confirm"><strong>{t('profile.remove')} · {profiles.find(value => value.id === selectedId)?.name}</strong><div className="redis-actions"><button type="button" onClick={() => { const id = selectedId; void run(signal => props.removeProfile({ id }, signal), true) }}>{t('profile.remove')}</button><button type="button" onClick={() => setConfirmRemove(false)}>{t('keys.cancel')}</button></div></div>}
+        </fieldset>
+        {error !== null && <p className="redis-error" role="alert">{t(error)}</p>}
       </aside>
-      <div className="redis-connection-editor">
-      <ConnectionUri t={t} open={props.open} disabled={busy || props.disabled} apply={value => { choose(undefined); props.applyUri(value) }} />
-      {props.children}
-      </div>
-      <div className="redis-connection-extras">
-      <ProfileTransfer t={t} open={props.open} disabled={busy || props.disabled} profiles={profiles} import={request => run(signal => props.importProfiles(request, signal), 'keep')} />
-      </div>
-      </div>
-    </dialog>
-  </>
+      <div className="redis-connection-editor">{props.children}</div>
+    </div>
+  </dialog>
 }

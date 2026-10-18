@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useBrowsingFormat } from './PreviewFormats.tsx'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { MAX_LIST_ITEMS, type DatabaseTarget, type RedisKey, type ZSetEntry, type ZSetReadRequest, type ZSetReadResult } from '../domain.ts'
@@ -8,25 +9,22 @@ import { CollectionTable, type CollectionColumn } from './CollectionTable.tsx'
 import { displayLabel } from './collection-value.ts'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { appendZSetRows, emptyZSetCache, type ZSetCache } from './zset-cache.ts'
-import { useBrowsingFormat } from './BrowsingSession.tsx'
 import { NS } from './locales.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
-import { GeoView, type GeoActions } from './GeoView.tsx'
 
-export interface ZSetActions extends GeoActions { readonly readZSet: (request: ZSetReadRequest, signal: AbortSignal) => Promise<RemoteResult<ZSetReadResult>> }
+export interface ZSetActions { readonly readZSet: (request: ZSetReadRequest, signal: AbortSignal) => Promise<RemoteResult<ZSetReadResult>> }
 type Props = ZSetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 
 /** Each mode owns its pagination. A ZSCAN token is never a rank offset. */
 export function ZSetView(props: Props) {
   const { t } = props
-  const [geo, setGeo] = useState(false)
   const [mode, setMode] = useState<'range' | 'scan'>('range'), [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_LIST_ITEMS)
   const [range, setRange] = useState({ offset: '0', count: MAX_LIST_ITEMS, attempt: 0 }), [pattern, setPattern] = useState('*')
   const [draft, setDraft] = useState('*')
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('zset'), [rangeError, setRangeError] = useState(false)
-  const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ active: !geo, target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range, pattern]), empty: emptyZSetCache,
+  const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range, pattern]), empty: emptyZSetCache,
     append: (previous, page) => appendZSetRows(previous, page.entries),
     load: async (cursor, signal) => {
       const response = await props.readZSet(mode === 'range' ? { target: props.target, keyBase64: props.selected.base64, mode, offset: cursor ?? range.offset, count: range.count } : { target: props.target, keyBase64: props.selected.base64, mode, pattern, cursor }, signal)
@@ -42,10 +40,6 @@ export function ZSetView(props: Props) {
     { id: 'member', title: t('set.member'), render: entry => <span data-zset-member={entry.member.base64} title={displayLabel(entry.member.label)}>{entry.member.byteLength === 0 ? t('collection.emptyMember') : displayLabel(entry.member.label)}</span> },
     { id: 'score', title: t('zset.score'), render: entry => <span data-zset-score={entry.member.base64}>{entry.score}</span> },
   ]
-  if (geo) return <>
-    <button type="button" onClick={() => { setGeo(false); setRange({ ...range, attempt: range.attempt + 1 }) }}>{t('geo.back')}</button>
-    <GeoView {...props} />
-  </>
   return <section className="redis-details redis-collection-workbench" aria-label={t('zset.title')}>
     <PresentKeyMetadata value={result?.metadata ?? null} />
     <h2>{t('zset.title')} · <span>{props.selected.label}</span></h2>
@@ -62,7 +56,6 @@ export function ZSetView(props: Props) {
       </div> : <label>{t('set.pattern')}<input name="zsetPattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>}
       <div className="redis-actions">
         <button type="submit" disabled={busy}>{t('workbench.apply')}</button>
-        <button type="button" disabled={busy} onClick={() => { scanState.cancel(); setSelected(null); setGeo(true) }}>{t('geo.open')}</button>
       </div>
     </form>}
     {rangeError && <p role="alert" className="redis-error">{t('zset.rangeError')}</p>}

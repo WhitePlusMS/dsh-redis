@@ -153,13 +153,9 @@ describe('lossless byte previews', () => {
     expect(previewValue(window('{bad'), 'json').error).toBe('json')
     expect(previewValue(window('['.repeat(65) + '0' + ']'.repeat(65)), 'json').error).toBe('limit')
   })
-  it('decodes Base64 only when explicitly selected and reports invalid encoding/decoded bytes', () => {
+  it('keeps Base64-looking text unchanged in Text mode', () => {
     const text = '{"integer":9007199254740993}', encoded = Buffer.from(text).toString('base64')
     expect(previewValue(window(encoded), 'text').text).toBe(encoded)
-    expect(previewValue(window(encoded), 'decode-json').text).toContain('9007199254740993')
-    expect(previewValue(window('%%%'), 'decode-text').error).toBe('base64')
-    expect(previewValue(window('/w=='), 'decode-text').error).toBe('utf8')
-    expect(previewValue(window('AB=='), 'decode-text').error).toBe('base64')
   })
 })
 

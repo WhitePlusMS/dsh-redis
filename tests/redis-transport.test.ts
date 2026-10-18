@@ -164,22 +164,15 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'SCAN', 'SCAN'])
     }, socket => { if (++reads === 1) firstSeen.resolve(socket); else socket.write('*2\r\n$1\r\n9\r\n*0\r\n') })
   })
-  it('allows only CLIENT LIST and rejects every client management shape before dispatch', async () => {
+  it('rejects removed diagnostic and module commands before dispatch', async () => {
     await withPeer(async (transport, commands) => {
-      for (const args of [[], ['KILL', 'ID', '1'], ['PAUSE', '1000'], ['LIST', 'TYPE', 'normal'], ['SETNAME', 'name'], [Buffer.from('LIST')]]) await expect(transport.execute('CLIENT', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      // Cast deliberately untrusted input to exercise the runtime boundary too.
+      for (const command of ['CLIENT', 'SLOWLOG', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'BF.EXISTS']) {
+        await expect(transport.execute(command as RedisReadCommand, [], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      }
+      for (const args of [[], ['all']]) await expect(transport.execute('INFO', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
       expect(commands).toEqual(['PING'])
-      expect(await transport.execute('CLIENT', ['LIST'], signal(), () => undefined)).toEqual(Buffer.alloc(0))
-      expect(commands).toEqual(['PING', 'CLIENT'])
-    }, (socket, args) => { expect(args.map(arg => Buffer.isBuffer(arg) ? arg.toString() : arg)).toEqual(['CLIENT', 'LIST']); socket.write('$0\r\n\r\n') })
-  })
-  it('limits diagnostics to INFO without sections and SLOWLOG GET with a bounded positive count', async () => {
-    await withPeer(async (transport, commands) => {
-      for (const args of [['RESET'], ['LEN'], ['GET', '-1'], ['GET', '102'], ['GET', '01'], ['GET', '2', 'extra'], [Buffer.from('GET'), '2']]) await expect(transport.execute('SLOWLOG', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
-      await expect(transport.execute('INFO', ['all'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
-      expect(commands).toEqual(['PING'])
-      expect(await transport.execute('SLOWLOG', ['GET', '101'], signal(), () => undefined)).toEqual([])
-      expect(commands).toEqual(['PING', 'SLOWLOG'])
-    }, (socket, args) => { expect(args.map(arg => Buffer.isBuffer(arg) ? arg.toString() : arg)).toEqual(['SLOWLOG', 'GET', '101']); socket.write('*0\r\n') })
+    }, () => { throw new Error('A removed command reached the peer') })
   })
   it('allows only fixed database metadata shapes and refuses config mutations or wildcards', async () => {
     await withPeer(async (transport, commands) => {

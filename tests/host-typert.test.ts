@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { redisHostDescriptors } from '../src/typert.host.ts'
-import { connectionRequestSchema, connectionViewSchema, connectionTestSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema, importProfilesSchema } from '../src/typert.shared.ts'
+import { connectionRequestSchema, connectionViewSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema } from '../src/typert.shared.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
 
 const valid = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
@@ -30,7 +30,7 @@ describe('strict rc.2 sidebar protocol', () => {
   })
   it('keeps matching endpoints and trusted Agent lookup, without command or write methods', () => {
     expect(redisDescriptors.map(value => value.id)).toEqual(redisHostDescriptors.map(value => value.id))
-    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'testConnection', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'importProfiles', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readJson', 'readGeo', 'readHll', 'readTimeSeries', 'readBloom', 'readSlowLog', 'readClients', 'readDatabases', 'readOverview', 'loadBrowsingState', 'saveBrowsingState'])
+    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases'])
     expect(redisDescriptors[0].parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
     expect(redisDescriptors[0].cancellation).toEqual({ parameter: 'signal' })
   })
@@ -65,15 +65,6 @@ describe('strict non-secret saved profile protocol', () => {
 
 
 describe('strict connection protocol', () => {
-  it('rejects contradictory test outcomes before they can report a successful connection', () => {
-    const codec = redisDescriptors.find(value => value.method === 'testConnection')?.result
-    if (codec?.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing connection-test decoder')
-    for (const parse of [connectionTestSchema.parse, codec.decode]) {
-      expect(parse({ outcome: 'passed', error: null })).toEqual({ outcome: 'passed', error: null })
-      expect(parse({ outcome: 'failed', error: 'auth' })).toEqual({ outcome: 'failed', error: 'auth' })
-      for (const value of [{ outcome: 'passed', error: 'auth' }, { outcome: 'failed', error: null }, { outcome: 'passed', error: null, password: 'private' }]) expect(() => parse(value)).toThrow()
-    }
-  })
   it('accepts standalone credentials and rejects URI hosts, invalid ports and arbitrary commands', () => {
     const descriptor = redisHostDescriptors.find(value => value.method === 'connect')
     const codec = descriptor?.parameters.find(value => value.name === 'request')?.codec
@@ -108,24 +99,5 @@ describe('strict connection protocol', () => {
       const { tls: _tls, ...missing } = valid
       expect(() => schema.parse(missing)).toThrow()
     }
-  })
-})
-
-
-describe('strict portable profile import codecs', () => {
-  it('accepts only non-secret portable fields on both faces and carries optional groups in saved results', () => {
-    const descriptor = redisHostDescriptors.find(value => value.method === 'importProfiles')
-    const codec = descriptor?.parameters.find(value => value.name === 'request')?.codec
-    if (codec?.mode !== 'strict' || descriptor?.result.mode !== 'strict') throw new Error('Missing import codecs')
-    const entry = { name: 'Reader', group: '开发', settings: { host: 'localhost', port: 6379, username: '', tls: true } }
-    for (const schema of [codec.create(), importProfilesSchema]) {
-      expect(schema.parse({ profiles: [entry] })).toEqual({ profiles: [entry] })
-      for (const invalid of [{ ...entry, password: 'secret' }, { ...entry, id: 'foreign' }, { ...entry, group: ' ' }, { ...entry, settings: { ...entry.settings, password: 'secret' } }, { ...entry, settings: { ...entry.settings, tls: { caPem: '' } } }]) expect(() => schema.parse({ profiles: [invalid] })).toThrow()
-      expect(() => schema.parse({ profiles: [] })).toThrow()
-      expect(() => schema.parse({ profiles: [entry], replace: true })).toThrow()
-    }
-    const response = { profiles: [{ ...entry, id: 'host-issued', settings: { ...entry.settings, tls: { caPem: '' } } }], selectedId: null }
-    expect(profileCollectionSchema.parse(response)).toEqual(response)
-    expect(descriptor.result.create().parse(response)).toEqual(response)
   })
 })

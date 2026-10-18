@@ -1463,3 +1463,15 @@
 - 逐项说明旧问题的范围变化：两项快照P1及相关P2可随模块退出；连接保存密码、实际身份与草稿、资料禁用、自动刷新及核心图标仍需修，不承诺删功能等于无bug。记录沿组件/RPC/读取/测试的删除边界与后续顺序，并为原保留全部功能的修复顺序增加适用范围说明。
 - `README.md`更新审查入口名称，当前56项功能清单不变，候选不写成已删除功能。本次仅文档变更，不读取业务内容、不操作Redis、不启动/停止服务、不安装插件、不改应用代码或依赖；文档检查后本地提交，没有推送或网页GPT评审。
 - 文档检查通过：原56项核对表保持完整、54个本地来源链接及行号有效、`git diff --check`无空白错误；差异仅涉及README、审查文档和更新日志。无应用代码变更，未重复运行编译或回归，也未把上轮318项通过写作本轮重新执行。
+
+## 2026-10-19：实施六种基础类型精简版
+
+- 用户明确授权按精简方案直接修改、修复连接/自动刷新、保留青紫橘导航并将小按钮统一为Lucide，完成后更新现用DSH；每个小目标本地提交。新增 `docs/SLIM_VIEWER_IMPLEMENTATION.md` 跟踪删除、连接、刷新、图标、验证、安装六个检查点，起点91dc39e。
+- 大量依赖探寻由GPT6 LUNA描述，主模型核对实际源码和协议后实施。删除诊断、专用视图、URI、导入导出、独立测试和浏览恢复时，保留六种类型、DB目录元数据、手动SELECT、字节身份、读取取消及所属会话隔离；不维护删除能力的兼容层。
+
+- 小目标1/2：删除63个低频视图、Host reader、解析器、状态恢复和专用测试/脚本文件；`domain.ts`、三份typert文件、`remote-service.ts`、Client注入及`redis-transport.ts`从28个RPC收敛为16个，删除对应DTO/schema和命令白名单。仍保留`INFO keyspace`、DBSIZE/CONFIG GET databases以读取DB目录，不再允许诊断INFO、CLIENT、SLOWLOG及模块命令。
+- `PreviewFormats.tsx`替代`BrowsingSession.tsx`，只保存挂载期间六种视图的Text/JSON/Hex/Base64格式；`RedisWorkspace.tsx`、`KeyBrowser.tsx`、`KeyDetails.tsx`和五种集合视图移除自动恢复及专用解释接线。普通JSON格式化仍在，GEO底层ZSet、Bitmap/HLL底层String仍可查看原始数据。
+- `ConnectionForm.tsx`将编辑草稿与实际ConnectionView分开，状态/SELECT回复仅更新实际连接；只有明确选择资料才填草稿。去掉独立测试，关闭连接窗口取消尚未完成的connect；已连接时可管理其他资料，切换服务器仍需显式断开。密码只保留本次草稿、连接或关闭后清空。
+- `ProfileChooser.tsx`保存/刷新回复只更新资料列表和名称分组，不再调用select回填，因此保存不会清空密码；资料重载不覆盖草稿；删除改为显示真实资料名的二次确认。分组及TLS/CA按需展开。`profile-store.ts`保留原有核心持久化、重复名称/容量校验，删除批量导入。
+- `value-preview.ts`/`BytePreview.tsx`删除显式Base64解码选项；`locales.ts`修正已连接时编辑资料的说明、名称冲突及容量提示。`scripts/build.mjs`先验证并清空本项目lib输出，再构建，防止已删除模块残留进安装包。
+- `host-typert`/bundle/连接/资料/String/transport测试删去退出功能的断言，新增运行时拒绝已删除命令且不发送到Redis的回归；bundle仍检查原生注册/卸载和严格16方法decode。三层严格类型通过；全量构建与19文件187项回归通过。连接UI与刷新连续性尚待隔离原生专项，不把单元通过等同实际安装验收。

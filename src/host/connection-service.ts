@@ -2,7 +2,7 @@
 import { randomUUID } from 'node:crypto'
 import { RedisTransport, RedisTransportError, type RedisReadCommand } from './redis-transport.ts'
 import { RedisFrameError, RedisReplyError, type RedisArgument, type RedisReply } from './resp.ts'
-import type { ConnectionErrorCode, ConnectionRequest, ConnectionTarget, ConnectionTestResult, ConnectionView, DatabaseTarget } from '../domain.ts'
+import type { ConnectionErrorCode, ConnectionRequest, ConnectionTarget, ConnectionView, DatabaseTarget } from '../domain.ts'
 
 /** Small Host-owned transport surface; no Redis command strings cross the RPC. */
 export interface RedisLink {
@@ -71,13 +71,6 @@ export class RedisConnections {
     this.release(record)
     record.state = 'disconnected'
     record.error = null
-  }
-
-  async test(settings: ConnectionRequest, signal: AbortSignal): Promise<ConnectionTestResult> {
-    let link: RedisLink | undefined
-    try { link = await this.open(settings, signal); signal.throwIfAborted(); return { outcome: 'passed', error: null } }
-    catch (error) { return { outcome: 'failed', error: signal.aborted ? 'cancelled' : connectionErrorCode(error) } }
-    finally { link?.close() }
   }
 
   async connect(sessionId: string, settings: ConnectionRequest, signal: AbortSignal): Promise<ConnectionView> {

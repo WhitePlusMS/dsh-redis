@@ -73,22 +73,11 @@ export function previewValue(value: Window, format: PreviewFormat): ValuePreview
       }
       return { text: lines.join('\n'), error: null, contextBytes: 0 }
     }
-    if ((format === 'json' || format === 'decode-json') && !value.complete) throw new PreviewFailure('partial-json')
-    let text: string, contextBytes = 0
-    if (format === 'decode-text' || format === 'decode-json') {
-      let decoded: string
-      try {
-        const encoded = decoder().decode(raw).replace(/[ \t\r\n]/gu, '')
-        decoded = atob(encoded)
-        if (btoa(decoded) !== encoded) throw new Error('Non-canonical Base64')
-      } catch { throw new PreviewFailure('base64') }
-      try { text = decoder().decode(Uint8Array.from(decoded, character => character.charCodeAt(0))) }
-      catch { throw new PreviewFailure('utf8') }
-    } else {
-      const decoded = decodeTextWindow(value)
-      text = decoded.text; contextBytes = decoded.contextBytes
-    }
-    if (format === 'json' || format === 'decode-json') text = formatJson(text)
+    if (format === 'json' && !value.complete) throw new PreviewFailure('partial-json')
+    const decoded = decodeTextWindow(value)
+    let text = decoded.text
+    const contextBytes = decoded.contextBytes
+    if (format === 'json') text = formatJson(text)
     if (text.length > MAX_PREVIEW_CHARACTERS) throw new PreviewFailure('limit')
     return { text, error: null, contextBytes }
   } catch (error) { return { text: '', error: error instanceof PreviewFailure ? error.code : 'base64', contextBytes: 0 } }

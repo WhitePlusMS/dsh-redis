@@ -7,7 +7,7 @@ import { Icon } from './Icon.tsx'
 import { findLoadedText, indexJsonFolds, projectLoadedText, type TextRange } from './loaded-content.ts'
 
 type Window = Pick<StringReadResult, 'base64' | 'prefix' | 'suffix' | 'offset' | 'complete'>
-const formats: readonly PreviewFormat[] = ['text', 'json', 'hex', 'base64', 'decode-text', 'decode-json']
+const formats: readonly PreviewFormat[] = ['text', 'json', 'hex', 'base64']
 
 /** The same byte formatter serves String windows and collection cells. */
 export function BytePreview({ value, t, format, onFormatChange, heading }: { readonly value: Window; readonly t: TranslateNS<typeof NS>; readonly format: PreviewFormat; readonly onFormatChange: (format: PreviewFormat) => void; readonly heading?: { readonly label: string; readonly description: string } }) {
@@ -20,7 +20,7 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
   const [collapsed, setCollapsed] = useState<ReadonlySet<number>>(() => new Set())
   const searchInput = useRef<HTMLInputElement>(null), content = useRef<HTMLPreElement>(null)
   const matches = useMemo(() => findLoadedText(preview.text, searchOpen ? query : ''), [preview.text, query, searchOpen])
-  const folds = useMemo(() => (format === 'json' || format === 'decode-json') && preview.error === null ? indexJsonFolds(preview.text) : { blocks: [], limited: false, error: null }, [preview.text, preview.error, format])
+  const folds = useMemo(() => format === 'json' && preview.error === null ? indexJsonFolds(preview.text) : { blocks: [], limited: false, error: null }, [preview.text, preview.error, format])
   const pieces = useMemo(() => projectLoadedText(preview.text.length, folds.blocks, collapsed), [preview.text, folds, collapsed])
   const current = matches.ranges.length === 0 ? -1 : matchIndex % matches.ranges.length
   useEffect(() => {
