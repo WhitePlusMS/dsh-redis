@@ -1,0 +1,24 @@
+{
+  "packageSha256": "6194353d9b58f2f74a17fdff00546995ba3488c5646296152b20b511d63fd319",
+  "allPackedFilesMatch": true,
+  "packedFiles": 98,
+  "libFiles": 88,
+  "bundlesUnchanged": true,
+  "otherDependenciesUnchanged": true,
+  "changedProfileFiles": [
+    "package.json",
+    "pnpm-lock.yaml"
+  ],
+  "backupFiles": 5,
+  "port": 7198,
+  "pid": 39180,
+  "hiddenLaunch": true,
+  "realData": {
+    "connected": true,
+    "db": 0,
+    "keys": "760 / 760",
+    "hashFields": "8",
+    "toolbarHeight": 33
+  },
+  "checkedAt": "2026-10-18T15:54:36.245Z"
+}

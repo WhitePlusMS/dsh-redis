@@ -37,4 +37,26 @@
 
 ## 最终包专项与日常安装
 
-待最终打包、失败反馈专项与日常安装完成后写入实际结果。日常7198按用户明确要求保留，临时验证服务完成后停止；业务数据、凭据、认证URL与profile备份不入Git。没有运行npm dev/start:dev、网页端GPT审查或推送。
+最终SHA256：`6194353d9b58f2f74a17fdff00546995ba3488c5646296152b20b511d63fd319`。默认prepack再次完成三层严格类型、standalone构建和32文件/318回归；未在仅文档归档后重复运行。
+
+最终原生CUA专项7组通过（`final-native-checks.json`）：
+
+1. 测试连接失败原按钮为警告，详细错误一次；修改草稿清除旧状态，重测可恢复通过。
+2. 用独占夹具的LRANGE/GEOPOS拒绝用户验证List/GEO实际权限错误各一条。
+3. Hash字段复制仅字段按钮对勾，值按钮保持原状。
+4. 自动刷新实际触发读取，工具带保持33px；间隔可恢复5s。
+5. 元信息仍可查询；Host/版本按需展开，正常不占底栏。
+6. 464px深色侧栏实际宽464.11px，工作区scrollWidth/clientWidth均464；无全局溢出。
+7. DB3的5100 Key自动扫描停止于5000，显示“部分”，没有100%或全量完成误报。
+
+最终14份Key DUMP和Stream消费组状态不变，代理未观察到写命令/KEYS/协议错误；所属DSH、代理、Redis停止且新fixture已清理。`final-read-summary.json`/`final-cleanup.json`保留证据。历史smoke-dsh全模式未在本轮执行，本轮原生检查为CUA实际操作，不将旧脚本结果计为本包通过。
+
+日常web profile五文件先备份；安装唯一SHA包后，98个发布文件与实际安装逐字节一致，88个lib同时与本机构建一致（`package-manifest.json`）。仅package.json/pnpm-lock.yaml插件引用变化，其他依赖、bundles、cordis配置未变。核对旧7198/PID11652归属后，仅停止该所属进程树，隐藏重启为PID39180，仍监听127.0.0.1:7198。
+
+实际页面已手动连接用户127.0.0.1:6379，DB0自动读到760/760，打开8字段Hash、选行并切换值JSON；新工具带33px。业务内容/截图与认证URL只在忽略目录，入库报告仅保留数量和安装校验。日常页面已打开并保留供用户查看，自动刷新仍需用户手动开启。
+
+日常7198按用户明确要求保留，临时验证服务完成后停止；业务数据、凭据、认证URL与profile备份不入Git。没有运行npm dev/start:dev、网页端GPT审查或推送。
+
+![最终包合成Hash效果](E:/项目demo/dsh-redis/docs/verification/artifacts/state-controls/final-hash-dark.png)
+
+上图为最终包在独占Redis上的合成数据，用户真实业务截图不随报告提交。

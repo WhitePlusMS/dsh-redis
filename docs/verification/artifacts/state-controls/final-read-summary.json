@@ -1,0 +1,29 @@
+{
+  "counts": {
+    "PING": 2,
+    "AUTH": 1,
+    "DBSIZE": 6,
+    "INFO": 6,
+    "CONFIG": 6,
+    "SCAN": 90,
+    "TYPE": 84,
+    "PTTL": 84,
+    "LLEN": 1,
+    "LRANGE": 1,
+    "ZCARD": 3,
+    "ZRANGE": 2,
+    "GEOPOS": 1,
+    "HLEN": 76,
+    "HSCAN": 38,
+    "SELECT": 1
+  },
+  "unchangedValueSnapshots": 14,
+  "consumerGroupsUnchanged": true,
+  "noWritesOrKeys": true,
+  "sizes": {
+    "list": 241,
+    "set": 238,
+    "zset": 237,
+    "stream": 235
+  }
+}

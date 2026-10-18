@@ -1,0 +1,54 @@
+{
+  "packageSha256": "6194353d9b58f2f74a17fdff00546995ba3488c5646296152b20b511d63fd319",
+  "checks": [
+    {
+      "id": "test-failure-recovery",
+      "passed": true,
+      "detail": "失败警告和详细错误各就位，改草稿清除，重测通过"
+    },
+    {
+      "id": "list-geo-single-failure",
+      "passed": true,
+      "detail": {
+        "list": 1,
+        "geo": 1
+      }
+    },
+    {
+      "id": "final-copy",
+      "passed": true,
+      "detail": [
+        "copied",
+        "idle"
+      ]
+    },
+    {
+      "id": "final-auto",
+      "passed": true,
+      "detail": {
+        "scans": 37,
+        "height": 33
+      }
+    },
+    {
+      "id": "metadata-and-host-info",
+      "passed": true,
+      "detail": "元信息可查；正常Host不占底栏，基线信息按需"
+    },
+    {
+      "id": "final-narrow",
+      "passed": true,
+      "detail": {
+        "client": 464,
+        "scroll": 464,
+        "width": 464.1111145019531
+      }
+    },
+    {
+      "id": "key-cap",
+      "passed": true,
+      "detail": "5000 / 5100\n部分"
+    }
+  ],
+  "recordedAt": "2026-10-18T15:49:46.160Z"
+}
