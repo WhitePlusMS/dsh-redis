@@ -1,5 +1,5 @@
 {
-  "observedAt": "2026-10-19T14:22:14.531Z",
+  "observedAt": "2026-10-19T14:34:50.446Z",
   "dataSource": "user-real-redis",
   "provider": "deepseek-official",
   "model": "deepseek-flash",
@@ -25,22 +25,32 @@
   },
   "unconnectedSessionReported": true,
   "connectedSessionReported": true,
-  "toolCalls": 7,
-  "toolResults": 7,
-  "toolErrors": 0,
+  "turns": 7,
+  "toolCalls": 14,
+  "toolResults": 14,
+  "expectedToolErrors": 1,
+  "unexpectedToolErrors": 0,
   "toolNames": [
     "redis_viewer_status",
     "redis_viewer_keys",
-    "redis_viewer_value"
+    "redis_viewer_value",
+    "redis_viewer_select_db"
   ],
   "scanPages": [
     {
+      "db": 0,
       "returned": 1,
       "scanComplete": false
     },
     {
+      "db": 0,
       "returned": 1,
       "scanComplete": false
+    },
+    {
+      "db": 1,
+      "returned": 0,
+      "scanComplete": true
     }
   ],
   "valueChecks": [
@@ -57,6 +67,44 @@
       "fieldIdentityRecognized": true
     }
   ],
+  "dbSwitches": {
+    "sequence": [
+      0,
+      1,
+      0
+    ],
+    "generations": [
+      2,
+      3,
+      4
+    ],
+    "sameConnectionId": true,
+    "finalSelectionEmpty": true
+  },
+  "sessionIsolation": {
+    "secondSessionDisconnected": true,
+    "valueRejected": true,
+    "originalConnectionPreserved": true
+  },
+  "ui": {
+    "db1": {
+      "selected": "true",
+      "autoRefreshControls": 0,
+      "hashGrids": 0
+    },
+    "db0": {
+      "selected": "true",
+      "autoRefreshControls": 0,
+      "hashGrids": 0
+    },
+    "afterSessionRoundTrip": {
+      "redisStyleCount": 1,
+      "db0Selected": "true",
+      "autoRefreshControls": 0
+    },
+    "autoRefreshEnabledBeforeSwitch": true
+  },
+  "finalDb0Size": 760,
   "writesIssuedByIndependentVerifier": 0,
   "businessValuesSaved": false
 }

@@ -49,3 +49,5 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 工具不接收sessionId或自由命令，不自动建立连接，不返回密码，也不新增快照、诊断或特殊类型。DB切换只影响所属连接的逻辑DB，不修改Redis业务数据。连接断开、代次变化、会话或插件释放会清理AI选择及游标。
 
 实现遵循固定rc2的[官方工具契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)。实际检查、模型服务故障与日常安装状态见[实施记录](AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
+
+2026-10-19已完成[真实模型与真实数据联调](verification/ai-read-real-data-2026-10-19.md)：真实Hash检索/读取、当前选中字段、明确切库与侧栏同步、跨会话隔离通过。实际库只有Hash，其他五类不标为真实数据验证通过。
