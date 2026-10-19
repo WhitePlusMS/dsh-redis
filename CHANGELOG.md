@@ -4,9 +4,13 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 ## [Unreleased]
 
-Recorded through **2026-10-20**, including documentation maintenance; runtime acceptance cited below was recorded on 2026-10-19. The manifest currently uses `0.1.0` as a local development package version. The source is hosted in a private GitHub repository; no release tag, Release asset or npm publication exists at this checkpoint. This entry is not a published `0.1.0` release or a release date.
+Future changes will be recorded here. / 后续改动记录在此。
 
-以下为截至 **2026-10-20** 的未发布记录（含文档整理），所引用运行验收发生于2026-10-19。`package.json` 的 `0.1.0` 是本地开发包标识，不代表已经发布；源码已托管在私有GitHub仓库，尚无发布tag、Release附件或npm发布；下文继续记录未发布改动。
+## [0.1.0] — 2026-10-20
+
+First versioned GitHub Release, distributed as `dsh-redis-0.1.0.tgz` with `SHA256SUMS.txt` under tag `v0.1.0`. The repository remains private; this is not an npm or community-market publication. Runtime acceptance cited below was recorded on 2026-10-19.
+
+首个版本化 GitHub Release，tag 为 `v0.1.0`，交付 `dsh-redis-0.1.0.tgz` 与 `SHA256SUMS.txt`。仓库保持私有，不包含 npm 或社区市场发布。下述既有运行验收记录于2026-10-19。
 
 ### Added
 

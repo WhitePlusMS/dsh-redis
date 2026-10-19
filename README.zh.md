@@ -22,7 +22,7 @@
 
 使用已验证的 **DSH Web `0.2.0-rc.2`**，Host 上须有可用的 pnpm；命令行方式还需要能调用 `dsh`。下面两种方式安装的是同一个 Release 成品 `.tgz`，使用 DSH 官方支持的 tarball 安装机制。依据见[官方打包说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md)和[插件管理器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md)。
 
-**当前状态：** [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 是私有仓库，尚未创建发布 tag 和 Release 附件；`0.1.0` 仍是开发版本。下方 `v0.1.0` 地址展示首版发布后的格式，只有对应 tag、Release 和附件发布后才能使用。试用当前源码时，见[本地开发包步骤](docs/INSTALLATION.zh.md#准备成品包)。
+**当前版本：`v0.1.0`。** 在[对应 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 获取 `dsh-redis-0.1.0.tgz` 和 `SHA256SUMS.txt`。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载前须登录有仓库访问权限的账号。
 
 维护者的交付顺序是：**核对提交 → 构建并 `pnpm pack` → `v<version>` tag → GitHub Release 上传 `.tgz` 与 `SHA256SUMS.txt` → 用户安装**。普通用户使用成品包；[版本发布步骤](docs/DEVELOPMENT.md#8-版本化发布与安装入口)由维护者完成。
 
@@ -32,7 +32,7 @@
 2. 打开 DSH 的**插件 → 添加插件**。公开 Release 可以直接粘贴完整的固定版本附件 URL；当前私有仓库则需先登录 GitHub 下载附件，将文件放到 Host，再填入该文件的绝对路径。
 3. 确认包名、版本后安装，选择**立即启用**，在对话右侧栏打开 **Redis**。没有热重载时，按提示重启原 Host。
 
-发布 `v0.1.0` 后的附件地址示例：
+`v0.1.0` 固定附件地址（私有期间需要下载授权）：
 
 ```text
 https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
@@ -179,7 +179,7 @@ dsh plugin --profile web remove dsh-redis
 
 **为什么 Release 地址返回 404？**
 
-先核对对应 tag 和 `.tgz` 附件是否已经发布，以及当前账号是否能访问仓库。目前私有仓库尚无 Release；浏览器登录也不会授权另一台 Host 下载。私有附件采用登录下载后安装本地文件的方式。
+先核对 tag、`.tgz` 附件名，以及当前账号是否有仓库访问权限。浏览器登录不会授权另一台 Host 下载；这个私有 Release 采用登录下载后安装本地文件的方式。
 
 **可以安装 GitHub 的 Source code 源码归档吗？**
 

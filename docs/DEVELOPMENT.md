@@ -8,7 +8,7 @@
 
 | 项目 | 声明或实际状态 |
 | --- | --- |
-| 插件包 | `dsh-redis@0.1.0`，本地开发版本，未声明已公开发布 |
+| 插件包 | `dsh-redis@0.1.0`，私有仓库 Release，tag 为 `v0.1.0` |
 | 宿主、DSH SDK | `0.2.0-rc.2`，实际确认的预发布基线 |
 | 官方参考源码 | `deepseek-ai/deepseek-harness` 的 `dsh-v0.2.0-rc.2`，核对提交前缀 `639ed015` |
 | Node.js | 声明 `^22.19.0 || >=24.0.0`；实际验证 `22.22.1` |
@@ -123,7 +123,7 @@ pnpm build
 - 默认夹具阻断真实模型，`REDIS_SMOKE_REAL_MODEL=1` 才允许真实 provider。凭据副本只放忽略的临时目录，验收后删除；未经当前任务授权不改日常模型、代理、路由或真实业务数据。
 - `scripts/verify-release-package.mjs` 仍固定旧 `.scratch/artifacts/dsh-redis-0.1.0.tgz` 和报告路径。它是既有专项工具，不应直接拿来核对任意新文件名，或覆盖旧报告后当作本次通过。`REDIS_VERIFY_PACKAGE_ROOT` 只改变安装目录，不改变固定 tgz 路径。
 
-这次文档整理不重新运行真实 Redis/模型专项，也不触碰用户日常 DSH；只验证文档、成品包和独立 profile 的包管理行为。
+版本发布时重新执行默认打包检查，并从实际 Release 重新下载成品，在独立 profile 中验收 CLI 安装及原生 DSH 界面安装、启用和连接入口。真实 Redis/模型的验收范围另行记录，不用安装通过替代业务数据联调。
 
 ## 7. 本地打包与检查
 
@@ -157,7 +157,7 @@ Get-Content -LiteralPath '.release\SHA256SUMS.txt'
 
 ### 当前状态与分发约定
 
-源码已推送到私有仓库 [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis)，默认分支为main；截至2026-10-20尚无发布tag、GitHub Release附件或npm发布。`0.1.0` 仍是本地开发包标识。私有源码上传不等于已经交付安装版本。
+源码托管在私有仓库 [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis)，默认分支为main。首版为 [v0.1.0](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0)，日期2026-10-20，附件为 `dsh-redis-0.1.0.tgz` 和 `SHA256SUMS.txt`；仓库保持私有，未发布到npm或社区市场。
 
 本项目采用与 [GitGraph 当前安装说明](https://github.com/WhitePlusMS/dsh-git-graph/blob/f4ae9a9b8ed40233f7322df5f967708be9e29316/README.zh.md#安装与更新)一致的交付方式：**通过检查的提交 → 预构建 `.tgz` → 固定版本tag → Release附件 → DSH界面或CLI安装**。这是我们的版本维护约定；官方支持的机制是安装预构建npm包或tarball，也提供Git和本地开发来源。
 
@@ -165,7 +165,7 @@ Redis的main/exports指向`lib/*`，`files`会将lib装入成品包，但`lib/`�
 
 ### 维护者发布步骤
 
-以下是待执行的版本流程，`0.1.0`/`v0.1.0`以当前manifest为例；本轮修订文档不会执行tag、Release或安装操作。
+以下使用首版 `0.1.0`/`v0.1.0` 说明维护流程；后续发布须换成实际的新版本，不移动已发布tag或覆盖附件。
 
 1. 确定发布版本，使 `package.json.version`、`CHANGELOG.md` 的版本与实际 `YYYY-MM-DD` 日期、中英文README、附件文件名和下载地址一致。只在发布时把对应记录移出Unreleased。
 2. 在干净且明确的发布提交上冻结安装依赖，按上一节 `pnpm pack --pack-destination .release` 打包；默认prepack会完成严格类型、构建与回归。核对归档入口、许可、文档及所有需要的lib文件，生成同一成品包的 `SHA256SUMS.txt`。

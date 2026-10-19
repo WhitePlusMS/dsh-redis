@@ -22,7 +22,7 @@ English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme
 
 Use the verified **DSH Web `0.2.0-rc.2`** environment and a working pnpm on the Host. The CLI method also requires `dsh` in that Host's terminal. Both methods below install the same prebuilt Release `.tgz`, using DSH's supported tarball mechanism. See the [official packaging guide](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md) and [plugin manager](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md).
 
-**Current status:** [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) is private, with no release tag or Release asset yet. `0.1.0` is the development version. The `v0.1.0` URL below shows the intended first-release format; it is not available until that tag, Release and asset exist. For the current checkout, use the [local development package steps](docs/INSTALLATION.md#prepare-a-built-package).
+**Version: `v0.1.0`.** Obtain `dsh-redis-0.1.0.tgz` and `SHA256SUMS.txt` from the [versioned Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0). [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private, so sign in with an account that has repository access before downloading.
 
 The maintainer's delivery order is **checked commit → build and `pnpm pack` → `v<version>` tag → GitHub Release with `.tgz` and `SHA256SUMS.txt` → installation**. Ordinary users receive the built package; [release preparation](docs/DEVELOPMENT.md#8-版本化发布与安装入口) belongs to the maintainer.
 
@@ -32,7 +32,7 @@ The maintainer's delivery order is **checked commit → build and `pnpm pack` �
 2. In DSH, open **Plugins → Add plugin**. For a public Release, paste its complete, versioned asset URL. For this private repository, sign in to GitHub, download the asset, place it on the Host, and enter that file's absolute path.
 3. Confirm the package name/version, install, then choose **Enable now**. Open **Redis** in a conversation's right sidebar. Follow a Host restart notice when live reload is unavailable.
 
-Example asset address after publishing `v0.1.0`:
+Fixed `v0.1.0` asset address (authenticated access required while private):
 
 ```text
 https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
@@ -179,7 +179,7 @@ Reload/restart that same profile when required. Uninstalling retains saved conne
 
 **Why does the Release URL return 404?**
 
-Check that the exact tag and `.tgz` asset have been published and that you can access the repository. This private repository has no Release yet. Signing into GitHub in a browser does not authenticate a separate Host download; use the downloaded-file route for a private asset.
+Check the exact tag and `.tgz` filename, and confirm that your account has repository access. Signing into GitHub in a browser does not authenticate a separate Host download; use the downloaded-file route for this private Release.
 
 **Can I install GitHub's Source code archive instead?**
 

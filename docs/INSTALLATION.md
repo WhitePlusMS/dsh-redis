@@ -2,7 +2,7 @@
 
 English | [简体中文](INSTALLATION.zh.md)
 
-This guide covers versioned Release packages, the two supported installation interfaces, and local development packages. The source is now in the private [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) repository. No release tag or Release asset exists yet; `0.1.0` remains the development version.
+This guide covers `v0.1.0` Release packages, the two supported installation interfaces, and local development packages. [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private; downloading its Release assets requires repository access.
 
 ## Supported target
 
@@ -12,7 +12,7 @@ This guide covers versioned Release packages, the two supported installation int
 | Verified platform | Windows, Node.js `22.22.1` |
 | Declared Node.js range | `^22.19.0 || >=24.0.0` |
 | Build tool | pnpm `11.22.0` |
-| Plugin package | `dsh-redis@0.1.0`, local development version |
+| Plugin package | `dsh-redis@0.1.0`, tag `v0.1.0` |
 
 `0.2.0-rc.2` is a prerelease. It is the verified baseline, not a claim about the latest stable DSH release. Desktop, macOS and Linux installation have not been accepted for this plugin. The Web client declaration alone does not establish Desktop compatibility.
 
@@ -22,17 +22,17 @@ Use the DSH profile that actually serves your browser. The examples below use an
 
 The maintainer prepares a checked commit, builds and runs `pnpm pack`, creates `v<version>`, then publishes a GitHub Release containing `dsh-redis-<version>.tgz` and `SHA256SUMS.txt`. Both the DSH interface and CLI install that same built package. [Maintainer release steps](DEVELOPMENT.md#8-版本化发布与安装入口).
 
-After publication, choose the exact version under [Releases](https://github.com/WhitePlusMS/dsh-redis/releases), download both assets and compare the package SHA-256 with the checksum file. A source tag and GitHub's automatic **Source code** downloads are not the built package. The current Git tree does not contain `lib/`, and this project does not provide a Git-install `prepare` build.
+Open the [v0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0), download both assets and compare the package SHA-256 with the checksum file. A source tag and GitHub's automatic **Source code** downloads are not the built package. The current Git tree does not contain `lib/`, and this project does not provide a Git-install `prepare` build.
 
-For example, the first `v0.1.0` asset address would be:
+The fixed `v0.1.0` asset address is:
 
 ```text
 https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
 ```
 
-This is a planned address, not an available download today. While the repository is private, sign into GitHub to download the asset and place it on the DSH Host; install by its local absolute path. The Host's pnpm does not inherit a browser's login. Direct asset URLs are the normal route for a published public Release; any private-download authentication is Host-specific rather than automatically provided by DSH.
+While the repository is private, sign into GitHub with repository access to download the asset and place it on the DSH Host; install by its local absolute path. The Host's pnpm does not inherit a browser's login. Direct asset URLs are the normal route for a published public Release; any private-download authentication is Host-specific rather than automatically provided by DSH.
 
-Ordinary users do not need to clone or build a released package. Until a Release is created, use a verified package supplied by the maintainer or the [local build section](#prepare-a-built-package).
+Ordinary users do not need to clone or build the released package. Maintainers can use the [local build section](#prepare-a-built-package) for development.
 
 ## Install through the DSH interface
 
@@ -60,7 +60,7 @@ For a private Release, sign in and download the same asset first, replace this e
 $packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
 ```
 
-The `v0.1.0` example requires that version to be published first. Add the selected built package and check it:
+Add the selected built package and check it:
 
 ```powershell
 dsh plugin --profile web add $packageForInstall

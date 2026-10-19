@@ -2,7 +2,7 @@
 
 [English](INSTALLATION.md) | 简体中文
 
-本文说明固定版本 Release 成品包、界面/CLI 两种安装入口及本地开发包。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 源码已在私有仓库中，目前尚无发布 tag 和 Release 附件；`0.1.0` 仍是开发版本。
+本文说明 `v0.1.0` Release 成品包、界面/CLI 两种安装入口及本地开发包。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载 Release 附件需要仓库访问权限。
 
 ## 适用环境
 
@@ -12,7 +12,7 @@
 | 实际验证的平台 | Windows、Node.js `22.22.1` |
 | 声明的 Node.js 范围 | `^22.19.0 || >=24.0.0` |
 | 构建工具 | pnpm `11.22.0` |
-| 插件包 | `dsh-redis@0.1.0`，本地开发版本 |
+| 插件包 | `dsh-redis@0.1.0`，tag 为 `v0.1.0` |
 
 `0.2.0-rc.2` 是预发布版本；这里记录实际验证的基线，不把它称为最新稳定版。本插件尚未完成 Desktop、macOS、Linux 安装验收，不能仅凭 Web Client 声明推断 Desktop 可用。
 
@@ -22,17 +22,17 @@
 
 维护者先核对提交、构建并执行 `pnpm pack`，创建 `v<version>` 标签，再发布包含 `dsh-redis-<version>.tgz` 和 `SHA256SUMS.txt` 的 GitHub Release。DSH 界面和 CLI 两种入口安装同一个成品包，完整[发布步骤](DEVELOPMENT.md#8-版本化发布与安装入口)由维护者执行。
 
-发布后，在 [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) 选定具体版本，下载这两个附件，并将包的 SHA-256 与校验文件核对。源码 tag 与 GitHub 自动生成的 **Source code** 下载不是构建成品；当前源码 Git 树不包含 `lib/`，项目也没有提供 Git 安装用的 `prepare` 构建。
+打开 [v0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0)，下载这两个附件，并将包的 SHA-256 与校验文件核对。源码 tag 与 GitHub 自动生成的 **Source code** 下载不是构建成品；当前源码 Git 树不包含 `lib/`，项目也没有提供 Git 安装用的 `prepare` 构建。
 
-以首次 `v0.1.0` 为例，附件地址将是：
+`v0.1.0` 的固定附件地址为：
 
 ```text
 https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
 ```
 
-这是待发布地址，目前还不能下载。仓库保持私有时，先登录 GitHub 下载附件，把文件放到 DSH Host，再按本地绝对路径安装；Host 的 pnpm 不会继承浏览器登录。已发布的公开 Release 可以直接使用完整附件 URL，私有下载授权则取决于 Host，DSH 不会自动补入浏览器身份。
+仓库保持私有时，先登录有访问权限的 GitHub 账号下载附件，把文件放到 DSH Host，再按本地绝对路径安装；Host 的 pnpm 不会继承浏览器登录。已发布的公开 Release 可以直接使用完整附件 URL，私有下载授权则取决于 Host，DSH 不会自动补入浏览器身份。
 
-普通用户使用已经构建的发布包，无需克隆或构建源码。当前尚无 Release，可使用维护者交付并核对的开发包，或按[本地构建部分](#准备成品包)生成。
+普通用户使用已经构建的发布包，无需克隆或构建源码。维护者开发时可按[本地构建部分](#准备成品包)生成。
 
 ## 从 DSH 界面安装
 
@@ -60,7 +60,7 @@ $packageForInstall = 'https://github.com/WhitePlusMS/dsh-redis/releases/download
 $packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
 ```
 
-`v0.1.0` 示例以前述版本已经发布为前提。添加所选成品包并核对安装版本：
+添加所选成品包并核对安装版本：
 
 ```powershell
 dsh plugin --profile web add $packageForInstall
