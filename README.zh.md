@@ -30,7 +30,7 @@
 
 1. 在 [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) 选择一个已发布版本，取得该版本的 `dsh-redis-<version>.tgz` 和 `SHA256SUMS.txt`，核对校验值。
 2. 打开 DSH 的**插件 → 添加插件**。公开 Release 可以直接粘贴完整的固定版本附件 URL；当前私有仓库则需先登录 GitHub 下载附件，将文件放到 Host，再填入该文件的绝对路径。
-3. 确认包名、版本后安装，选择**立即启用**，在对话右侧栏打开 **Redis**。没有热重载时，按提示重启原 Host。
+3. 安装后选择**立即启用**，在已安装插件的详情里核对 `dsh-redis`、`v0.1.0` 和 `ui-redis` 运行状态，再在对话右侧栏打开 **Redis**。没有热重载时，按提示重启原 Host。
 
 `v0.1.0` 固定附件地址（私有期间需要下载授权）：
 

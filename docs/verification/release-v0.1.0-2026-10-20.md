@@ -29,7 +29,7 @@
 - [GitHub Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) ID为417629679，已从草稿正式发布；API发布时间为2026-10-19T18:51:03Z，即北京时间2026-10-20 02:51:03。仓库private=true，插件Release为0.1.0，宿主预发布基线另行注明。
 - 附件 `dsh-redis-0.1.0.tgz` ID657130934，408868字节；`SHA256SUMS.txt` ID657130975，87字节。GitHub返回的digest均与上传来源一致，未替换同名附件。
 - 已通过GitHub官方API重新下载两个正式附件，逐字节匹配上传来源，并用下载的SHA256SUMS.txt重新核对下载成品。认证只在进程内使用；重定向到签名附件域名时不转发GitHub API凭据。
-- 重新下载的包是后续两条安装验收的共同来源。此检查点尚未完成原生界面安装，不把上传、下载和构建通过等同于安装通过。
+- 重新下载的包是下面两条安装验收的共同来源。不把上传、下载和构建通过等同于安装通过。
 
 ## CLI 实际安装
 
@@ -42,5 +42,28 @@
 5. finally核对临时home的真实路径和所有权后清理成功；该轮未启动Host、未连接Redis。
 
 机器记录位于忽略目录 `.scratch/artifacts/release-v0.1.0/cli-install.json`。正式Release页面也已通过实际GitHub登录会话打开，确认版本、源码提交、两附件及校验值；未把私有下载链接写成匿名可用。
+
+## DSH 原生界面实际安装
+
+使用另一个全新的独立DSH_HOME，启动官方DSH Web0.2.0-rc.2。没有复制日常profile或模型凭据；模型指向不可连接的本机地址，本轮不发对话请求，也不连接Redis或写入测试Key。
+
+1. 在实际原生页面打开“插件 → 添加插件”，填写正式Release回下载包的Host绝对路径，点击安装。
+2. 界面经历“正在检查”后显示“已安装”，安装详情中的真实命令为`pnpm add <下载包绝对路径>`，退出成功。
+3. 点击“立即启用”，组合包开关开启；插件详情明确显示`v0.1.0`、“共1个 · 1运行中”，组件为`ui-redis`。
+4. 回到隔离会话，打开右侧栏，出现Redis入口；点击后原生查看器正常显示。实际页面中Redis样式节点为1，图标尺寸及布局正常。
+5. 打开“选择或新建连接”，核对资料选择、名称、分组、地址、端口、认证、TLS及连接按钮；关闭后返回同一Redis界面，没有点击连接。
+6. Host端再次核对安装的86个文件逐字节匹配正式成品；Host日志记录“Read-only Host registered”，无加载错误。
+
+本次使用端口8343的Host及8344的所属控制服务，结束已关闭进程树；两端口无监听，临时home删除成功。日常7198仍在监听，未停止或更新用户原有服务。截图及机器记录保留在忽略目录`.scratch/artifacts/release-v0.1.0/`，包括已安装、版本/运行中、原生侧栏、连接表单及Release附件页面；不收录登录token或业务数据。
+
+### 实测发现及说明
+
+- **文档顺序：** 原安装指南提到安装前的包名/版本预览，本次本地tgz流程没有这一步，而是在安装后插件详情核对。本轮已同步修正main上的双语README和安装指南；v0.1.0 tag与两个已发布附件保持不变，Release说明补充实际核对顺序。
+- **pnpm peer提示：** 安装日志出现missing-peer警告，独立profile内`pnpm peers check`返回14项宿主共享包/React缺失。没有为消除静态警告把这些共享服务再装一份。官方运行时在安装scope收集dependencies与peers并提供profile模块解析，浏览器使用shell的共享模块表；本次实际Host注册、组件运行、Client与样式加载均成功。依据为固定版本[profile运行时解析](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/boot/app-boot/src/profile.ts#L357)与[浏览器共享模块](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/packages/client/modules/README.md#sharing-modules)。不把pnpm静态检查记为通过，也不据此声称所有宿主版本都兼容。
+- **验收工具：** 原生会话项的AX名称与DOM角色不同，最初定位未命中；连接表单与后台tab也有同名关闭按钮。改用页面实际暴露的唯一作用域后完成操作，未修改产品来配合验收脚本。
+
+## 最终范围
+
+本次完成私有Release、上传/回下载校验、CLI安装/卸载、原生DSH安装/启用及连接入口验收。没有重新运行真实模型或业务Redis验收，也没有把安装成功当作六种真实业务数据全部通过。先前样式节点缺失问题本次未复现，根因仍未定位，不宣称修复。
 
 宿主基线仍为Windows、Node.js22.22.1、DSH Web0.2.0-rc.2（预发布）。本轮安装验证不重新执行真实模型/业务Redis读写验收，不修改日常profile、模型或代理配置。

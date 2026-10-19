@@ -1732,3 +1732,10 @@
 - 使用正式Release回下载的同一个95f18567成品，在全新独立DSH_HOME中调用官方DSH CLI0.2.0-rc.2；按正常命令安装、list列出0.1.0，dump-config确认ui-redis组合，安装后86文件逐字节一致。没有用ignore-scripts/offline参数改变用户文档的安装路线。
 - CLI卸载成功、包链接与ui-redis组合均移除，专门创建的空连接资料保留且字节一致；finally核对所属绝对路径后清理本轮临时home。此轮无Host/Redis服务，不读写日常profile或业务数据。
 - 原生Chrome已打开正式Release，确认v0.1.0、86eb93b、两个上传附件和校验值，保留该交付页；截图只含发布说明与仓库上下文。报告追加CLI实际结果，影响仅docs/verification/release-v0.1.0-2026-10-20.md及本文，记录后本地提交；原生UI安装继续单独验收。
+
+### 小目标五：原生界面安装、启用与收尾
+
+- 另建无日常凭据的独立Web profile，原生浏览器实际执行插件→添加插件→正式下载包绝对路径→安装→立即启用。详情显示v0.1.0、ui-redis运行中；会话右栏Redis入口、样式及连接表单正常，Host记录Read-only Host registered，86个安装文件与正式包一致。没有连接Redis或调用真实模型。
+- 实测本地tgz安装没有单独的版本预览页，改在安装后插件详情核对。README.md、README.zh.md、docs/INSTALLATION.md、docs/INSTALLATION.zh.md据此修正操作顺序；这是一处文档勘误，不重新打包、覆盖发布附件或移动v0.1.0。Release说明补充已验收状态和实际核对顺序。
+- 安装日志的peer警告经限定GPT-6 Luna源码事实及主代理复核：临时profile的pnpm静态检查缺少14个宿主共享peer，DSH运行时另有安装scope解析/浏览器共享模块机制。保留该观察，不为消除警告重复安装DSH/React；实际Host/Client加载成功，不把pnpm peers check记作通过。验收定位器两次歧义按真实DOM作用域处理，无产品补丁。
+- 报告docs/verification/release-v0.1.0-2026-10-20.md追加UI流程、peer提示、文档勘误和范围。所属Host54328、端口8343/8344均停止，临时home已清理；日常7198继续监听。修改原因是保存实际用户路径及验收结果，影响仅上述4份指南、报告与本文；接着检查文档、精确本地提交并同步main，保持发布tag与附件不变。

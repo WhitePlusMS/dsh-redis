@@ -30,7 +30,7 @@ The maintainer's delivery order is **checked commit → build and `pnpm pack` �
 
 1. Open [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) and select a published version. Obtain its `dsh-redis-<version>.tgz` and `SHA256SUMS.txt`, and verify the checksum.
 2. In DSH, open **Plugins → Add plugin**. For a public Release, paste its complete, versioned asset URL. For this private repository, sign in to GitHub, download the asset, place it on the Host, and enter that file's absolute path.
-3. Confirm the package name/version, install, then choose **Enable now**. Open **Redis** in a conversation's right sidebar. Follow a Host restart notice when live reload is unavailable.
+3. Install, then choose **Enable now**. Open the installed plugin's details to confirm `dsh-redis`, `v0.1.0` and its running `ui-redis` component, then open **Redis** in a conversation's right sidebar. Follow a Host restart notice when live reload is unavailable.
 
 Fixed `v0.1.0` asset address (authenticated access required while private):
 

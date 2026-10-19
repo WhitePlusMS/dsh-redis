@@ -38,8 +38,8 @@ Ordinary users do not need to clone or build the released package. Maintainers c
 
 1. In DSH, open **Plugins → Add plugin**.
 2. Enter the complete fixed-version Release `.tgz` URL when it is publicly downloadable. For a private Release, enter the absolute Host path of the downloaded archive. The source must identify a published built asset, not the repository page or Source code archive.
-3. Check that the preview identifies `dsh-redis` and the expected version, then install.
-4. Choose **Enable now**. Closing the success dialog without enabling leaves the new bundle disabled.
+3. Choose **Install**. For a local archive, DSH checks the source and installs it; a separate package/version preview is not shown in this verified flow.
+4. Choose **Enable now**, then open the installed plugin's details to confirm `dsh-redis`, `v0.1.0` and the running `ui-redis` component. Closing the success dialog without enabling leaves the new bundle disabled.
 5. Open a conversation and its right sidebar, then select **Redis**. Follow any DSH restart notice when the profile does not support live reload.
 
 The path is resolved on the **DSH Host machine**. A path on the browser's computer does not upload a file to a remote Host. Transfer the archive to that Host first when they are different machines.
