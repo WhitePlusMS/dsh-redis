@@ -11,6 +11,8 @@
 
 官方契约与审查依据见[审查文档](E:/项目demo/dsh-redis/docs/DSH_PLUGIN_COMPLIANCE_AND_AI_READ_AUDIT.md)。当前依赖固定 `0.2.0-rc.2`；不更换宿主版本，不复制或改写官方宿主。
 
+具体接入方式见[AI 读取架构说明](AI_READ_ARCHITECTURE.md)：本插件通过 DSH 原生 tools API 注册自定义工具，侧栏走 Typert RPC，Host 通过 TCP/TLS RESP2 访问 Redis；没有实现 Redis MCP Server，也没有开放业务数据写入。
+
 每轮检查与实际包/安装证据在本文件及后续验收文档中补充，未执行的项目不写成通过。
 
 ## A 检查点

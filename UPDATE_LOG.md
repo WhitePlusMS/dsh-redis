@@ -1570,3 +1570,10 @@
 - 更新 `docs/verification/ai-read-real-data-2026-10-19.md`、脱敏JSON及计数截图，补完整DB/会话结果与样式待复现项；同步 `docs/AI_READ_IMPLEMENTATION.md`、`docs/AI_READ_USAGE.md`、`docs/FEATURE_INVENTORY.md`，历史审查和旧接线报告只加后续结果指针，不改写当时失败事实。核对脚本对官方日志header的session-前缀修正后通过；日志和真实数据只在内存解析，无产品变更。
 - 本轮仅文档/验收证据变更，不重跑205项或重复安装；进行JS语法、JSON断言、文档链接、图像人工核对与差异检查。日常7198/PID26896保留在原已连接会话、DB0/无选中Key，临时DSH/WSL Redis已停并删除凭据副本；不运行npm dev/start:dev、网页GPT评审或Git推送，FlClash及系统代理/路由原样。
 - 最终只读核对：日常安装62个lib文件与项目产物逐字节一致；40个本地文档/证据链接有效，14调用/14结果、0非预期错误、最终760项等JSON断言通过，脱敏JSON未含本轮业务文本。截图已人工查看，显示正常青色DB图标和DB0(760)，没有业务Key/值。两项完成小目标分别本地提交，不推送。
+
+## 2026-10-19：说明AI读取架构及MCP区别
+
+- 用户询问AI读写范围及是否通过MCP接入。本轮按实际代码核对 `src/index.ts`、`runtime.ts`、工具/AI reader、连接/RESP传输、选择/DB同步及固定rc2官方工具/MCP资料；必要的大量源码事实定位由GPT6 LUNA负责，主模型交叉核对后形成说明。
+- 新增 `docs/AI_READ_ARCHITECTURE.md`，明确当前是DSH原生tools API注册的四个自定义工具，界面与Host之间的Typert RPC不是MCP；正式Redis访问由项目RedisTransport通过node:net/node:tls及RESP2完成，区分验收脚本的node-redis使用。包含调用流程图、当前选择/同会话连接/游标/DB同步、固定命令、结果预算及模型数据去向，并以实际源码和官方固定版本资料链接支持。
+- 纠正“读写已完成”的理解：本插件开放读取与明确要求时的逻辑DB切换，未提供新增/修改/删除或自由命令。`docs/AI_READ_USAGE.md` 补入口并把“四个官方工具”改为“插件注册的四个工具”，避免误认为DSH自带Redis工具；`docs/AI_READ_IMPLEMENTATION.md` 增加架构说明链接。变更影响仅说明文档与本文，无产品/依赖/模型/代理配置改动，不访问业务Redis、不重跑真实对话或历史205项、不安装/重启服务；文档与差异检查后本地提交，不推送。
+- 文档检查通过：24个本地链接有效，12个源码行链接均指向存在的非空行，四个工具名与实际注册一致，Markdown代码围栏成对，官方参考checkout仍为固定639ed015提交。再次明确集合值前缀与字段/成员完整身份的区别；仅文档修改，未执行编译或服务联调。
