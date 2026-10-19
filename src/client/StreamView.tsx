@@ -12,6 +12,7 @@ import { useBrowsingFormat } from './PreviewFormats.tsx'
 import { NS } from './locales.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
+import { useCurrentItem } from './CurrentSelection.tsx'
 
 export interface StreamActions { readonly readStream: (request: StreamReadRequest, signal: AbortSignal) => Promise<RemoteResult<StreamReadResult>> }
 type Props = StreamActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -34,6 +35,7 @@ export function StreamView(props: Props) {
   })
   const { cache, result, cursor, busy, error, progress } = page
   const message = cache.messages.find(item => item.id === selected), pair = message?.fields[pairIndex]
+  useCurrentItem(message === undefined || pair === undefined ? null : { kind: 'stream', id: message.id, fieldIndex: pairIndex, fieldBase64: pair.field.base64 })
   const rows = useMemo(() => message?.fields.map((field, index) => ({ ...field, index })) ?? [], [message])
   const windows = useMemo(() => pair === undefined ? null : { field: { base64: pair.field.base64, offset: '0', prefix: '', suffix: '', complete: true }, value: prefixWindow(pair.value) }, [pair])
   function refresh(): void { void page.scan(false) }

@@ -1,4 +1,5 @@
 import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
+import type { SetSelectionRequest, SelectionAck } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult, TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { EmptyRequest, RedisHostStatus, ConnectionRequest, ConnectionTarget, ConnectionView } from './domain.ts'
@@ -13,6 +14,7 @@ import type { StreamReadRequest, StreamReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  setSelection: (agentId: SessionId, request: SetSelectionRequest, signal?: AbortSignal) => Promise<RemoteResult<SelectionAck>>
   readDatabases: (agentId: SessionId, request: DatabasesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
   readStream: (agentId: SessionId, request: StreamReadRequest, signal?: AbortSignal) => Promise<RemoteResult<StreamReadResult>>
   readZSet: (agentId: SessionId, request: ZSetReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ZSetReadResult>>
@@ -32,6 +34,7 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/setSelection': RedisViewerRemote['setSelection']
     'redisViewer/readDatabases': RedisViewerRemote['readDatabases']
     'redisViewer/readStream': RedisViewerRemote['readStream']
     'redisViewer/readZSet': RedisViewerRemote['readZSet']
@@ -51,6 +54,7 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/setSelection': (request: SetSelectionRequest, signal?: AbortSignal) => Promise<RemoteResult<SelectionAck>>
     'agent:redisViewer/readDatabases': (request: DatabasesReadRequest, signal?: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
     'agent:redisViewer/readStream': (request: StreamReadRequest, signal?: AbortSignal) => Promise<RemoteResult<StreamReadResult>>
     'agent:redisViewer/readZSet': (request: ZSetReadRequest, signal?: AbortSignal) => Promise<RemoteResult<ZSetReadResult>>

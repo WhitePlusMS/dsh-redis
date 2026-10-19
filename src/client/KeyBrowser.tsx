@@ -15,8 +15,10 @@ import type { ListActions } from './ListView.tsx'
 import type { SetActions } from './SetView.tsx'
 import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
+import { CurrentSelection, type SetCurrentSelection } from './CurrentSelection.tsx'
 
 export interface KeyActions extends StringActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions {
+  readonly setSelection: SetCurrentSelection
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
   readonly readDatabases: (request: DatabasesReadRequest, signal: AbortSignal) => Promise<RemoteResult<DatabasesReadResult>>
@@ -129,7 +131,7 @@ export function KeyBrowser(props: Props) {
       {(load.error !== null || catalogError !== null) && <p role="alert" className="redis-error">{t(`connection.error.${load.error ?? catalogError!}`)}</p>}
     </div>
     <div ref={detail} className="redis-key-detail" tabIndex={-1}>
-      {selected !== null ? <KeyPresentation key={selected.base64}><KeyAutoRefresh>
+      {selected !== null ? <CurrentSelection key={selected.base64} target={target()} keyBase64={selected.base64} publish={props.setSelection}><KeyPresentation><KeyAutoRefresh>
         <div className="redis-inspector-heading"><Icon name="key" />{focused && <span className="redis-chip">db{connection.db}</span>}<strong title={displayLabel(selected.label)}>{displayLabel(selected.label)}</strong><KeyMetadataSummary t={t} inspect={() => setDetailTab('metadata')} /><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>
         <div className="redis-inspector-toolbar"><div className="redis-inspector-tabs" role="tablist" aria-label={t('value.title')}>
           <button type="button" role="tab" aria-selected={detailTab === 'data'} onClick={() => setDetailTab('data')}>{t('ui.data')}</button>
@@ -140,7 +142,7 @@ export function KeyBrowser(props: Props) {
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={selected.base64} spellCheck={false} /></label>
           <KeyDetails {...props} target={target()} selected={selected} />
         </div>
-      </KeyAutoRefresh></KeyPresentation> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
+      </KeyAutoRefresh></KeyPresentation></CurrentSelection> : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}
     </div>
   </section>
 }

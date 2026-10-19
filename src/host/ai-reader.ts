@@ -8,7 +8,8 @@ import { RedisLists } from './list-reader.ts'
 import { RedisSets } from './set-reader.ts'
 import { RedisZSets } from './zset-reader.ts'
 import { RedisStreams } from './stream-reader.ts'
-import type { BytePrefix, DatabaseTarget } from '../domain.ts'
+import { RedisSelectedReader } from './selected-reader.ts'
+import type { BytePrefix, DatabaseTarget, RedisSelection, SetSelectionRequest, SelectionAck } from '../domain.ts'
 import { scanKeysRequestSchema, stringReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 /** Keep model results useful without silently dropping a scan page's tail. */
@@ -49,6 +50,7 @@ export class RedisAiReader {
   private readonly sets: RedisSets
   private readonly zsets: RedisZSets
   private readonly streams: RedisStreams
+  private readonly selections = new Map<string, { readonly target: DatabaseTarget; readonly selection: RedisSelection; readonly sampledAt: string }>()
   constructor(private readonly connections: RedisConnections) {
     this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections)
     this.hashes = new RedisHashes(connections); this.lists = new RedisLists(connections)
@@ -62,13 +64,25 @@ export class RedisAiReader {
   private project(sessionId: string, data: unknown): AiJson {
     const result = json.parse(data)
     if (Buffer.byteLength(JSON.stringify(result)) > MAX_AI_RESULT_BYTES) {
-      this.disposeSession(sessionId)
+      this.disposeCursors(sessionId)
       throw new Error('本批结果超过对话读取预算，未将其作为完整结果返回。请缩小 MATCH 或读取范围后重试。')
     }
     return result
   }
   status(sessionId: string): AiJson {
-    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId) })
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), currentSelection: this.selection(sessionId) })
+  }
+  private selection(sessionId: string) {
+    const record = this.selections.get(sessionId)
+    if (record === undefined) return null
+    try { this.connections.assertTarget(sessionId, record.target); return record }
+    catch { this.selections.delete(sessionId); return null }
+  }
+  setSelection(sessionId: string, request: SetSelectionRequest): SelectionAck {
+    try { this.connections.assertTarget(sessionId, request.target) } catch { return { accepted: false } }
+    if (request.selection === null) this.selections.delete(sessionId)
+    else if (JSON.stringify(this.selection(sessionId)?.selection) !== JSON.stringify(request.selection)) this.selections.set(sessionId, { target: request.target, selection: request.selection, sampledAt: new Date().toISOString() })
+    return { accepted: true }
   }
   async scan(sessionId: string, args: { readonly match?: string; readonly cursor?: string }, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
@@ -81,8 +95,16 @@ export class RedisAiReader {
   async read(sessionId: string, args: AiValueRequest, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
     const target = this.target(sessionId)
-    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请指定 key 或 keyBase64，且只能指定其中一个。')
-    const keyBase64 = args.keyBase64 ?? Buffer.from(args.key ?? '', 'utf8').toString('base64')
+    const selected = args.key === undefined && args.keyBase64 === undefined ? this.selection(sessionId) : null
+    if (selected !== null && selected.selection.item !== null) {
+      const read = await new RedisSelectedReader(this.connections).read(sessionId, target, selected.selection.keyBase64, selected.selection.item, signal)
+      this.connections.assertTarget(sessionId, target)
+      if (this.selection(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), selected, value: { ...read, cell: read.cell === null ? null : value(read.cell) } })
+    }
+    if (args.key === undefined && args.keyBase64 === undefined && selected === null) throw new Error('当前没有有效的侧栏选择，请选择 Key 或明确指定 key。')
+    if (args.key !== undefined && args.keyBase64 !== undefined) throw new Error('key 与 keyBase64 只能指定其中一个。')
+    const keyBase64 = selected?.selection.keyBase64 ?? args.keyBase64 ?? Buffer.from(args.key ?? '', 'utf8').toString('base64')
     const common = { target, keyBase64 }, pattern = args.match ?? '*', cursor = args.cursor ?? null
     const offset = args.offset ?? '0', count = args.count ?? 25
     // Reuse the same bounded type discovery used by the sidebar. Readers check
@@ -123,10 +145,15 @@ export class RedisAiReader {
       }
     } else if (probe.state === 'value') data = { ...probe, text: text(Buffer.from(probe.base64, 'base64')) }
     this.connections.assertTarget(sessionId, target)
+    if (selected !== null && this.selection(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(keyBase64, 'base64')), value: data })
   }
   disposeSession(sessionId: string): void {
+    this.selections.delete(sessionId)
+    this.disposeCursors(sessionId)
+  }
+  private disposeCursors(sessionId: string): void {
     this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.streams.disposeSession(sessionId)
   }
-  dispose(): void { this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose() }
+  dispose(): void { this.selections.clear(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose() }
 }

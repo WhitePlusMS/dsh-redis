@@ -20,8 +20,8 @@ const run = promisify(execFile), cli = process.env.DSH_CLI_ENTRY
 assert(cli, 'Set DSH_CLI_ENTRY to the verified rc.2 lib/bin.js')
 assert(!relative(root, home).startsWith('..'))
 const report = { startedAt: new Date().toISOString(), passed: false, processStopped: false, fixtureStopped: false }
-const allowed = new Set(['AUTH','PING','SELECT','DBSIZE','INFO','CONFIG','SCAN','TYPE','PTTL','STRLEN','GETRANGE','HLEN','HSCAN','LLEN','LRANGE','SCARD','SSCAN','ZCARD','ZRANGE','ZSCAN','XLEN','XRANGE','XREVRANGE'])
-const readable = new Set(['PING','GETRANGE','HSCAN','LRANGE','SSCAN','ZRANGE','ZSCAN','XRANGE','XREVRANGE','SCAN'])
+const allowed = new Set(['AUTH','PING','SELECT','DBSIZE','INFO','CONFIG','SCAN','TYPE','PTTL','STRLEN','GETRANGE','HLEN','HSCAN','HGET','LLEN','LRANGE','SCARD','SSCAN','SISMEMBER','ZCARD','ZRANGE','ZSCAN','ZSCORE','XLEN','XRANGE','XREVRANGE'])
+const readable = new Set(['PING','GETRANGE','HSCAN','HGET','LRANGE','SSCAN','SISMEMBER','ZRANGE','ZSCAN','ZSCORE','XRANGE','XREVRANGE','SCAN'])
 await mkdir(artifacts, { recursive: true })
 
 async function sameFiles(source, installed) {

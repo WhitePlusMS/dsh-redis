@@ -12,6 +12,7 @@ import { NS } from './locales.ts'
 import { Icon } from './Icon.tsx'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
+import { useCurrentItem } from './CurrentSelection.tsx'
 
 export interface SetActions { readonly scanSet: (request: ScanSetRequest, signal: AbortSignal) => Promise<RemoteResult<ScanSetResult>> }
 type Props = SetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -28,6 +29,7 @@ export function SetView(props: Props) {
   })
   const { cache, result, cursor, busy, error, progress } = scanState
   const member = cache.keys.find(value => value.base64 === selected)
+  useCurrentItem(member === undefined ? null : { kind: 'set', memberBase64: member.base64 })
   const window = useMemo(() => member === undefined ? null : { base64: member.base64, offset: '0', prefix: '', suffix: '', complete: true }, [member])
   const columns: readonly CollectionColumn<RedisKey>[] = [
     { id: 'number', title: '#', render: (_value, index) => index + 1 },

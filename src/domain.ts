@@ -1,6 +1,6 @@
 /** Exact runtime baseline selected by the user. */
 export const DSH_VERSION = '0.2.0-rc.2' as const
-export const PROTOCOL_VERSION = 1 as const
+export const PROTOCOL_VERSION = 2 as const
 export type EmptyRequest = Record<string, never>
 
 /** Public Host status contains no connection credentials or Redis data. */
@@ -41,6 +41,16 @@ export const MAX_INFO_BYTES = 128 * 1024
 
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
+/** Current UI identity only; never cache cell values or credentials here. */
+export type RedisSelectionItem =
+  | { readonly kind: 'hash'; readonly fieldBase64: string }
+  | { readonly kind: 'list'; readonly index: string }
+  | { readonly kind: 'set'; readonly memberBase64: string }
+  | { readonly kind: 'zset'; readonly memberBase64: string }
+  | { readonly kind: 'stream'; readonly id: string; readonly fieldIndex: number; readonly fieldBase64: string }
+export interface RedisSelection { readonly keyBase64: string; readonly item: RedisSelectionItem | null }
+export interface SetSelectionRequest { readonly target: DatabaseTarget; readonly selection: RedisSelection | null }
+export interface SelectionAck { readonly accepted: boolean }
 export interface ScanKeysRequest { readonly target: DatabaseTarget; readonly pattern: string; readonly cursor: string | null }
 export interface RedisKey { readonly base64: string; readonly byteLength: number; readonly label: string }
 export interface ScanKeysResult {

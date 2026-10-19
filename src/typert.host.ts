@@ -5,6 +5,7 @@ import { DSH_VERSION, PROTOCOL_VERSION, MAX_PROFILES } from './domain.ts'
 import { createRedisInvocation, TYPERT_PACKAGE, scanKeysRequestSchema, scanKeysResultSchema, stringReadRequestSchema, stringReadResultSchema, scanHashRequestSchema, scanHashResultSchema, listReadRequestSchema, listReadResultSchema, scanSetRequestSchema, scanSetResultSchema } from './typert.shared.ts'
 import { zsetReadRequestSchema, zsetReadResultSchema } from './typert.shared.ts'
 import { streamReadRequestSchema, streamReadResultSchema } from './typert.shared.ts'
+import { setSelectionRequestSchema, selectionAckSchema } from './typert.shared.ts'
 
 const empty = z.object({}).strict()
 const error = z.enum(['auth', 'network', 'timeout', 'cancelled', 'stale', 'tls-certificate', 'tls-hostname', 'permission', 'oversize', 'protocol', 'busy', 'database', 'type-changed'])
@@ -64,6 +65,7 @@ export const redisHostDescriptors = [
   createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetRead, zsetPage, z.string().min(1)),
   createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamRead, streamPage, z.string().min(1)),
   createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesRead, databasesValue, z.string().min(1)),
+  createRedisInvocation('setSelection', 'SetSelectionRequest', 'SelectionAck', z.unknown().transform(value => setSelectionRequestSchema.parse(value)), z.unknown().transform(value => selectionAckSchema.parse(value)), z.string().min(1)),
 ] as const
 export const TYPERT = { package: TYPERT_PACKAGE, face: 'host', schemas: [], invocations: redisHostDescriptors, model: { services: [], events: [], objects: [] } }
 export default TYPERT

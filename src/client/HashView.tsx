@@ -13,6 +13,7 @@ import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 import { useCollectionScan } from './use-collection-scan.ts'
 import { previewValue } from './value-preview.ts'
 import { Icon } from './Icon.tsx'
+import { useCurrentItem } from './CurrentSelection.tsx'
 
 export interface HashActions { readonly scanHash: (request: ScanHashRequest, signal: AbortSignal) => Promise<RemoteResult<ScanHashResult>> }
 type Props = HashActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -44,6 +45,7 @@ export function HashView(props: Props) {
     })
   }, [cache.rows, search])
   const selected = rows.find(row => row.field.base64 === selectedField)
+  useCurrentItem(selected === undefined ? null : { kind: 'hash', fieldBase64: selected.field.base64 })
   const windows = useMemo(() => selected === undefined ? null : { field: fieldWindow(selected), value: prefixWindow(selected.value) }, [selected])
   function refresh(): void { void scanState.scan(false) }
   function applyPattern(value: string): void {

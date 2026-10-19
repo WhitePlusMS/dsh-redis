@@ -1,6 +1,7 @@
 import { RedisDatabases } from './host/database-reader.ts'
 import { RedisAiReader } from './host/ai-reader.ts'
 import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
+import type { SetSelectionRequest, SelectionAck } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
 import { RedisConnections } from './host/connection-service.ts'
@@ -87,6 +88,7 @@ export class RedisRemoteService extends TypertRemoteService {
     return this.streams.read(agent.session.id, request, signal)
   }
   async readDatabases(agent: Agent, request: DatabasesReadRequest, signal: AbortSignal): Promise<DatabasesReadResult> { return this.databases.read(agent.session.id, request, signal) }
+  async setSelection(agent: Agent, request: SetSelectionRequest, signal: AbortSignal): Promise<SelectionAck> { signal.throwIfAborted(); return this.ai.setSelection(agent.session.id, request) }
   async connectionStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     return this.connections.status(agent.session.id)

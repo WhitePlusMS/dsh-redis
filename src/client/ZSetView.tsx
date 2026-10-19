@@ -12,6 +12,7 @@ import { appendZSetRows, emptyZSetCache, type ZSetCache } from './zset-cache.ts'
 import { NS } from './locales.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
+import { useCurrentItem } from './CurrentSelection.tsx'
 
 export interface ZSetActions { readonly readZSet: (request: ZSetReadRequest, signal: AbortSignal) => Promise<RemoteResult<ZSetReadResult>> }
 type Props = ZSetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -34,6 +35,7 @@ export function ZSetView(props: Props) {
   })
   const { cache, result, cursor, busy, error, progress } = scanState
   const row = cache.rows.find(entry => entry.member.base64 === selected)
+  useCurrentItem(row === undefined ? null : { kind: 'zset', memberBase64: row.member.base64 })
   const window = useMemo(() => row === undefined ? null : { base64: row.member.base64, offset: '0', prefix: '', suffix: '', complete: true }, [row])
   const columns: readonly CollectionColumn<ZSetEntry>[] = [
     ...(mode === 'range' ? [{ id: 'rank', title: t('zset.rank'), render: (entry: ZSetEntry) => entry.rank }] : []),

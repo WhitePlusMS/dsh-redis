@@ -31,13 +31,16 @@ async function fixture() {
         case 'SCAN': return [bulk(args[0] === '0' ? '7' : '0'), [bulk(args[0] === '0' ? 'plain' : 'hash')]]
         case 'HLEN': return 2n
         case 'HSCAN': return [bulk(args[1] === '0' ? '7' : '0'), [bulk(args[1] === '0' ? 'first' : 'second'), bulk('字段值')]]
+        case 'HGET': return String(args[1]) === 'absent' ? null : bulk('精确字段值')
         case 'LLEN': return 2n
         case 'LRANGE': return [bulk('one'), bulk('two')].slice(Number(args[1]), Number(args[2]) + 1)
         case 'SCARD': return 1n
         case 'SSCAN': return [bulk('0'), [bulk(key === 'wide' ? 'm'.repeat(60000) : 'member')]]
+        case 'SISMEMBER': return String(args[1]) === 'absent' ? 0n : 1n
         case 'ZCARD': return 1n
         case 'ZRANGE': return [bulk('member'), bulk('1.2345678901234567')]
         case 'ZSCAN': return [bulk('0'), [bulk('member'), bulk('1.2345678901234567')]]
+        case 'ZSCORE': return String(args[1]) === 'absent' ? null : bulk('1.2345678901234567')
         case 'XLEN': return 1n
         case 'XRANGE': case 'XREVRANGE': return [[bulk('1-0'), [bulk('field'), bulk('first'), bulk('field'), bulk('second')]]]
         default: throw new Error('Unexpected fixture command: ' + command)
@@ -121,5 +124,42 @@ describe('official Redis model tools', () => {
     const oversized = await f.call('redis_viewer_value', { key: 'wide' })
     expect(oversized.isError).toBe(true); expect(content(oversized)).toContain('预算')
     expect((await f.call('redis_viewer_value', { key: 'plain' })).isError).toBeFalsy()
+  })
+  it('reads exact current identities, retaining duplicate Stream field occurrences', async () => {
+    const f = await fixture(), base64 = (text: string) => Buffer.from(text).toString('base64')
+    const selections = [
+      { keyBase64: base64('plain'), item: null },
+      { keyBase64: base64('hash'), item: { kind: 'hash' as const, fieldBase64: Buffer.from([0, 255]).toString('base64') } },
+      { keyBase64: base64('list'), item: { kind: 'list' as const, index: '1' } },
+      { keyBase64: base64('set'), item: { kind: 'set' as const, memberBase64: base64('member') } },
+      { keyBase64: base64('zset'), item: { kind: 'zset' as const, memberBase64: base64('member') } },
+      { keyBase64: base64('stream'), item: { kind: 'stream' as const, id: '1-0', fieldIndex: 1, fieldBase64: base64('field') } },
+    ]
+    for (const selection of selections) {
+      expect(f.reader.setSelection('a', { target: f.target, selection })).toEqual({ accepted: true })
+      const result = await f.call('redis_viewer_value', {})
+      expect(result.isError).toBeFalsy(); expect(content(result)).toContain('"state":"value"')
+      if (selection.item?.kind === 'stream') expect(content(result)).toContain('"text":"second"')
+      if (selection.item?.kind === 'hash') expect(content(result)).toContain('精确字段值')
+      if (selection.item?.kind === 'list') expect(content(result)).toContain('"text":"two"')
+    }
+    expect(f.commands).toContain('HGET'); expect(f.commands).toContain('SISMEMBER'); expect(f.commands).toContain('ZSCORE')
+    expect(f.reader.setSelection('b', { target: f.target, selection: selections[0]! })).toEqual({ accepted: false })
+    expect(f.reader.setSelection('a', { target: f.target, selection: null })).toEqual({ accepted: true })
+    expect((await f.call('redis_viewer_value', {})).isError).toBe(true)
+  })
+  it('distinguishes missing rows from missing Keys and drops a selection replaced during reading', async () => {
+    const f = await fixture(), base64 = (text: string) => Buffer.from(text).toString('base64')
+    for (const kind of ['hash', 'set', 'zset'] as const) {
+      const item = kind === 'hash' ? { kind, fieldBase64: base64('absent') } : { kind, memberBase64: base64('absent') }
+      f.reader.setSelection('a', { target: f.target, selection: { keyBase64: base64(kind), item } })
+      expect(content(await f.call('redis_viewer_value', {}))).toContain('selection-missing')
+    }
+    f.reader.setSelection('a', { target: f.target, selection: { keyBase64: base64('hash'), item: { kind: 'hash', fieldBase64: base64('first') } } })
+    const read = f.reader.read('a', {}, new AbortController().signal)
+    f.reader.setSelection('a', { target: f.target, selection: { keyBase64: base64('plain'), item: null } })
+    await expect(read).rejects.toThrow('选择已变化')
+    expect(f.reader.setSelection('a', { target: { ...f.target, generation: f.target.generation + 1 }, selection: null })).toEqual({ accepted: false })
+    expect(content(await f.call('redis_viewer_value', {}))).toContain('hello')
   })
 })

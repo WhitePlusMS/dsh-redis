@@ -2,8 +2,25 @@ import { describe, expect, it } from 'vitest'
 import { redisHostDescriptors } from '../src/typert.host.ts'
 import { connectionRequestSchema, connectionViewSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema } from '../src/typert.shared.ts'
 import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
+import { setSelectionRequestSchema, selectionAckSchema } from '../src/typert.shared.ts'
 
 const valid = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+
+it('decodes selection identities strictly on both Host and browser faces', () => {
+  const descriptor = redisHostDescriptors.find(value => value.method === 'setSelection')
+  const codec = descriptor?.parameters.find(value => value.name === 'request')?.codec
+  if (codec?.mode !== 'strict') throw new Error('Missing selection request')
+  const target = { id: 'test', generation: 1, db: 0 }, keyBase64 = 'aw=='
+  const selection = { keyBase64, item: { kind: 'stream', id: '1-0', fieldIndex: 1, fieldBase64: '' } }
+  for (const schema of [codec.create(), setSelectionRequestSchema]) {
+    expect(schema.parse({ target, selection })).toEqual({ target, selection })
+    expect(schema.parse({ target, selection: null })).toEqual({ target, selection: null })
+    for (const item of [{ kind: 'hash', fieldBase64: '%bad' }, { kind: 'list', index: '-1' }, { kind: 'stream', id: '0-0', fieldIndex: 0, fieldBase64: '' }, { kind: 'stream', id: '1-0', fieldIndex: 4096, fieldBase64: '' }, { kind: 'set', memberBase64: '', value: 'not-identity' }]) expect(() => schema.parse({ target, selection: { keyBase64, item } })).toThrow()
+    expect(() => schema.parse({ target, selection, sessionId: 'other' })).toThrow()
+  }
+  expect(selectionAckSchema.parse({ accepted: true })).toEqual({ accepted: true })
+  expect(() => selectionAckSchema.parse({ accepted: 'true' })).toThrow()
+})
 
 describe('strict rc.2 sidebar protocol', () => {
   it('rejects extra request fields on both faces, including hidden command text', () => {
@@ -30,7 +47,7 @@ describe('strict rc.2 sidebar protocol', () => {
   })
   it('keeps matching endpoints and trusted Agent lookup, without command or write methods', () => {
     expect(redisDescriptors.map(value => value.id)).toEqual(redisHostDescriptors.map(value => value.id))
-    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases'])
+    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases', 'setSelection'])
     expect(redisDescriptors[0].parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
     expect(redisDescriptors[0].cancellation).toEqual({ parameter: 'signal' })
   })

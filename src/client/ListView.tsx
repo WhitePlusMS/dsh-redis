@@ -12,6 +12,7 @@ import { useBrowsingFormat } from './PreviewFormats.tsx'
 import { NS } from './locales.ts'
 import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
+import { useCurrentItem } from './CurrentSelection.tsx'
 
 export interface ListActions { readonly readList: (request: ListReadRequest, signal: AbortSignal) => Promise<RemoteResult<ListReadResult>> }
 type Props = ListActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
@@ -33,6 +34,7 @@ export function ListView(props: Props) {
   })
   const { cache, result, busy, error, cursor, progress } = page
   const row = cache.rows.find(entry => entry.index === selected)
+  useCurrentItem(row === undefined ? null : { kind: 'list', index: row.index })
   const window = useMemo(() => row === undefined ? null : prefixWindow(row.value), [row])
   const columns: readonly CollectionColumn<ListEntry>[] = [
     { id: 'index', title: t('list.index'), render: entry => entry.index },

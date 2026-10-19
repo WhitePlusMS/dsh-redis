@@ -1,5 +1,6 @@
 import { MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
+import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
 import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
@@ -390,6 +391,34 @@ export const databasesReadResultSchema: TypertSchema<DatabasesReadResult> = { pa
   return { state, error, catalog, sampledAt: sampleTimeAt(object.sampledAt) }
 } }
 
+function selectionAt(value: unknown): RedisSelection | null {
+  if (value === null) return null
+  const record = objectAt(value, ['keyBase64', 'item'])
+  let item: RedisSelectionItem | null = null
+  if (record.item !== null) {
+    if (record.item === null || typeof record.item !== 'object' || Array.isArray(record.item)) throw new TypeError('Redis RPC: invalid selection')
+    const kind: unknown = Reflect.get(record.item, 'kind')
+    if (kind === 'hash') { const raw = objectAt(record.item, ['kind', 'fieldBase64']); item = { kind, fieldBase64: byteStringAt(raw.fieldBase64, MAX_KEY_BYTES) } }
+    else if (kind === 'list') { const raw = objectAt(record.item, ['kind', 'index']); item = { kind, index: unsignedIntegerAt(raw.index) } }
+    else if (kind === 'set' || kind === 'zset') { const raw = objectAt(record.item, ['kind', 'memberBase64']); item = { kind, memberBase64: byteStringAt(raw.memberBase64, MAX_KEY_BYTES) } }
+    else if (kind === 'stream') {
+      const raw = objectAt(record.item, ['kind', 'id', 'fieldIndex', 'fieldBase64']), id = stringAt(raw.id, 41)
+      if (!isStreamId(id) || id === '0-0') throw new TypeError('Redis RPC: invalid selected message')
+      item = { kind, id, fieldIndex: integerAt(raw.fieldIndex, 0, MAX_SCAN_KEYS - 1), fieldBase64: byteStringAt(raw.fieldBase64, MAX_KEY_BYTES) }
+    } else throw new TypeError('Redis RPC: invalid selected type')
+  }
+  return { keyBase64: byteStringAt(record.keyBase64, MAX_KEY_BYTES), item }
+}
+export const setSelectionRequestSchema: TypertSchema<SetSelectionRequest> = { parse(value) {
+  const raw = objectAt(value, ['target', 'selection'])
+  return { target: databaseTargetSchema.parse(raw.target), selection: selectionAt(raw.selection) }
+} }
+export const selectionAckSchema: TypertSchema<SelectionAck> = { parse(value) {
+  const raw = objectAt(value, ['accepted'])
+  if (typeof raw.accepted !== 'boolean') throw new TypeError('Redis RPC: invalid selection acknowledgement')
+  return { accepted: raw.accepted }
+} }
+
 export const redisDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema, sessionIdSchema),
@@ -407,4 +436,5 @@ export const redisDescriptors = [
   createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetReadRequestSchema, zsetReadResultSchema, sessionIdSchema),
   createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamReadRequestSchema, streamReadResultSchema, sessionIdSchema),
   createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema, sessionIdSchema),
+  createRedisInvocation('setSelection', 'SetSelectionRequest', 'SelectionAck', setSelectionRequestSchema, selectionAckSchema, sessionIdSchema),
 ] as const

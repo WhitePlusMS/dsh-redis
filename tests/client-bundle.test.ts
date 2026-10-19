@@ -20,6 +20,11 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const unmount = vi.fn(async () => undefined)
   const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
   const mount = vi.fn(async (_contribution: TypertRemoteContribution) => unmount).mockRejectedValueOnce(new Error('Host not ready'))
+  let releaseSelection: (() => void) | undefined
+  const setSelection = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => {
+    if (setSelection.mock.calls.length === 1) await new Promise<void>(resolve => { releaseSelection = resolve })
+    return { ok: true as const, value: { accepted: true } }
+  })
   function register(id: string): () => void {
     if (contributions.has(id)) throw new Error('Duplicate contribution: ' + id)
     contributions.add(id)
@@ -52,7 +57,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
       register: (entry: SlotEntry) => { slot = entry; return register('slot:' + entry.key) },
     },
     remote: { $mount: mount },
-    get: () => ({ status }),
+    get: () => ({ status, setSelection }),
   } as unknown as Context
   client.apply(context)
   if (slot === undefined) throw new Error('Missing sidebar body')
@@ -63,7 +68,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   // Inspect the actual emitted browser contribution, not only TS source schemas.
   // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
   const descriptors = mount.mock.calls[1]?.[0].descriptors
-  expect(descriptors).toHaveLength(16)
+  expect(descriptors).toHaveLength(17)
   for (const descriptor of descriptors ?? []) {
     const codec = descriptor.result
     if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)
@@ -78,6 +83,15 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')
   expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')
+  const target = { id: 'fixture', generation: 1, db: 0 }, selection = { keyBase64: 'aw==', item: null }
+  const first = api.setSelection({ target, selection }, new AbortController().signal)
+  await vi.waitFor(() => expect(setSelection).toHaveBeenCalledTimes(1))
+  const second = api.setSelection({ target, selection: null }, new AbortController().signal)
+  await Promise.resolve(); expect(setSelection).toHaveBeenCalledTimes(1)
+  if (releaseSelection === undefined) throw new Error('Selection did not start')
+  releaseSelection(); await Promise.all([first, second])
+  expect(setSelection.mock.calls.map(call => call[0])).toEqual(['trusted-session', 'trusted-session'])
+  expect(setSelection.mock.calls[1]?.[1]).toEqual({ target, selection: null })
   expect(importNames.every(name => !name.startsWith('node:'))).toBe(true)
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   expect(unmount).toHaveBeenCalledTimes(1)
