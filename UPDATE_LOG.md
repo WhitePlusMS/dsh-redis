@@ -1726,3 +1726,9 @@
 - 创建Release草稿417629679，上传同一次核对的408868字节tgz和87字节SHA256SUMS.txt，检查两个附件的state/size/digest后正式发布。Release地址为https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0，北京时间2026-10-20 02:51:03；没有npm发布、市场投稿或可见性修改。
 - 从正式Release重新下载两附件，逐字节一致，下载的校验文件再次验证tgz通过。Git认证只在子进程内使用、不落盘；签名资源重定向不携带API Authorization。忽略目录仅存非凭据发布元数据及所需成品。
 - docs/verification/release-v0.1.0-2026-10-20.md追加真实标签、Release、附件与回下载证据；修改原因是区分已完成的发布与待执行的安装验收，影响仅报告与本文。本小目标本地提交后继续用正式下载附件验证CLI和原生界面。
+
+### 小目标四：实际CLI安装验收
+
+- 使用正式Release回下载的同一个95f18567成品，在全新独立DSH_HOME中调用官方DSH CLI0.2.0-rc.2；按正常命令安装、list列出0.1.0，dump-config确认ui-redis组合，安装后86文件逐字节一致。没有用ignore-scripts/offline参数改变用户文档的安装路线。
+- CLI卸载成功、包链接与ui-redis组合均移除，专门创建的空连接资料保留且字节一致；finally核对所属绝对路径后清理本轮临时home。此轮无Host/Redis服务，不读写日常profile或业务数据。
+- 原生Chrome已打开正式Release，确认v0.1.0、86eb93b、两个上传附件和校验值，保留该交付页；截图只含发布说明与仓库上下文。报告追加CLI实际结果，影响仅docs/verification/release-v0.1.0-2026-10-20.md及本文，记录后本地提交；原生UI安装继续单独验收。

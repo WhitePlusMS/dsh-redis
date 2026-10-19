@@ -31,4 +31,16 @@
 - 已通过GitHub官方API重新下载两个正式附件，逐字节匹配上传来源，并用下载的SHA256SUMS.txt重新核对下载成品。认证只在进程内使用；重定向到签名附件域名时不转发GitHub API凭据。
 - 重新下载的包是后续两条安装验收的共同来源。此检查点尚未完成原生界面安装，不把上传、下载和构建通过等同于安装通过。
 
+## CLI 实际安装
+
+在新建、无用户模型凭据的独立DSH_HOME中，使用官方DSH CLI0.2.0-rc.2，安装从正式Release重新下载的同一个tgz。没有使用跳过脚本或离线参数替代文档中的正常安装方式。
+
+1. `--profile web --dump-config`初始化官方Web profile，不启动Host。
+2. `plugin --profile web add <下载包绝对路径>`成功，`plugin --profile web list dsh-redis`列出0.1.0。
+3. 安装后的86个文件逐字节匹配正式包；组合配置出现ui-redis。
+4. 创建仅含空profiles数组的连接资料，执行CLI卸载；包链接移除，组合配置不再有ui-redis，空连接资料字节不变。
+5. finally核对临时home的真实路径和所有权后清理成功；该轮未启动Host、未连接Redis。
+
+机器记录位于忽略目录 `.scratch/artifacts/release-v0.1.0/cli-install.json`。正式Release页面也已通过实际GitHub登录会话打开，确认版本、源码提交、两附件及校验值；未把私有下载链接写成匿名可用。
+
 宿主基线仍为Windows、Node.js22.22.1、DSH Web0.2.0-rc.2（预发布）。本轮安装验证不重新执行真实模型/业务Redis读写验收，不修改日常profile、模型或代理配置。
