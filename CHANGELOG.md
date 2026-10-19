@@ -4,9 +4,9 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 ## [Unreleased]
 
-Recorded through **2026-10-20**, including documentation maintenance; runtime acceptance cited below was recorded on 2026-10-19. The manifest currently uses `0.1.0` as a local development package version. This repository has no release tag or configured public remote at this checkpoint; this entry is not a published `0.1.0` release or a release date.
+Recorded through **2026-10-20**, including documentation maintenance; runtime acceptance cited below was recorded on 2026-10-19. The manifest currently uses `0.1.0` as a local development package version. The source is hosted in a private GitHub repository; no release tag, Release asset or npm publication exists at this checkpoint. This entry is not a published `0.1.0` release or a release date.
 
-以下为截至 **2026-10-20** 的未发布记录（含文档整理），所引用运行验收发生于2026-10-19。`package.json` 的 `0.1.0` 是本地开发包标识，不代表已经发布；本轮只整理本地交付材料。
+以下为截至 **2026-10-20** 的未发布记录（含文档整理），所引用运行验收发生于2026-10-19。`package.json` 的 `0.1.0` 是本地开发包标识，不代表已经发布；源码已托管在私有GitHub仓库，尚无发布tag、Release附件或npm发布；下文继续记录未发布改动。
 
 ### Added
 
@@ -20,6 +20,8 @@ Recorded through **2026-10-20**, including documentation maintenance; runtime ac
 - English/Chinese READMEs, installation/update/uninstall guides, screenshot provenance and a development guide for local maintenance.
 
 ### Changed
+
+- Documented fixed-tag, prebuilt Release tarballs and both DSH/CLI install paths, including private-asset downloads, update/uninstall and maintainer release preparation.
 
 - Consolidated the product around the six core types and daily read-only browsing.
 - Replaced repeated “continue scan” interactions with automatic bounded Key batches and scroll-based collection loading.

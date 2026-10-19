@@ -6,11 +6,11 @@
 
 English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme-header.svg)
 
-A community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing into the same workspace as the conversation. Find a Key, select a row to inspect its details, then ask DSH about the current selection. It supports six core Redis types and reads through the connection opened manually in that conversation.
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) by **WhitePlusMS** is a community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing into the same workspace as the conversation. Find a Key, select a row to inspect its details, then ask DSH about the current selection. It supports six core Redis types and reads through the connection opened manually in that conversation.
 
 **Read-only · Standalone Redis + TLS · Windows / DSH Web `0.2.0-rc.2` (prerelease)**
 
-[Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits)
+[Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
 
 ![Hash table with same-screen field and value previews](docs/screenshots/hash-workbench-dark.jpg)
 
@@ -20,18 +20,55 @@ A community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing int
 
 ## Install and update
 
-The current package is a local development build, `dsh-redis@0.1.0`. Use a verified built `.tgz`; there is no verified public download URL in this workspace.
+Use the verified **DSH Web `0.2.0-rc.2`** environment and a working pnpm on the Host. The CLI method also requires `dsh` in that Host's terminal. Both methods below install the same prebuilt Release `.tgz`, using DSH's supported tarball mechanism. See the [official packaging guide](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md) and [plugin manager](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md).
 
-In DSH, choose **Plugins → Add plugin**, enter the archive's absolute path on the Host machine, install, then choose **Enable now**. Use the same profile that serves your DSH browser. Follow a requested Host restart when live reload is unavailable.
+**Current status:** [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) is private, with no release tag or Release asset yet. `0.1.0` is the development version. The `v0.1.0` URL below shows the intended first-release format; it is not available until that tag, Release and asset exist. For the current checkout, use the [local development package steps](docs/INSTALLATION.md#prepare-a-built-package).
 
-To build the local archive from this checkout:
+The maintainer's delivery order is **checked commit → build and `pnpm pack` → `v<version>` tag → GitHub Release with `.tgz` and `SHA256SUMS.txt` → installation**. Ordinary users receive the built package; [release preparation](docs/DEVELOPMENT.md#8-版本化发布与安装入口) belongs to the maintainer.
 
-```powershell
-pnpm install --frozen-lockfile
-pnpm pack --pack-destination .release
+### 1. Install through DSH
+
+1. Open [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) and select a published version. Obtain its `dsh-redis-<version>.tgz` and `SHA256SUMS.txt`, and verify the checksum.
+2. In DSH, open **Plugins → Add plugin**. For a public Release, paste its complete, versioned asset URL. For this private repository, sign in to GitHub, download the asset, place it on the Host, and enter that file's absolute path.
+3. Confirm the package name/version, install, then choose **Enable now**. Open **Redis** in a conversation's right sidebar. Follow a Host restart notice when live reload is unavailable.
+
+Example asset address after publishing `v0.1.0`:
+
+```text
+https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
 ```
 
-The default `prepack` runs strict type checking, a fresh build and the regression suite. See the [installation guide](docs/INSTALLATION.md) for SHA-named package and CLI commands, profile selection, update/rollback and uninstall. The verified plugin manager updates this bundle by uninstalling it and installing the new archive.
+A browser's GitHub login is not passed to the Host's package installer. Keep using the authenticated-download/local-file route while the repository is private.
+
+### 2. Install through the CLI
+
+For a published, publicly downloadable Release, run on the Host:
+
+```powershell
+dsh plugin --profile web add https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
+dsh plugin --profile web list dsh-redis
+```
+
+For a private Release, download the same asset first, replace this example path with its actual Host location, then run:
+
+```powershell
+$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
+dsh plugin --profile web add $packageForInstall
+dsh plugin --profile web list dsh-redis
+```
+
+Use the profile and `DSH_HOME` that serve your browser; `web` is the Web example, not a Desktop profile. Start Web with its existing command (`dsh web` for the default Web setup), or restart that original instance if required. The Release archive contains `lib/`; GitHub's automatically generated **Source code** archive is a different artifact.
+
+### Update an installed version
+
+Obtain the target version's Release asset and checksum. In **Plugins**, uninstall the old package, install the new asset through the same route, then enable it. For CLI replacement, stop the target Host when needed and run:
+
+```powershell
+dsh plugin --profile web remove dsh-redis
+dsh plugin --profile web add $packageForInstall
+```
+
+Here `$packageForInstall` must identify the **new** verified asset path or its publicly downloadable fixed-version URL. Restart the same profile when required. Keep the old asset for rollback; see the [installation guide](docs/INSTALLATION.md) for profile checks, local builds, update/rollback and saved data.
 
 ## First use
 
@@ -128,11 +165,35 @@ These candidates are not implemented or scheduled. The current version stays rea
 
 Bulk deletion, DB flushing, arbitrary commands and script execution are outside this candidate scope.
 
+## Uninstall
+
+In DSH, uninstall **dsh-redis** from **Plugins**, or stop the target profile as required and run:
+
+```powershell
+dsh plugin --profile web remove dsh-redis
+```
+
+Reload/restart that same profile when required. Uninstalling retains saved connection profiles and DSH conversation history; [settings cleanup](docs/INSTALLATION.md#disable-uninstall-or-remove-saved-connections) is a separate operation.
+
+## FAQ
+
+**Why does the Release URL return 404?**
+
+Check that the exact tag and `.tgz` asset have been published and that you can access the repository. This private repository has no Release yet. Signing into GitHub in a browser does not authenticate a separate Host download; use the downloaded-file route for a private asset.
+
+**Can I install GitHub's Source code archive instead?**
+
+The current Git tree omits `lib/`, while the package entry points require it. Use the built Release `.tgz`, or [build a local package](docs/INSTALLATION.md#prepare-a-built-package). A source tag alone does not make a loadable Redis package.
+
+**Why does `cannot resolve profile bundle "dsh-redis"` appear?**
+
+Check whether the profile still points to a moved/deleted development directory or archive. In that same profile, remove the old source and add the verified built package, then reload/restart as required. A plain dependency `install` retains the old source. See [troubleshooting](docs/INSTALLATION.md#troubleshooting).
+
 ## Documentation and license
 
 - [Installation, update and uninstall](docs/INSTALLATION.md)
 - [中文安装、更新与卸载](docs/INSTALLATION.zh.md)
-- [Changelog](CHANGELOG.md)
+- [Changelog](CHANGELOG.md) · [Repository issues](https://github.com/WhitePlusMS/dsh-redis/issues)
 - [Development and maintenance (中文)](docs/DEVELOPMENT.md)
 - [Screenshot provenance](docs/screenshots/README.md)
 

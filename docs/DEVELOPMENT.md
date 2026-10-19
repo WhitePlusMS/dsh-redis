@@ -39,7 +39,7 @@ scripts/                    构建、真实 Redis 与原生 DSH 专项夹具
 lib/                        构建输出，不直接编辑、不提交
 licenses/                   必须随包保留的第三方许可
 docs/screenshots/           README 使用的已核对截图和来源说明
-.scratch/                   忽略的参考源码、临时环境及私有验收文件
+.scratch/                   参考、历史任务与临时环境；仅upstream/runtime/artifacts忽略
 .release/                   忽略的本地打包输出
 ```
 
@@ -75,7 +75,7 @@ flowchart LR
 4. 游标推进、取消、超时和返回预算沿用现有边界，不靠多开连接规避同一会话语义。`scanComplete` 与值是否完整分开表达，不能把前缀称为完整内容。
 5. 刷新按上次读取完成后再等待间隔执行，不重叠读取；保持可复用预览状态。隐藏、换目标、取消和错误后停止，不自动重新开启。
 6. 更新当前文档时保留历史证据的时间边界。旧12类型、旧测试数量和先前失败报告不改写为当前成功；新结果在当前说明中引用或补独立报告。
-7. 每个可验收小目标更新根目录 `UPDATE_LOG.md`，写明文件、原因、影响和验证，再本地 Git 提交。当前授权不包含 push、tag、Release、注册表发布或社区提交。
+7. 每个可验收小目标更新根目录 `UPDATE_LOG.md`，写明文件、原因、影响和验证，再本地 Git 提交；是否同步远端、创建tag或发布版本，以当前任务的明确授权为准。
 
 ## 5. 安装依赖、检查和构建
 
@@ -151,22 +151,50 @@ Get-Content -LiteralPath '.release\SHA256SUMS.txt'
 
 单独开发包同为 `0.1.0` 时，按[安装指南](INSTALLATION.zh.md#准备成品包)生成 SHA 唯一文件名，避免复用旧路径；不要删除 profile 仍引用的本地 tgz。
 
-## 8. 文档维护与未来发布
+## 8. 版本化发布与安装入口
 
-项目维护约定：`README.md` 为英文、`README.zh.md` 为中文，顶部互链；功能、版本、限制、图片说明同步。`CHANGELOG.md` 面向使用者，`UPDATE_LOG.md` 保存文件级原因与检查。截图记录载体、日期、数据来源，不把隔离数据画面标为真实业务数据。
+项目维护约定：`README.md` 为英文、`README.zh.md` 为中文，顶部互链；功能、版本、限制和图片说明同步。`CHANGELOG.md` 面向使用者，`UPDATE_LOG.md` 保存文件级原因与检查。
 
-官方支持 npm/package spec、Git、tarball 和本地路径等安装来源。本项目未来优先使用**构建成品 tgz + SHA256SUMS + Release 下载链接**作为交付方式，这是维护约定，不是官方唯一安装机制。
+### 当前状态与分发约定
 
-当前无已配置的 Git 远程、无 release tag，也没有可引用的公开下载地址。收到单独的发布授权后，再执行：
+源码已推送到私有仓库 [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis)，默认分支为main；截至2026-10-20尚无发布tag、GitHub Release附件或npm发布。`0.1.0` 仍是本地开发包标识。私有源码上传不等于已经交付安装版本。
 
-- [ ] 核对真实目标仓库、名称、作者与许可，确认 README 两种语言和实际功能一致。
-- [ ] 确定正式版本，同步元数据/锁文件及本次范围，运行相应检查，填写真实的 `YYYY-MM-DD` 发布日期。
-- [ ] 对同一个通过检查的 tgz 计算校验值，保留许可，核对包内文档与隐私边界。
-- [ ] 按实际仓库创建对应 `v<version>` tag 和 Release，上传该 tgz 及 `SHA256SUMS.txt`；本轮不执行。
-- [ ] 从实际公开地址重新下载，核对校验值，并在隔离 profile 完成用户安装路径验收。
-- [ ] 用真实下载地址更新双语 README；社区市场是否收录单独核查，不把准备材料或提交申请称为已收录。
+本项目采用与 [GitGraph 当前安装说明](https://github.com/WhitePlusMS/dsh-git-graph/blob/f4ae9a9b8ed40233f7322df5f967708be9e29316/README.zh.md#安装与更新)一致的交付方式：**通过检查的提交 → 预构建 `.tgz` → 固定版本tag → Release附件 → DSH界面或CLI安装**。这是我们的版本维护约定；官方支持的机制是安装预构建npm包或tarball，也提供Git和本地开发来源。
 
-写入、解锁和逐次人工审批规划继续保留在双语 README，不在本轮实现。
+Redis的main/exports指向`lib/*`，`files`会将lib装入成品包，但`lib/`不提交到Git。只有`prepack: pnpm check`，没有Git依赖安装用的`prepare`。因此不能把GitGraph旧版的`archive/refs/tags/...tar.gz`地址直接换成Redis仓库名：源码归档不会因为有tag而生成lib。交付的是`pnpm pack`产生的 `.tgz`，而不是GitHub自动生成的Source code归档。
+
+### 维护者发布步骤
+
+以下是待执行的版本流程，`0.1.0`/`v0.1.0`以当前manifest为例；本轮修订文档不会执行tag、Release或安装操作。
+
+1. 确定发布版本，使 `package.json.version`、`CHANGELOG.md` 的版本与实际 `YYYY-MM-DD` 日期、中英文README、附件文件名和下载地址一致。只在发布时把对应记录移出Unreleased。
+2. 在干净且明确的发布提交上冻结安装依赖，按上一节 `pnpm pack --pack-destination .release` 打包；默认prepack会完成严格类型、构建与回归。核对归档入口、许可、文档及所有需要的lib文件，生成同一成品包的 `SHA256SUMS.txt`。
+3. 将源码发布提交同步到main，在该已检查提交上创建不可变的版本tag：
+
+```powershell
+git tag -a v0.1.0 -m "dsh-redis v0.1.0"
+git push origin v0.1.0
+```
+
+4. 在GitHub打开 **Releases → Draft a new release**，选择该tag，按当前CHANGELOG写发布说明，上传同一次打包的 `dsh-redis-0.1.0.tgz` 与 `SHA256SUMS.txt`，再发布。仅创建tag不会自动上传成品；Redis仓库尚无自动Release工作流。可参考 [GitGraph已实现的工作流](https://github.com/WhitePlusMS/dsh-git-graph/blob/f4ae9a9b8ed40233f7322df5f967708be9e29316/.github/workflows/release.yml)，本轮未移植。
+5. 发布后的固定附件URL应为：
+
+```text
+https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
+```
+
+6. 从实际Release重新取得同一个附件并核对SHA256。当前仓库私有，浏览器登录下载后先放到Host，再按[安装指南](INSTALLATION.zh.md)分别验证界面与CLI入口；浏览器登录不会自动传递给Host的pnpm。未来公开可下载时，两种入口都可使用上面完整URL。不把尚未发布的地址当成现成下载入口。
+7. 在隔离profile核对安装、组合包启用、Host加载与一次主要查看操作；不以构建通过替代用户安装通过。随后才把对应实际版本和安装结果写回README/CHANGELOG。
+8. 已发布tag与附件保持固定，修复使用新版本。npm发布、社区目录和市场索引是独立渠道；仅输入包名需要真实npm发布，Release发布不代表市场已收录。源码推送授权也不自动变成这些渠道的发布授权。
+
+### 使用者的两条安装入口
+
+- **DSH 界面：** 插件 → 添加插件 → 固定版本Release `.tgz` 来源 → 安装 → 立即启用。
+- **CLI：** 在目标 Host执行 `dsh plugin --profile web add <同一个成品来源>`，核对安装版本并按需启用、重启原profile。
+
+公开Release来源为完整附件URL；私有Release先登录下载，再用Host文件绝对路径。两者的包内容、版本和校验值一致；构建源码仅用于维护和开发。具体更新、回退、卸载与连接资料保留见安装指南。
+
+写入、解锁和逐次人工审批规划继续保留在双语README，本轮不实现。
 
 ## 9. 官方依据和许可
 

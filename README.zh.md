@@ -6,11 +6,11 @@
 
 [English](README.md) | 简体中文 · [静态标题](docs/screenshots/readme-header.svg)
 
-面向 **DeepSeek Harness（DSH）** 的社区插件，把 Redis 查看放进当前对话所在的工作区。先定位 Key，选中一行查看详情，再围绕当前选择向 DSH 提问。支持六种基础类型，复用这个对话中手动建立的 Redis 连接。
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **WhitePlusMS** 开发的 **DeepSeek Harness（DSH）** 社区插件，把 Redis 查看放进当前对话所在的工作区。先定位 Key，选中一行查看详情，再围绕当前选择向 DSH 提问。支持六种基础类型，复用这个对话中手动建立的 Redis 连接。
 
 **只读查看 · 单机 Redis + TLS · Windows / DSH Web `0.2.0-rc.2`（预发布版）**
 
-[安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界)
+[安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
 
 ![Hash 表格与同屏字段、值预览](docs/screenshots/hash-workbench-dark.jpg)
 
@@ -20,18 +20,55 @@
 
 ## 安装与更新
 
-当前是本地开发包 `dsh-redis@0.1.0`，使用已包含构建产物、经过核对的 `.tgz`；工作区暂时没有已验证的公开下载地址。
+使用已验证的 **DSH Web `0.2.0-rc.2`**，Host 上须有可用的 pnpm；命令行方式还需要能调用 `dsh`。下面两种方式安装的是同一个 Release 成品 `.tgz`，使用 DSH 官方支持的 tarball 安装机制。依据见[官方打包说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md)和[插件管理器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md)。
 
-在 DSH 打开**插件 → 添加插件**，填入包在 Host 机器上的绝对路径，安装后选择**立即启用**。目标应是正在服务这个浏览器的同一个 profile；没有热重载时，按提示重启原 Host。
+**当前状态：** [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 是私有仓库，尚未创建发布 tag 和 Release 附件；`0.1.0` 仍是开发版本。下方 `v0.1.0` 地址展示首版发布后的格式，只有对应 tag、Release 和附件发布后才能使用。试用当前源码时，见[本地开发包步骤](docs/INSTALLATION.zh.md#准备成品包)。
 
-需要从当前源码构建时，在项目根目录执行：
+维护者的交付顺序是：**核对提交 → 构建并 `pnpm pack` → `v<version>` tag → GitHub Release 上传 `.tgz` 与 `SHA256SUMS.txt` → 用户安装**。普通用户使用成品包；[版本发布步骤](docs/DEVELOPMENT.md#8-版本化发布与安装入口)由维护者完成。
 
-```powershell
-pnpm install --frozen-lockfile
-pnpm pack --pack-destination .release
+### 方式一：从 DSH 界面安装
+
+1. 在 [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) 选择一个已发布版本，取得该版本的 `dsh-redis-<version>.tgz` 和 `SHA256SUMS.txt`，核对校验值。
+2. 打开 DSH 的**插件 → 添加插件**。公开 Release 可以直接粘贴完整的固定版本附件 URL；当前私有仓库则需先登录 GitHub 下载附件，将文件放到 Host，再填入该文件的绝对路径。
+3. 确认包名、版本后安装，选择**立即启用**，在对话右侧栏打开 **Redis**。没有热重载时，按提示重启原 Host。
+
+发布 `v0.1.0` 后的附件地址示例：
+
+```text
+https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
 ```
 
-默认 `prepack` 会执行严格类型检查、全新构建和回归。SHA 唯一文件名、CLI 命令、profile 选择、更新、回退和卸载步骤见[安装指南](docs/INSTALLATION.zh.md)。当前已验证的插件管理器采用先卸载、再安装新包的更新方式。
+浏览器的 GitHub 登录不会传给 Host 的包安装器；仓库保持私有时，采用登录下载后安装本地文件的方式。
+
+### 方式二：从 CLI 安装
+
+已有公开可下载的 Release 时，在 Host 终端执行：
+
+```powershell
+dsh plugin --profile web add https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
+dsh plugin --profile web list dsh-redis
+```
+
+私有 Release 则先下载同一个附件，把示例路径换成它在 Host 上的实际位置，再执行：
+
+```powershell
+$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
+dsh plugin --profile web add $packageForInstall
+dsh plugin --profile web list dsh-redis
+```
+
+安装、启动和卸载使用服务当前浏览器的同一个 profile 与 `DSH_HOME`；`web` 是 Web 示例，不代表 Desktop。沿用原命令启动 Web（默认 Web 为 `dsh web`），需要重启时重启原实例。Release 成品包含 `lib/`，与 GitHub 自动生成的 **Source code** 源码归档不同。
+
+### 更新已安装版本
+
+取得目标版本的 Release 附件和校验文件。在**插件**中卸载旧包，按相同方式安装新包并启用。通过 CLI 替换时，按需要先停止目标 Host，再执行：
+
+```powershell
+dsh plugin --profile web remove dsh-redis
+dsh plugin --profile web add $packageForInstall
+```
+
+这里的 `$packageForInstall` 应指向**新版**已核对的附件路径，或公开可下载的固定版本 URL。需要时重启同一个 profile，保留旧包用于回退。profile 检查、本地构建、更新回退和资料保存见[安装指南](docs/INSTALLATION.zh.md)。
 
 ## 开始使用
 
@@ -128,11 +165,35 @@ Key 扫描最多 5,000 个 Key、2 MiB 编码结果、1,000 批或 60 秒。筛�
 
 该候选不包含批量删除、清空 DB、任意命令和脚本执行。
 
+## 卸载
+
+在 DSH 的**插件**页面卸载 **dsh-redis**；或按要求停止目标 profile 后执行：
+
+```powershell
+dsh plugin --profile web remove dsh-redis
+```
+
+需要时重载或重启同一个 profile。卸载会保留连接资料和 DSH 对话历史；[清理已保存资料](docs/INSTALLATION.zh.md#停用卸载与清理资料)是另一个操作。
+
+## 常见问题
+
+**为什么 Release 地址返回 404？**
+
+先核对对应 tag 和 `.tgz` 附件是否已经发布，以及当前账号是否能访问仓库。目前私有仓库尚无 Release；浏览器登录也不会授权另一台 Host 下载。私有附件采用登录下载后安装本地文件的方式。
+
+**可以安装 GitHub 的 Source code 源码归档吗？**
+
+当前 Git 树不包含 `lib/`，包入口却需要这些构建产物。使用 Release 成品 `.tgz`，或[先构建本地包](docs/INSTALLATION.zh.md#准备成品包)；仅创建源码 tag 不会得到可加载的 Redis 安装包。
+
+**为什么提示 `cannot resolve profile bundle "dsh-redis"`？**
+
+检查 profile 是否仍指向已经移动、删除的开发目录或归档。在同一个 profile 移除旧来源，再添加核对过的成品包，按要求重载或重启。单独执行依赖 `install` 会沿用原来源。详见[常见安装问题](docs/INSTALLATION.zh.md#常见问题)。
+
 ## 文档与许可
 
 - [安装、更新与卸载](docs/INSTALLATION.zh.md)
 - [English installation guide](docs/INSTALLATION.md)
-- [版本记录](CHANGELOG.md)
+- [版本记录](CHANGELOG.md) · [问题反馈](https://github.com/WhitePlusMS/dsh-redis/issues)
 - [开发与维护说明](docs/DEVELOPMENT.md)
 - [截图来源说明](docs/screenshots/README.md)
 

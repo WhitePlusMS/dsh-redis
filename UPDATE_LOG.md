@@ -1688,3 +1688,16 @@
 - 通过用户现有Chrome GitHub会话打开 `https://github.com/WhitePlusMS/dsh-redis/blob/main/README.zh.md`，原生页面确认中文版正文与预览视图；DOM核对4种正文图片全部加载，GIF为1200×280，两张原生截图1280×720，流程图1200×176。GitHub另含一个隐藏GIF副本，不重复计为素材。
 - 已保存1520×4225的原生完整页面截图，以及仅截取顶部、保留GitHub与仓库上下文的展示副本；实际文件与不含签名查询参数的图片检查记录均留在忽略目录 `.scratch/artifacts/readme-header-20261020/`。已人工查看顶部动图、中文介绍及原生Hash截图同屏效果，用户请求的Chrome标签已标记为交付保留；没有更改用户原有标签、登录资料或浏览器视口。
 - 本小目标仅更新本文，本地提交后继续按已授权推送main并核对最终远端SHA；不修改README正文、产品代码、依赖、运行配置或实际DSH，不启动服务、不连接业务Redis，不重复执行产品回归，也不创建Release、外发消息或社区投稿。
+
+## 2026-10-20：按 GitGraph 与官方机制修正安装、版本与发布说明
+
+- 用户指出README把本地绝对路径作为主要安装入口，漏掉固定版本tag/Release成品及界面/CLI两种方式。本次完整对照用户提供的DSH_PLUGIN_GUIDE.md，并核对GitGraph当前线上0.5.1 README与f4ae9a9发布工作流；本地旧README仍是0.5.0源码归档说明，不能作为最新交付流程直接照搬。
+- 重新浏览固定dsh-v0.2.0-rc.2的官方publish与ui-plugin-manager说明；按项目约束由GPT-6 Luna提供固定源码解析/包管理描述，主代理核对当前manifest和Git树事实。DSH支持界面/CLI tarball安装，tag+Release是项目采用的版本交付约定，不称为官方唯一强制渠道；Redis的lib不入Git且无prepare，不将源码tag压缩包当作构建成品。
+- README.md、README.zh.md同步新增维护者版本交付顺序、Release附件和校验文件、界面/CLI两个入口、私有附件登录下载后Host本地安装、公开Release URL示例、更新及原profile启用/重启。补独立卸载与FAQ、仓库作者/反馈入口；源构建移往详细文档，原功能、四工具、六类型、隐私边界、原生截图和5条写入候选保留。
+- docs/INSTALLATION.md、INSTALLATION.zh.md前置固定版本Release成品取得方式，界面/CLI使用同一来源；本地构建移到后面的维护部分，保留SHA开发包步骤与数据清理说明。统一默认CLI命令，补Release404/私有权限、源码缺lib与失效开发路径排查；不假设浏览器或Git凭据会自动授权Host下载私有Release。
+- docs/DEVELOPMENT.md将未来发布章节细化为检查提交、打包校验、版本tag、Release双附件、重新下载与两种安装入口验收的流程；修正已配置私有远端的状态及任务授权措辞，说明Redis尚无Release自动化。CHANGELOG.md同步私有源码/仍未发布的真实状态及本轮文档变化。
+- 官方API回读确认仓库仍私有、main为默认分支，当前tag和Release列表均为空；v0.1.0完整地址只作为待发布格式示例，没有伪造已存在的附件。修改原因是补齐普通用户与维护者的交付步骤，影响仅7份Markdown，不修改代码、manifest、依赖、构建流程、DSH安装或Redis数据，不实际创建tag/Release或安装插件。
+- 下一步检查中英文命令/版本/链接一致、PowerShell示例语法、README图片和新增锚点、差异与原生预览；通过后按既有授权本地提交并同步这个私有仓库，不运行示例中的安装/卸载/tag命令，不因纯文档变更重复产品回归。
+- 文档静态检查通过：6份主文档77处本地引用、31处锚点；两份README各4张图片引用有效，中英文README的4段PowerShell与两份安装指南的6段PowerShell逐字一致。原有图片、四工具标识、各5条写入候选保留，package/锁文件/原图字节不变；本次差异仅7份Markdown。
+- PowerShell示例仅进行AST解析，不执行安装/卸载/Tag/Host命令。最初校验器未兼容CRLF的代码围栏终点而匹配0段，该轮不计通过；修正临时校验器并强制预期24段后，实际24段语法错误为0。双语README及安装/开发说明oil-tone检查通过；补中文强调标签后的空格，避免CommonMark把标记显示为普通文字。
+- 拉取私有origin后确认当前main与origin/main为0/0；即将精确暂存本轮7份文档、提交并同步main，再核对GitHub实际安装章节显示。没有新增发布工作流、创建tag或更改版本，所有v0.1.0附件地址仍标明待发布。
