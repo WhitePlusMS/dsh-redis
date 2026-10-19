@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="docs/screenshots/readme-header.gif" width="100%" alt="DSH Redis — read-only Redis browsing in DeepSeek Harness">
+</p>
+
 # DSH Redis
 
-English | [简体中文](README.zh.md)
+English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme-header.svg)
 
 A community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing into the same workspace as the conversation. Find a Key, select a row to inspect its details, then ask DSH about the current selection. It supports six core Redis types and reads through the connection opened manually in that conversation.
 

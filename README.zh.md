@@ -1,6 +1,10 @@
+<p align="center">
+  <img src="docs/screenshots/readme-header.gif" width="100%" alt="DSH Redis — 在 DeepSeek Harness 中只读查看 Redis">
+</p>
+
 # DSH Redis
 
-[English](README.md) | 简体中文
+[English](README.md) | 简体中文 · [静态标题](docs/screenshots/readme-header.svg)
 
 面向 **DeepSeek Harness（DSH）** 的社区插件，把 Redis 查看放进当前对话所在的工作区。先定位 Key，选中一行查看详情，再围绕当前选择向 DSH 提问。支持六种基础类型，复用这个对话中手动建立的 Redis 连接。
 

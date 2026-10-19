@@ -18,3 +18,11 @@ The originals are under `docs/verification/artifacts/slim-2026-10-19/` in the so
 [readme-flow.svg](readme-flow.svg) is a deterministic, editable SVG explaining manual connection, DB/Key browsing, selected-row inspection and a request in the same DSH conversation. It reuses the interface's cyan/purple/orange palette. It is a diagram, not a screenshot or acceptance result. The adjacent Markdown carries the complete operating instructions.
 
 该图为可编辑矢量流程示意，使用界面已有青紫橘配色，未重绘产品界面，也不代替原生截图。操作条件和完整步骤仍保留在 Markdown 中。
+
+## Animated title / 动画标题
+
+[readme-header.gif](readme-header.gif) is a 1200 × 280 title animation based on the layout approach of the maintainer's GitGraph README. It uses this project's existing cylinder paths and cyan/purple/orange navigation palette. The DB, folder and Key highlights appear in sequence, hold still, then fade; the name and purpose remain visible. It illustrates browsing order, not live server activity or a product screen recording.
+
+[readme-header.svg](readme-header.svg) is the static fallback. [readme-header-motion.svg](readme-header-motion.svg) and its [motion spec](readme-header-motion.json) preserve the editable source: 30 source frames per second, a 5-second loop and a 2.3-second fully settled hold. The 150 source frames may merge into fewer encoded GIF frames; timings are retained.
+
+这是 README 顶部的轻量标题示意，复用现有数据库图标路径和青紫橘导航配色；不是原生截图，也不代表实际 Redis 活动。两种语言共用同一 GIF，并保留静态 SVG 入口，操作说明、真实截图和版本要求仍在正文中。维护源文件时同步重新导出 GIF；不要把 SVG 自身当成 GitHub 可播放的动画。

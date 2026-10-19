@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="280" viewBox="0 0 1200 280" role="img" aria-labelledby="title desc">
+  <title id="title">DSH Redis</title>
+  <desc id="desc">Editable animation source for DSH Redis. Only the database, folder and Key highlights appear in sequence; this is a title diagram, not a recording of Redis activity.</desc>
+  <rect width="1200" height="280" rx="20" fill="#15191f"/>
+  <!-- The cylinder paths reuse the existing project icon; the other shapes show DB / folder / Key navigation. -->
+  <g fill="none" stroke="#34404f" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M165 128h14M165 164h14v34h4"/>
+  </g>
+  <!-- Muted silhouettes keep the first frame meaningful while the three navigation layers appear in order. -->
+  <g id="navigation-base" fill="none" stroke="#526173" stroke-linecap="round" stroke-linejoin="round">
+    <g transform="translate(33 42) scale(2.6)" stroke-width="3.5">
+      <ellipse cx="32" cy="18" rx="19" ry="7"/>
+      <path d="M13 18v14c0 9 38 9 38 0V18M13 32v14c0 9 38 9 38 0V32"/>
+    </g>
+    <path d="M182 110v-13h22l9 10h33v40h-64v-37Z" stroke-width="6"/>
+    <circle cx="197" cy="195" r="13" stroke-width="6"/>
+    <path d="m208 202 30 30m-8-8 9-9m-19 0 9-9" stroke-width="6"/>
+  </g>
+  <g id="db-highlight" transform="translate(33 42) scale(2.6)" fill="none" stroke="#24c7dd" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+    <ellipse cx="32" cy="18" rx="19" ry="7"/>
+    <path d="M13 18v14c0 9 38 9 38 0V18M13 32v14c0 9 38 9 38 0V32"/>
+  </g>
+  <g id="folder-highlight" fill="none" stroke="#af8af1" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M182 110v-13h22l9 10h33v40h-64v-37Z"/>
+  </g>
+  <g id="key-highlight" fill="none" stroke="#f2a15c" stroke-width="6" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="197" cy="195" r="13"/>
+    <path d="m208 202 30 30m-8-8 9-9m-19 0 9-9"/>
+  </g>
+  <!-- Name and purpose stay still. Versions, requirements and detailed claims remain editable Markdown. -->
+  <g font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif">
+    <text x="304" y="133" fill="#f4f7fa" font-size="86" font-weight="700" letter-spacing="-2">DSH Redis</text>
+    <text x="309" y="192" fill="#b0bdcc" font-size="32">Read-only Redis in DeepSeek Harness</text>
+  </g>
+</svg>
