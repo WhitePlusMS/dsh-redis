@@ -13,6 +13,7 @@ DSH 原生右侧栏中的个人 Redis 查看器。当前精简版只保留六种
 - 内容：Text、JSON、Hex、Base64 四种格式，查找、JSON 折叠及复制当前已读内容。
 - 刷新：手动刷新、1/5/10/30秒自动刷新、取消和最近读取时间。同一查询刷新保留画面，重新读取已加载批次后替换结果。
 - 界面：青色 DB、紫色目录、橘色 Key 的 Phosphor 双色导航，官方 Lucide 操作图标，随 DSH 明暗主题及中英文切换。
+- 对话：通过4个官方模型工具复用本会话连接，检索Key、读取六类型及当前选中行；用户明确要求时切DB并同步侧栏。模型服务及宿主工具策略需可用，实际验收状态见下方实施记录。
 
 已删除诊断快照、六种特殊类型专用视图及曲线、URI、资料导入导出、独立测试连接、显式 Base64 解码、DB/Key 选择自动恢复。普通 String 中的 JSON 格式化仍保留；GEO 可看底层 ZSet，Bitmap/HLL 可看底层 String 原始字节。模块专用类型显示不支持。
 
@@ -25,6 +26,7 @@ DSH 原生右侧栏中的个人 Redis 查看器。当前精简版只保留六种
 5. 使用预览格式下拉、查找和复制图标。范围与服务端筛选按需展开，填写草稿后点应用才读取。
 6. 自动刷新为图标开关加间隔下拉，默认关闭。同一 Key 刷新保留选行和未卸载的预览；原选行未包含在本次读取中会提示重新选择。切换 Key/DB/会话、隐藏、取消或读取失败会停止自动刷新。
 7. 已连接时仍可编辑、保存、删除其他资料，实际连接身份单独显示。切换服务器前先断开，再选择资料并手动连接。
+8. 在同一会话对话中询问“查看当前选中的字段”“查找 `order:*` 的Key”或“切到DB1查看指定Key”。未连接时先手动连接；无需复制数据或生成快照。选行只同步标识，值在工具调用时读取；详见[对话使用说明](E:/项目demo/dsh-redis/docs/AI_READ_USAGE.md)。
 
 资料在同一 DSH profile 内共用；网络连接和读取按会话隔离。连接从 DB 0 开始，不自动恢复以前的 DB/Key。格式选择仅在当前挂载会话内保存。不直接打开 RDB/AOF 文件，不提供 Redis 写入、命令控制台、Cluster、Sentinel 或内置 SSH 隧道。
 
@@ -48,7 +50,8 @@ dsh plugin --profile web add '<唯一 SHA 包的绝对路径>' --ignore-scripts
 
 ## 文档与验证
 
-- [当前功能清单：8 个模块、41 项条目](E:/项目demo/dsh-redis/docs/FEATURE_INVENTORY.md)
+- [当前功能清单：9 个模块、46 项条目](E:/项目demo/dsh-redis/docs/FEATURE_INVENTORY.md)
+- [对话读取实施与验收状态](E:/项目demo/dsh-redis/docs/AI_READ_IMPLEMENTATION.md)
 - [本次精简实施与检查点](E:/项目demo/dsh-redis/docs/SLIM_VIEWER_IMPLEMENTATION.md)
 - [精简版专项验收](E:/项目demo/dsh-redis/docs/verification/slim-viewer-2026-10-19.md)
 - [旧56项操作审查与精简决策](E:/项目demo/dsh-redis/docs/FEATURE_OPERATION_AUDIT.md)

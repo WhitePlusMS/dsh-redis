@@ -1,0 +1,47 @@
+{
+  "realModel": false,
+  "officialAgentLoop": true,
+  "redisTypes": 6,
+  "currentTypes": 6,
+  "duplicateStreamSecondField": true,
+  "dbRoundTrip": [
+    0,
+    1,
+    0
+  ],
+  "generation": 3,
+  "toolCalls": 30,
+  "expectedUnconnectedErrors": 1,
+  "redisConnections": 1,
+  "readOnly": {
+    "dumpKeysUnchanged": 12,
+    "streamGroupsUnchanged": true,
+    "commands": [
+      "AUTH",
+      "CONFIG",
+      "DBSIZE",
+      "GETRANGE",
+      "HGET",
+      "HLEN",
+      "HSCAN",
+      "INFO",
+      "LLEN",
+      "LRANGE",
+      "PING",
+      "PTTL",
+      "SCAN",
+      "SCARD",
+      "SELECT",
+      "SISMEMBER",
+      "SSCAN",
+      "STRLEN",
+      "TYPE",
+      "XLEN",
+      "XRANGE",
+      "ZCARD",
+      "ZRANGE",
+      "ZSCORE"
+    ],
+    "proxyErrors": []
+  }
+}

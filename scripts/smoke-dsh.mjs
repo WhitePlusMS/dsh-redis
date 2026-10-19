@@ -8,17 +8,22 @@ import { spawn, execFile } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { createServer } from 'node:http'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
-import { resolve, relative } from 'node:path'
+import { resolve, relative, sep } from 'node:path'
 import { setTimeout as delay } from 'node:timers/promises'
 import { promisify } from 'node:util'
 import { RESP_TYPES } from 'redis'
 import { withRedisFixture } from './redis-fixture.mjs'
 import { createReadDelayProxy } from './read-delay-proxy.mjs'
 
-const root = resolve(import.meta.dirname, '..'), home = resolve(root, '.scratch/runtime/dsh-home'), artifacts = resolve(root, '.scratch/artifacts')
+const root = resolve(import.meta.dirname, '..'), runtime = resolve(root, '.scratch/runtime')
+const home = resolve(process.env.REDIS_SMOKE_HOME ?? resolve(runtime, 'dsh-home'))
+const artifacts = resolve(process.env.REDIS_SMOKE_ARTIFACTS ?? resolve(root, '.scratch/artifacts'))
+const privateFile = resolve(process.env.REDIS_SMOKE_PRIVATE ?? resolve(runtime, 'slim-native.private.json'))
+const realModel = process.env.REDIS_SMOKE_REAL_MODEL === '1'
 const run = promisify(execFile), cli = process.env.DSH_CLI_ENTRY
 assert(cli, 'Set DSH_CLI_ENTRY to the verified rc.2 lib/bin.js')
-assert(!relative(root, home).startsWith('..'))
+assert(home.startsWith(runtime + sep) && privateFile.startsWith(runtime + sep), 'Owned runtime paths must stay inside project scratch')
+assert(artifacts.startsWith(resolve(root, '.scratch/artifacts') + sep) || artifacts === resolve(root, '.scratch/artifacts'))
 const report = { startedAt: new Date().toISOString(), passed: false, processStopped: false, fixtureStopped: false }
 const allowed = new Set(['AUTH','PING','SELECT','DBSIZE','INFO','CONFIG','SCAN','TYPE','PTTL','STRLEN','GETRANGE','HLEN','HSCAN','HGET','LLEN','LRANGE','SCARD','SSCAN','SISMEMBER','ZCARD','ZRANGE','ZSCAN','ZSCORE','XLEN','XRANGE','XREVRANGE'])
 const readable = new Set(['PING','GETRANGE','HSCAN','HGET','LRANGE','SSCAN','SISMEMBER','ZRANGE','ZSCAN','ZSCORE','XRANGE','XREVRANGE','SCAN'])
@@ -49,6 +54,16 @@ try {
       await admin.sendCommand(['XADD',keys[5],(index + 1) + '-0','field',item,'field','duplicate'])
     }
     await admin.sendCommand(['XGROUP','CREATE',keys[5],'unchanged-fixture-group','0'])
+    if (realModel) {
+      const compact = ['string','hash','list','set','zset','stream'].map(type => 'ai:' + type)
+      await admin.set(compact[0], 'synthetic-string-value')
+      await admin.hSet(compact[1], { temperature: '24.8', state: 'synthetic-running' })
+      await admin.rPush(compact[2], ['synthetic-first','synthetic-second'])
+      await admin.sAdd(compact[3], ['synthetic-alpha','synthetic-beta'])
+      await admin.zAdd(compact[4], [{score:1.25,value:'synthetic-alpha'},{score:2.5,value:'synthetic-beta'}])
+      await admin.sendCommand(['XADD',compact[5],'1-0','field','synthetic-first','field','synthetic-second'])
+      keys.push(...compact)
+    }
     await admin.select(1); await admin.set('db1:only','synthetic'); await admin.select(0)
     const binary = admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
     const dumps = () => Promise.all(keys.map(async key => (await binary.sendCommand(['DUMP',key])).toString('base64')))
@@ -57,8 +72,11 @@ try {
     let hold = null, child, server, output = '', exited
     try {
       await sameFiles(resolve(root,'lib'),resolve(home,'profiles/web/node_modules/dsh-redis/lib'))
-      const env = { ...process.env, DSH_HOME: home, DSH_AGENTS_HOME: resolve(root,'.scratch/runtime/agents'), DO_NOT_TRACK: '1', DEEPSEEK_API_KEY: 'keyless-owned-fixture', DEEPSEEK_BASE_URL: 'http://127.0.0.1:1' }
-      delete env.OPENAI_API_KEY; delete env.ANTHROPIC_API_KEY
+      const env = { ...process.env, DSH_HOME: home, DSH_AGENTS_HOME: resolve(home,'agents'), DO_NOT_TRACK: '1' }
+      if (!realModel) {
+        env.DEEPSEEK_API_KEY = 'keyless-owned-fixture'; env.DEEPSEEK_BASE_URL = 'http://127.0.0.1:1'
+        delete env.OPENAI_API_KEY; delete env.ANTHROPIC_API_KEY
+      }
       child = spawn(process.execPath,[cli,'web','--no-open','--host','127.0.0.1','--port','0'],{cwd:root,env,windowsHide:true,stdio:['ignore','pipe','pipe']})
       exited = new Promise(done => child.once('close',done))
       const readyUrl = await new Promise((done,reject) => {
@@ -101,7 +119,7 @@ try {
       await new Promise((done,reject) => {server.once('error',reject);server.listen(0,'127.0.0.1',done)})
       const address = server.address();assert(address && typeof address !== 'string')
       // Private scratch file is never committed or copied into the evidence report.
-      await writeFile(resolve(root,'.scratch/runtime/slim-native.private.json'),JSON.stringify({readyUrl,control:'http://127.0.0.1:'+address.port,settings:proxy.settings,keys,owner:fixture.metadata.owner}),{mode:0o600})
+      await writeFile(privateFile,JSON.stringify({readyUrl,control:'http://127.0.0.1:'+address.port,settings:proxy.settings,keys,owner:fixture.metadata.owner}),{mode:0o600})
       console.log(JSON.stringify({ready:true,controlPort:address.port,dshPid:child.pid,fixtureKeys:keys.length}))
       await stopped
       report.passed = true

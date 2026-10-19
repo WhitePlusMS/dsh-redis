@@ -1,0 +1,702 @@
+{
+  "observedAt": "2026-10-19T08:52:57.466Z",
+  "provider": "fixture-local",
+  "model": "fixture-model",
+  "modelSource": "scripted-local-fixture",
+  "sessions": [
+    {
+      "sessionId": "session-01f01876-029a-46a9-a79b-191160a07814",
+      "running": false,
+      "hasMore": false,
+      "calls": [
+        {
+          "seq": 16,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 29,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 34,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        }
+      ],
+      "results": [
+        {
+          "seq": 17,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_ec5b482561f442729bfc3fea15735d83"
+          },
+          "toolCallId": "call_ec5b482561f442729bfc3fea15735d83",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "1de6f5a1-c929-4d6e-ae42-b58f35969417"
+        },
+        {
+          "seq": 30,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_ba06af9b520e4820b91a63e2f8b3d769"
+          },
+          "toolCallId": "call_ba06af9b520e4820b91a63e2f8b3d769",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "c95f97af-3d27-42fb-bfa3-9bea54a5fee6"
+        },
+        {
+          "seq": 35,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_702f8b39cbb9406e904e4c012065365d"
+          },
+          "toolCallId": "call_702f8b39cbb9406e904e4c012065365d",
+          "content": [
+            {
+              "type": "text",
+              "text": "Error: 当前对话尚未连接 Redis，请先在侧栏手动连接。"
+            }
+          ],
+          "isError": true,
+          "id": "160f561c-5a21-4299-88ee-a4bb44c747d7"
+        }
+      ],
+      "assistant": [
+        "本地接线夹具 STATUS：\n{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}\nError: 当前对话尚未连接 Redis，请先在侧栏手动连接。"
+      ]
+    },
+    {
+      "sessionId": "session-e8b01121-2c77-4f2c-8e79-f1e02aa362b1",
+      "running": false,
+      "hasMore": false,
+      "calls": [
+        {
+          "seq": 16,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 29,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 34,
+          "name": "redis_viewer_keys",
+          "arguments": "{\"match\":\"ai:*\"}"
+        },
+        {
+          "seq": 39,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:string\"}"
+        },
+        {
+          "seq": 44,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:hash\"}"
+        },
+        {
+          "seq": 49,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:list\"}"
+        },
+        {
+          "seq": 54,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:set\"}"
+        },
+        {
+          "seq": 59,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:zset\"}"
+        },
+        {
+          "seq": 64,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"ai:stream\"}"
+        },
+        {
+          "seq": 77,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 82,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 95,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 100,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 113,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 118,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 131,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 136,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 149,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 154,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 167,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 172,
+          "name": "redis_viewer_value",
+          "arguments": "{}"
+        },
+        {
+          "seq": 185,
+          "name": "redis_viewer_select_db",
+          "arguments": "{\"db\":1}"
+        },
+        {
+          "seq": 190,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        },
+        {
+          "seq": 195,
+          "name": "redis_viewer_keys",
+          "arguments": "{\"match\":\"*\"}"
+        },
+        {
+          "seq": 200,
+          "name": "redis_viewer_value",
+          "arguments": "{\"key\":\"db1:only\"}"
+        },
+        {
+          "seq": 213,
+          "name": "redis_viewer_select_db",
+          "arguments": "{\"db\":0}"
+        },
+        {
+          "seq": 218,
+          "name": "redis_viewer_status",
+          "arguments": "{}"
+        }
+      ],
+      "results": [
+        {
+          "seq": 17,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_d3a1fe6d2c6441a4ad8a5a1a5007180b"
+          },
+          "toolCallId": "call_d3a1fe6d2c6441a4ad8a5a1a5007180b",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "1c0ebc7e-fe52-4e5b-a9b0-d4bbafad753b"
+        },
+        {
+          "seq": 30,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_8ee144c21c074b7f81dc9c6cec48b12e"
+          },
+          "toolCallId": "call_8ee144c21c074b7f81dc9c6cec48b12e",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "e2ab5a55-e6ef-4321-a716-7a71db77a8d8"
+        },
+        {
+          "seq": 35,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_0e6429033fb74cd7af87e816f2c54a5e"
+          },
+          "toolCallId": "call_0e6429033fb74cd7af87e816f2c54a5e",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"state\":\"page\",\"error\":null,\"keys\":[{\"base64\":\"YWk6bGlzdA==\",\"byteLength\":7,\"label\":\"\\\"ai:list\\\"\"},{\"base64\":\"YWk6c3RyZWFt\",\"byteLength\":9,\"label\":\"\\\"ai:stream\\\"\"},{\"base64\":\"YWk6c2V0\",\"byteLength\":6,\"label\":\"\\\"ai:set\\\"\"},{\"base64\":\"YWk6enNldA==\",\"byteLength\":7,\"label\":\"\\\"ai:zset\\\"\"},{\"base64\":\"YWk6aGFzaA==\",\"byteLength\":7,\"label\":\"\\\"ai:hash\\\"\"},{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.580Z\",\"scanComplete\":true}"
+            }
+          ],
+          "isError": false,
+          "id": "3d4eaa9e-16af-4dcf-a933-844f8d96adb5"
+        },
+        {
+          "seq": 40,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_972a3072d2584bfca8e7a284c4de5b9e"
+          },
+          "toolCallId": "call_972a3072d2584bfca8e7a284c4de5b9e",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"22\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGljLXN0cmluZy12YWx1ZQ==\",\"byteLength\":22,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:43:28.642Z\",\"text\":\"synthetic-string-value\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "b1c8526d-96da-4805-8670-f6b8d45f447d"
+        },
+        {
+          "seq": 45,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_363ce4429ba9419e9157ff3d1a5184d4"
+          },
+          "toolCallId": "call_363ce4429ba9419e9157ff3d1a5184d4",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6aGFzaA==\",\"byteLength\":7,\"label\":\"\\\"ai:hash\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"hash\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"entries\":[{\"field\":{\"base64\":\"dGVtcGVyYXR1cmU=\",\"byteLength\":11,\"label\":\"\\\"temperature\\\"\"},\"value\":{\"base64\":\"MjQuOA==\",\"text\":\"24.8\",\"byteLength\":4,\"fullByteLength\":4,\"complete\":true}},{\"field\":{\"base64\":\"c3RhdGU=\",\"byteLength\":5,\"label\":\"\\\"state\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLXJ1bm5pbmc=\",\"text\":\"synthetic-running\",\"byteLength\":17,\"fullByteLength\":17,\"complete\":true}}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.703Z\",\"scanComplete\":true,\"complete\":true}}"
+            }
+          ],
+          "isError": false,
+          "id": "91816390-ca9a-45b7-be59-66456cd7785d"
+        },
+        {
+          "seq": 50,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_c0e685c7d65a4ef3b02ec8b01316a15c"
+          },
+          "toolCallId": "call_c0e685c7d65a4ef3b02ec8b01316a15c",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6bGlzdA==\",\"byteLength\":7,\"label\":\"\\\"ai:list\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"list\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"entries\":[{\"index\":\"0\",\"value\":{\"base64\":\"c3ludGhldGljLWZpcnN0\",\"text\":\"synthetic-first\",\"byteLength\":15,\"fullByteLength\":15,\"complete\":true}},{\"index\":\"1\",\"value\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true}}],\"offset\":\"0\",\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:43:28.780Z\",\"complete\":true}}"
+            }
+          ],
+          "isError": false,
+          "id": "275cb0fb-9a6c-4641-b7d3-2c42e4431aa5"
+        },
+        {
+          "seq": 55,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_e1b98dbca0eb4c8398a5b291cefb8bd3"
+          },
+          "toolCallId": "call_e1b98dbca0eb4c8398a5b291cefb8bd3",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c2V0\",\"byteLength\":6,\"label\":\"\\\"ai:set\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"set\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"members\":[{\"base64\":\"c3ludGhldGljLWFscGhh\",\"byteLength\":15,\"label\":\"\\\"synthetic-alpha\\\"\"},{\"base64\":\"c3ludGhldGljLWJldGE=\",\"byteLength\":14,\"label\":\"\\\"synthetic-beta\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.870Z\",\"scanComplete\":true,\"complete\":true}}"
+            }
+          ],
+          "isError": false,
+          "id": "95eeb5d8-268e-4f0b-ac34-dd8e33c3e825"
+        },
+        {
+          "seq": 60,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_53ed859060ac418381afa667286f124f"
+          },
+          "toolCallId": "call_53ed859060ac418381afa667286f124f",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6enNldA==\",\"byteLength\":7,\"label\":\"\\\"ai:zset\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"zset\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"mode\":\"range\",\"entries\":[{\"member\":{\"base64\":\"c3ludGhldGljLWFscGhh\",\"byteLength\":15,\"label\":\"\\\"synthetic-alpha\\\"\"},\"score\":\"1.25\",\"rank\":\"0\"},{\"member\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"byteLength\":14,\"label\":\"\\\"synthetic-beta\\\"\"},\"score\":\"2.5\",\"rank\":\"1\"}],\"offset\":\"0\",\"nextOffset\":null,\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.959Z\",\"scanComplete\":false,\"complete\":true}}"
+            }
+          ],
+          "isError": false,
+          "id": "7c41d363-71f1-4924-9e8a-b04a7c298078"
+        },
+        {
+          "seq": 65,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_2d7751e6068143ccad3cf88eea887353"
+          },
+          "toolCallId": "call_2d7751e6068143ccad3cf88eea887353",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyZWFt\",\"byteLength\":9,\"label\":\"\\\"ai:stream\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"stream\",\"ttlMs\":\"-1\",\"length\":\"1\"},\"direction\":\"forward\",\"start\":\"-\",\"end\":\"+\",\"messages\":[{\"id\":\"1-0\",\"fields\":[{\"index\":0,\"field\":{\"base64\":\"ZmllbGQ=\",\"byteLength\":5,\"label\":\"\\\"field\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLWZpcnN0\",\"text\":\"synthetic-first\",\"byteLength\":15,\"fullByteLength\":15,\"complete\":true}},{\"index\":1,\"field\":{\"base64\":\"ZmllbGQ=\",\"byteLength\":5,\"label\":\"\\\"field\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true}}]}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:29.052Z\",\"scanComplete\":true,\"complete\":true}}"
+            }
+          ],
+          "isError": false,
+          "id": "2f871091-87b8-4e9a-a532-34188f476051"
+        },
+        {
+          "seq": 78,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_0fcb3b7b1aca44fe9565bf6f39c3d0eb"
+          },
+          "toolCallId": "call_0fcb3b7b1aca44fe9565bf6f39c3d0eb",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6aGFzaA==\",\"item\":{\"kind\":\"hash\",\"fieldBase64\":\"c3RhdGU=\"}},\"sampledAt\":\"2026-10-19T08:44:07.265Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "abbbf065-696c-401c-ae64-b3a81340dd1a"
+        },
+        {
+          "seq": 83,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_cdc13fad610f46958d7a6e9a7785b9c8"
+          },
+          "toolCallId": "call_cdc13fad610f46958d7a6e9a7785b9c8",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6aGFzaA==\",\"item\":{\"kind\":\"hash\",\"fieldBase64\":\"c3RhdGU=\"}},\"sampledAt\":\"2026-10-19T08:44:07.265Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"hash\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLXJ1bm5pbmc=\",\"text\":\"synthetic-running\",\"byteLength\":17,\"fullByteLength\":17,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:44:08.195Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "455377d0-983a-4bc3-a775-f38b20ee4962"
+        },
+        {
+          "seq": 96,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_dad97fbfd4784825ab955955f9a534f7"
+          },
+          "toolCallId": "call_dad97fbfd4784825ab955955f9a534f7",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6bGlzdA==\",\"item\":{\"kind\":\"list\",\"index\":\"1\"}},\"sampledAt\":\"2026-10-19T08:45:49.478Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "3f8c833b-a4f1-4b80-b96f-c7a98bffe7ed"
+        },
+        {
+          "seq": 101,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_63c99689cdf9441bb0cbb4b4c0b7cb76"
+          },
+          "toolCallId": "call_63c99689cdf9441bb0cbb4b4c0b7cb76",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6bGlzdA==\",\"item\":{\"kind\":\"list\",\"index\":\"1\"}},\"sampledAt\":\"2026-10-19T08:45:49.478Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"list\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"cell\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:45:50.117Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "527f054d-136e-4af8-afad-afb9662ef347"
+        },
+        {
+          "seq": 114,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_2246571b7d08452a92cf4672bcae06e3"
+          },
+          "toolCallId": "call_2246571b7d08452a92cf4672bcae06e3",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c2V0\",\"item\":{\"kind\":\"set\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:19.545Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "36cc7865-e22f-4153-89e2-fd3d805f2caf"
+        },
+        {
+          "seq": 119,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_788ca2c4d2d64fa2864ac9c1c774662c"
+          },
+          "toolCallId": "call_788ca2c4d2d64fa2864ac9c1c774662c",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c2V0\",\"item\":{\"kind\":\"set\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:19.545Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"set\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"text\":\"synthetic-beta\",\"byteLength\":14,\"fullByteLength\":14,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:46:20.336Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "9ca0245c-764b-4ad1-beb8-a621bb3b3795"
+        },
+        {
+          "seq": 132,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_ef2725983531412c844b6d4169cfae30"
+          },
+          "toolCallId": "call_ef2725983531412c844b6d4169cfae30",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6enNldA==\",\"item\":{\"kind\":\"zset\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:42.377Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "b0800161-3145-4f39-9d90-b9fac051310d"
+        },
+        {
+          "seq": 137,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_9484b2152d764d2e8305a641f6661e54"
+          },
+          "toolCallId": "call_9484b2152d764d2e8305a641f6661e54",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6enNldA==\",\"item\":{\"kind\":\"zset\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:42.377Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"zset\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"text\":\"synthetic-beta\",\"byteLength\":14,\"fullByteLength\":14,\"complete\":true},\"score\":\"2.5\",\"sampledAt\":\"2026-10-19T08:46:43.112Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "c6e16a7f-42a5-4526-8ab8-925a64919493"
+        },
+        {
+          "seq": 150,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_97be4436326d41a5b45b68ed671ad8be"
+          },
+          "toolCallId": "call_97be4436326d41a5b45b68ed671ad8be",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyZWFt\",\"item\":{\"kind\":\"stream\",\"id\":\"1-0\",\"fieldIndex\":1,\"fieldBase64\":\"ZmllbGQ=\"}},\"sampledAt\":\"2026-10-19T08:47:45.573Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "1910fed3-e962-4848-9a3c-2a87a786375c"
+        },
+        {
+          "seq": 155,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_e836a67bb50047d2b08a2fce959706f6"
+          },
+          "toolCallId": "call_e836a67bb50047d2b08a2fce959706f6",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyZWFt\",\"item\":{\"kind\":\"stream\",\"id\":\"1-0\",\"fieldIndex\":1,\"fieldBase64\":\"ZmllbGQ=\"}},\"sampledAt\":\"2026-10-19T08:47:45.573Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"stream\",\"ttlMs\":\"-1\",\"length\":\"1\"},\"cell\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:47:46.373Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "5ef81a5e-19a6-4360-85eb-10e34d0057bc"
+        },
+        {
+          "seq": 168,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_3951c7e50e2c4a298ff794b589ffe728"
+          },
+          "toolCallId": "call_3951c7e50e2c4a298ff794b589ffe728",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyaW5n\",\"item\":null},\"sampledAt\":\"2026-10-19T08:48:08.001Z\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "0fe136ca-ff00-42cd-a442-0b3503b36a5b"
+        },
+        {
+          "seq": 173,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_a4bec53decc14090ba484cbb313031b7"
+          },
+          "toolCallId": "call_a4bec53decc14090ba484cbb313031b7",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"22\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGljLXN0cmluZy12YWx1ZQ==\",\"byteLength\":22,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:48:34.637Z\",\"text\":\"synthetic-string-value\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "befa83cc-de72-41f2-bfb5-dffcb4ee3cf3"
+        },
+        {
+          "seq": 186,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_f280ed6279294ec2881554af5281ab7d"
+          },
+          "toolCallId": "call_f280ed6279294ec2881554af5281ab7d",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}}}"
+            }
+          ],
+          "isError": false,
+          "id": "a0b43136-b74a-4bbb-8405-193ecb366f77"
+        },
+        {
+          "seq": 191,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_4b74db48f7c8418687c7ba85f733a0c1"
+          },
+          "toolCallId": "call_4b74db48f7c8418687c7ba85f733a0c1",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "65ddc318-1b88-4504-8e99-264f1f7fa7c7"
+        },
+        {
+          "seq": 196,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_6efceef0081e457294fb67bccb627047"
+          },
+          "toolCallId": "call_6efceef0081e457294fb67bccb627047",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"state\":\"page\",\"error\":null,\"keys\":[{\"base64\":\"ZGIxOm9ubHk=\",\"byteLength\":8,\"label\":\"\\\"db1:only\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:49:25.638Z\",\"scanComplete\":true}"
+            }
+          ],
+          "isError": false,
+          "id": "30c7a548-2ae5-4a1a-b0bf-c250b129913c"
+        },
+        {
+          "seq": 201,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_7df78b52e2c740998369e2763b96e60a"
+          },
+          "toolCallId": "call_7df78b52e2c740998369e2763b96e60a",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"ZGIxOm9ubHk=\",\"byteLength\":8,\"label\":\"\\\"db1:only\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"9\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGlj\",\"byteLength\":9,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:49:25.834Z\",\"text\":\"synthetic\"}}"
+            }
+          ],
+          "isError": false,
+          "id": "913c27c9-6778-4784-8d81-e297442ed976"
+        },
+        {
+          "seq": 214,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_724acb643da7437383fb81fefdbf99f0"
+          },
+          "toolCallId": "call_724acb643da7437383fb81fefdbf99f0",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":3,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}}}"
+            }
+          ],
+          "isError": false,
+          "id": "35c8c9df-6b57-4911-ab06-7c2241e5b3f6"
+        },
+        {
+          "seq": 219,
+          "role": "tool",
+          "source": {
+            "kind": "tool",
+            "callId": "call_823d6402476045f28f2582172e5de6c2"
+          },
+          "toolCallId": "call_823d6402476045f28f2582172e5de6c2",
+          "content": [
+            {
+              "type": "text",
+              "text": "{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":3,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}"
+            }
+          ],
+          "isError": false,
+          "id": "1b0b1ba1-9f35-4707-a2d0-88514cb7a4ae"
+        }
+      ],
+      "assistant": [
+        "本地接线夹具 STATUS：\n{\"readOnly\":true,\"connection\":{\"id\":null,\"generation\":0,\"db\":0,\"state\":\"disconnected\",\"error\":null,\"target\":null},\"currentSelection\":null}",
+        "本地接线夹具 ALL：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"state\":\"page\",\"error\":null,\"keys\":[{\"base64\":\"YWk6bGlzdA==\",\"byteLength\":7,\"label\":\"\\\"ai:list\\\"\"},{\"base64\":\"YWk6c3RyZWFt\",\"byteLength\":9,\"label\":\"\\\"ai:stream\\\"\"},{\"base64\":\"YWk6c2V0\",\"byteLength\":6,\"label\":\"\\\"ai:set\\\"\"},{\"base64\":\"YWk6enNldA==\",\"byteLength\":7,\"label\":\"\\\"ai:zset\\\"\"},{\"base64\":\"YWk6aGFzaA==\",\"byteLength\":7,\"label\":\"\\\"ai:hash\\\"\"},{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.580Z\",\"scanComplete\":true}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"22\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGljLXN0cmluZy12YWx1ZQ==\",\"byteLength\":22,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:43:28.642Z\",\"text\":\"synthetic-string-value\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6aGFzaA==\",\"byteLength\":7,\"label\":\"\\\"ai:hash\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"hash\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"entries\":[{\"field\":{\"base64\":\"dGVtcGVyYXR1cmU=\",\"byteLength\":11,\"label\":\"\\\"temperature\\\"\"},\"value\":{\"base64\":\"MjQuOA==\",\"text\":\"24.8\",\"byteLength\":4,\"fullByteLength\":4,\"complete\":true}},{\"field\":{\"base64\":\"c3RhdGU=\",\"byteLength\":5,\"label\":\"\\\"state\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLXJ1bm5pbmc=\",\"text\":\"synthetic-running\",\"byteLength\":17,\"fullByteLength\":17,\"complete\":true}}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.703Z\",\"scanComplete\":true,\"complete\":true}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6bGlzdA==\",\"byteLength\":7,\"label\":\"\\\"ai:list\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"list\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"entries\":[{\"index\":\"0\",\"value\":{\"base64\":\"c3ludGhldGljLWZpcnN0\",\"text\":\"synthetic-first\",\"byteLength\":15,\"fullByteLength\":15,\"complete\":true}},{\"index\":\"1\",\"value\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true}}],\"offset\":\"0\",\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:43:28.780Z\",\"complete\":true}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c2V0\",\"byteLength\":6,\"label\":\"\\\"ai:set\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"set\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"members\":[{\"base64\":\"c3ludGhldGljLWFscGhh\",\"byteLength\":15,\"label\":\"\\\"synthetic-alpha\\\"\"},{\"base64\":\"c3ludGhldGljLWJldGE=\",\"byteLength\":14,\"label\":\"\\\"synthetic-beta\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.870Z\",\"scanComplete\":true,\"complete\":true}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6enNldA==\",\"byteLength\":7,\"label\":\"\\\"ai:zset\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"zset\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"mode\":\"range\",\"entries\":[{\"member\":{\"base64\":\"c3ludGhldGljLWFscGhh\",\"byteLength\":15,\"label\":\"\\\"synthetic-alpha\\\"\"},\"score\":\"1.25\",\"rank\":\"0\"},{\"member\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"byteLength\":14,\"label\":\"\\\"synthetic-beta\\\"\"},\"score\":\"2.5\",\"rank\":\"1\"}],\"offset\":\"0\",\"nextOffset\":null,\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:28.959Z\",\"scanComplete\":false,\"complete\":true}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyZWFt\",\"byteLength\":9,\"label\":\"\\\"ai:stream\\\"\"},\"value\":{\"state\":\"page\",\"error\":null,\"metadata\":{\"type\":\"stream\",\"ttlMs\":\"-1\",\"length\":\"1\"},\"direction\":\"forward\",\"start\":\"-\",\"end\":\"+\",\"messages\":[{\"id\":\"1-0\",\"fields\":[{\"index\":0,\"field\":{\"base64\":\"ZmllbGQ=\",\"byteLength\":5,\"label\":\"\\\"field\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLWZpcnN0\",\"text\":\"synthetic-first\",\"byteLength\":15,\"fullByteLength\":15,\"complete\":true}},{\"index\":1,\"field\":{\"base64\":\"ZmllbGQ=\",\"byteLength\":5,\"label\":\"\\\"field\\\"\"},\"value\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true}}]}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:43:29.052Z\",\"scanComplete\":true,\"complete\":true}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6aGFzaA==\",\"item\":{\"kind\":\"hash\",\"fieldBase64\":\"c3RhdGU=\"}},\"sampledAt\":\"2026-10-19T08:44:07.265Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6aGFzaA==\",\"item\":{\"kind\":\"hash\",\"fieldBase64\":\"c3RhdGU=\"}},\"sampledAt\":\"2026-10-19T08:44:07.265Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"hash\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLXJ1bm5pbmc=\",\"text\":\"synthetic-running\",\"byteLength\":17,\"fullByteLength\":17,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:44:08.195Z\"}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6bGlzdA==\",\"item\":{\"kind\":\"list\",\"index\":\"1\"}},\"sampledAt\":\"2026-10-19T08:45:49.478Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6bGlzdA==\",\"item\":{\"kind\":\"list\",\"index\":\"1\"}},\"sampledAt\":\"2026-10-19T08:45:49.478Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"list\",\"ttlMs\":\"-1\",\"length\":\"2\"},\"cell\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:45:50.117Z\"}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c2V0\",\"item\":{\"kind\":\"set\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:19.545Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c2V0\",\"item\":{\"kind\":\"set\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:19.545Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"set\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"text\":\"synthetic-beta\",\"byteLength\":14,\"fullByteLength\":14,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:46:20.336Z\"}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6enNldA==\",\"item\":{\"kind\":\"zset\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:42.377Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6enNldA==\",\"item\":{\"kind\":\"zset\",\"memberBase64\":\"c3ludGhldGljLWJldGE=\"}},\"sampledAt\":\"2026-10-19T08:46:42.377Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"zset\",\"ttlMs\":\"-1\",\"length\":null},\"cell\":{\"base64\":\"c3ludGhldGljLWJldGE=\",\"text\":\"synthetic-beta\",\"byteLength\":14,\"fullByteLength\":14,\"complete\":true},\"score\":\"2.5\",\"sampledAt\":\"2026-10-19T08:46:43.112Z\"}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyZWFt\",\"item\":{\"kind\":\"stream\",\"id\":\"1-0\",\"fieldIndex\":1,\"fieldBase64\":\"ZmllbGQ=\"}},\"sampledAt\":\"2026-10-19T08:47:45.573Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"selected\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyZWFt\",\"item\":{\"kind\":\"stream\",\"id\":\"1-0\",\"fieldIndex\":1,\"fieldBase64\":\"ZmllbGQ=\"}},\"sampledAt\":\"2026-10-19T08:47:45.573Z\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"stream\",\"ttlMs\":\"-1\",\"length\":\"1\"},\"cell\":{\"base64\":\"c3ludGhldGljLXNlY29uZA==\",\"text\":\"synthetic-second\",\"byteLength\":16,\"fullByteLength\":16,\"complete\":true},\"score\":null,\"sampledAt\":\"2026-10-19T08:47:46.373Z\"}}",
+        "本地接线夹具 CURRENT：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":{\"target\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0},\"selection\":{\"keyBase64\":\"YWk6c3RyaW5n\",\"item\":null},\"sampledAt\":\"2026-10-19T08:48:08.001Z\"}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":1,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"YWk6c3RyaW5n\",\"byteLength\":9,\"label\":\"\\\"ai:string\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"22\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGljLXN0cmluZy12YWx1ZQ==\",\"byteLength\":22,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:48:34.637Z\",\"text\":\"synthetic-string-value\"}}",
+        "本地接线夹具 DB1：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"state\":\"page\",\"error\":null,\"keys\":[{\"base64\":\"ZGIxOm9ubHk=\",\"byteLength\":8,\"label\":\"\\\"db1:only\\\"\"}],\"cursor\":null,\"sampledAt\":\"2026-10-19T08:49:25.638Z\",\"scanComplete\":true}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":2,\"db\":1,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"key\":{\"base64\":\"ZGIxOm9ubHk=\",\"byteLength\":8,\"label\":\"\\\"db1:only\\\"\"},\"value\":{\"state\":\"value\",\"error\":null,\"metadata\":{\"type\":\"string\",\"ttlMs\":\"-1\",\"length\":\"9\"},\"offset\":\"0\",\"base64\":\"c3ludGhldGlj\",\"byteLength\":9,\"prefix\":\"\",\"suffix\":\"\",\"complete\":true,\"nextOffset\":null,\"sampledAt\":\"2026-10-19T08:49:25.834Z\",\"text\":\"synthetic\"}}",
+        "本地接线夹具 DB0：\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":3,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}}}\n{\"readOnly\":true,\"connection\":{\"id\":\"b396a26e-db5b-4d43-94f1-e1471c5d334d\",\"generation\":3,\"db\":0,\"state\":\"connected\",\"error\":null,\"target\":{\"host\":\"127.0.0.1\",\"port\":5727,\"username\":\"\",\"tls\":false}},\"currentSelection\":null}"
+      ]
+    }
+  ]
+}
