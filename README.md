@@ -2,15 +2,48 @@
 
 English | [简体中文](README.zh.md)
 
-A community Redis viewer for the native right sidebar in **DeepSeek Harness (DSH)**. Browse six core Redis types and let the conversation read the connection you opened manually. All current data operations are read-only.
+A community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing into the same workspace as the conversation. Find a Key, select a row to inspect its details, then ask DSH about the current selection. It supports six core Redis types and reads through the connection opened manually in that conversation.
 
-**Status:** local development package `dsh-redis@0.1.0`. No public release or registry download is claimed. Verified against **DSH Web `0.2.0-rc.2` on Windows**; that Host version is a prerelease.
+**Read-only · Standalone Redis + TLS · Windows / DSH Web `0.2.0-rc.2` (prerelease)**
+
+[Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits)
 
 ![Hash table with same-screen field and value previews](docs/screenshots/hash-workbench-dark.jpg)
 
 *Recorded on 2026-10-19 in DSH Web `0.2.0-rc.2`, using isolated fixture data. This is an existing six-type viewer capture, not a new acceptance run for this documentation revision. [Screenshot provenance](docs/screenshots/README.md).*
 
+![Manually connect Redis, browse DB and Keys, inspect the selected row, then ask in the same DSH conversation](docs/screenshots/readme-flow.svg)
+
+## Install and update
+
+The current package is a local development build, `dsh-redis@0.1.0`. Use a verified built `.tgz`; there is no verified public download URL in this workspace.
+
+In DSH, choose **Plugins → Add plugin**, enter the archive's absolute path on the Host machine, install, then choose **Enable now**. Use the same profile that serves your DSH browser. Follow a requested Host restart when live reload is unavailable.
+
+To build the local archive from this checkout:
+
+```powershell
+pnpm install --frozen-lockfile
+pnpm pack --pack-destination .release
+```
+
+The default `prepack` runs strict type checking, a fresh build and the regression suite. See the [installation guide](docs/INSTALLATION.md) for SHA-named package and CLI commands, profile selection, update/rollback and uninstall. The verified plugin manager updates this bundle by uninstalling it and installing the new archive.
+
+## First use
+
+1. Open a DSH conversation, then select **Redis** in its right sidebar.
+2. Choose **Select or create connection**. Enter address, port and optional ACL credentials; expand TLS when needed. A name and optional group let you save non-password settings.
+3. Choose **Connect**. A new connection starts at DB 0 and loads Keys automatically in batches. Saving settings alone does not connect.
+4. Select the DB, folder and Key. Select a collection row to inspect it directly; change preview format, find or copy from its toolbar.
+5. Auto-refresh starts off, with a 5-second interval selected. Enable it with the refresh control. Key/DB/session changes, hiding the view, cancellation or a read failure stop it; showing the view again does not turn it back on automatically.
+6. In the same conversation, ask “Explain the selected field”. Ask explicitly when you want to switch DB; the sidebar follows the Host's new DB.
+
+Editing or saving a profile while connected does not change the active server. Disconnect, choose the intended settings and connect manually to change servers.
+
 ## Features
+
+<details>
+<summary>Full feature list and six-type views</summary>
 
 | Area | Available behavior |
 | --- | --- |
@@ -39,6 +72,8 @@ The compact Stream layout uses the same row-selection workflow:
 
 *Recorded on 2026-10-19 with isolated fixture data; the Redis sidebar is approximately 464 px wide. The surrounding DSH workspace is part of the native capture.*
 
+</details>
+
 ## Requirements
 
 - **Host:** DSH Web `0.2.0-rc.2`, with matching DSH peer packages declared in `package.json`.
@@ -47,32 +82,6 @@ The compact Stream layout uses the same row-selection workflow:
 - **Chat:** an available model configured in DSH and permission to use the plugin's tools. Sidebar browsing does not require a separate model API key.
 
 Desktop, macOS and Linux operation have not been verified. The declared Node.js range is broader than the versions actually tested.
-
-## Install and update
-
-Use a verified built `.tgz`, not a source-only archive. There is currently no verified public download URL in this workspace.
-
-In DSH, choose **Plugins → Add plugin**, enter the archive's absolute path on the Host machine, install, then choose **Enable now**. Use the same profile that serves your DSH browser. Follow a requested Host restart when live reload is unavailable.
-
-To build the local archive from this checkout:
-
-```powershell
-pnpm install --frozen-lockfile
-pnpm pack --pack-destination .release
-```
-
-The default `prepack` runs strict type checking, a fresh build and the regression suite. See the [installation guide](docs/INSTALLATION.md) for complete SHA-named package and CLI commands, profile selection, update/rollback and uninstall steps. The verified DSH plugin manager updates this bundle by uninstalling it and installing the new archive.
-
-## First use
-
-1. Open a DSH conversation, then select **Redis** in its right sidebar.
-2. Choose **Select or create connection**. Enter address, port and optional ACL credentials; expand TLS when needed. A name and optional group let you save non-password settings.
-3. Choose **Connect**. A new connection starts at DB 0 and loads Keys automatically in batches. Saving settings alone does not connect.
-4. Select the DB, folder and Key. Select a collection row to inspect it directly; change preview format, find or copy from its toolbar.
-5. Auto-refresh starts off, with a 5-second interval selected. Enable it with the refresh control. Key/DB/session changes, hiding the view, cancellation or a read failure stop it; showing the view again does not turn it back on automatically.
-6. In the same conversation, ask to read the current selection or search for a Key. Ask explicitly when you want to switch DB; the sidebar follows the Host's new DB.
-
-Editing or saving a profile while connected does not change the active server. Disconnect, choose the intended settings and connect manually to change servers.
 
 ## Conversation access
 
