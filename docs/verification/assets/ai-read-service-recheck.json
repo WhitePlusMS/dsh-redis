@@ -1,0 +1,42 @@
+{
+  "checkedAt": "2026-10-19T10:24:36.069Z",
+  "provider": "bzkj",
+  "model": "DeepSeek-V4-Flash",
+  "host": "10.1.210.21",
+  "port": "3200",
+  "probes": [
+    {
+      "via": "direct",
+      "exitCode": 28,
+      "statusLines": []
+    },
+    {
+      "via": "existing-local-proxy",
+      "exitCode": 0,
+      "statusLines": [
+        "HTTP/1.1 502 Bad Gateway"
+      ]
+    }
+  ],
+  "modelListConnectivity": {
+    "checkedAt": "2026-10-19T10:26:02.897Z",
+    "probe": "unauthenticated-model-list-connectivity",
+    "exitCode": 28,
+    "httpStatus": 0,
+    "connectSeconds": 0,
+    "startTransferSeconds": 5.010874,
+    "totalSeconds": 5.01088,
+    "responseBytes": 0
+  },
+  "sourceBoundComparison": {
+    "checkedAt": "2026-10-19T10:31:23.000Z",
+    "source": "bound-physical-address",
+    "exitCode": 28,
+    "httpStatus": 0,
+    "connectSeconds": 0,
+    "totalSeconds": 5.012216
+  },
+  "flClashOrSystemRouteChanged": false,
+  "flClashInvestigationStoppedByUser": true,
+  "inferenceTestedThisRun": false
+}
