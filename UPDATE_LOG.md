@@ -1739,3 +1739,5 @@
 - 实测本地tgz安装没有单独的版本预览页，改在安装后插件详情核对。README.md、README.zh.md、docs/INSTALLATION.md、docs/INSTALLATION.zh.md据此修正操作顺序；这是一处文档勘误，不重新打包、覆盖发布附件或移动v0.1.0。Release说明补充已验收状态和实际核对顺序。
 - 安装日志的peer警告经限定GPT-6 Luna源码事实及主代理复核：临时profile的pnpm静态检查缺少14个宿主共享peer，DSH运行时另有安装scope解析/浏览器共享模块机制。保留该观察，不为消除警告重复安装DSH/React；实际Host/Client加载成功，不把pnpm peers check记作通过。验收定位器两次歧义按真实DOM作用域处理，无产品补丁。
 - 报告docs/verification/release-v0.1.0-2026-10-20.md追加UI流程、peer提示、文档勘误和范围。所属Host54328、端口8343/8344均停止，临时home已清理；日常7198继续监听。修改原因是保存实际用户路径及验收结果，影响仅上述4份指南、报告与本文；接着检查文档、精确本地提交并同步main，保持发布tag与附件不变。
+- 小目标五提交fe39f4c并同步私有main成功；回读确认远端main与本地一致、0/0，工作树干净。Release仍已发布且private=true，两附件ID/大小/digest、源码tag解引用均未变；正式回下载包SHA仍95f18567。6份文档57处引用和双语命令一致性复查通过，运行源码/脚本/tests/manifest/锁文件/patch/图片相对86eb93b无变化，不重复产品测试。
+- 最后原生刷新GitHub Release，实际确认已加入CLI与界面验收状态、安装后版本核对勘误、完整报告链接；Release页保留供用户查看。收尾仅补报告及本文并本地提交、同步main，清除已停止夹具的私有控制指针；不移动tag，不替换成品包，不启动任何额外服务。
