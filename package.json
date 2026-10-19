@@ -104,6 +104,12 @@
     "cordis.patch.yml",
     "icon.svg",
     "README.md",
+    "README.zh.md",
+    "CHANGELOG.md",
+    "docs/INSTALLATION.md",
+    "docs/INSTALLATION.zh.md",
+    "docs/DEVELOPMENT.md",
+    "docs/screenshots",
     "LICENSE",
     "licenses",
     "THIRD_PARTY_NOTICES.md"
