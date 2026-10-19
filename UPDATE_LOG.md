@@ -1680,3 +1680,11 @@
 - 当前main检查点8b8b24e、工作树干净且无remote，新增origin为 `https://github.com/WhitePlusMS/dsh-redis.git`；不更改用户其他项目的远端或本地原型分支。仓库初始默认分支沿用账号设置，首次推送main后将新仓库默认分支设为main，便于首页直接展示当前README。
 - 本小目标只补本文并本地提交；下一步推送明确的main分支和其可达历史，不推其他分支、标签或未跟踪资料。随后核对远端提交、默认分支和私有状态，并打开中文版README确认动图/截图的实际GitHub显示；未把仓库创建当成已经推送。
 - 不修改运行代码、依赖、README正文、实际DSH或业务Redis，不启动项目服务，也不创建Release、注册表发布或社区投稿。
+
+## 2026-10-20：私有仓库首次推送与 GitHub README 实际查看
+
+- 首次明确推送main成功，Git返回new branch并建立origin/main上游；检查点为c9997cfc7e0f4a5f07eae4bf3c034db5dc808045。官方API核对同一分支提交，已将这个新仓库默认分支设为main；回读确认private=true。git ls-remote只显示main，未上传其他原型分支或标签，当时HEAD与origin/main为0/0。
+- 官方Contents API逐项对比README.md、README.zh.md、动画GIF、静态SVG、Hash/Stream原生截图与流程SVG共7个文件，远端blob SHA均与本地Git对象相同。保留本地开发包与预发布宿主事实，没有把私有源码上传描述成成品Release或公开市场发布。
+- 通过用户现有Chrome GitHub会话打开 `https://github.com/WhitePlusMS/dsh-redis/blob/main/README.zh.md`，原生页面确认中文版正文与预览视图；DOM核对4种正文图片全部加载，GIF为1200×280，两张原生截图1280×720，流程图1200×176。GitHub另含一个隐藏GIF副本，不重复计为素材。
+- 已保存1520×4225的原生完整页面截图，以及仅截取顶部、保留GitHub与仓库上下文的展示副本；实际文件与不含签名查询参数的图片检查记录均留在忽略目录 `.scratch/artifacts/readme-header-20261020/`。已人工查看顶部动图、中文介绍及原生Hash截图同屏效果，用户请求的Chrome标签已标记为交付保留；没有更改用户原有标签、登录资料或浏览器视口。
+- 本小目标仅更新本文，本地提交后继续按已授权推送main并核对最终远端SHA；不修改README正文、产品代码、依赖、运行配置或实际DSH，不启动服务、不连接业务Redis，不重复执行产品回归，也不创建Release、外发消息或社区投稿。
