@@ -1,4 +1,5 @@
 import { RedisDatabases } from './host/database-reader.ts'
+import { RedisAiReader } from './host/ai-reader.ts'
 import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
@@ -28,6 +29,7 @@ import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus 
 /** Typert supplies the trusted Agent; clients cannot select an arbitrary owner. */
 export class RedisRemoteService extends TypertRemoteService {
   private readonly connections = new RedisConnections()
+  readonly ai = new RedisAiReader(this.connections)
   private readonly databases = new RedisDatabases(this.connections)
   private readonly keys = new RedisKeys(this.connections)
   private readonly strings = new RedisStrings(this.connections)
@@ -40,11 +42,12 @@ export class RedisRemoteService extends TypertRemoteService {
   constructor(ctx: Context) {
     super(ctx, 'redisViewer')
     this.profiles = new RedisProfiles(ctx.profileContext.dir)
-    ctx.effect(() => () => { this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose(); this.connections.dispose(); }, 'redis connections')
-    ctx.on('session/disposed', session => { this.keys.disposeSession(session.id); this.hashes.disposeSession(session.id); this.sets.disposeSession(session.id); this.zsets.disposeSession(session.id); this.streams.disposeSession(session.id); this.connections.disposeSession(session.id); })
+    ctx.effect(() => () => { this.ai.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose(); this.connections.dispose(); }, 'redis connections')
+    ctx.on('session/disposed', session => { this.ai.disposeSession(session.id); this.keys.disposeSession(session.id); this.hashes.disposeSession(session.id); this.sets.disposeSession(session.id); this.zsets.disposeSession(session.id); this.streams.disposeSession(session.id); this.connections.disposeSession(session.id); })
   }
   async connect(agent: Agent, request: ConnectionRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
+    this.ai.disposeSession(agent.session.id)
     this.keys.disposeSession(agent.session.id)
     this.hashes.disposeSession(agent.session.id)
     this.sets.disposeSession(agent.session.id)
@@ -55,7 +58,7 @@ export class RedisRemoteService extends TypertRemoteService {
   async disconnect(agent: Agent, request: ConnectionTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     const view = this.connections.disconnect(agent.session.id, request)
-    if (view.state === 'disconnected') { this.keys.disposeSession(agent.session.id); this.hashes.disposeSession(agent.session.id); this.sets.disposeSession(agent.session.id); this.zsets.disposeSession(agent.session.id); this.streams.disposeSession(agent.session.id) }
+    if (view.state === 'disconnected') { this.ai.disposeSession(agent.session.id); this.keys.disposeSession(agent.session.id); this.hashes.disposeSession(agent.session.id); this.sets.disposeSession(agent.session.id); this.zsets.disposeSession(agent.session.id); this.streams.disposeSession(agent.session.id) }
     return view
   }
   async selectDatabase(agent: Agent, request: DatabaseTarget, signal: AbortSignal): Promise<ConnectionView> {
