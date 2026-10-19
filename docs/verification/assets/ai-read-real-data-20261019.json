@@ -1,0 +1,62 @@
+{
+  "observedAt": "2026-10-19T14:22:14.531Z",
+  "dataSource": "user-real-redis",
+  "provider": "deepseek-official",
+  "model": "deepseek-flash",
+  "packageSha256": "a23e3902105e1b7a9ebadaee373eb3db52ab74293c9cb74d32ab01252c7b4689",
+  "inventory": {
+    "observedAt": "2026-10-19T14:18:33.462Z",
+    "dataSource": "user-real-redis",
+    "db": 0,
+    "dbsizeBefore": 760,
+    "dbsizeAfter": 760,
+    "scannedUnique": 760,
+    "redisVersion": "8.10.0",
+    "typeCounts": {
+      "hash": 760
+    },
+    "commands": [
+      "INFO server",
+      "DBSIZE",
+      "SCAN",
+      "TYPE"
+    ],
+    "writesIssued": 0
+  },
+  "unconnectedSessionReported": true,
+  "connectedSessionReported": true,
+  "toolCalls": 7,
+  "toolResults": 7,
+  "toolErrors": 0,
+  "toolNames": [
+    "redis_viewer_status",
+    "redis_viewer_keys",
+    "redis_viewer_value"
+  ],
+  "scanPages": [
+    {
+      "returned": 1,
+      "scanComplete": false
+    },
+    {
+      "returned": 1,
+      "scanComplete": false
+    }
+  ],
+  "valueChecks": [
+    {
+      "kind": "explicit-hash-key",
+      "fields": 8,
+      "complete": true,
+      "rawBytesMatchLiveRedis": true
+    },
+    {
+      "kind": "current-hash-field",
+      "toolArgumentsEmpty": true,
+      "rawBytesMatchLiveRedis": true,
+      "fieldIdentityRecognized": true
+    }
+  ],
+  "writesIssuedByIndependentVerifier": 0,
+  "businessValuesSaved": false
+}
