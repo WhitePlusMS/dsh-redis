@@ -10,7 +10,7 @@ import { RedisZSets } from './zset-reader.ts'
 import { RedisStreams } from './stream-reader.ts'
 import { RedisSelectedReader } from './selected-reader.ts'
 import type { BytePrefix, DatabaseTarget, RedisSelection, SetSelectionRequest, SelectionAck } from '../domain.ts'
-import { scanKeysRequestSchema, stringReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
+import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 /** Keep model results useful without silently dropping a scan page's tail. */
 export const MAX_AI_RESULT_BYTES = 64 * 1024
@@ -91,6 +91,13 @@ export class RedisAiReader {
     const page = await this.keys.scan(sessionId, request, signal)
     this.connections.assertTarget(sessionId, target)
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), ...page, scanComplete: page.state === 'page' && page.cursor === null })
+  }
+  async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    const previous = this.target(sessionId), target = databaseTargetSchema.parse({ ...previous, db })
+    const connection = await this.connections.selectDatabase(sessionId, target, signal)
+    if (connection.generation !== previous.generation) this.disposeSession(sessionId)
+    return this.project(sessionId, { readOnly: true, connection })
   }
   async read(sessionId: string, args: AiValueRequest, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()

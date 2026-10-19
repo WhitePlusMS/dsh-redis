@@ -31,4 +31,9 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     output, timeoutMs: 15000,
     async execute(args, exec) { strict(args, ['key', 'keyBase64', 'cursor', 'offset', 'count', 'bytes', 'match', 'start', 'end', 'direction']); return reader.read(owner(exec), args, exec.signal) },
   }))
+  ctx.tools.register(defineTool({
+    name: 'redis_viewer_select_db', description: '仅在用户明确要求切换DB时使用：切换当前对话已连接Redis的数据库，并让侧栏同步。普通查询必须沿用当前DB，不能为了搜索自行切库；不会连接其他服务器或写入Redis数据。',
+    parameters: { db: { type: 'integer', required: true, description: '用户明确要求的DB编号，0到65535。' } }, output, timeoutMs: 15000,
+    async execute(args, exec) { strict(args, ['db']); return reader.selectDatabase(owner(exec), args.db, exec.signal) },
+  }))
 }

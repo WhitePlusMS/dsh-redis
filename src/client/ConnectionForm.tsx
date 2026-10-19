@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef, useState } from 'react'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ConnectionErrorCode, ConnectionRequest, ConnectionSettings, ConnectionTarget, ConnectionView } from '../domain.ts'
@@ -7,6 +7,8 @@ import { KeyBrowser, type KeyActions } from './KeyBrowser.tsx'
 import { ReadTime } from './ReadControls.tsx'
 import { Icon } from './Icon.tsx'
 import { NS } from './locales.ts'
+import { RefreshVisibility } from './AutoRefresh.tsx'
+import { ConnectionSync } from './connection-sync.ts'
 
 export interface ConnectionActions extends ProfileActions, KeyActions {
   readonly connect: (request: ConnectionRequest, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
@@ -30,6 +32,9 @@ export function ConnectionForm(props: Props) {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const sequence = useRef(0), active = useRef<AbortController | null>(null)
   const busy = operation !== null, connected = connection?.state === 'connected'
+  const visibility = useContext(RefreshVisibility), latest = useRef({ connection, busy })
+  const syncFailed = useRef(false)
+  latest.current = { connection, busy }
   function select(settings: ConnectionSettings | null): void {
     setHost(settings?.host ?? '127.0.0.1'); setPort(String(settings?.port ?? 6379)); setUsername(settings?.username ?? '')
     setTls(settings?.tls != null); setCaPem(settings?.tls?.caPem ?? ''); setPassword(''); setError(null)
@@ -66,6 +71,18 @@ export function ConnectionForm(props: Props) {
     void run('status', signal => props.connectionStatus(signal), true)
     return () => { ++sequence.current; active.current?.abort() }
   }, [props.connectionStatus])
+  useEffect(() => {
+    const sync = new ConnectionSync({
+      read: props.connectionStatus, current: () => latest.current.connection,
+      busy: () => latest.current.busy || active.current !== null,
+      visible: () => visibility?.visible !== false && !visibility?.signal.aborted && document.visibilityState === 'visible',
+      apply: acceptConnection, failed: () => { syncFailed.current = true; setError('rpc') },
+      healthy: () => { if (syncFailed.current) { syncFailed.current = false; setError(previous => previous === 'rpc' ? null : previous) } },
+    })
+    const changed = () => sync.visibilityChanged()
+    changed(); document.addEventListener('visibilitychange', changed); visibility?.signal.addEventListener('abort', changed)
+    return () => { sync.dispose(); document.removeEventListener('visibilitychange', changed); visibility?.signal.removeEventListener('abort', changed) }
+  }, [props.connectionStatus, visibility?.visible, visibility?.signal])
   const settings = (): ConnectionSettings => ({ host: host.trim(), port: Number(port), username, tls: tls ? { caPem: caPem.trim() } : null })
   function disconnectCurrent(): void {
     if (connection?.id == null) return

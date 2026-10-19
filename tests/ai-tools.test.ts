@@ -25,6 +25,7 @@ async function fixture() {
       const key = String(args[0]), bulk = (value: string) => Buffer.from(value)
       switch (command) {
         case 'TYPE': return types[key] ?? 'none'
+        case 'SELECT': return 'OK'
         case 'PTTL': return -1n
         case 'STRLEN': return key === 'large' ? 9000n : 5n
         case 'GETRANGE': return bulk(key === 'large' ? 'x'.repeat(9000) : 'hello').subarray(Number(args[1]), Number(args[2]) + 1)
@@ -71,7 +72,7 @@ function content(result: Awaited<ReturnType<ToolRuntime['execute']>>): string {
 describe('official Redis model tools', () => {
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_keys', 'redis_viewer_status', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_keys', 'redis_viewer_select_db', 'redis_viewer_status', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })
@@ -161,5 +162,21 @@ describe('official Redis model tools', () => {
     await expect(read).rejects.toThrow('选择已变化')
     expect(f.reader.setSelection('a', { target: { ...f.target, generation: f.target.generation + 1 }, selection: null })).toEqual({ accepted: false })
     expect(content(await f.call('redis_viewer_value', {}))).toContain('hello')
+  })
+  it('switches only through its dedicated tool, advances identity and clears old selection', async () => {
+    const f = await fixture(), selection = { keyBase64: Buffer.from('plain').toString('base64'), item: null }
+    f.reader.setSelection('a', { target: f.target, selection })
+    await f.call('redis_viewer_value', { key: 'plain' })
+    expect(f.commands).not.toContain('SELECT')
+    expect((await f.call('redis_viewer_select_db', { db: 0 })).isError).toBeFalsy()
+    expect(content(await f.call('redis_viewer_status', {}))).toContain('currentSelection":{"target"')
+    const selected = await f.call('redis_viewer_select_db', { db: 2 })
+    expect(selected.isError).toBeFalsy(); expect(f.connections.status('a').db).toBe(2)
+    expect(f.connections.status('a').generation).toBeGreaterThan(f.target.generation)
+    expect(content(await f.call('redis_viewer_status', {}))).toContain('"currentSelection":null')
+    expect((await f.call('redis_viewer_value', {})).isError).toBe(true)
+    for (const args of [{ db: -1 }, { db: 65536 }, { db: 1.5 }, {}, { db: 1, sessionId: 'other' }]) expect((await f.call('redis_viewer_select_db', args)).isError).toBe(true)
+    expect(f.commands.filter(command => command === 'SELECT')).toHaveLength(1)
+    expect(f.open).toHaveBeenCalledTimes(1)
   })
 })

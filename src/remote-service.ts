@@ -64,7 +64,9 @@ export class RedisRemoteService extends TypertRemoteService {
   }
   async selectDatabase(agent: Agent, request: DatabaseTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
-    return this.connections.selectDatabase(agent.session.id, request, signal)
+    const view = await this.connections.selectDatabase(agent.session.id, request, signal)
+    if (view.generation !== request.generation) this.ai.disposeSession(agent.session.id)
+    return view
   }
   async scanKeys(agent: Agent, request: ScanKeysRequest, signal: AbortSignal): Promise<ScanKeysResult> {
     return this.keys.scan(agent.session.id, request, signal)
