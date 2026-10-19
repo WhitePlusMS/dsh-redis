@@ -1719,3 +1719,10 @@
 - 从干净的86eb93b7b174ce7d8d04260e450d658c4ad52e8d执行默认pnpm pack；prepack完成Host/Client/tests严格类型、全新构建、21文件205项回归，全部通过。成品输出在忽略目录.release/v0.1.0，不跳过构建或检查钩子。
 - 归档为dsh-redis-0.1.0.tgz，408868字节，SHA256为95f18567132ee9d75c212a162b9c332a1ea422b06f1d16a2cd6660d4597245d7；生成同一文件的SHA256SUMS.txt。检查86个文件、62个lib入口、64处包内相对链接、许可及所有来源字节，manifest仅包含pnpm正常规范化差异。
 - 新增docs/verification/release-v0.1.0-2026-10-20.md记录本次结果和验收范围；本小目标只提交该报告与本文，不改变已打包文件。随后tag固定在已检查源码86eb93b，不将后续验收记录误称成品来源，也不移动tag；真实上传及安装结果待执行后追加。
+
+### 小目标三：发布私有Release并回下载核对
+
+- 已按授权推送main和附注tag v0.1.0；tag解引用固定86eb93b，未推送其他本地分支/标签。GitHub API在发布前后均核对仓库ID1425983719、WhitePlusMS/dsh-redis、private=true。
+- 创建Release草稿417629679，上传同一次核对的408868字节tgz和87字节SHA256SUMS.txt，检查两个附件的state/size/digest后正式发布。Release地址为https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0，北京时间2026-10-20 02:51:03；没有npm发布、市场投稿或可见性修改。
+- 从正式Release重新下载两附件，逐字节一致，下载的校验文件再次验证tgz通过。Git认证只在子进程内使用、不落盘；签名资源重定向不携带API Authorization。忽略目录仅存非凭据发布元数据及所需成品。
+- docs/verification/release-v0.1.0-2026-10-20.md追加真实标签、Release、附件与回下载证据；修改原因是区分已完成的发布与待执行的安装验收，影响仅报告与本文。本小目标本地提交后继续用正式下载附件验证CLI和原生界面。
