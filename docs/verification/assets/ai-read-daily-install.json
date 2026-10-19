@@ -1,0 +1,14 @@
+{
+  "verifiedAt": "2026-10-19T09:00:29.852Z",
+  "packageSha256": "a23e3902105e1b7a9ebadaee373eb3db52ab74293c9cb74d32ab01252c7b4689",
+  "installedPackageFiles": 73,
+  "libFiles": 62,
+  "hostPeers": 13,
+  "dependencies": 3,
+  "allPackageFilesMatch": true,
+  "appLibSameAsNativeCandidate": true,
+  "onlyRedisDependencyChanged": true,
+  "profileConfigUnchanged": true,
+  "originalReference": "file:E:/项目demo/dsh-redis/.scratch/artifacts/dsh-redis-slim-57e4d6a34e199a97c63e884596f88dc64b5cea10c11f480bed0aef4534cfac71.tgz",
+  "currentReference": "file:E:/项目demo/dsh-redis/.scratch/artifacts/dsh-redis-ai-final-a23e3902105e1b7a9ebadaee373eb3db52ab74293c9cb74d32ab01252c7b4689.tgz"
+}
