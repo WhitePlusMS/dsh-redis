@@ -1,6 +1,6 @@
 # 2026-10-20：定位、推广与 README 检查
 
-本轮按 product-marketing → oil-tone → beautify-github-readme → oil-cover Agent 自主模式执行。以下先记录文案与README范围，封面交付情况在对应小目标完成后补齐。
+本轮按 product-marketing → oil-tone → beautify-github-readme → oil-cover Agent 自主模式执行，下文记录定位、文案、README与封面的本地交付和验证范围。
 
 ## 定位与文案
 
@@ -29,3 +29,21 @@
 预览使用原生in-app browser与本地Markdown渲染，不冒称GitHub线上验收。检查文件位于忽略目录 `.scratch/artifacts/marketing-20261020/`，机器可读结果为 `readme-preview-checks.json`。浏览器临时视口覆盖已复位，所属预览页及服务已关闭，没有操作日常DSH标签页。
 
 本轮没有运行产品服务、真实Redis或真实模型，没有更改运行源码、依赖、锁文件或安装，也没有为文档修改重复执行既有205项产品回归。仅做本地文档与视觉检查，不发布或推送。
+
+## 封面交付
+
+复用已有隔离Hash截图与项目icon.svg。参考图先归档并查看，原图标仅原样栅格化为供内置工具参考的PNG；三份prompt在调用前写入[素材sidecar目录](../promotion/dsh-redis-demo.oil-cover/)。使用内置 `image_gen.imagegen`，每画幅独立调用一次，无外部服务Key、无头像、无返工或额外候选。
+
+| 画幅 | 本地文件 | 实际尺寸与检查 |
+| --- | --- | --- |
+| 3:4 | [竖版](../promotion/dsh-redis-demo_3x4.png) | 1086×1448，精确3:4 |
+| 4:3 | [横版主封面](../promotion/dsh-redis-demo_4x3.png) | 1448×1086，精确4:3 |
+| 16:9 | [横向伴随版](../promotion/dsh-redis-demo_16x9.png) | 1672×941，近似16:9；没有裁切凑比例 |
+
+三幅完整解码通过；最终图、保存的无人物底图及工具原始PNG逐字节一致。逐张人工核对标题“在 DSH 里 / 查看 Redis”、副标题“六种类型 · 只读查看”、项目图标、选中Hash行与同屏预览，无人物、写入、图表、性能或官方合作暗示。界面是工具重绘的推广视觉，不是产品原始截图或新增运行验收证据。
+
+原生浏览器并列预览的实际图片宽约298.7px，三幅主标题可辨识、图片完整加载。预览页已关闭、视口已复位、所属服务已停止；证据为忽略目录内 `cover-thumbnails.jpg` 与 `cover-thumbnail-checks.json`。没有对最终图进行本地贴字、贴Logo、拼贴、裁切或视觉修补。
+
+[素材索引](../promotion/README.md)、[方案与提示词入口](../promotion/dsh-redis-demo.oil-cover/cover_plan.md)、[生成与校验记录](../promotion/dsh-redis-demo.oil-cover/generation-record.json)均已保存。记录只保留实际工具返回字段名、MIME、源文件名和可验证文件数据，不伪造模型名，省略本机默认输出绝对路径。README仍只使用原生Hash/Stream截图与确定性流程示意。
+
+最终检查覆盖12份相关Markdown、90处本地链接，围栏和路径通过，无机器盘符绝对路径或明显凭据内容。三个成品、底图及源工具文件哈希一致，三份prompt齐全；源截图、项目SVG图标、运行源码、依赖与锁文件未变。双语README与PROMOTION的oil-tone检查、两份README图片/SVG审计再次通过。三个小目标分别本地Git提交，不推送、不发布。

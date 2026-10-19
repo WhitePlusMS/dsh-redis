@@ -1,0 +1,104 @@
+{
+  "mode": "agent-native",
+  "tool": "image_gen.imagegen",
+  "independentCalls": 3,
+  "transparentBackground": false,
+  "portraitEnabled": false,
+  "localVisualPostProcessing": false,
+  "references": [
+    {
+      "file": "../dsh-redis-demo.jpg",
+      "original": "docs/screenshots/hash-workbench-dark.jpg",
+      "sha256": "5bd936d66784375e88233fca38564f8819cf4b061a5d933c908889ec329cece3",
+      "role": "native-interface-isolated-fixture"
+    },
+    {
+      "file": "frames/dsh-redis-icon.png",
+      "original": "icon.svg",
+      "sha256": "ecd541996fda982e0392c03cb47dee79fba4cb56e393341ddd87f072826103be",
+      "role": "unchanged-vector-icon-rasterized-for-reference"
+    }
+  ],
+  "outputs": [
+    {
+      "format": "3x4",
+      "file": "../dsh-redis-demo_3x4.png",
+      "baseFile": "3x4.generated-base.png",
+      "prompt": "cover_3x4.prompt.md",
+      "width": 1086,
+      "height": 1448,
+      "bytes": 1577176,
+      "sha256": "94e32f08a5bed2be4004d5fde124ff8e3a9b4acd1ef5aa012fdb788369c1fa9f",
+      "requestedAspect": "3:4",
+      "exactAspect": true,
+      "actualToolReturn": {
+        "keys": [
+          "image_url",
+          "output_hint"
+        ],
+        "imageDataHeader": "data:image/png;base64,",
+        "sourceFilename": "exec-7acf24c8-a65c-45f5-9ece-5cad32f63265.png"
+      },
+      "copiedUnchanged": true
+    },
+    {
+      "format": "4x3",
+      "file": "../dsh-redis-demo_4x3.png",
+      "baseFile": "4x3.generated-base.png",
+      "prompt": "cover_4x3.prompt.md",
+      "width": 1448,
+      "height": 1086,
+      "bytes": 1714495,
+      "sha256": "aae533f7ac0600c4dcd0824ca275814e171b1154e50e7579bde7836039e00378",
+      "requestedAspect": "4:3",
+      "exactAspect": true,
+      "actualToolReturn": {
+        "keys": [
+          "image_url",
+          "output_hint"
+        ],
+        "imageDataHeader": "data:image/png;base64,",
+        "sourceFilename": "exec-88042abb-da78-439d-95b5-a181a12aaa26.png"
+      },
+      "copiedUnchanged": true
+    },
+    {
+      "format": "16x9",
+      "file": "../dsh-redis-demo_16x9.png",
+      "baseFile": "16x9.generated-base.png",
+      "prompt": "cover_16x9.prompt.md",
+      "width": 1672,
+      "height": 941,
+      "bytes": 1671743,
+      "sha256": "0164ae548f5a830817394ea23cd3434edac991835d1b2565a4fe5bd4f1f59eca",
+      "requestedAspect": "16:9",
+      "exactAspect": false,
+      "actualToolReturn": {
+        "keys": [
+          "image_url",
+          "output_hint"
+        ],
+        "imageDataHeader": "data:image/png;base64,",
+        "sourceFilename": "exec-d859a447-de00-4d30-9f73-01095a43073e.png"
+      },
+      "copiedUnchanged": true
+    }
+  ],
+  "recordScope": "Actual returned field names, image media header and source filenames are retained. Full machine-specific output_hint strings are kept only in the ignored local check directory. No internal model name or response fields are invented.",
+  "visualReview": {
+    "mainTitleMatches": true,
+    "subtitleMatches": true,
+    "personFree": true,
+    "existingIconRecognizable": true,
+    "selectedHashRowAndPreviewVisible": true,
+    "noWritesChartsOrOfficialEndorsement": true,
+    "generatedArtworkNotRuntimeEvidence": true,
+    "thumbnailTitleReadable": true,
+    "thumbnailRenderedWidths": [
+      298.6625061035156,
+      298.6625061035156,
+      298.6750183105469
+    ],
+    "nativeBrowserPreviewClosed": true
+  }
+}
