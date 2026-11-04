@@ -454,6 +454,30 @@ describe('official Redis model tools', () => {
     expect((await f.call('redis_viewer_keys', { match: 'order:*', cursor: first.cursor })).isError).toBeFalsy()
     expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBeFalsy()
   })
+  it('rejects lossy Key or MATCH text before any Redis read while preserving exact identities', async () => {
+    const f = await fixture()
+    expect((await f.call('redis_viewer_value', { key: 'fixture:\ud800' })).isError).toBe(true)
+    expect((await f.call('redis_viewer_value', { key: 'hash', match: '\ud800' })).isError).toBe(true)
+    expect(f.commands).toHaveLength(0)
+    const replacement = JSON.parse(content(await f.call('redis_viewer_value', { key: '�' })))
+    expect(replacement).toMatchObject({ key: { base64: '77+9' }, value: { state: 'missing' } })
+    const binary = JSON.parse(content(await f.call('redis_viewer_value', { keyBase64: 'AP8=' })))
+    expect(binary).toMatchObject({ key: { base64: 'AP8=' }, value: { state: 'missing' } })
+    expect(f.commands.filter(command => command === 'TYPE')).toHaveLength(2)
+  })
+  it('rejects range arguments for a selected field instead of silently ignoring them', async () => {
+    const f = await fixture()
+    const selection = { keyBase64: Buffer.from('hash').toString('base64'), item: { kind: 'hash' as const, fieldBase64: Buffer.from('first').toString('base64') } }
+    expect(f.reader.setSelection('a', { target: f.target, selection })).toEqual({ accepted: true })
+    for (const args of [{ offset: '1' }, { count: 1 }, { bytes: 1 }, { match: '*' }, { cursor: 'unknown' }, { start: '-' }, { end: '+' }, { direction: 'forward' }]) {
+      const result = await f.call('redis_viewer_value', args)
+      expect(result.isError).toBe(true)
+      expect(content(result)).toContain('不支持分页或范围参数')
+    }
+    expect(f.commands).toHaveLength(0)
+    expect((await f.call('redis_viewer_value', {})).isError).toBeFalsy()
+    expect(f.commands).toContain('HGET')
+  })
   it('continues a split Key page through the registered tool without losing identities', async () => {
     const keys = Array.from({ length: 180 }, (_value, index) => Buffer.from(String(index).padStart(4, '0') + 'x'.repeat(500)))
     const f = await fixture(undefined, async () => [Buffer.from('0'), keys])

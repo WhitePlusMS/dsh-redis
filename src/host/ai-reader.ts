@@ -37,6 +37,9 @@ function encodeIdentity(value: string): string {
   if (bytes.toString('utf8') !== value) throw new Error('文本包含无法无损编码的字符，请使用规范 Base64 身份。')
   return bytes.toString('base64')
 }
+function validateMatch(value: string): void {
+  if (Buffer.from(value, 'utf8').toString('utf8') !== value) throw new Error('MATCH 条件包含无法无损编码的字符，请修正条件。')
+}
 /** Missing and changed are read states, not transport errors. */
 const explainValue = (error: ConnectionErrorCode | null, data: unknown): string | null => {
   if (error !== null) return explain(error)
@@ -220,7 +223,7 @@ export class RedisAiReader {
   async scan(sessionId: string, args: { readonly match: string; readonly cursor?: string }, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
     signal.throwIfAborted()
     if (typeof args.match !== 'string') throw new Error('请明确提供 Redis MATCH 查询范围；只有用户要求查看整个当前数据库时才使用 *。')
-    encodeIdentity(args.match)
+    validateMatch(args.match)
     const target = this.target(sessionId)
     const request = scanKeysRequestSchema.parse({ target, pattern: args.match, cursor: args.cursor ?? null })
     const page = await this.keyPages.prepare(sessionId, target, request.pattern, request.cursor, signal)
@@ -232,7 +235,7 @@ export class RedisAiReader {
   async filterHash(sessionId: string, args: { readonly match: string; readonly field: string; readonly equals: string; readonly cursor?: string }, signal: AbortSignal, stage: (page: PreparedAiPage) => void): Promise<AiJson> {
     signal.throwIfAborted()
     const target = this.target(sessionId)
-    encodeIdentity(args.match)
+    validateMatch(args.match)
     const request = scanKeysRequestSchema.parse({ target, pattern: args.match, cursor: null })
     const fieldBase64 = encodeIdentity(args.field), expectedBase64 = encodeIdentity(args.equals)
     if (Buffer.byteLength(args.field, 'utf8') > 1024 || Buffer.byteLength(args.equals, 'utf8') > MAX_AI_VALUE_BYTES) throw new Error('筛选字段或目标值超过允许的字节数。')
@@ -457,6 +460,7 @@ export class RedisAiReader {
   }
   private async readValue(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void, validateSelection?: (allowFailed?: boolean) => void): Promise<AiJson> {
     signal.throwIfAborted()
+    if (args.match !== undefined) validateMatch(args.match)
     const target = this.target(sessionId)
     const hashSnapshot = this.hashPages.snapshot(sessionId)
     const setSnapshot = this.setPages.snapshot(sessionId)
@@ -465,6 +469,7 @@ export class RedisAiReader {
     const selected = args.key === undefined && args.keyBase64 === undefined ? this.selection(sessionId) : null
     if (selected !== null && selected.selection.item !== null) {
       if (isAiHashCursor(args.cursor ?? null) || isAiSetCursor(args.cursor ?? null) || isAiZSetCursor(args.cursor ?? null) || isAiStreamCursor(args.cursor ?? null)) throw new Error('侧栏选择已变化，请读取新的当前选择。')
+      if (args.cursor !== undefined || args.offset !== undefined || args.count !== undefined || args.bytes !== undefined || args.match !== undefined || args.start !== undefined || args.end !== undefined || args.direction !== undefined) throw new Error('当前选择是具体字段或行，不支持分页或范围参数；请去掉这些参数，或明确指定 Key 读取范围。')
       // Recheck before dispatch and after receipt, even if the UI has not yet
       // published its replacement selection to the Host.
       const read = await new RedisSelectedReader(this.connections).read(sessionId, target, selected.selection.keyBase64, selected.selection.item, signal, () => validateSelection?.())
@@ -475,7 +480,7 @@ export class RedisAiReader {
     }
     if (args.key === undefined && args.keyBase64 === undefined && selected === null) throw new Error('当前没有有效的侧栏选择，请选择 Key 或明确指定 key。')
     if (args.key !== undefined && args.keyBase64 !== undefined) throw new Error('key 与 keyBase64 只能指定其中一个。')
-    const keyBase64 = selected?.selection.keyBase64 ?? args.keyBase64 ?? Buffer.from(args.key ?? '', 'utf8').toString('base64')
+    const keyBase64 = selected?.selection.keyBase64 ?? args.keyBase64 ?? encodeIdentity(args.key ?? '')
     const common = { target, keyBase64 }, pattern = args.match ?? '*', cursor = args.cursor ?? null
     const offset = args.offset ?? '0', count = args.count ?? 25
     // The wrapped continuation bypasses type discovery, but must retain the
