@@ -1,17 +1,21 @@
-import { useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { DatabaseCatalog, RedisKey } from '../domain.ts'
 import { displayLabel } from './collection-value.ts'
 import { Icon } from './Icon.tsx'
 import { KEY_ROW_HEIGHT, KeyNamespaces, keyRowId, keyRowWindow, validSeparator, type KeyRow } from './key-namespaces.ts'
 import { NS } from './locales.ts'
+import { SelectionEpochContext } from './SelectionEpochContext.ts'
 
 type DatabaseRow = { readonly kind: 'database'; readonly id: string; readonly label: string; readonly db: number; readonly depth: number; readonly parentId: null }
 type NavigationRow = KeyRow | DatabaseRow
-type Props = { readonly databases: DatabaseCatalog | null; readonly db: number; readonly selectingDb: boolean; readonly selectDb: (db: number) => void; readonly keys: readonly RedisKey[]; readonly selected: RedisKey | null; readonly select: (key: RedisKey) => void; readonly t: TranslateNS<typeof NS> }
+type Props = { readonly databases: DatabaseCatalog | null; readonly db: number; readonly selectingDb: boolean; readonly selectDb: (db: number) => void; readonly keys: readonly RedisKey[]; readonly selected: RedisKey | null; readonly select: (key: RedisKey) => void; readonly located: boolean; readonly locateToken: string | null; readonly onLocated: (token: string) => void; readonly t: TranslateNS<typeof NS> }
 
 /** Presentation only: no remote actions, persisted values, cursors or automatic reads. */
-export function KeyCatalog({ keys, selected, select, t, databases, db, selectingDb, selectDb }: Props) {
+export function KeyCatalog({ keys, selected, select, t, databases, db, selectingDb, selectDb, located, locateToken, onLocated }: Props) {
+  const epoch = useContext(SelectionEpochContext)
+  const wheel = useRef<{ timer: ReturnType<typeof setTimeout> | undefined; end: (() => void) | undefined } | null>(null)
+  const drag = useRef<{ readonly pointerId: number; readonly end: (() => void) | undefined } | null>(null)
   const [tree, setTree] = useState(true)
   const [dbOpen, setDbOpen] = useState(true)
   const [separator, setSeparator] = useState(':')
@@ -22,9 +26,34 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
   const [focusId, setFocusId] = useState<string | null>(null)
   const [viewport, setViewport] = useState({ top: 0, height: 0 })
   const list = useRef<HTMLDivElement>(null)
+  const locatedKey = useRef<HTMLButtonElement>(null)
   const previousRows = useRef<readonly NavigationRow[]>([])
   const locate = useRef<string | null>(null)
   const domId = useId()
+  const endWheel = () => { const current = wheel.current; wheel.current = null; if (current !== null) { if (current.timer !== undefined) clearTimeout(current.timer); current.end?.() } }
+  const endDrag = () => { const current = drag.current; drag.current = null; current?.end?.() }
+  useEffect(() => {
+    const pointerEnded = (event: PointerEvent) => { if (drag.current?.pointerId === event.pointerId) endDrag() }
+    const hidden = () => { if (document.visibilityState !== 'visible') { endDrag(); endWheel() } }
+    window.addEventListener('pointerup', pointerEnded, true)
+    window.addEventListener('pointercancel', pointerEnded, true)
+    window.addEventListener('lostpointercapture', pointerEnded, true)
+    window.addEventListener('blur', endDrag)
+    document.addEventListener('visibilitychange', hidden)
+    return () => {
+      window.removeEventListener('pointerup', pointerEnded, true)
+      window.removeEventListener('pointercancel', pointerEnded, true)
+      window.removeEventListener('lostpointercapture', pointerEnded, true)
+      window.removeEventListener('blur', endDrag)
+      document.removeEventListener('visibilitychange', hidden)
+      endDrag(); endWheel()
+    }
+  }, [])
+  function userScroll(): void {
+    if (wheel.current === null) { epoch?.userSelect(); wheel.current = { timer: undefined, end: epoch?.beginBoundary(new AbortController().signal) } }
+    else if (wheel.current.timer !== undefined) clearTimeout(wheel.current.timer)
+    wheel.current.timer = setTimeout(endWheel, 150)
+  }
   const index = useMemo(() => new KeyNamespaces(separator), [separator])
   // appendKeys retains old object references; a refresh/replacement makes this index reset.
   const model = useMemo(() => { index.update(keys); return index }, [index, keys])
@@ -39,8 +68,8 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
     })
   }, [model, keys, expanded, tree, databases, db, dbOpen])
   const activeIndex = Math.max(0, rows.findIndex(row => row.id === focusId))
-  const window = keyRowWindow(rows.length, viewport.top, viewport.height)
-  const mounted = Array.from({ length: window.end - window.start }, (_, offset) => window.start + offset)
+  const rowWindow = keyRowWindow(rows.length, viewport.top, viewport.height)
+  const mounted = Array.from({ length: rowWindow.end - rowWindow.start }, (_, offset) => rowWindow.start + offset)
   // Retain at most one off-screen active row so aria-activedescendant always resolves.
   if (rows.length > 0 && !mounted.includes(activeIndex)) mounted.push(activeIndex)
 
@@ -72,6 +101,28 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
     setViewport({ top: element.scrollTop, height: element.clientHeight })
   }, [rows])
 
+  useLayoutEffect(() => {
+    if (locateToken === null || selected === null) return
+    const path = model.path(selected.base64)
+    const visible = (element: HTMLElement | null, container: HTMLElement | null): boolean => {
+      if (element === null || container === null || element.getClientRects().length === 0 || container.getClientRects().length === 0) return false
+      const row = element.getBoundingClientRect(), bounds = container.getBoundingClientRect()
+      return row.width > 0 && row.height > 0 && row.bottom > bounds.top && row.top < bounds.bottom && row.right > bounds.left && row.left < bounds.right
+    }
+    if (path === undefined) {
+      if (visible(locatedKey.current, locatedKey.current?.closest<HTMLElement>('.redis-key-catalog') ?? null)) onLocated(locateToken)
+      return
+    }
+    const id = keyRowId(selected.base64)
+    if (rows.some(row => row.id === id)) {
+      reveal(rows.findIndex(row => row.id === id))
+      const element = Array.from(list.current?.querySelectorAll<HTMLButtonElement>('[data-key-base64]') ?? []).find(node => node.dataset.keyBase64 === selected.base64) ?? null
+      if (visible(element, list.current)) onLocated(locateToken)
+      return
+    }
+    locate.current = id; setDbOpen(true); setExpanded(previous => new Set([...previous, ...path]))
+  }, [locateToken, selected?.base64, model, model.revision, rows, activeIndex, onLocated])
+
   function reveal(rowIndex: number): void {
     const element = list.current, row = rows[rowIndex]
     if (element === null || row === undefined) return
@@ -82,17 +133,19 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
     setViewport({ top: element.scrollTop, height: element.clientHeight })
   }
   function toggle(id: string): void {
+    epoch?.userSelect()
     setExpanded(previous => { const next = new Set(previous); if (next.has(id)) next.delete(id); else next.add(id); return next })
   }
   function activate(row: NavigationRow): void {
     setFocusId(row.id); list.current?.focus({ preventScroll: true })
-    if (row.kind === 'database') { if (row.db === db) setDbOpen(!dbOpen); else selectDb(row.db) }
+    if (row.kind === 'database') { epoch?.userSelect(); if (row.db === db) setDbOpen(!dbOpen); else selectDb(row.db) }
     else if (row.kind === 'namespace') toggle(row.id)
     else select(row.key)
   }
   function navigate(event: KeyboardEvent<HTMLDivElement>): void {
     const row = rows[activeIndex]
     if (row === undefined) return
+    if (['ArrowDown', 'ArrowUp', 'Home', 'End', 'PageDown', 'PageUp', 'ArrowRight', 'ArrowLeft', 'Enter', ' '].includes(event.key)) epoch?.userSelect()
     const step = Math.max(1, Math.floor(viewport.height / KEY_ROW_HEIGHT))
     switch (event.key) {
       case 'ArrowDown': reveal(Math.min(rows.length - 1, activeIndex + 1)); break
@@ -118,10 +171,11 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
 
   return <>
     <div className="redis-namespace-tools" role="group" aria-label={t('namespace.view')}>
-      <button type="button" className="redis-icon-button" title={t('namespace.tree')} aria-label={t('namespace.tree')} aria-pressed={tree} onClick={() => setTree(true)}><Icon name="tree" /></button>
-      <button type="button" className="redis-icon-button" title={t('namespace.list')} aria-label={t('namespace.list')} aria-pressed={!tree} onClick={() => setTree(false)}><Icon name="list" /></button>
+      <button type="button" className="redis-icon-button" title={t('namespace.tree')} aria-label={t('namespace.tree')} aria-pressed={tree} onClick={() => { epoch?.userSelect(); setTree(true) }}><Icon name="tree" /></button>
+      <button type="button" className="redis-icon-button" title={t('namespace.list')} aria-label={t('namespace.list')} aria-pressed={!tree} onClick={() => { epoch?.userSelect(); setTree(false) }}><Icon name="list" /></button>
       <button type="button" className="redis-icon-button" title={t('namespace.locate')} aria-label={t('namespace.locate')} disabled={selected === null || model.path(selected.base64) === undefined} onClick={() => {
         if (selected === null) return
+        epoch?.userSelect()
         setDbOpen(true)
         locate.current = keyRowId(selected.base64)
         setExpanded(previous => new Set([...previous, ...model.path(selected.base64) ?? []]))
@@ -133,6 +187,7 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
         <form onSubmit={event => {
           event.preventDefault()
           if (!validSeparator(draft)) { setSeparatorError(true); return }
+          epoch?.userSelect()
           setSeparatorError(false); setExpanded(new Set()); setSeparator(draft); setSettingsOpen(false)
         }}>
           <label>{t('namespace.separator')}<input name="namespaceSeparator" value={draft} maxLength={16} spellCheck={false} onChange={event => { setDraft(event.target.value); setSeparatorError(false) }} /></label>
@@ -140,7 +195,11 @@ export function KeyCatalog({ keys, selected, select, t, databases, db, selecting
         </form>
         {separatorError && <p role="alert" className="redis-error">{t('namespace.invalid')}</p>}
     </section>}
-    <div ref={list} className="redis-key-list" role="tree" aria-label={t(tree ? 'namespace.tree' : 'namespace.list')} tabIndex={0} aria-activedescendant={rows[activeIndex] === undefined ? undefined : `${domId}-${activeIndex}`} data-key-view={tree ? 'tree' : 'list'} data-row-count={rows.length} onKeyDown={navigate} onScroll={event => setViewport({ top: event.currentTarget.scrollTop, height: event.currentTarget.clientHeight })}>
+    {located && selected !== null && !keys.some(key => key.base64 === selected.base64) && <button ref={locatedKey} type="button" className="redis-chip" data-located-key={selected.base64} aria-pressed="true" onClick={() => select(selected)}>{t('keys.located')} · {displayLabel(selected.label)}</button>}
+    <div ref={list} className="redis-key-list" role="tree" aria-label={t(tree ? 'namespace.tree' : 'namespace.list')} tabIndex={0} aria-activedescendant={rows[activeIndex] === undefined ? undefined : `${domId}-${activeIndex}`} data-key-view={tree ? 'tree' : 'list'} data-row-count={rows.length} onKeyDown={navigate} onWheel={userScroll} onPointerDown={event => {
+      if (event.target !== event.currentTarget || event.button !== 0 || drag.current !== null) return
+      epoch?.userSelect(); drag.current = { pointerId: event.pointerId, end: epoch?.beginBoundary(new AbortController().signal) }
+    }} onScroll={event => setViewport({ top: event.currentTarget.scrollTop, height: event.currentTarget.clientHeight })}>
       {rows.length === 0 ? <p>{t('keys.empty')}</p> : <div className="redis-key-spacer" style={{ height: rows.length * KEY_ROW_HEIGHT }}>
         {mounted.map(rowIndex => {
           const row = rows[rowIndex]!

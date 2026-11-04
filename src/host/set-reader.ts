@@ -8,7 +8,7 @@ import { byteIdentity } from './byte-identity.ts'
 /** One SSCAN per action. A full member, not a display prefix, is its identity. */
 export class RedisSets {
   private readonly scans = new RedisScanCursors()
-  constructor(private readonly connections: RedisConnections) {}
+  constructor(private readonly connections: RedisConnections, private readonly retryCancelled = false) {}
   disposeSession(sessionId: string): void { this.scans.disposeSession(sessionId) }
   dispose(): void { this.scans.dispose() }
 
@@ -47,6 +47,11 @@ export class RedisSets {
       return { ...page, cursor: token }
     } catch (error) {
       const code = context.error(error)
+      // Only the AI reader retries a cancelled stateless cursor, and only
+      // while the same target and reader state remain current.
+      if (this.retryCancelled && signal.aborted && scan !== undefined) {
+        try { this.connections.assertTarget(sessionId, request.target); if (this.scans.restore(sessionId, scan, request.cursor)) scan = undefined } catch { /* target changed */ }
+      }
       return code === 'type-changed' ? result('changed') : result('failed', code)
     } finally {
       if (scan !== undefined) this.scans.discard(sessionId, scan)

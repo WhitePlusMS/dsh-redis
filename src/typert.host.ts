@@ -5,14 +5,17 @@ import { DSH_VERSION, PROTOCOL_VERSION, MAX_PROFILES } from './domain.ts'
 import { createRedisInvocation, TYPERT_PACKAGE, scanKeysRequestSchema, scanKeysResultSchema, stringReadRequestSchema, stringReadResultSchema, scanHashRequestSchema, scanHashResultSchema, listReadRequestSchema, listReadResultSchema, scanSetRequestSchema, scanSetResultSchema } from './typert.shared.ts'
 import { zsetReadRequestSchema, zsetReadResultSchema } from './typert.shared.ts'
 import { streamReadRequestSchema, streamReadResultSchema } from './typert.shared.ts'
-import { setSelectionRequestSchema, selectionAckSchema } from './typert.shared.ts'
+import { aiBudgetStatusSchema, aiBudgetResumeSchema } from './typert.shared.ts'
+import { createRedisUiStreamInvocation, uiChannelInputSchema, uiChannelMessageSchema } from './typert.shared.ts'
+import { actionPointReadRequestSchema, actionPointReadResultSchema } from './typert.shared.ts'
 
 const empty = z.object({}).strict()
 const error = z.enum(['auth', 'network', 'timeout', 'cancelled', 'stale', 'tls-certificate', 'tls-hostname', 'permission', 'oversize', 'protocol', 'busy', 'database', 'type-changed'])
 const host = z.string().min(1).max(253).regex(/^[^\s/\\@?#\0]+$/u)
 const address = z.object({ host, port: z.number().int().min(1).max(65535), username: z.string().max(256) }).strict()
-const target = address.extend({ tls: z.boolean() }).strict()
-const credentials = address.extend({ password: z.string().max(4096), tls: z.object({ caPem: z.string().max(65536) }).strict().nullable() }).strict()
+const environment = z.string().min(1).max(80).refine(value => value.trim() === value && !/[\u0000-\u001f\u007f]/u.test(value)).optional()
+const target = address.extend({ environment, tls: z.boolean() }).strict()
+const credentials = address.extend({ password: z.string().max(4096), environment, tls: z.object({ caPem: z.string().max(65536) }).strict().nullable() }).strict()
 const identity = z.object({ id: z.string().min(1).max(128), generation: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER) }).strict()
 const view = z.object({ id: z.string().max(128).nullable(), generation: z.number().int().min(0).max(Number.MAX_SAFE_INTEGER), db: z.number().int().min(0).max(65535), state: z.enum(['connecting', 'connected', 'disconnected', 'error']), error: error.nullable(), target: target.nullable() }).strict()
 const settings = credentials.omit({ password: true }).strict()
@@ -29,6 +32,8 @@ const stringRead = z.object({ target: databaseTarget, keyBase64: z.string().max(
 const stringValue = z.object({ state: z.enum(['value', 'missing', 'unsupported', 'changed', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), offset: z.string().max(19), base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), prefix: z.string().max(4), suffix: z.string().max(4), complete: z.boolean(), nextOffset: z.string().max(19).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => stringReadResultSchema.parse(value))
 const hashScan = z.object({ target: databaseTarget, keyBase64: z.string().max(87384), pattern: z.string().max(256), cursor: z.string().max(36).nullable() }).strict().transform(value => scanHashRequestSchema.parse(value))
 const bytePrefix = z.object({ base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), fullByteLength: z.number().int().min(0).max(1048576), suffix: z.string().max(4) }).strict()
+const actionPointValue = z.object({ state: z.enum(['value', 'selection-missing', 'missing', 'changed', 'failed']), error: error.nullable(), cell: bytePrefix.nullable(), score: z.string().max(128).nullable(), streamMessage: z.object({ id: z.string().max(41), fields: z.array(z.object({ field: z.object({ base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), label: z.string().max(1024) }).strict(), value: bytePrefix }).strict()).min(1).max(4096) }).strict().nullable(), sampledAt: z.string().max(24) }).strict().transform(value => actionPointReadResultSchema.parse(value))
+const actionPointRead = z.object({ requestId: z.string().max(36) }).strict().transform(value => actionPointReadRequestSchema.parse(value))
 const hashPage = z.object({ state: z.enum(['page', 'missing', 'unsupported', 'changed', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), entries: z.array(z.object({ field: z.object({ base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), label: z.string().max(1024) }).strict(), value: z.object({ base64: z.string().max(87384), byteLength: z.number().int().min(0).max(65536), fullByteLength: z.number().int().min(0).max(1048576), suffix: z.string().max(4) }).strict() }).strict()).max(4096), cursor: z.string().max(36).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => scanHashResultSchema.parse(value))
 const listRead = z.object({ target: databaseTarget, keyBase64: z.string().max(87384), offset: z.string().max(19), count: z.number().int().min(1).max(100) }).strict().transform(value => listReadRequestSchema.parse(value))
 const listPage = z.object({ state: z.enum(['page', 'missing', 'unsupported', 'changed', 'failed']), error: error.nullable(), metadata: z.object({ type: z.string().max(128), ttlMs: z.string().max(19), length: z.string().max(19).nullable() }).strict().nullable(), entries: z.array(z.object({ index: z.string().max(19), value: bytePrefix }).strict()).max(100), offset: z.string().max(19), nextOffset: z.string().max(19).nullable(), sampledAt: z.string().max(24) }).strict().transform(value => listReadResultSchema.parse(value))
@@ -60,12 +65,15 @@ export const redisHostDescriptors = [
   createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scan, scanned, z.string().min(1)),
   createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringRead, stringValue, z.string().min(1)),
   createRedisInvocation('scanHash', 'ScanHashRequest', 'ScanHashResult', hashScan, hashPage, z.string().min(1)),
+  createRedisInvocation('readActionPoint', 'ActionPointReadRequest', 'ActionPointReadResult', actionPointRead, actionPointValue, z.string().min(1)),
   createRedisInvocation('readList', 'ListReadRequest', 'ListReadResult', listRead, listPage, z.string().min(1)),
   createRedisInvocation('scanSet', 'ScanSetRequest', 'ScanSetResult', setScan, setPage, z.string().min(1)),
   createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetRead, zsetPage, z.string().min(1)),
   createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamRead, streamPage, z.string().min(1)),
   createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesRead, databasesValue, z.string().min(1)),
-  createRedisInvocation('setSelection', 'SetSelectionRequest', 'SelectionAck', z.unknown().transform(value => setSelectionRequestSchema.parse(value)), z.unknown().transform(value => selectionAckSchema.parse(value)), z.string().min(1)),
+  createRedisInvocation('aiBudgetStatus', 'EmptyRequest', 'AiBudgetStatus', empty, z.unknown().transform(value => aiBudgetStatusSchema.parse(value)), z.string().min(1)),
+  createRedisInvocation('resumeAiBudget', 'EmptyRequest', 'AiBudgetResume', empty, z.unknown().transform(value => aiBudgetResumeSchema.parse(value)), z.string().min(1)),
+  createRedisUiStreamInvocation(empty, z.unknown().transform(value => uiChannelMessageSchema.parse(value)), z.unknown().transform(value => uiChannelInputSchema.parse(value)), z.string().min(1)),
 ] as const
 export const TYPERT = { package: TYPERT_PACKAGE, face: 'host', schemas: [], invocations: redisHostDescriptors, model: { services: [], events: [], objects: [] } }
 export default TYPERT

@@ -27,6 +27,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-plugin-info-toggle { margin-left:auto; }
 .dsh-redis .redis-plugin-info { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:6px 9px; border-bottom:1px solid var(--dsw-alias-border-l2); font-size:10px; color:var(--dsw-alias-label-secondary); flex-shrink:0; }
 .dsh-redis .redis-connection-indicator { display:flex; align-items:center; gap:4px; }
+.dsh-redis .redis-chip.redis-environment { display:block; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dsh-redis .redis-connection-indicator.redis-connected { color:var(--redis-accent); }
 .dsh-redis .redis-empty, .dsh-redis .redis-connect-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; padding:16px; min-height:0; text-align:center; }
 .dsh-redis .redis-empty { flex:1; }
@@ -72,7 +73,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-primary-button { background:var(--redis-accent); border-color:var(--redis-accent); color:var(--dsw-alias-bg-base); font-weight:600; }
 .dsh-redis .redis-primary-button:hover { background:color-mix(in srgb,var(--redis-accent) 88%,var(--dsw-alias-label-primary)); }
 .dsh-redis .redis-connection-notice { display:flex; flex-direction:column; align-items:flex-start; gap:7px; padding:10px 12px; border-left:2px solid var(--redis-accent); background:var(--redis-selected); border-radius:0 5px 5px 0; }
-.dsh-redis .redis-connection-notice strong { font-size:11px; font-weight:500; }
+.dsh-redis .redis-connection-notice strong { max-width:100%; overflow-wrap:anywhere; font-size:11px; font-weight:500; }
 @media (max-width:600px) { .dsh-redis .redis-connection-layout { grid-template-columns:minmax(0,1fr); padding:14px; gap:14px; } .dsh-redis .redis-connection-layout .redis-profiles { border-right:0; border-bottom:1px solid var(--dsw-alias-border-l2); padding:0 0 14px; } }
 .dsh-redis fieldset { padding:0; margin:0; border:0; display:flex; flex-direction:column; gap:10px; min-width:0; }
 .dsh-redis label { display:flex; flex-direction:column; gap:4px; min-width:0; font-size:11px; color:var(--dsw-alias-label-secondary); }
@@ -107,6 +108,7 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-key-list [aria-selected=true] { background:var(--redis-selected); }
 .dsh-redis .redis-key-list:focus-visible [data-active=true] { outline:1px solid var(--dsw-alias-label-primary); outline-offset:-1px; }
 .dsh-redis .redis-key-detail { display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
+.dsh-redis .redis-key-view { flex:1; display:flex; flex-direction:column; min-height:0; min-width:0; overflow:hidden; }
 .dsh-redis .redis-keys[data-focused=true] { grid-template-columns:minmax(0,1fr); }
 .dsh-redis .redis-keys[data-focused=true] .redis-key-catalog { display:none; }
 .dsh-redis .redis-focus-button { margin-left:auto; flex-shrink:0; }

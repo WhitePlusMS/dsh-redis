@@ -19,12 +19,11 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
   const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
+  const aiBudgetStatus = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } }))
+  const resumeAiBudget = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { accepted: true, status: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } } }))
+  const stream = { send: vi.fn(), end: vi.fn(), dispose: vi.fn(), async *[Symbol.asyncIterator]() {} }
+  const openUiChannel = vi.fn(() => stream)
   const mount = vi.fn(async (_contribution: TypertRemoteContribution) => unmount).mockRejectedValueOnce(new Error('Host not ready'))
-  let releaseSelection: (() => void) | undefined
-  const setSelection = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => {
-    if (setSelection.mock.calls.length === 1) await new Promise<void>(resolve => { releaseSelection = resolve })
-    return { ok: true as const, value: { accepted: true } }
-  })
   function register(id: string): () => void {
     if (contributions.has(id)) throw new Error('Duplicate contribution: ' + id)
     contributions.add(id)
@@ -52,12 +51,13 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
     },
     locale: { register: () => register('locale'), bind: () => (key: string) => key },
     sidebarRightTabs: { register: (tab: { id: string }) => register(tab.id) },
+    sidebarRight: { mounted: { getSnapshot: () => undefined, subscribe: () => () => undefined } },
     slots: {
       inject: (_name: string, enter: () => unknown) => enter(),
       register: (entry: SlotEntry) => { slot = entry; return register('slot:' + entry.key) },
     },
     remote: { $mount: mount },
-    get: () => ({ status, setSelection }),
+    get: (key: string) => key === 'connection' ? { generation: { getSnapshot: () => undefined, subscribe: () => () => undefined } } : ({ status, aiBudgetStatus, resumeAiBudget, openUiChannel }),
   } as unknown as Context
   client.apply(context)
   if (slot === undefined) throw new Error('Missing sidebar body')
@@ -68,7 +68,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   // Inspect the actual emitted browser contribution, not only TS source schemas.
   // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
   const descriptors = mount.mock.calls[1]?.[0].descriptors
-  expect(descriptors).toHaveLength(17)
+  expect(descriptors).toHaveLength(20)
   for (const descriptor of descriptors ?? []) {
     const codec = descriptor.result
     if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)
@@ -83,15 +83,12 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')
   expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')
-  const target = { id: 'fixture', generation: 1, db: 0 }, selection = { keyBase64: 'aw==', item: null }
-  const first = api.setSelection({ target, selection }, new AbortController().signal)
-  await vi.waitFor(() => expect(setSelection).toHaveBeenCalledTimes(1))
-  const second = api.setSelection({ target, selection: null }, new AbortController().signal)
-  await Promise.resolve(); expect(setSelection).toHaveBeenCalledTimes(1)
-  if (releaseSelection === undefined) throw new Error('Selection did not start')
-  releaseSelection(); await Promise.all([first, second])
-  expect(setSelection.mock.calls.map(call => call[0])).toEqual(['trusted-session', 'trusted-session'])
-  expect(setSelection.mock.calls[1]?.[1]).toEqual({ target, selection: null })
+  await api.aiBudgetStatus(new AbortController().signal)
+  await other.resumeAiBudget(new AbortController().signal)
+  expect(aiBudgetStatus.mock.calls[0]?.slice(0, 2)).toEqual(['trusted-session', {}])
+  expect(resumeAiBudget.mock.calls[0]?.slice(0, 2)).toEqual(['another-session', {}])
+  const releasePane = api.registerVisiblePane(); releasePane()
+  expect(descriptors?.some(descriptor => descriptor.method === 'setSelection')).toBe(false)
   expect(importNames.every(name => !name.startsWith('node:'))).toBe(true)
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   expect(unmount).toHaveBeenCalledTimes(1)

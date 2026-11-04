@@ -1742,12 +1742,877 @@
 - 小目标五提交fe39f4c并同步私有main成功；回读确认远端main与本地一致、0/0，工作树干净。Release仍已发布且private=true，两附件ID/大小/digest、源码tag解引用均未变；正式回下载包SHA仍95f18567。6份文档57处引用和双语命令一致性复查通过，运行源码/脚本/tests/manifest/锁文件/patch/图片相对86eb93b无变化，不重复产品测试。
 - 最后原生刷新GitHub Release，实际确认已加入CLI与界面验收状态、安装后版本核对勘误、完整报告链接；Release页保留供用户查看。收尾仅补报告及本文并本地提交、同步main，清除已停止夹具的私有控制指针；不移动tag，不替换成品包，不启动任何额外服务。
 
+## 2026-10-28：DSH AI 原生能力只读实施规划
+
+- 用户要求将已讨论的顺序写为完整本地实施方案和任务清单，本轮先不改代码，后续优先做不写入 Redis 的内容。当前源码基线为 `7be8f4a7c1ded2ba1cb47196ed6025a5039c0689`；写文档前工作树干净，插件 `0.1.0`、宿主及 SDK `0.2.0-rc.2`。
+- 新增 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md`，明确由 DSH 自带 AI 调用插件工具，人工和 AI 共用 Host 能力；逐阶段描述范围、当前基线、调用分层、结果和预算、界面回执、已有连接管理、诊断、拓扑扩展、专业类型与验证要求。修改原因是把泛化的客户端路线收敛为可实施的 DSH 插件能力，避免另造模型或业务工作流。
+- 新增 `docs/DSH_AI_READONLY_TASKS.md`，登记 33 项待开始任务，每项包含交付、源码候选范围和验收条件，总表列明直接依赖；单列 5 项 Redis 写入暂缓任务。实际非写入顺序为第 1→2→4→5→6 阶段，第 3 阶段不作为后续依赖。旧 29 票与历史验收不改写、不冒充新范围完成。
+- 只读边界包含连接/断开、SELECT、界面状态及用户明确请求的本地偏好/报告保存；排除改值、TTL 修改、删除、Stream 消费推进、服务器配置修改、任意命令和脚本。写入确认框架也暂不建设。环境、模块和组合模式须分别验证，不因命令叫“查询”就认定无副作用。
+- 源码复核确认正式访问使用自建 TCP/TLS RESP2 transport，不能把现有 redis npm 依赖当作已经支持 Cluster/Sentinel。方案将正式连接库/架构选择放在独立前置任务，宿主 API 也须按固定版本核验，不自动升级或改日常环境。
+- 本轮影响仅上述两份新 Markdown 与本日志；未修改运行源码、测试、脚本、manifest、锁文件、现有功能文档和发布物，未连接 Redis、调用真实模型、启停服务、安装插件或提交推送。接下来回读文档，检查任务数量/依赖、链接、写入暂缓边界、差异与 UTF-8；纯文档变更不执行会生成构建产物的产品编译和回归。
+- 文档校验通过：33 个 RO 条目与总表一一对应且均待开始，5 个 W 条目均暂缓；直接依赖有效且无循环/悬空引用，20 处本地链接有效，UTF-8 无替换字符、代码围栏成对。历史日志前缀与 HEAD 原文一致，`git diff --check` 通过；最终修改范围核对为两份新文档及本日志。以上仅为文档检查，不代表代码功能、Redis、原生 DSH 或模型回归通过。
+
+## 2026-10-28：启动只读能力实施
+
+- 修改 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：根据用户授权启动实施；将各连接模式的技术前置统一指向公共契约，允许已满足前置条件的专业读取独立推进，并保留最终全范围验收依赖。原因是避免无关环境缺失阻塞；推荐阶段顺序与写入暂缓边界保持不变。
+- 修正 RO03 对无选择且无显式目标的失败条件；RO05 补充连续预算的归属、累计、重置和继续规则；说明 Redis 数据作为工具结果可能进入 DSH 与模型链路，真实业务数据须先明确范围。以上为实施约束澄清，尚未改变运行代码或连接 Redis。
+- 新增 `docs/verification/readonly-ro01-contract-2026-10-28.md`，记录本机 CLI、项目 SDK、固定上游 tag、现有工具/会话/取消/RPC、Client 侧栏打开接口和现有选择确认的边界；将任务清单 RO01 标记进行中。原因是为后续实现提供可核验契约，避免混淆 Client API 与 Host 调用；运行中的 DSH 实例和界面动作回执仍待验证，不能标完成。本次 `pnpm typecheck` 和 `git diff --check` 通过；没有操作用户 Redis。
+- 更新 RO01 核验记录和任务清单总述：沙箱内 Vitest 为 193 项通过、12 项回环连接 `EACCES`；随后允许本机回环后重跑传输专项，12 项通过。两次结果分别记录，不称完整 `pnpm check` 通过；Docker 命令不在 PATH，真实 Redis/DSH 界面和模型验收尚未执行。原因是保留可核验的测试及环境边界；未连接用户 Redis、未更改运行代码。
+- 在 `docs/verification/readonly-ro01-contract-2026-10-28.md` 追加隔离 WSL Redis 8.2.6 实测：随机端口上合成 Key 扫描、跨会话拒绝和值不变通过，fixture 已停止并移除；使用既有 `lib`，不代表重新构建验收。执行 `dsh web --help` 曾意外尝试写日常 `profiles/web/cordis.yml`，沙箱 `EPERM` 拒绝，进程退出且未启动服务；后续仅用明确隔离的 DSH_HOME/DSH_AGENTS_HOME。原因是完整记录测试、资源归属与意外操作边界；用户现有 Redis 未连接。
+- 校正同一核验记录中 Docker 夹具与 WSL Redis 夹具的表述，避免将 Docker 未运行误写成所有隔离 Redis 均未运行；不影响代码或测试数据。
+- 追加隔离代理测试异常记录：第二次 WSL fixture 提示其 Redis 未在规定时间内退出，未取得有效命令顺序结果；复查该次进程号不存在且该次端口无监听，在确认目录真实路径、父目录及 UUID 后仅移除本次 fixture 目录。原因待排查，本次验证未通过；未连接或关闭用户 Redis，未清理历史 fixture。
+- 追加隔离 DSH Web 启动尝试：仅使用新建空工作目录、独立 DSH_HOME/DSH_AGENTS_HOME 和精简环境；测试脚本未获得启动及退出可靠回执，进程查询未发现符合该次命令的 DSH/Node 进程，核对路径及无重解析点后移除该次临时目录。原因是记录运行实例核验缺口；不能将此尝试记为通过，用户当前 DSH Web 地址仍待确认。
+- 更新 `docs/verification/readonly-ro01-contract-2026-10-28.md`：用户确认日常 DSH 未启动；以独立空目录、随机回环端口及精简环境启动隔离 DSH Web，观察到 ready 后结束本次进程树并清理专属目录。此证据仅覆盖宿主启动，尚未加载 Redis 插件或验证原生界面、真实模型。另一次只读检查运行 `dsh --profile web --help` 再次触及默认 profile，沙箱 `EPERM` 拒绝；未启动服务，后续禁止无隔离环境的 profile 命令。
+- 更新 RO01 契约报告与任务清单：核对实际启动入口及其 `dsh-app-boot` 均为 0.2.0-rc.2，结合固定版官方接口源码和隔离 Host ready 证据，将 RO01 标为完成并启动 RO02。原因是完成宿主基线及接口证据归档；原生 Client、插件加载和真实模型仍须后续单独验收，不因 RO01 完成而宣称通过。
+- 修改 `tests/redis-transport.test.ts`：让现有模拟回环服务支持合成密码，并新增 AUTH、PING、SELECT、SCAN 顺序测试。原因是区分建连认证、显式切库和数据查询，验证只读传输实际发出的命令；测试仅连接自身随机端口，不改变运行时代码或访问用户 Redis。`pnpm typecheck` 通过；提升本机回环访问权限后，传输专项 13 项通过。
+- 修改 `src/host/connection-service.ts` 和 `tests/key-browser.test.ts`：普通读取路径在运行时拒绝 SELECT，并验证拒绝时不会向 transport 发命令或改变会话状态，正常专用切库仍递增代次。原因是 TypeScript 的排除类型不约束无类型调用，若绕过会使服务器实际 DB 与会话记录不一致；不改变常规读取和专用切库接口。`pnpm check` 完整构建和 21 文件、207 项测试通过；旧 `lib` 已备份至 `.scratch/runtime/ro02-lib-backup-4b0049e7-d5bb-470c-9583-054d341cec50`。
+- 补强 `tests/redis-transport.test.ts` 的模拟认证、切库和扫描参数断言，原因是仅验证命令名称不足以发现错误参数；`pnpm typecheck` 与 13 项传输专项通过，测试使用合成数据和自有本机端口，不单独代表真实 Redis 命令跟踪。
+- 新增 `docs/verification/readonly-ro02-boundary-2026-10-28.md` 并将任务清单 RO02 标为完成：新构建产物使用独立 Redis 8.2.6 和代理验证 AUTH、PING、SELECT、SCAN 轨迹与合成值不变，fixture 已停止并移除。报告明确 transport 的命令白名单、少数命令精确验参及其他命令由 reader/schema 限制的区别；未连接用户 Redis，原生 DSH 插件和真实模型留待后续验收。
+- 开始 RO03：修改 `src/host/ai-reader.ts`、`src/host/ai-tools.ts` 和 `tests/ai-tools.test.ts`，为状态/切库结果增加状态采样时间、切库请求目标，为 Key 扫描回显实际 pattern，为值读取标识显式目标或侧栏选择，并同步工具说明与专项测试。原因是让模型区分请求与实际连接、当前数据与旧选择；复用现有连接、reader 和分页 DTO，不改变 Redis 命令。任务清单 RO03 标记进行中，检查结果随后记录。
+- 补充 `tests/ai-tools.test.ts`：验证官方工具渲染包含显式目标来源，并模拟切库权限拒绝，核对请求 DB 与实际 DB 分开返回；原因是避免失败被解释为成功。首轮 `pnpm typecheck` 及 14 项 AI 工具专项通过，本次新增断言待复测。
+- 改进同一测试的拒绝场景：通过注册的 `redis_viewer_select_db` 工具和模拟 Redis `NOPERM` 响应验证错误映射、请求 DB 与实际 DB，不直接替换连接服务。原因是覆盖完整工具路径；修改前 15 项 AI 专项及类型检查通过，本次修改后继续检查。
+- 修改 `src/host/connection-service.ts`、`src/host/ai-reader.ts`、`src/remote-service.ts` 和 `tests/ai-tools.test.ts`：共享连接视图校验，AI 与界面切库结果过期时不清理替换连接的选择；新增两条入口的可控并发回归。原因是旧切库返回的 stale 结果可能携带新连接代次，原逻辑会误清新选择；不新增 Redis 命令或跨会话访问。检查结果随后记录。
+- 修复 `tests/ai-tools.test.ts` 的测试夹具类型：首次类型检查报私有字段交叉类型被归约为 `never`，改为先创建实例形状再用 `Reflect.set` 注入模拟依赖；原因是让测试可在严格 TypeScript 下执行，不影响生产代码。
+- 独立复核发现仅比较连接视图字段仍不能区分新旧连接恰好返回相同权限错误的情况；修改 `src/host/connection-service.ts`，原连接记录已被替换时明确返回 stale，且 stale 视图不视为当前视图；在 `tests/ai-tools.test.ts` 为 AI 和界面入口分别补充两次切库均被拒绝的并发回归。原因是保护新连接的选择和错误状态；上一版完整构建与 211 项测试通过，新修改需重新验证。
+- 进一步复核发现切库成功后、返回调用方之前，同一新 DB 已产生的选择也可能被延迟清理。重新调整 `src/host/connection-service.ts`、`src/host/ai-reader.ts`、`src/remote-service.ts`：在切库同步递增代次时通过回调清理旧状态，不在异步完成后清理整会话；保留过期结果检查。`tests/ai-tools.test.ts` 增加 AI 和界面入口的新 DB 选择交错测试；原因是清理必须与启动的切库操作绑定，不得覆盖新状态。修改前类型检查通过，本次修改后继续检查。
+- 完整梳理切库生命周期后，修改 `src/host/connection-service.ts`：错误处理核对原连接记录、操作代次及当前状态，迟到结果不能覆盖断开或重连；若传输故障已由 onFailure 登记，则保留真实错误。`tests/key-browser.test.ts` 覆盖断开后迟到成功、权限拒绝和取消；`tests/connection-service.test.ts` 覆盖在途网络故障。原因是单靠连接记录身份无法区分同一记录被主动断开；上一版 `pnpm check` 为 21 文件、215 项通过，本次需重新验证。
+- 新增 `docs/verification/readonly-ro03-ai-results-2026-10-28.md` 并将任务清单 RO03 标为完成：独立复核未发现新的可复现阻断问题；最终 `pnpm check` 构建及 21 文件、219 项测试通过。新构建产物经隔离 Redis 8.2.6、合成数据和正式工具注册完成四工具调用，观察到限定命令且数据未变，fixture 已停止并移除。此次无真实模型对话、原生界面或用户 Redis 验收。
+- 开始 RO04：修改 `src/domain.ts`、`src/typert.shared.ts`、`src/host/connection-service.ts`、`src/client/ConnectionForm.tsx`、`src/client/locales.ts` 和任务清单，增加可选环境标签并随连接建立时复制到实际连接状态；界面从真实连接显示标签，未填写显示未知环境，资料可保存用户填写的标签。RPC 协议版本升为 3，以同步 Host/Client 契约；原因是避免当前草稿或其他资料被误显示为当前服务器环境。标签为空是正常未指定状态，未删除或重写用户资料；类型、测试和界面验收随后进行。
+- 同步 `src/typert.host.ts` 的 Host Zod 校验，并更新 `tests/host-typert.test.ts`、`tests/profile-store.test.ts`、`tests/connection-service.test.ts` 和 `docs/DEVELOPMENT.md`；原因是 Host 与浏览器共享协议必须一致，同时验证标签约束、资料持久化、实际连接快照与协议版本。前一版类型检查通过，本次继续检查并进行原生界面验收。
+- 修改 `src/client/ConnectionForm.tsx` 和 `src/client/styles.ts`：连接状态条限制环境标签宽度并保留完整 title，连接提示允许长标签折行。原因是避免窄侧栏中长标签挤出其他状态控件；标签仍取实际连接快照。此前类型检查及 28 项协议、资料、连接专项测试通过，当前样式仍需真实浏览器验收。
+- 新增 `src/connection-errors.ts` 并更新 `src/client/locales.ts`、`src/host/ai-reader.ts` 和 `tests/ai-tools.test.ts`，让界面中英文和 AI 中文错误解释共用固定错误码文案；AI 按连接、扫描或读取的实际错误返回说明，保留原错误码。原因是避免界面与 AI 对相同错误解释不一致，不回显服务器原始错误或凭据；检查随后记录。
+- 修改 `tsconfig.client.json` 将共享错误文案文件纳入客户端工程。原因是首次类型检查报 TS6307，客户端 composite 工程要求显式列出共享源文件；继续重新编译和测试。
+- 扩展 `tests/ai-tools.test.ts`，验证 Key 扫描及值读取被拒绝时 AI 与界面使用相同说明且不回显 Redis 原始错误。原因是统一错误说明必须覆盖读取路径而不仅是切库；修复工程配置后类型检查及 49 项相关专项测试通过，本次修改后继续检查。
+- 独立复核发现同一连接在读取中发生网络故障时，AI 返回前的目标检查可能把真实错误误报为 stale；修改 `src/host/connection-service.ts` 和 `src/host/ai-reader.ts`，仅允许同一连接、同一代次和 DB 的对应失败结果返回，替换目标仍拒绝；已失败连接再次读取时说明实际错误。`tests/ai-tools.test.ts` 增加扫描、显式值与选中项三种网络故障回归。调整 `src/client/styles.ts` 的环境标签选择器优先级，以确保省略号规则生效。原因是准确区分故障与旧目标；本次修改后继续检查。
+- 在 `tests/ai-tools.test.ts` 补充读取故障后立即重连的交错测试；原因是证明保留同连接错误时不会放行替换连接的旧结果。修改前类型检查和 AI 专项 25 项通过，本次修改后继续检查。
+
+### 2026-10-28：真实 DSH Web 与 Redis 只读验收进展
+
+- 文件与原因：本条追加至 `UPDATE_LOG.md`，记录 RO04 的连接环境标识、统一错误提示及真实界面检查，供后续继续实施和复核。
+- 构建与测试：`pnpm check` 通过，21 个测试文件、226 项测试通过；`pnpm pack` 的预打包检查在允许本机随机测试端口的环境中再次通过。默认沙箱下的首次打包因本机测试端口 `EACCES` 失败，未将该失败当作代码回归；隔离依赖缓存缺失后从 npm 官方仓库安装到了项目内临时 profile。
+- 实际验收：在 `.scratch/runtime/dsh-readonly-web-20261028` 独立 DSH home 安装本轮构建包，启动绑定本机回环地址的 DSH Web；日志确认 Redis Host 注册，真实侧栏可打开，连接本机 `127.0.0.1:6379` 成功，DB 0 显示已加载 760 个 Key，并只读打开一个 Hash（8 个字段）。无标签连接显示“未知环境”；更改连接表单中的草稿标签后当前连接标识保持不变。
+- 影响与边界：真实 Redis 仅用于连接、扫描和查看，未进行业务数据修改；本次未验证真实模型调用。DSH 使用隔离配置和离线占位模型设置，不覆盖日常 profile。任务结束前关闭本轮启动的 DSH；用户已有 Redis 保持运行。
+- 其他：一次只读探查尝试在未隔离的 DSH profile 上调用 help/list，CLI 先尝试写锁而被系统拒绝，未成功修改该 profile；后续操作均使用隔离 home。
+
+### 2026-10-28：RO05 会话读取预算基础模块
+
+- 初步接入 `src/host/ai-reader.ts`、`ai-tools.ts`、`remote-service.ts`：四工具共享可信会话预算，读取失败和取消计次；切库、重连和断开清目标而不重置预算。侧栏恢复 RPC 和专项回归仍在接入。
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/typert.host.ts`、`src/typert.remote-client.ts`、`src/remote-service.ts`：增加会话预算状态和恢复的严格 RPC；协议升级到 4，开发说明同步为 19 个方法。恢复请求不接受外部会话标识。
+- 修改 `src/client/index.ts`、`src/client/RedisWorkspace.tsx`、`src/client/locales.ts`：在侧栏按需查看预算，并通过手动按钮恢复已耗尽预算；在途读取未结束时不能恢复。UI 与真实模型验收仍待执行。
+- 修改 `tests/ai-tools.test.ts`、`tests/host-typert.test.ts`、`tests/client-bundle.test.ts`：验证跨工具预算、会话隔离、切库不重置、人工恢复和严格 RPC 接线；测试结果以本次实际执行记录为准。
+- 已通过当前源码的类型检查、客户端构建及上述专项 47 项；继续补充真实注册的四工具与断开重连、在途取消测试。`docs/DEVELOPMENT.md` 明确计次范围仅为通过 DSH 宿主参数校验后进入执行的调用，避免把宿主拒绝的无效参数误计为已执行。
+- 补充验证：四工具混合累计、实际 RemoteService 断开重连、切库及准入后取消均加入测试；再次执行 `pnpm typecheck`、`pnpm build` 和预算、工具、Host 协议、客户端 bundle 专项，共 47 项通过。未运行 DSH 或访问 Redis；真实原生界面和模型验收、分页批尾处理仍待后续。
+- 修改 `src/host/ai-reader.ts`、`src/client/RedisWorkspace.tsx`：预算耗尽时提示展开面板、刷新状态后继续；其他面板已恢复时，按照 Host 返回的最新状态展示，不误报恢复失败。`tests/ai-tools.test.ts` 与 `tests/ai-budget.test.ts` 增加提示和双面板回执测试。
+- 本次修正后 `pnpm typecheck` 通过，`pnpm exec vitest run tests/ai-budget.test.ts tests/ai-tools.test.ts` 共 37 项通过；尚待新构建的原生界面验收。
+- RO05 Key 尾批准备：新增 `src/host/ai-key-pages.ts`，按真实完整 JSON 的 64 KiB 上限切分受限扫描页；`src/host/scan-cursors.ts`、`key-reader.ts` 在当前目标和当前扫描仍有效时允许取消后重试原 Key 游标。此时尚未接入 AI 工具，后续继续完成事务和专项测试。
+- `src/host/ai-reader.ts`、`ai-tools.ts` 将 Key 尾批接入注册工具：使用会话、目标和匹配条件绑定的一次性 AI 令牌，预算计费及取消/目标复核后才提交批尾位置；不清除其他数据类型游标。专项验证尚在执行，其他类型和整体 RO05 仍未完成。
+- `src/host/ai-reader.ts` 不再在任何单项 AI 超限时清理所有类型游标；新增 `tests/ai-key-pages.test.ts` 覆盖大批次分段、令牌重放和绑定、取消后重试以及单 Key 超限。测试结果随后记录。
+- 首轮类型检查与相关测试 58 项通过；继续补充后续尾批取消、切库时旧结果、并发新旧扫描和其他类型超限不影响 Key 游标的交错测试。
+- 补充类型检查和专项 62 项通过；继续增加通过正式工具注册的多段读取，以及空页令牌在预算暂停与手动恢复后保持有效的测试。
+- 独立审阅发现底层游标推进后、上层保存批次前取消的交错风险；`tests/ai-key-pages.test.ts` 增加确定性回归以复现。该子项仍待修正和复核，不将既有 64 项通过解释为该竞态已通过。
+- 针对复现的取消交错，`src/host/ai-key-pages.ts` 在检查迟到取消前保存已成功取回的批次；`src/host/ai-budget.ts` 和 `ai-reader.ts` 将尾批提交及字节结算放在同一同步步骤，提交失败仍计调用但不计未返回的字节。新增专项覆盖。提交结果后若宿主或网络丢失回执，当前机制不能确认模型是否收到，也不能保证该情形自动重放；不得将其视为已解决。
+- 修正后 `pnpm typecheck` 与 Key 批尾、工具、Key reader、预算四项专项共 66 项通过，包含先失败再通过的取消交错和失败结果不计字节测试；独立审阅与完整构建尚待主任务执行。
+- Hash AI 批尾准备：新增 `src/host/ai-hash-pages.ts` 和可复用值预览 `ai-value.ts`，以完整字段为单位保留尾批；`src/host/hash-reader.ts` 仅在 AI 显式启用时支持安全取消重试。模块尚未接入调用，类型检查和专项测试随后执行；Set、ZSet、Stream 未改。
+- `src/host/ai-reader.ts` 与 `ai-tools.ts` 接入 Hash 尾批事务；使用独立前缀区分 Hash 续读令牌，在读取和提交时验证会话、连接、Key、匹配条件及当前选择。共享原有 AI 值预览实现；其他类型批尾未改变。专项测试尚待执行。
+- 新增 `tests/ai-hash-pages.test.ts`，使用合成 transport 和正式工具注册检查大 Hash 分段、令牌绑定、取消重试、选择变化与单字段超限；未访问用户 Redis。验证结果随后记录。
+- 首轮 Hash 与关联回归 73 项通过；继续补充 Hash 尾批取消、空页预算恢复、切 DB 和新旧请求交错、其他 Key 游标独立性的测试。
+- 补充测试首次运行有 1 项失败：测试错误地假设 100 个字段只需两段，实际上由于完整 JSON 预算需要更多段；测试已改为跟随令牌直到结束后再核对全部字段。待复验。
+- Hash 批尾及相关回归复验：`pnpm typecheck` 通过，Hash 批尾、AI 工具、Key 批尾、原 Hash reader 和预算专项五个文件共 77 项通过；包含实际 Key 令牌在 Hash 超限后继续、取消交错和旧目标结果拒绝。测试使用合成 transport；真实 Redis、原生 DSH 和真实模型未在该子项验收。工具结果提交后网络丢失回执仍不能自动确认或重放；Set、ZSet、Stream 和 List 的批尾未实现，RO05 整体未完成。
+- RO05 Set AI 批尾：新增 `src/host/ai-set-pages.ts`，按完整成员身份及实际 JSON 字节分段；修改 `set-reader.ts` 和 `ai-reader.ts`，仅 AI Set reader 在安全条件下支持取消后重试，Set 专用令牌在探测前识别并绑定会话、目标、Key、匹配条件和选中项。ZSet、Stream、List 批尾仍未实现；专项验证随后执行。
+- 新增 `tests/ai-set-pages.test.ts`，以合成 transport 验证 Set 分段、会话/目标/筛选绑定、取消、预算恢复、新旧并发、超限及 Key/Hash 游标隔离；包含正式工具注册调用。类型检查和 Set 基线回归随后执行。
+- Set 首轮专项中新增 9 项通过、关联工具回归有 1 项因超限错误缺少“预算”提示而失败；`src/host/ai-set-pages.ts` 已补充清晰文案，随后复验。尚未进行共享事务迁移。
+- Set 基线复验：`pnpm typecheck` 通过，Key/Hash/Set 批尾、原 reader、工具和预算七个专项共 101 项通过。新增 `src/host/ai-page-store.ts` 和独立事务测试，提取强类型的状态、分段和提交规则；目前尚未替换任何现有分页实现。
+- 隔离真实 TCP 与正式工具核验（主任务执行）：合成数据中 Key 140 个分 3 次、Hash 140 个字段分 6 次完整读回，单结果均不超过 64 KiB；临时 Redis 已由夹具关闭。这不是实际模型对话。
+- `src/host/ai-key-pages.ts` 和 `ai-reader.ts` 将 Key 分页迁入共享事务，保留独立状态、原 UUID 令牌及预算提交行为；原取消和并发回归随后重跑。
+- Key 迁移后类型检查与四文件 60 项专项通过；`src/host/ai-hash-pages.ts` 现迁入同一内部事务，同时保留独立 store、h: 令牌、完整字段和原有结果语义，Hash 专项随后重跑。
+- Hash 迁移后类型检查与五文件 71 项专项通过；`src/host/ai-set-pages.ts` 现迁入同一内部事务，继续使用独立 store 和 s: 令牌，保留完整成员身份与超限说明。三类联合回归随后执行。
+- 三类迁移后 `pnpm typecheck` 及分页事务、Key/Hash/Set 批尾、原 reader、工具和预算九文件联合测试 120 项通过。ZSet、Stream、List 不在此次重构中；共享事务仍需独立审阅和完整构建。工具结果提交后的回执丢失不能确认或自动重放。
+- 独立复核发现 Hash/Set 续读绕过首读公共参数校验；`src/host/ai-reader.ts` 将既有校验前移到包装令牌处理之前，并复用已校验的探测请求。`tests/ai-hash-pages.test.ts`、`tests/ai-set-pages.test.ts` 验证非法字节数及偏移被拒绝，且原有效令牌仍可续读；修改后检查待执行。
+- 复验结果：`pnpm typecheck` 通过，分页事务、三类批尾、工具、原 reader 和预算九文件共 122 项通过；非法参数没有触发新的模拟 Redis 命令。实际模型对话、其他类型批尾以及响应回执丢失仍未验收。
+- RO05 ZSet 扫描批尾：新增 `src/host/ai-zset-pages.ts`，使用独立共享事务实例和 z: 令牌保留完整成员及分数原文；`zset-reader.ts` 仅 AI 扫描支持安全取消重试，`ai-reader.ts` 在切换排名读取时同步失效该会话的扫描尾批。类型检查与专项测试随后执行；排名模式分页、List 和 Stream 批尾未改变。
+- 主任务隔离真实 TCP Set 核验：140 个合成成员由实际注册 AI 工具分 3 次完整读回，每次不超过 64 KiB；夹具实例已关闭，未执行真实模型对话。
+- 新增 `tests/ai-zset-pages.test.ts`，使用合成 transport 验证扫描分段、成员/分数、绑定、取消、排名模式隔离及其他类型游标；包含正式工具注册。类型与测试结果随后记录。
+- 首次 ZSet 专项有一项测试超时：夹具将下一次正常响应排在取消模拟之前，导致等待条件不触发；已调整测试响应队列，需重新验证，不能将首次测试算作通过。
+- 调整夹具后类型检查与八文件 97 项通过。进一步发现无效排名请求先清扫描尾批，`src/host/ai-reader.ts` 已改为先校验排名参数，再执行模式切换；补充非法参数不消耗令牌、空页预算恢复和新旧扫描并发测试，待复验。
+- ZSet 扫描批尾复验：`pnpm typecheck` 通过，ZSet 批尾及原 reader、AI 工具、Key/Hash/Set、分页事务和预算八文件共 100 项通过；含无效排名参数保留令牌、真实工具注册、成员身份和分数原文、取消/切目标及跨类型隔离。使用合成 transport，尚待真实 Redis/原生 DSH/真实模型验证；ZSet 排名、List 和 Stream 的大页批尾未实现，网络回执丢失仍无法自动确认。
+
+- 新增 `src/host/ai-budget.ts`：按可信会话身份累计 AI 调用次数与结果字节；每个并发请求先预留完整单次结果额度，失败或取消也消耗已准入的调用次数。达到上限后只有无在途请求时才能由受信用户动作恢复；会话释放使旧额度凭据失效。
+- 新增 `tests/ai-budget.test.ts`：覆盖并发预留、累计字节、失败/取消计数、会话隔离、旧凭据、恢复及非法输入。
+- 影响：本模块尚未接入 AI 工具或侧栏，不改变现有 Redis 读取行为；RO05 整体仍在实施和验收中。类型检查和专项测试在修改后执行。
+
+### 2026-10-28：补齐 AI 的 Key 状态说明
+
+- 修改 `src/connection-errors.ts`、`src/client/locales.ts` 和 `src/host/ai-reader.ts`：共享 Key 消失和读取中发生变化的中英文说明，使 AI 的显式读取和选中项读取与界面表达一致，不改变底层状态码或 Redis 命令。
+- 修改 `tests/ai-tools.test.ts`：覆盖不存在、读取中内容变化及选中项类型变化的工具结果与界面说明一致；验证结果以实际执行为准。
+- 补充修正：`src/host/ai-reader.ts` 识别初次探测与具体类型读取之间的类型变化，避免误报不支持；共享文案不推测变化发生的时刻。`tests/ai-tools.test.ts` 增加 Hash 变为 List 的交错场景。此前完整检查为 227 项通过，本次补充后的检查另行记录。
+- 重新核对选中项入口后，修改 `src/host/selected-reader.ts`：已选 List 或 Stream 的实际类型不匹配时统一返回 `changed`，保留缺失与失败状态；相应工具测试覆盖两种类型。前一版完整检查 227 项通过，本次修改后继续检查。
+
+### 2026-10-28：预算面板的真实 DSH 初步验收
+
+- 更新 `docs/DSH_AI_READONLY_TASKS.md`：RO05 标记为进行中，记录已完成的会话预算和仍待完成的超限批尾、真实模型验收，避免将部分结果误标完成。
+- 当前构建经 `pnpm pack` 默认预打包检查通过，并离线安装到项目隔离 DSH profile；实际 DSH Web 的 Redis 侧栏显示 AI 读取预算 `0/32` 次、`0/1048576` 字节，手动刷新可用。再次只读连接本机 Redis，DB 0 显示已加载 760 个 Key，普通浏览保持可用。
+- 保存另一条隔离测试连接资料后，已连接的服务器和标签保持不变。此验证未覆盖预算耗尽后的原生界面恢复，也未调用真实模型；所有 Redis 操作为读取，日常 DSH profile 未安装本次包。
+
+- 验证结果：本模块新增后 pnpm typecheck 通过，pnpm exec vitest run tests/ai-budget.test.ts 7 项通过；未启动服务或访问 Redis。
+
+### 2026-10-28：Key 批尾全量检查
+
+- `src/host/ai-key-pages.ts`、`src/host/ai-reader.ts`、`src/host/ai-budget.ts`、`src/host/key-reader.ts` 与游标相关修改：为 AI Key 扫描保留受限批尾，确保继续读取先交付已接收的尾部，并在取消、目标变化和并发新扫描时保护游标及预算记账。
+- `tests/ai-key-pages.test.ts` 和关联测试覆盖单项过大、令牌、取消及迟到交错；独立审阅发现并复现的两处取消/记账问题已修复并复测。
+- 本次 `pnpm check` 通过，23 个测试文件、251 项测试通过。此结果为本机测试，宿主提交后丢失响应无法保证重放；其他类型的批尾、真实模型对话及最终原生验证仍未完成。
+
+### 2026-10-28：ZSet 并发与参数回归复现
+
+- `tests/ai-zset-pages.test.ts`：新增模拟测试，复现旧排名探测迟到、探测返回时取消及扫描与排名参数混用，检查有效扫描令牌不被误消费；不访问 Redis。
+- `src/host/ai-reader.ts`、`src/host/ai-zset-pages.ts`、`src/host/ai-page-store.ts`：只对校验通过的 ZSet 操作登记会话顺序，防止旧排名请求清理新扫描；扫描拒绝混用排名参数，取消与无效令牌不能登记或清游标。共享分页器的登记钩子仅用于 ZSet，其他类型保留既有行为。
+- `src/host/ai-tools.ts`：工具说明明确 ZSet 扫描不能同时传排名参数；`tests/ai-zset-pages.test.ts` 补充无效请求、其他类型与排名执行中被新扫描取代的交错回归。
+- 验证：新增复现测试初次为 3 失败、10 通过；修复后 `pnpm typecheck` 通过，Key/Hash/Set/ZSet 分页、预算和工具共 6 个测试文件 87 项通过。均使用模拟连接；未启动 DSH 或访问 Redis。结果提交后若传输丢失，不能保证响应重放。
+
+### 2026-10-28：ZSet 排名与扫描独立性
+
+- `tests/ai-zset-pages.test.ts`：调整并新增模拟回归，要求成功、取消和迟到的排名请求不会清除扫描令牌，也不因另一个模式的读取而失败。
+- `src/host/ai-reader.ts`、`src/host/ai-zset-pages.ts`、`src/host/ai-page-store.ts`：为 ZSet 排名使用独立读取器，移除跨模式顺序及共享分页器专用钩子；排名不再清理 ZSet 扫描令牌，取消及失败不破坏扫描；扫描参数、目标与选择校验和预算提交保护保持有效。
+- `tests/ai-zset-pages.test.ts`：补充扫描进行中取消后迟到的排名请求与原扫描令牌仍可使用，以及排名读取失败不影响扫描的交错测试。
+- 验证：新模式测试在修改前复现 4 失败、12 通过；修复后 `pnpm typecheck` 通过，分页、预算和工具共 6 个测试文件 90 项通过。测试使用模拟连接，未启动 DSH 或访问 Redis；结果提交后丢失响应仍无法保证重放。
+
+### 2026-10-28：迟到类型探测的分页回归
+
+- `tests/ai-hash-pages.test.ts`、`tests/ai-set-pages.test.ts`、`tests/ai-zset-pages.test.ts`：以模拟连接构造旧类型探测迟到、较新令牌已经提交的交错，验证旧操作不得使新令牌失效；本步骤只添加回归测试，未改实现。
+- 验证：`pnpm typecheck` 通过；上述三个测试文件共 3 项新增失败、40 项通过，三项均复现较新令牌续读时返回 stale。结果表明问题尚未修复，测试使用模拟连接，未访问 Redis。
+- 主任务此前隔离真实 TCP 验证：140 个合成 ZSet 成员及整数分数经正式注册 AI 工具分 3 次完整读回，各次结果不超过 64 KiB；临时 Redis 夹具已关闭，不代表真实模型对话。
+- `src/host/ai-page-coordinator.ts` 与 `tests/ai-page-coordinator.test.ts`：新增独立双槽事务协调器和单元测试，候选页在预算提交时替换当前槽；失败/取消不替换，同类型在途互斥，提交版本用于识别迟到探测。尚未接入生产读取器。
+- `src/host/ai-reader.ts`、`src/host/ai-hash-pages.ts`：先为 Hash 接入独立候选槽，类型探测前读取无副作用版本快照，槽清理包括对应底层 reader；Set 和 ZSet 暂未接入。
+- 修正 Hash 快照声明位置，使其属于值读取而非 Key 扫描，解决类型检查发现的未使用及未定义错误。
+- `tests/ai-hash-pages.test.ts`：按新约定验证同类型在途时明确 busy、提交后可重新开始；迟到探测被拒绝后不再预置错误的额外模拟扫描页。
+- `tests/ai-hash-pages.test.ts`：补充真实当前 Hash 令牌与新首读取消、成功替换的模拟组合，核验旧令牌不被未提交候选清除。
+- `src/host/ai-reader.ts`、`src/host/ai-set-pages.ts`、`tests/ai-set-pages.test.ts`：Set 使用同一双槽协调器、独立 reader 和提交版本；同步更新在途冲突与迟到探测模拟预期。
+- `tests/ai-set-pages.test.ts`：补充 Set 新首读取消后继续使用原令牌的组合回归。
+- `src/host/ai-reader.ts`、`src/host/ai-zset-pages.ts`、`tests/ai-zset-pages.test.ts`：ZSet 扫描接入独立双槽和提交版本，排名 reader 继续与扫描独立；调整在途冲突与迟到探测模拟。
+- `tests/ai-zset-pages.test.ts`：补充新首扫取消后原令牌继续，以及无效令牌、Hash/Set 操作不使等待中的 ZSet 探测失效。
+- 验证：三个迟到探测复现已转绿；逐步接入后 `pnpm typecheck` 通过，协调器、四种分页、预算及工具共 7 个测试文件 101 项通过。测试均为模拟连接，未启动 DSH 或访问 Redis。此项仍需独立复核，提交后的响应传输丢失不保证重放。
+
+### 2026-10-28：空分页协调状态清理
+
+- `tests/ai-page-coordinator.test.ts`：添加会话销毁后旧探测失败及无效令牌不留下空会话状态的复现测试，使用内存夹具，不访问 Redis。
+- `src/host/ai-page-coordinator.ts`：无效续读及旧快照不创建空状态；候选失败、回滚或无结果提交后仅在操作身份匹配且无当前槽、无已提交版本时删除空状态，保留有效令牌与版本记录。
+- `tests/ai-page-coordinator.test.ts`：补充旧异步请求失败晚于新会话提交的交错，验证旧清理不会移除新状态。
+- 验证：先复现 2 项空状态残留，修复后 `pnpm typecheck` 通过，分页、预算及工具共 7 个测试文件 104 项通过；测试使用模拟连接，未启动 DSH 或访问 Redis。
+
+### 2026-10-28：Stream AI 消息分页
+
+- `tests/ai-stream-pages.test.ts`：新增模拟 Stream 大批次及续读取消测试，验证整条消息、重复字段顺序、64 KiB 边界和取消重试；本步骤先复现现状，不访问 Redis。
+- `src/host/ai-stream-pages.ts`、`src/host/ai-reader.ts`：Stream AI 采用独立双槽及消息级分段，保留重复字段索引和原身份，值继续标识预览完整性；`src/host/stream-reader.ts` 为 AI 读取增加当前目标内的取消续读恢复。
+- 移除 Stream 分页模块未使用的类型导入，修复类型检查错误。
+- `tests/ai-stream-pages.test.ts`：补充目标、方向、范围、选择及 count 校验，反向范围、候选取消、旧探测迟到、底层返回后取消和超大单条消息的跨类型游标隔离。
+- `tests/ai-stream-pages.test.ts`：补充空页、截断值、预算恢复、成功换槽、提交前目标变化和正式注册 AI 工具调用回归。
+- `tests/ai-stream-pages.test.ts` 验证候选消息超限不破坏旧 Stream 令牌；`src/host/ai-tools.ts` 明确 Stream 续读须保持方向及范围并以整条消息分批。
+- `tests/ai-stream-pages.test.ts`：新增大批次缓存尾部分页时缩小 count 的回归，用于复现每次返回条数未按最新请求限制的问题。
+- `src/host/ai-page-store.ts`、`src/host/ai-stream-pages.ts`：共享分页切片增加可选行数上限，Stream 传当前已校验 count，返回条数与 64 KiB 同时受限；其他类型继续按原规则切片。
+- 验证：首次复现大批次直接超限和取消后无法续读；后续又复现缓存尾批 count=1 实际返回 13 条。修复后 `pnpm typecheck` 通过，Stream、分页、预算、工具、Stream view 与 Host codec 共 11 个测试文件 149 项通过。均为模拟连接，未启动 DSH 或访问 Redis；底层 1 MiB 接收上限、单条不可拆消息和提交后响应丢失仍有既定限制，真实模型对话尚未验证。
+
+### 2026-10-28：Key 自动扫描暂停续读
+
+- `src/client/key-loading.ts`、`tests/key-loading.test.ts`：完整批次后暂停时保留游标，手动续读沿用缓存和累计页数并重置本轮页数/时间限制；缓存溢出、失败和取消不提供续读令牌。该步骤尚未接入按钮。
+- `src/client/KeyBrowser.tsx`、`src/client/locales.ts`：暂停状态提供继续扫描入口，同步防止重复点击；切换目标、筛选或页面隐藏时取消并丢弃续读令牌，缓存溢出仅提示缩小范围；补充中英文提示。
+- `src/client/key-loading.ts`、`tests/key-loading.test.ts`：统一可继续及取消状态判定，补充缓存恰好满额、随后溢出和隐藏取消的状态回归；完整末页恰好满额仍可标为完成。
+- `src/client/KeyBrowser.tsx`：数据库选择结束时按控制器身份清理忙碌标记，防止无效阻塞续读；防双击使用弱引用，避免额外保留整份 Key 缓存。
+- `tests/key-loading.test.ts`：补充续读期间失效令牌与取消后迟到响应的模拟回归；`README.md`、`README.zh.md`：区分每轮自动扫描预算与总缓存上限，并说明手动继续和缓存批尾丢弃后的处理。
+- `tests/key-resume-browser.test.ts`：增加本地浏览器模拟交互，验证到达 1000 批暂停后双击继续仅调用一次且使用原游标；浏览器不可用时跳过。双语 README 补充 60 秒限制只阻止启动后续批次。
+- `tests/key-resume-browser.test.ts`：为浏览器路径增加明确的类型收窄，修复类型检查错误。
+- `tests/key-resume-browser.test.ts`：首次交互测试超时，增加页面错误诊断和短等待，用于定位模拟页面问题。
+- `tests/key-resume-browser.test.ts`：测试包使用与项目构建一致的自动 JSX 配置，修复模拟页面因 `React is not defined` 未渲染的问题。
+- 验证：`pnpm typecheck` 通过，Key 加载、Host 游标与本地 Chrome 浏览器模拟交互共 3 个测试文件 32 项通过；浏览器模拟了 1000 个空批次及双击继续，确认仅发送一次原令牌并显示后续 Key。未启动 DSH 或访问 Redis，真实 DSH 界面及用户数据未在本步骤验证。
+
+### 2026-10-28：Key 扫描失效提示
+
+- `src/client/KeyBrowser.tsx`、`src/client/locales.ts`：Key 扫描状态失效时提示列表可能不完整并手动刷新，已加载内容保留；其他连接错误继续使用原提示。
+- `tests/key-resume-browser.test.ts`：新增中英文浏览器模拟回归，验证旧游标失效时显示专用文案、保留已加载 Key 且不自动重扫。
+- 验证：`pnpm typecheck` 通过，Key 加载与本地 Chrome 浏览器模拟交互共 2 个测试文件 17 项通过；不代表真实 DSH 验收，本步骤未启动 DSH 或访问 Redis。
+
+### 2026-10-28：AI 连接视图版本说明
+
+- `src/host/ai-tools.ts`：状态与切库工具的模型提示明确 generation 表示插件连接与 DB 视图版本，切库可能递增，不能仅据此推断物理连接重建或 Redis 服务器重启；不增加返回字段或 Redis 命令。
+- `tests/ai-tools.test.ts`：检查实际注册的模型工具 schema 包含上述语义，并在模拟切库时核对连接 id 保持及 generation 变化。
+- `tests/ai-tools.test.ts`：同时核对实际切库工具返回中的连接 id、DB 和 generation，避免只检查内部状态。
+- 验证：`pnpm typecheck` 与注册 AI 工具专项 32 项通过；基于模拟连接，尚未重新进行真实模型对话，本步骤未启动 DSH 或访问 Redis。
+
+### 2026-10-28：RO04 错误与日志模拟核验
+
+- `tests/connection-service.test.ts`：注入假密码和假证书标记，捕获连接成功、掉线、断开、认证及 TLS 错误路径日志，检查固定错误结果与日志不包含注入内容。
+- `tests/profile-store.test.ts`：在资料保存、移除、非法密码和损坏文件路径注入假凭据标记，捕获 info/warn/error 输出，检查不回显标记；测试使用隔离临时目录。
+- `tests/profile-store.test.ts`：通过实际远程服务资料保存方法和模拟连接核验，保存另一份资料不会修改当前连接；未设置环境标签时不生成猜测值。
+- `tests/profile-store.test.ts`、`tests/ai-tools.test.ts`：进一步检查非法资料异常文本与注入假敏感信息的权限拒绝工具结果不会回显该信息。
+- `docs/verification/readonly-ro04-errors-2026-10-28.md`：记录当前模拟证据与尚需真实认证、TLS、ACL、超时、Key 变化及宿主日志验收的边界；RO04 保持进行中。
+
+### 2026-10-28：日志测试捕获格式修正
+
+- `tests/log-output.ts`、`tests/connection-service.test.ts`、`tests/profile-store.test.ts`：将日志参数按 Node console 的格式渲染后检查，并验证 Error 消息及嵌套 cause 中的假标记可被检测，避免 JSON 序列化遗漏异常内容。
+- `docs/verification/readonly-ro04-errors-2026-10-28.md`：将“不启动 DSH 或访问 Redis”的范围准确限定为本次模拟测试。
+- 验证：`pnpm typecheck` 通过；连接、资料和 AI 工具专项 3 个文件 56 项通过。本次模拟测试未启动 DSH 或访问 Redis。
+### 2026-10-28：日常 DSH 已安装版本的真实模型验证
+
+- 新增 `docs/verification/readonly-real-model-installed-2026-10-28.md`：记录真实 DeepSeek-V41-Flash 对话、Redis 工具轨迹、当前字段读取和明确切换临时 DB 的证据。
+- 真实模型通过 DSH 调用状态、Key 扫描、值读取和切库工具；测试目标为自建临时 Redis 的合成数据，回读确认数据未变化。未读取或记录模型凭据。
+- 已安装插件的 AI reader 构建哈希与当前项目构建不同，故此次只验证已安装版本；本轮新代码的真实模型与原生界面仍需单独验收。未安装日常 profile、未提交或推送。
+### 2026-10-28：RO05 分页预算验证记录
+
+- 新增 `docs/verification/readonly-ro05-pagination-2026-10-28.md`，说明预算、分页、暂停继续、游标失效提示的实现与分层证据，保留多面板、响应丢失和当前版本真实模型尚未验收的边界。
+- 当前包默认预打包检查通过 30 个测试文件、330 项测试，其中两项是真实浏览器的组件夹具；安装在项目隔离 DSH profile 后，真实侧栏显示预算面板并只读扫描本机 DB 0 的 760 个 Key。
+- 多类型隔离 Redis/正式 ToolRuntime 合成数据检查与日常 profile 的旧版真实模型对话分别记录，不把它们合并为当前版本真实模型验收。
+### 2026-10-28：真实 DSH 扫描暂停续读验证
+
+- 更新 `docs/verification/readonly-ro05-pagination-2026-10-28.md`：在项目隔离 profile 的当前构建中，使用临时 Redis 的 150,000 个合成短 Key，验证不匹配筛选扫描触发暂停，点击继续后完成。
+- 夹具预查扫描约 1,495 批；真实界面先显示“本轮扫描已暂停”，人工点击“继续扫描”后显示“扫描完成”。测试实例已按 owner 校验的夹具流程关闭；用户已有 Redis 没有写入。此项为原生 DSH 界面证据，不是真实模型多页对话。
+### 2026-10-28：当前构建的真实模型多页验证
+
+- 新增 `docs/verification/readonly-ro06-real-model-2026-10-28.md`：在共享现有模型凭据的独立临时 DSH profile 中，对合成 Redis 实际完成两页 Key 续读、选中 Hash 字段和明确切库；完整回读测试数据一致。
+- 真实模型一次误把 generation 递增说成物理重连；`src/host/ai-tools.ts` 的状态和切库工具说明已明确版本语义。新包在新真实对话中复测切库，模型没有再作该推断；这是单次样本。
+- 最终 `pnpm pack` 预打包检查通过 30 文件、331 项测试。临时 profile 的 schema 初始化命令曾报 Loader tree carrier 错误，实际 Host 随后成功运行；测试会话存于共享 DSH 历史，未删除其他会话。RO06 剩余取消、跨会话与预算等真实验收仍未完成。
+### 2026-10-28：修正验收包哈希
+
+- 修正 `docs/verification/readonly-ro06-real-model-2026-10-28.md` 中的最终包 SHA-256 转写，并以 `Get-FileHash` 对实际包重新核对；仅修改验证记录，不影响代码或运行行为。
+### 2026-10-28：真实模型验收资源清理
+
+- 更新 `docs/verification/readonly-ro06-real-model-2026-10-28.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录本次当前构建的真实模型多页、选中项和切库证据，保留 RO05/RO06 的未验收条件。
+- 本次启动的 DSH Host 和合成 Redis 端口已停止，`127.0.0.1:6379` 经 TCP 检测仍可连接；按绝对路径与父目录核验后删除本次唯一临时 profile，未删除日常 `web` profile 或模型凭据。测试对话留在共享 DSH 历史中。
+### 2026-10-28：RO04 隔离 Redis Host 实测
+
+- 更新 `docs/verification/readonly-ro04-errors-2026-10-28.md`，新增去除临时资源标识的连接与 TLS JSON 收据。连接 Host smoke 8 项、TLS Host smoke 5 项通过，覆盖真实密码/ACL 认证、错误密码、真实 socket 超时/取消、可信与错误 CA 和主机名不匹配。
+- 测试使用项目内独立脚本与构建副本、临时 WSL Redis 8.2.6；夹具报告资源停止并移除。原历史收据未覆盖；系统证书、用户现有 Redis 与日常 DSH profile 未修改。真实 Redis 命令 ACL 拒绝及这些错误在原生 DSH 界面的呈现仍待验证。
+
+### 2026-10-28：RO04 真实界面异常验证
+
+- 更新 `docs/verification/readonly-ro04-errors-2026-10-28.md`：记录隔离 DSH profile 配合合成 TLS/ACL Redis 的真实界面验证。未信任 CA、错误认证和禁止 SCAN 的权限拒绝分别显示相应错误；权限错误显示加载失败而非空库。成功连接后重新打开设置时密码输入框为空。
+- 使用独立本机 TCP 黑洞验证连接超时提示；证书主机名不匹配的原生界面、超时恢复、Key 变化和实际宿主日志仍需验证，RO04 继续保持进行中。一次 ACL 预检格式不匹配的夹具启动已退出并清理，修正预检后完成验证；测试未写入用户 Redis。
+- 验证：`pnpm check` 在允许回环访问的环境通过 TypeScript 编译和 30 个文件、336 项测试。首次沙箱运行的 13 项 socket 测试因本机回环连接 `EACCES` 失败；授权后重跑全部通过。
+- 本次 DSH 和所有临时 Redis/TCP 测试端口均已关闭，Key 消失的临时夹具也按自身流程清理；该界面场景尚未完成。用户原 Redis `127.0.0.1:6379` 的 TCP 端口仍可连接。
+
+### 2026-10-29：RO04 Key 变化原生界面验证
+
+- 更新 `docs/verification/readonly-ro04-errors-2026-10-28.md`：隔离 DSH 连接自建临时 Redis 后，使用合成数据核验 Key 被删除和自然过期后的刷新提示，以及 String 变为 Hash 后的类型和内容刷新；不改业务 Redis。
+- `pnpm check` 基线通过 30 个文件、336 项测试。首次临时 Redis 夹具未能成功启动，退出时临时目录报 EBUSY；目录内容为空，删除该专属空目录的操作被自动策略拒绝，保留待处理。第二次夹具启动成功并完成上述界面检查。
+- 第二次测试的临时 Redis 输出 `FIXTURE_CLEANED`，本次启动的隔离 DSH 已停止；文档修改后 `pnpm typecheck` 通过。RO04 仍有原生界面及实际运行日志验收缺口，RO05、RO06 和后续任务状态未更改。
+
+### 2026-10-29：RO04 主机名和超时恢复补测
+
+- `docs/verification/readonly-ro04-errors-2026-10-28.md`：记录隔离 DSH 的 TLS 主机名不匹配提示，以及黑洞超时后刷新状态、手动连接另一临时 Redis 并加载合成 Key 的真实界面结果。没有证明同一端点恢复后重连；RO04 继续进行中。
+- 同一临时 TCP 端点经受控转发从挂起切换到可用后，DSH 手动重连成功并加载测试 Key；合成密码触发的认证失败未在本次收集的宿主标准输出中回显。更新同一验收记录，保留其他日志通道及运行中读操作超时的限制。
+- 此批测试的两套临时 Redis 均输出 `FIXTURE_CLEANED`，TCP 黑洞和转发器均输出关闭标记，隔离 DSH 已停止；文档更新后 `pnpm typecheck` 通过。
+
+### 2026-10-29：RO06 模型重试与会话界面
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录新临时 profile 使用已有模型配置时，真实模型请求重试 5 次后传输失败，未调用 Redis 工具；合成 Redis 在第一会话可加载 141 个 Key，第二会话初始显示未连接。界面会话隔离不能替代真实模型跨会话验收，RO06 仍未完成。
+
+### 2026-10-29：RO05 真实 Redis 工具预算恢复
+
+- `docs/verification/readonly-ro05-pagination-2026-10-28.md`：记录当前构建通过正式注册 ToolRuntime 访问独立临时 Redis，验证 32 次预算耗尽、跨会话恢复拒绝、本会话恢复后原游标继续和 141 个合成 Key 完整返回。首次误传不支持的参数被工具拒绝；按注册 schema 更正参数后通过。该检查没有调用真实模型。
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：补充当前构建正式工具在隔离 Redis 上的选中字段、预取消和切库清空选择检查；脚本调用与真实模型严格分开。
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：连接测试 Redis 后重试真实模型，仍在工具调用前报传输错误；共享设置中的单个 TCP 连通结果不能证明模型 API 可用。140 个合成 String、Hash 字段和 DB 1 的回读与预置一致。
+- `docs/verification/readonly-ro05-pagination-2026-10-28.md`、`docs/DSH_AI_READONLY_TASKS.md`：记录当前构建在隔离 Redis 上的 UI/AI 游标独立实测，分页预算专项 11 文件 141 项通过，并将 RO05 标记完成；真实模型验收依旧属于 RO06，不代表已完成。
+
+### 2026-10-29：RO04 损坏资料真实界面
+
+- `docs/verification/readonly-ro04-errors-2026-10-28.md`：在本次独立临时 DSH profile 中写入带合成标记的无效资料，验证真实界面显示固定读取失败提示、宿主输出固定警告且没有回显标记；真实保存失败及其他日志通道尚未核验。
+- 更正上一条关于 `wsl-fixture-e31a16ea-c174-45ef-9f69-67bfed6b5903` 为空的表述：重新检查发现其中有一份该临时夹具的 `redis.conf`，不应当称为空目录。此前删除尝试被自动策略拒绝，目录继续保留。
+- 为评估真实保存失败的构造，临时把本次独立 profile 的资料目录置为普通文件；核查发现这样会先触发读取失败，不能证明写入路径，因此立即恢复原目录，未将该尝试计为通过。
+
+### 2026-10-29：日常 DSH 模型配置核对
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录应用户要求按日常 `dsh web` 配置启动，并发出普通模型测试消息；实际重试 5 次后仍报传输错误。日常与临时 profile 的模型配置层存在字段差异，尚不能据此判定最终配置或失败原因；未输出凭据，也未修改日常 profile。
+- 上轮独立 Redis 输出 `FIXTURE_CLEANED`，临时 DSH 已停止；删除本轮唯一临时 profile `redis-eval-20261029-01a181a4` 的命令被自动策略拒绝，未绕过限制，该 profile 暂时保留，日常配置未删除或覆盖。
+
+### 2026-10-29：日常 DSH 模型网络错误诊断
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录用户确认日常 DSH Web 与测试在同一台电脑；本轮没有发现其他正在监听的 DSH Web。临时诊断进程沿用日常配置，只输出模型网络错误类型与代码，普通消息复现 `ECONNRESET`；未输出模型地址、请求或凭据，不能据此判定连接由哪一方重置。RO06 未因此通过。
+
+### 2026-10-29：RO04 真实资料保存失败验证
+
+- `docs/verification/readonly-ro04-errors-2026-10-28.md`：在本轮独立 DSH profile 恢复合成空资料，通过短时文件占用模拟保存时替换失败；真实界面显示固定错误，宿主输出固定警告且不包含合成地址。释放文件后回读原内容不变，临时写入文件已清理；不扩大到其他日志通道。
+- 真实 Redis 与 transport 的受控交错中，在 `GETRANGE` 返回后由独立夹具改变类型或删除合成 Key，结果分别为 `changed`、`missing` 且不返回旧字节；夹具确认清理。结果已写入 RO04 记录，不称作原生界面的并发交错。
+- `docs/DSH_AI_READONLY_TASKS.md`、`docs/verification/readonly-ro04-errors-2026-10-28.md`：按 RO04 清单条件汇总模拟、真实 Host 和原生界面证据并标记完成；保留第三方/系统日志、其他超时组合及原生界面并发交错未覆盖的限制。模型对话另属 RO06。
+
+### 2026-10-29：补正固定版 Gateway 事件证据
+
+- `docs/verification/readonly-ro01-contract-2026-10-28.md`：补充固定 rc.2 Gateway 文档中 Host 事件源、Client 订阅、活动流及 scoped waterfall 回执的证据；澄清其不自动证明 Redis 面板已就绪、唯一接收或动作应用成功。未修改源码，RO07 仍须按依赖及真实装配验证推进。
+
+### 2026-10-30：日常 DSH 模型普通消息复测
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录按日常 `dsh web` 配置启动的普通消息复测，重试 5 次后仍显示传输失败；没有调用 Redis 工具，本次启动进程已停止。真实模型验收 RO06 仍未通过。
+- `docs/DSH_AI_READONLY_TASKS.md`：将已有部分真实模型和工具调用证据的 RO06 从“待开始”更正为“进行中”，并列出尚缺的真实模型场景；未勾选完成。
+- `docs/verification/readonly-ro01-contract-2026-10-28.md`：补充固定版 API Remotes 的应用级事件白名单约束，澄清插件不能单靠 `ctx.remote.$on()` 增加自定义转发事件；后续界面动作仍需核验可用通道和多 Client 回执。
+
+### 2026-10-30：当前构建临时启动补丁
+
+- `.scratch/runtime/readonly-current-entry.patch.yml`：为本次 DSH 验证准备按插件 ID 覆盖入口的临时启动补丁，指向当前项目 Host 构建；仅在显式传入该补丁时生效，不修改日常 profile 或现有安装包。实际 Host 和 Client 是否成功加载仍需启动核验。
+
+- 更正：首次临时补丁试图直接覆盖 `name`，合成配置证明旧入口未变；固定版 DSH 使用 `name` 校验目标身份。临时补丁现改为仅本次启动禁用旧条目并插入独立 ID 的当前入口，仍须核验合成配置和实际装配；未改日常 profile。
+
+### 2026-10-30：日常模型与当前构建验证
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录日常 `bzkj-LLM` 普通消息成功、默认 DeepSeek 仍连接重置；旧安装包真实分页结果为 101 和 40 条，模型误报 139 条。记录临时插件入口补丁的实际装配问题，以及独立 profile 叠加日常模型配置后当前包与原生面板的确认结果；RO06 继续进行中。
+
+### 2026-10-30：AI Key 批次计数
+
+- `src/host/ai-key-pages.ts`：为 AI Key 分页结果增加由本次返回数组长度计算的 `returnedCount`，帮助模型准确报告当前批次数量；该字段不表示全库总数。
+- `tests/ai-key-pages.test.ts`：检查拆分后的每批计数和空页计数，保留分页上限和续读检查。
+- `docs/AI_READ_USAGE.md`：说明计数的范围和空页、续读语义。
+
+### 2026-10-30：新包真实分页与已有预算证据
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：补记上一轮真实模型的选中字段、切库、跨会话和预算耗尽轨迹；关闭进程后的旧游标不算恢复成功。记录新包 SHA-256、完整打包检查 30 文件 336 项通过，以及真实模型直接读取 `returnedCount` 得到 100、41 的分页结果。预算恢复与真实工具取消仍待验收。
+
+### 2026-10-30：预算恢复真实模型验收
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录新包下真实模型触发 32 次调用预算、侧栏手动恢复后使用原游标续读 41 条并完成；记录延迟代理取消试验因模型未发出工具调用而未取得在途取消证据。RO06 仍为进行中。
+
+### 2026-10-30：界面动作契约准备
+
+- `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`：依据固定版 Gateway 和侧栏文档，整理双向流候选、可信会话、唯一接收者、目标代次、用户选择优先、终态回执及待验证场景；该文档为草稿，RO06 的直接依赖和 RO07 真实装配验收仍未完成。
+
+### 2026-10-30：RO06 真实在途取消
+
+- `docs/verification/readonly-ro06-real-model-2026-10-28.md`：记录合成 Redis 的响应扣留、真实 DSH 停止、1,223 毫秒工具错误及释放响应后的面板读取；轨迹错误对象未展示底层取消码，限制已保留。对比两个验收包，仅 AI Key 分页 Host 文件发生变化。
+- `docs/DSH_AI_READONLY_TASKS.md`：按真实模型、原生界面、隔离数据和检查证据将 RO06 标记完成，RO07 标记进行中；默认 DeepSeek 连接重置和 RO07 原生装配仍未解决。
+
+### 2026-10-30：恢复本机 Redis 连接
+
+- 用户反馈 DSH Redis 无法连接。只读核查发现本机 Redis 仍监听 `127.0.0.1:6379`，当前验收会话保留了已关闭的测试代理 `127.0.0.1:10758`，因而无法连接。
+- 在该验收会话将地址改回本机 `6379` 并连接；DSH 原生面板显示已连接、DB 0 已加载 760 个 Key、扫描完成。此次只检查界面连接及数量，没有修改 Redis 数据，也没有向模型发送业务数据；不对其他会话或其连接状态作推断。
+- 后续验收结束前应检查用户正在使用的页面，避免留下失效的测试代理地址。
+
+### 2026-10-30：RO07 Host 动作协调基础
+
+- `src/host/ui-action-coordinator.ts`：增加按可信会话管理界面接收者的协调器，限制每会话一个在途动作；校验接收者唯一性、请求身份、目标和选择版本，区分取消、超时、断开及过期，并清理计时器与取消监听。接收方须在实际执行前校验并遵守取消信号；该组件尚未接入 RemoteStream 或原生界面。
+- `tests/ui-action-coordinator.test.ts`：覆盖会话隔离、多界面冲突、错误回执、用户变化、取消、超时、断开及迟到回执。
+
+### 2026-10-30：RO07 双向流协议描述
+
+- `src/typert.shared.ts`、`src/typert.host.ts`、`src/typert.remote-client.ts`：增加受可信 Agent 作用域约束的界面动作流描述，以及请求、取消和回执严格校验；Client 在消费流时仍须主动解析帧。当前尚未接入服务及原生界面。
+- `tests/host-typert.test.ts`、`tests/client-bundle.test.ts`：同步协议端点数量和清单；实际 Host/Client 流装配仍待验证。
+- `src/domain.ts`、`src/host/ui-action-coordinator.ts`、`src/host/ui-action-channel.ts`、`src/typert.shared.ts`、`src/typert.remote-client.ts` 及两项专项测试：修复协议描述首次编译时 Client 引入 Host 专用模块的错误，统一从公共类型定义引用，不向浏览器引入 Node 模块。
+
+### 2026-10-30：RO07 Host 流装配
+
+- `src/remote-service.ts`：从 Gateway 的可信 Agent 和本次调用上行建立界面动作流；会话结束或插件卸载时清理接收者，连接或 DB 目标变化时撤销等待中的动作。当前仍未接入 Client 和模型，实际流装配待验证。
+- `tests/host-typert.test.ts`：验证 Host 和 Client 的流描述符、可信 Agent、取消签名、消息及回执校验一致，并拒绝额外字段和未支持动作。
+- `tests/host-typert.test.ts`：修复新增测试中可选上行 codec 在回调内丢失类型收窄导致的 TypeScript 编译错误。
+- `tests/host-typert.test.ts`：根据重新核对的报错行，同样固定下行 codec 的类型收窄。
+
+### 2026-10-30：RO07 Client 流接收
+
+- `src/client/index.ts`、`src/client/RedisWorkspace.tsx`、`src/client/ui-actions.ts`：为可见的 Redis 面板建立会话绑定的动作流，并在卸载或隐藏时取消；对每个下行帧做严格校验，当前尚未实现的动作返回不支持，不声称界面已应用。
+- `tests/client-bundle.test.ts`：核验浏览器 bundle 的流接口使用正确的可信会话。实际原生 DSH 装配和动作验收仍待进行。
+- `src/client/ui-actions.ts`、`tests/ui-actions-client.test.ts`：避免取消与 finally 重复释放同一流，验证不支持动作、无效帧和面板提前取消时不会假报成功。
+- `tests/ai-tools.test.ts`：修复完整检查中发现的旧 Host 原型替身未初始化动作协调器的问题，统一构造并在测试后释放；不改变真实 Redis 连接行为。
+- 协调器发送前复制目标标识并拒绝非法回执终态；专项测试验证目标对象后续变化不会改变请求快照。
+
+### 2026-10-30：RO07 界面动作通道基础
+
+- `src/host/ui-action-channel.ts`：将单个界面接收者与上下行异步流关联；限制待发送消息，处理取消、断流和迟到回执，并在流退出时注销接收者。此通道尚未接入 DSH RemoteStream 或原生界面。
+- `tests/ui-action-channel.test.ts`：核验实际异步迭代中的回执匹配、取消、断流、多界面及会话隔离。
+- 使用显式状态对象修正异步回调中的 TypeScript 类型收窄错误，不改变通道语义。
+- 上行迭代等待与通道关闭信号竞争，避免通道内部持续等待不响应的输入；流关闭时请求输入迭代器释放，底层来源仍须遵守自身取消契约。
+- 对迭代器释放时的同步或异步异常统一捕获，避免影响断流清理。
+
+### 2026-10-30：继续工作时恢复已停止的本机服务
+
+- 当前重新检查时，8575、9250、6379 均无监听，历史进程会话已不存在；不能沿用上次运行状态作为当前证据。
+- 重新启动原验收 profile 的 DSH Web，地址为 http://127.0.0.1:8575/，继续复用日常模型配置。
+- 核验原安装目录 E:\Redis-8.10.0-Windows-x64-cygwin 的 start.bat 后，按相同工作目录及 redis.conf 启动原 redis-server.exe；未修改配置或数据文件。
+- 只读检查：PING 返回 PONG；DBSIZE 返回 760。未读取业务值、未写入 Redis。
+- 新包 RO07 仍使用单独的 9250 验证实例；Host 挂载问题未标记通过。当前源码 pnpm typecheck 通过。
+
+### 2026-10-30：中断后恢复服务并校正 RO07 草稿
+
+- 中断后重新检查发现 Redis 与 DSH 监听均已停止，按原 Redis 安装目录和配置启动服务，并以原验收 profile 启动 DSH Web。Redis PING 为 PONG，DB0 为 760 个键；DSH 界面重连后显示 760 个键、扫描完成。
+- `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`：将过时的 RO06 未完成状态改为已完成，说明 RO07 实现和验收边界；不将已有模块测试冒充真实 Gateway 往返。
+
+### 2026-10-30：准备 RO07 Gateway 集成验证
+
+- `package.json`、`pnpm-lock.yaml`：新增开发依赖 `@deepseek-ai/dsh-typert-registry@0.2.0-rc.2`，与既定 DSH 基线一致，用于测试中装配真实 Typert Registry 和 Gateway。运行时插件依赖及日常 DSH 安装没有改变。
+- 新增依赖后 `pnpm typecheck` 通过；真实流往返测试仍在准备。
+
+### 2026-10-30：RO07 Host Gateway 双向流测试
+
+- `tests/ui-action-gateway.test.ts`：用固定版真实 Typert Registry、Gateway 和 Redis Host 服务，以虚拟 Agent 进行进程内双向流测试；验证其他会话无接收者、动作帧经 Gateway 输出、匹配回执从上行到达协调器，未使用 Redis 数据。
+- 测试首次编译发现测试侧 Host contribution 的 `face` 推断为 string，注册时显式固定为 `host`；随后 `pnpm typecheck` 与专项测试通过。
+- 覆盖范围为进程内 Gateway；WebSocket、浏览器和实际界面动作仍待验收，RO07 保持进行中。
+- `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`：补充本次进程内 Gateway 验证和浏览器验收边界。
+- 完整 `pnpm check` 通过：类型检查、构建及 34 个测试文件的 351 项测试通过；其中浏览器测试为本地自动化验证，不能替代 RO07 实际动作及模型验收。
+
+### 2026-10-30：接入 Redis 面板可见性工具
+
+- `src/host/ai-ui-tools.ts`、`src/runtime.ts`：增加 `redis_viewer_show`，由宿主提供会话身份，复用动作协调器，区分已确认可见、未挂载和多接收者等终态；未挂载时提示用户打开侧栏，不接受会话参数或 Redis 命令。
+- `src/client/ui-actions.ts`、`src/client/RedisWorkspace.tsx`：只在收到有效动作时确认面板当前可见，隐藏或过期返回过期；不通过 DOM 注入打开侧栏。
+- `tests/ai-ui-tools.test.ts`、`tests/ui-actions-client.test.ts`：覆盖工具会话隔离、多接收者、非法参数、可见性和过期动作；真实浏览器双向通信及模型验收尚未完成。
+- 重新打包并安装独立 profile，包 SHA-256 `ad5b281202bea400f359d7ad621c369185db8e00eec12108572205767f737c19`；确认安装的 Host 入口与当前构建一致。专项 6 文件 17 项通过，prepack 全量检查通过。
+- 实际 DSH Web 与 `bzkj-LLM` 两次调用：可见面板返回 `applied`，收起侧栏返回 `no_receiver` 及人工打开提示；隔离会话未连接 Redis。此验证覆盖浏览器双向通信和可见性，不覆盖自动打开或其他动作。
+- `docs/DSH_AI_READONLY_TASKS.md`：将 RO08 更新为进行中，指向真实验证记录，保留自动展开和完整验收缺口。
+- 隔离 DSH 同会话的两个浏览器客户端同时可见时，真实模型工具返回 `ambiguous`；关闭第二客户端后再次返回 `applied`。已将结果与验证边界写入 RO07 记录。
+- `src/host/ai-ui-tools.ts`、`tests/ai-ui-tools.test.ts`：根据真实模型对 `applied` 的解释，明确工具只确认面板已有可见状态，没有执行打开操作，并验证返回说明。
+
+### 2026-10-31：界面选择和目标变化失效通知
+
+- `src/host/ai-reader.ts`、`src/remote-service.ts`：在已接收的选择实际变化或目标清理时，通知同会话动作协调器使在途动作失效；重复发布相同选择不会取消动作。AI 切换 DB 的目标清理也走相同通知。
+- `tests/ai-tools.test.ts` 及 AI 分页测试夹具：接入该通知并测试真实变化、重复选择和 DB 切换。界面本地操作至 Host 防抖上报前的竞态仍需处理，不将本次改动作为 RO07 全部验收。
+- 两次类型检查发现测试对异步回调重赋值的收窄假设不成立；重新分析后改用数组分别记录每次动作信号，避免依赖跨回调类型推断。
+- `pnpm typecheck` 通过；涉及工具、五类 AI 分页和界面动作通道的 9 个测试文件、118 项测试通过。上述测试使用合成传输和进程内 Gateway，不代表浏览器或真实模型已经验收。
+- 当前构建 `pnpm check` 通过：类型检查、构建及 35 个测试文件、354 项测试通过。真实 DSH/模型对本次代码尚未重新验收。
+- 重新按日常 `dsh web` 配置启动本机 Web，监听 `127.0.0.1:8575`；未更换日常 profile 中的插件。已有 Redis 进程保留，未对业务数据执行读写。
+- 重新打包当前代码，隔离安装包 SHA-256 `330943eac5ad728c521343e4e67fc554e45faca2f88b729adb328f60cc3cfcf2`，安装的 AI reader 与本次构建哈希一致。独立 DSH 原生 Redis 面板正常显示，验证会话未连接 Redis。
+- 使用 `bzkj-LLM` 请求调用 `redis_viewer_show` 时，隔离实例返回“API 密钥无效 AUTH”，未进入工具调用；日常 `dsh web` 中同一模型的一条无业务数据普通消息也返回相同错误。真实模型复验未通过，未读取或输出密钥；不据此推断具体凭据失效原因。
+- `src/client/ui-actions.ts`、`src/client/RedisWorkspace.tsx`：将客户端动作处理改为可异步执行，等待界面提交期间继续消费取消帧；面板卸载、请求取消和过期不发送迟到成功回执，为后续原生侧栏打开和界面定位提供基础。
+- `tests/ui-actions-client.test.ts`：覆盖等待中的取消和迟到成功不回执；当前动作仍仅检查可见性，自动打开尚未实现。
+- 动作实际调用前再次检查所属通道与取消状态；回执发送失败时释放通道，避免异步任务在已关闭状态继续或出现未处理异常。
+- `src/client/ui-pane-presence.ts`、`tests/ui-pane-presence.test.ts`：增加会话内可见面板计数和有界等待，原生打开后只有实际面板报告可见才确认；覆盖取消、会话变化、多个面板和原生打开失败。尚未接入 DSH 侧栏。
+- `src/client/index.ts`、`src/client/RedisWorkspace.tsx`、`src/host/ai-ui-tools.ts`：将每窗口动作接收者绑定到 DSH 的屏幕会话，调用原生 `openTab('redis')`，等待相应页签正文可见后返回成功；会话切换或通道关闭取消等待。同步调整工具说明和客户端 bundle 测试；真实 DSH/模型验收仍待执行。
+- `tests/ui-session-channel.test.ts`：补充当前会话通道与原生侧栏调用的装配测试，验证未收到实际页签可见通知前不回执成功，以及会话退出时释放流。
+- 当前包完整预打包检查通过；隔离包 SHA-256 `81f28d7de6fcec11167eb524729b31786e2cda5cccdc015a0dd1be3583373733`，安装后浏览器 bundle 哈希与构建一致，实际 DSH Redis 面板正常装配。模型 AUTH 错误仍使实际工具触发和自动打开验收待完成；未连接业务 Redis。
+- `src/client/RedisWorkspace.tsx`：在宿主页签生命周期信号中止时立即释放可见状态，避免页签失效后仍作为已显示的回执依据；卸载清理仍幂等。
+- `tests/ui-pane-presence.test.ts`：增加同一提交连续出现两个可见页签的竞态用例，检查不能在第一个出现时误报唯一可见面板。
+- `src/client/ui-pane-presence.ts`：合并同一轮页签可见变化后再判断唯一性，修复上述用例先出现第一个页签时误回成功的问题。
+- 最新隔离包 SHA-256 `175e209ab73a8d7daa10813a6a013fed56ccd986c78d805d8a87815c871857a5`，prepack 通过 37 文件、360 项测试；真实 DSH 与日常 `DeepSeek-V41-Flash` 验证侧栏收起后自动打开返回 `applied`、双客户端返回 `ambiguous`、关闭一个后恢复 `applied`。验证会话未连接 Redis；此前 `bzkj-LLM` 返回 AUTH，不代表当前日常模型不可用。
+- `src/domain.ts`、`src/typert.shared.ts`、`src/host/ui-action-coordinator.ts`、`src/client/ui-pane-presence.ts`、`src/host/ai-ui-tools.ts`：同窗口多个可见 Redis 页签与多窗口统一返回 `ambiguous`，并提示保留唯一界面；协议和协调器专项覆盖该终态。此后变更尚需重打包及真实 DSH 复验。
+- `src/client/index.ts`：订阅 DSH 连接代次，断线时释放该会话旧动作流，连接恢复时为当前会话建立新流；会话或代次未就绪时不派发。调整客户端测试夹具；真实断线重连仍需验收。
+- `tests/ui-session-channel.test.ts`：增加连接代次消失、恢复和会话离开用例，检查旧流释放、新代次仅建立一次新流及订阅清理。
+- 当前隔离包 SHA-256 `888dd39e2d37c06b8be9f425cc0e9d41d75349c90f92b29c2b53ceb51a75ba32` 的预打包检查通过（37 文件、362 项测试）。真实 DSH 及 `DeepSeek-V41-Flash` 在隔离宿主重启前和原浏览器手动重连后均成功打开面板，返回 `applied`；会话未连接 Redis。验证记录补充于 `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`；同代次开流失败或提前结束及本地选择竞态仍需处理。
+- `src/client/index.ts`：同一连接代次的动作流建立失败或提前结束后，最多延时重试三次；会话、连接代次变化和卸载时取消重试。重试耗尽后等待会话或连接变化，不进行无界轮询；专项测试和真实模型验证待补。
+- `tests/ui-session-channel.test.ts`：增加开流失败、流提前结束与重试上限测试；验证结果以实际运行记录为准。
+- 专项测试补充等待重试期间卸载的清理断言；确保卸载后不会再次开流。
+- `pnpm check` 通过：类型检查、构建及 37 个测试文件的 363 项测试通过。重试代码尚未完成真实 DSH 和模型验证。
+- 隔离包 SHA-256 `65d8d89f8b783aa6016098b0837d86a27d3582360fa39e2fb1286e3c8ab63989`；隔离 profile 安装的 Client 与当前构建 SHA-256 均为 `b589502f23550c006937c532ae2b1b3c666c961f6817c014ddb5a4727c6f5c63`。真实 DSH 和 `DeepSeek-V41-Flash` 从收起状态调用 `redis_viewer_show`，面板打开并返回 `applied`，未连接 Redis。该实测只覆盖正常调用；开流失败重试的行为由自动化测试验证。
+
+### 2026-10-31：选择竞态防护进行中
+
+- 新增 `src/client/selection-epoch.ts` 和 `tests/selection-epoch.test.ts`：表示浏览器本地同步失效的单调版本及其同步状态，旧异步完成不能将较新的版本标为已同步。此时尚未连接操作入口和 Host，不代表竞态已解决。
+- 扩展动作流上行类型、严格编解码、Host 与 Client 的版本状态交换：目标动作要求版本已同步且相同，失效后取消在途动作。当前仅完成基础连接，实际选择事件接入和测试仍待完成。
+- 更新客户端动作流测试夹具以传入版本对象，区分初始版本帧与动作回执；修复类型检查暴露的旧调用签名。
+- 动作流专项测试的无关回执使用合法 UUID，确保测试检查的是回执匹配而非非法协议帧。
+- `src/client/SelectionEpochContext.ts`、`RedisWorkspace.tsx`、`index.ts`：为每个 DSH 会话共享独立的本地选择版本并连接动作流；`KeyBrowser.tsx` 和 `CollectionTable.tsx` 在 Key 或集合行实际变化前同步失效；`CurrentSelection.tsx` 仅在对应选择经 Host 接受后同步版本。筛选清除、目标变化和端到端竞态仍待覆盖，尚不能视为完成。
+- `src/client/ui-actions.ts`：本地版本变化时立即中止在途目标动作并回报过期，避免等待异步动作结束；补充迟到成功不回执测试。
+- `src/host/ui-action-coordinator.ts`、`ui-action-channel.ts`：按实际流记录选择版本，仅在唯一接收者已同步时暴露版本，并在取消或流关闭后清理；补充版本变化取消在途动作的通道测试。后续目标工具必须使用该版本并再次校验。
+- `CollectionTable.tsx`、`StreamView.tsx`：支持识别同一 Stream 消息重置字段位置的选择变化，确保字段发生变化时同步失效。
+- `selection-epoch.ts`、`ConnectionForm.tsx`、`KeyBrowser.tsx`、`CurrentSelection.tsx`：初始选择版本设为未同步；连接和 DB 切换设置边界，进行中不能确认旧选择，结束后重新发布当前界面选择；空选择也须经 Host 接受。筛选清除及真实交错验收仍未完成。
+- `KeyBrowser.tsx` 和五类集合视图：筛选、范围和模式变更导致当前选择变化时，在本地操作前失效；Hash 本地搜索仅在所选字段可见性变化时失效。`CurrentSelection.tsx` 对缓存更新导致的行消失或恢复也在界面提交时失效。真实交错验收仍待完成。
+- 新增 `tests/selection-race-browser.test.ts`，用合成数据和真实浏览器延迟旧选择回执，验证新选择不会被旧回执错误确认；尚不替代真实 DSH 与模型验收。
+- `tests/ui-actions-client.test.ts` 增加旧目标动作执行前被拒绝的断言；`tests/ui-action-gateway.test.ts` 在固定版真实 Gateway 中验证非零选择版本上行。
+- `SelectionEpochContext.ts`、`KeyBrowser.tsx`：订阅会话版本变化，连接或 DB 操作取消后重新发布当前选择，避免在途边界结束后一直停留在未同步状态；版本就绪状态变化本身不触发重复发布。
+- 选择竞态浏览器夹具改为使用相同的版本订阅，检查真实渲染更新下的迟到回执。
+- `.scratch/runtime/ro07-validation-20261030/selection-fixture.mjs`：复用随机端口、独立进程的 Redis 夹具创建两条合成 Hash 字段，结束前回读核对；用于真实 DSH 界面选择验收，不使用现有 Redis。
+- 隔离包 `0e3b5a732a10f64a7fb9c0e018627747aae5e330bd20de5ccb8526823ac11698` 预打包检查通过（39 文件、369 项测试），安装 Client 与构建哈希一致。真实 DSH 和 `DeepSeek-V41-Flash` 成功打开侧栏；快速切换两条合成 Hash 字段后，无参数读取返回最后选中的 `second` / `synthetic-two`。详情和验证限制写入 `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`。
+- `domain.ts`、`typert.shared.ts`、`client/index.ts`、`remote-service.ts`、`host/ai-reader.ts`：无参数读取侧栏选择前后，使用受信会话和目标在原生动作流上确认唯一可见面板的同步版本；失效时拒绝结果并回滚暂存页。显式 Key 读取不要求面板确认。AI 读取测试夹具同步注入模拟确认；实际交错和真实模型回归待验证。
+- `host/ai-reader.ts`：选择读取的暂存页提交时再次检查界面版本，阻止确认后发生版本变化的旧结果提交；测试夹具提供受控的版本判断。
+- 修复选择读取的新校验对同一连接网络失败的误判：只有读取结果错误与当前同一目标的失败状态一致时保留原错误，替换连接仍按过期处理。
+- `tests/ai-tools.test.ts`：新增界面确认失败时不读旧选择、显式 Key 仍可读取，以及暂存分页在版本变化后拒绝提交并可重试的测试。
+- `typert.shared.ts`：动作协议拒绝“打开面板附带目标”或“确认选择缺少目标”的无效组合；同步调整目标动作测试夹具。
+- `src/domain.ts`：动作流上行协议发生不兼容变更，协议版本从 4 提升到 5，避免旧 Host 或 Client 与新版混用时被当作同一契约。
+- 协议 5 隔离包 `e9812a39efa1e11a21a68347a50483aaf4e08d5a323703d38b54f44b43419962` 已在真实 DSH 与 `DeepSeek-V41-Flash` 中验证：选中合成 Hash 字段可无参数读取；隐藏面板时旧选择读取被拒绝；显式合成 Key 读取不受影响。验证过程使用独立 Redis，记录详见 RO07 验收草稿；尚未覆盖真实 DSH 延迟动作。
+- 新增 `.scratch/runtime/ro07-validation-20261030/stop-selection-fixture.mjs`：为本次输入通道已关闭的独立 Redis 夹具回读两条合成字段并关闭随机端口实例；使用前已核对进程及端口归属。
+- `src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`：说明当前选择读取必须由唯一可见面板确认，而显式 Key 读取不要求面板可见；避免把最后同步的旧选择当作当前选择。
+- 合成夹具已回读两条字段一致并停止，隔离 DSH 已停止；日常 DSH 8575 与用户 Redis 6379 仍在监听。夹具进程因输入通道关闭而未进入原自动清理回调，验证用配置目录保留在 E:。
+- `tests/ai-tools.test.ts`：补充最终界面确认失败后的分页回滚测试，检查重试复用已取得页而不是重复推进 Redis 游标。
+- 修正该测试范围：首个未提交候选页按现有协调器设计允许重新扫描；对已交付游标的续读页，确认失败后必须保留已取得页，重试不得重复推进底层游标。
+- `RedisWorkspace.tsx`、`CurrentSelection.tsx`、`KeyBrowser.tsx`：页签可见性变化时失效选择版本；仅可见且信号有效的页签发布和同步选择，移除旧页签卸载时无条件清空选择的行为，防止隐藏页签覆盖当前选择。多窗口跨流的迟到 RPC 仍需处理。
+- `selection-epoch.ts`、`ConnectionForm.tsx`、`KeyBrowser.tsx`：目标切换边界在取消信号触发时同步释放，迟到结果仍受请求序号和目标代次保护；补充取消后边界可恢复测试。
+- 协议升级为 6：删除独立选择 RPC，将选择身份发布和确认放进会话动作流，Host 仅接受唯一接收流、匹配版本的发布；流关闭时拒绝在途发布。此变更仍在编译和跨窗口交错测试中，不代表验收完成。
+- 修正动作流清理函数的显式 `void` 返回类型，解决编译发现的类型收窄问题。
+- 测试夹具迁移到流式选择协议，调整端点数量及初始化版本断言；旧选择 RPC 不再注册。
+- 清除已删除 RPC 的测试假对象，并更新严格上行编解码及联合消息类型，修复迁移编译错误。
+- `tests/ui-action-channel.test.ts`、`tests/selection-epoch.test.ts`：覆盖多接收流拒绝发布、仅唯一流允许发布、旧版本拒绝，以及流关闭时在途发布失败。
+- `tests/selection-race-browser.test.ts`：增加同会话两个页签（一可见一隐藏）的真实浏览器夹具，验证隐藏页签不发布、旧页签迟到回执不确认新选择。
+- `selection-epoch.ts`、`CurrentSelection.tsx`、`KeyBrowser.tsx`、`RedisWorkspace.tsx`、`index.ts`、`locales.ts`：选择发布失败时显示明确状态和手动重试入口；点击后为当前会话重建动作流并重新发布，不进行无界自动轮询。验证待执行。
+# 2026-10-31：选择同步通道失败后的恢复
+
+- RO09 Key 定位协议基础：`src/domain.ts`、`src/typert.shared.ts` 将协议提升至 7，增加精确 Key 动作和选择提交帧；`src/host/ui-action-coordinator.ts`、`src/host/ui-action-channel.ts` 对动作、唯一流、版本和有效期进行同步核验；`src/host/ai-reader.ts`、`src/remote-service.ts` 支持核验后的选择提交。客户端定位和完整验收尚未完成。
+- 修正上述协议分支的 TypeScript 类型收窄，使流状态和动作联合类型能通过静态检查。
+- 扩展 `tests/ui-action-channel.test.ts`：验证 Key 动作仅能通过匹配请求和连续版本的提交帧成功，普通成功回执、旧版本和用户抢先选择不能更新 Host 选择。
+- 修改 `src/client/ui-pane-presence.ts`、`src/client/selection-epoch.ts`、`src/client/ui-actions.ts` 和 `src/client/index.ts`：为唯一可见面板注册定位处理器，并在界面提交后通过同一动作流提交新选择；直到 Host 确认前保持选择未同步，失败或断流触发撤销。`src/client/KeyBrowser.tsx` 增加对应处理器接口，具体界面实现待接入。
+- 修正客户端异步回调所持提交状态的 TypeScript 类型收窄。
+- 修改 `src/client/KeyBrowser.tsx`、`KeyCatalog.tsx`、`CurrentSelection.tsx` 和 `locales.ts`：增加可取消的定位候选、界面提交检查与回退；未扫描目标独立显示并保持计数和游标不变，同 Key 程序定位清除旧子项。浏览器扫描夹具补充处理器注册桩。
+- 修正候选动作回调类型，并在目录目标可见后显式触发父组件确认，避免只凭状态排队确认定位。
+- 新增 `tests/key-locate-browser.test.ts`：在真实浏览器中检验未扫描目标独立显示、扫描计数不变及迟到提交回执不能覆盖用户选择。
+- 补齐定位浏览器夹具所需的现有预览格式容器，确保测试按实际组件层级运行。
+- 调整定位浏览器测试的各阶段等待期限，便于明确定位失败环节。
+- 经真实 DOM 与动作帧排查，浏览器夹具未加载插件样式导致虚拟 Key 行被状态栏遮挡；现加载实际样式以验证可点击的用户界面。
+- 浏览器夹具还原 `.dsh-redis` 与连接容器，使带作用域的现有样式正确生效。
+- 新增 `src/host/ai-locate-tool.ts` 并在 `src/runtime.ts` 注册 `redis_viewer_locate_key`；`src/host/ai-reader.ts` 增加会话目标检查和单次 TYPE 点读。工具只接受文本或规范 Base64 Key，不扫描、不获取值；区分不存在、读取失败和界面未确认，并复用当前会话预算。
+- 新增 `tests/ai-locate-tool.test.ts`：使用真实 DSH ToolRuntime、隔离模拟 Redis 与动作流覆盖文本、二进制和空 Key 的定点检查与提交，验证不存在、权限拒绝、非法参数及命令范围。
+- 修正定位工具测试中动作联合类型的收窄。
+- 修改 `src/client/selection-epoch.ts`、`CollectionTable.tsx`、`StreamView.tsx`：手动选行先接管程序候选并使旧动作失效；修改 `KeyBrowser.tsx` 和 `styles.ts`：定位期间隐藏并保留原详情组件，暂停其可见性与选择发布，取消时恢复原字段状态。
+- 扩展定位浏览器回归：验证原 Hash 字段在拒绝动作后仍选中，以及候选 Hash 的字段可被用户接管并抵抗迟到回执。
+- 调整 `src/client/KeyBrowser.tsx` 的拒绝回退顺序：先恢复原选择，再通知外部选择版本，避免 React 同步渲染中途卸载已保留的旧详情。
+- 外部状态通知改到回退视图的 layout 提交后执行；浏览器回归增加原 DOM 身份及原字段发布断言。
+- 修正浏览器原生 DOM 身份检查中的选择器，使其使用标准 CSS 语法。
+- 修改 `src/host/ui-action-channel.ts`：匹配当前定位请求的提交被拒绝时立即结束动作并撤销已同步状态；`tests/ui-action-channel.test.ts` 覆盖拒绝后没有后续上行帧仍能及时释放动作，其他请求 ID 不得终止当前动作。
+- 修改 `src/client/RedisWorkspace.tsx`、`CurrentSelection.tsx`、`KeyBrowser.tsx` 和 `index.ts`：浏览器标签进入后台时撤销可见面板登记并停止选择发布，回到前台重新登记；确认动作同时检查浏览器可见性。`ui-actions.ts` 在确认等待期间选择版本变化时撤销旧候选。
+- 新增 `tests/workspace-visibility-browser.test.ts`：在真实 Chromium 中模拟可见性事件，验证后台撤销面板登记、版本失效及返回前台重新登记。本机无头 Chromium 的两个标签均报告可见，实际 DSH 后台切换仍待验收。
+- 新增 `tests/locate-inflight-browser.test.ts`：将真实 React 选行、DSH ToolRuntime 与 Host 动作流相连，使用合成 transport 暂停 TYPE 后重选同一字段，核验旧定位失效且不派发界面动作。
+- 完整链路浏览器夹具使用 route 拦截的 localhost 页面，提供与实际 DSH 一致的安全上下文，不启动网络服务。
+- 扩展 `tests/key-locate-browser.test.ts`：覆盖同 Key 程序重选清除旧字段、取消时保留原详情和字段，以及取消后的迟到成功回执。
+- 扩展 `tests/ui-action-gateway.test.ts`：通过固定版真实 Host Gateway 验证二进制 Key 的协议 7 动作、提交帧和确认帧。
+- 更新 `src/host/ai-locate-tool.ts` 的说明及定位工具测试：明确极长 Key 的后续读取可能超出结果预算；覆盖空 Base64、最大二进制身份、超限输入，以及定位已提交但新版本尚未同步时禁止无参读旧值、同步后读取新值。
+- 将极长 Key 的限制说明扩展到状态查询；最大身份测试分别验证定位确认与状态预算拒绝。
+- 扩展 `tests/ai-locate-tool.test.ts`：在合成 TYPE 查询尚未返回时取消或重连，核验旧目标不被派发到界面。
+- 修复 `src/client/KeyBrowser.tsx` 与 `KeyCatalog.tsx`：聚焦详情时程序定位先恢复目录，等待目标行实际位于可见目录后才提交；期间手动切换焦点会使旧动作失效。扩展真实浏览器回归覆盖聚焦模式下的未扫描目标。
+- 扩展定位浏览器回归，覆盖已扫描 Key 所在命名空间折叠时的展开、可见选中与提交，保持已扫描计数不变。
+- 扩展定位浏览器回归：等待确认期间用户手动进入聚焦模式时，旧动作失效，迟到回执不改变用户选择与聚焦状态。
+- 修复 `src/client/KeyBrowser.tsx`：所有手动焦点切换都立即使选择版本失效，覆盖 Host 的 TYPE 检查尚未返回、界面动作尚未下发的时间窗口。
+- 统一目录鼠标、键盘、滚轮和辅助点击操作的选择失效入口，覆盖折叠、定位、视图设置及用户滚动；程序定位回退时仅在用户未再变更焦点时恢复原聚焦布局。
+- 将数据与元信息页签手动切换纳入用户操作保护；定位失败且用户未修改页签时恢复原页签，避免旧动作覆盖新选择。
+- 扩展真实 React + ToolRuntime + Host 流的在途 TYPE 回归，覆盖手工重选字段、切换焦点、折叠命名空间、定位当前 Key、切换元信息及树/列表；浏览器回归检查定位失败后恢复原聚焦与页签。
+- 收窄目录用户操作保护到可能被定位覆盖的导航、视图及分隔符操作；连续滚轮只在一次手势开始时使选择失效，普通打开筛选面板不触发无关同步。
+- 滚轮保护改为手势期间保持选择未同步，静止后释放边界，防止超过发布延迟后旧定位仍覆盖后续滚动；完整链路测试覆盖手势中请求与无关筛选展开。
+- `src/client/KeyCatalog.tsx` 为滚动条指针拖动持有单次选择边界；指针释放/取消、窗口失焦、页面隐藏和组件卸载时解除边界并注销监听器。
+- 修正目录窗口变量与浏览器 `window` 的类型冲突，并在指针捕获丢失时释放拖动边界。
+- 在真实 Chromium 中用合成指针事件覆盖长拖期间请求被拒、释放/取消/捕获丢失/失焦/隐藏/卸载后的边界恢复及监听器清理；未将模拟事件称为系统原生滚动条实测。
+- 监听器回归按组件实际注册的回调进行身份核对，排除 Playwright 自身的点击拦截器。
+- 修正监听器夹具对 Playwright 预注册点击拦截器的识别，避免把测试工具自身监听器算作组件泄漏。
+- 扩展 `tests/locate-inflight-browser.test.ts`：在 Chromium 显示原生滚动条，用真实鼠标按住并拖动合成 Key 列表，核验拖动时定位拒绝、松开后同步恢复。
+- 调整原生滚动条夹具的合成 Key，避免全部被折叠为单一命名空间，从而实际形成可滚动列表。
+- 新增 `src/host/ai-profile-tools.ts`，并在 `src/runtime.ts` 注册 `redis_viewer_profiles`：在用户要求时按页返回已保存资料的唯一 ID、名称和分组，复用会话预算，不输出连接设置；每页独立采样，不声称原子快照。工具说明明确名称和分组按用户填写内容返回，不把自定义文字误称经过凭据过滤。新增 `tests/ai-profile-tools.test.ts` 覆盖空列表、分页、同名分组、敏感设置不输出、参数拒绝、无会话、取消、资料损坏和预算。该改动仅实现 RO12 的资料列表，连接和断开仍待完成。
+- 补充 `tests/ai-profile-tools.test.ts`：验证资料读取在途取消后不返回结果、不计结果字节，另一会话仍可独立读取并计入自身预算。
+- 更新 `docs/verification/readonly-ro07-action-contract-draft-2026-10-30.md`：记录协议 6 安装包哈希、真实 DSH 和模型对合成字段、多客户端冲突及恢复的验证，以及测试范围与服务清理结果。
+- 修改 `tests/ui-action-gateway.test.ts`：通过真实 Host Gateway 验证新版选择发布帧、会话归属和确认帧；修改 `tests/ui-session-channel.test.ts` 补充再次重试成功的检查。
+- 修改 `src/client/index.ts`：动作通道有限次数重试耗尽后标记当前选择同步失败，让界面保留手动恢复入口；不增加持续重试。
+- 修改 `tests/ui-session-channel.test.ts`：覆盖未建立 Redis 连接时连续开流失败、手动重试及再次失败后的状态，防止恢复入口消失。
+# 2026-11-01：连接扩展方案草稿
+
+- 修正 `docs/verification/readonly-ro09-key-locate-2026-11-01.md` 与 `docs/DSH_AI_READONLY_TASKS.md`：明确真实模型结果属于协议 7 构建，当前协议 8 源码尚待重新构建和验收。
+- 新增 `docs/verification/readonly-ro09-key-locate-2026-11-01.md`，并更新 `docs/DSH_AI_READONLY_TASKS.md` 的 RO09、RO12 证据入口：记录协议 7 包哈希、398 项预打包检查、真实 DSH/模型的合成文本和二进制 Key 定位、字段恢复、资料列表及清理；集合项定位和连接生命周期仍未完成。
+- 隔离模型验收配置补充：E 盘 DSH 测试实例使用固定版凭据服务支持的路径引用日常凭据库，测试配置只包含路径，不复制或记录凭据值；避免在隔离实例重复录入密钥。
+- 新增 `docs/RO21_CONNECTION_ARCHITECTURE_PLAN.md`：依据现有有界 RESP 实现及固定版本官方资料，记录 mTLS、SSH、Sentinel、Cluster 的候选设计、连接与资料模型影响、生命周期和验证矩阵；现阶段均为方案，未宣称连接模式已实现。
+- 更新 `docs/DSH_AI_READONLY_TASKS.md` 的 RO21 证据入口：说明方案仍待验证和实际实现，任务保持未完成。
+# RO09 Hash 字段定位：定点读取基础（进行中）
+
+- 继续修改 `src/domain.ts`、`src/typert.shared.ts`、`src/host/ui-action-channel.ts`、`src/host/ai-reader.ts` 和 `src/host/ai-locate-tool.ts`：新增当前 Hash 字段定位动作与模型工具，固定 Host 待处理请求中的 Key/字段身份，并对定点读取过程中的选择版本作校验；界面实现与完整验收仍待完成。
+- 修正 `src/host/selected-reader.ts` 的结果类型导出，满足公开方法的 TypeScript 声明生成要求。
+- 新增 `tests/hash-field-locate.test.ts`：使用内存合成 Redis 链路检查空字段、空值、字段缺失、类型变化、权限错误、编码拒绝与读取期间用户改选，确保不依赖用户 Redis。
+- 补充 `tests/ui-action-channel.test.ts`：验证字段提交仅采用 Host 待处理动作的身份，提交与界面重新同步之间不暴露已同步选择。
+- 修正 `src/host/ai-reader.ts` 的读取后连接校验：同一连接失败保留实际超限或网络错误，连接被替换时仍拒绝旧结果；`tests/hash-field-locate.test.ts` 注入两类连接失败验证分类。
+- 调整 `src/host/ai-locate-tool.ts`：明确区分 Key 不存在、字段不存在和类型变化，选择过期给出中文提示，并说明 Key 与字段组合可能超过请求预算；`tests/hash-field-locate.test.ts` 使用真实 RESP 编码器覆盖最大身份组合超限。
+- 扩展 `tests/ai-locate-tool.test.ts`：以合成连接串联真实 ToolRuntime 与 Host 双向流，验证二进制字段身份、提交后同步前拒绝无参读取、同步后读取新字段，以及定位结果不包含字段值。
+- 更新 `tests/host-typert.test.ts` 的严格端点清单，纳入只读 `readHashField` 并继续核对 Host/Client 两端一致。
+- 补充合成链路中的无效字段参数、字段缺失中文提示以及 HGET 期间重连测试，确保不会提交旧连接目标。
+- 验收状态：当前协议 8 的 Hash 字段定位仍在实施中。合成 ToolRuntime/Host 流、严格协议、错误分类和类型检查已验证；统一候选禁用后的最终浏览器版本尚未复测，也未在真实 DSH 与模型中验收。C 盘空间不足时未继续启动浏览器或 DSH。
+- 待核实的界面风险：用户按下候选行下方旧字段后，候选取消可能使旧行在松手前位移，造成点击丢失或误选；候选字段已缓存和旧选择为独立采样时布局不同。需在系统盘空间恢复后，用真实鼠标和触摸按下、取消回退、松手的受控浏览器交错验证，并覆盖隐藏、失焦、断流及取消的清理；未验证前不宣称该子项完成。
+
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/typert.host.ts` 和 `src/typert.remote-client.ts`：新增严格的 Hash 字段读取请求与结果，协议版本升至 8，区分空值、字段不存在、Key 不存在、类型变化和读取失败。
+- 修改 `src/host/selected-reader.ts` 和 `src/remote-service.ts`：复用现有只读定点读取，允许调用者对命令执行期间的选择状态施加校验；界面采样不改变 HSCAN 缓存和统计。
+- 修改 `tests/client-bundle.test.ts`：同步检查新增的远程调用描述符数量。该组是后续字段定位事务的基础，尚未提供模型定位能力或完成 RO09。
+
+# Hash 字段定位客户端接入（实施中）
+
+- `HashView.tsx` 接入当前 Hash 的定点字段采样与独立目标行，保留 HSCAN 缓存及计数，增加候选回退与人工选择优先。
+- `CurrentSelection.tsx`、`ui-actions.ts`、`ui-pane-presence.ts` 和 `index.ts` 接入请求级发布暂停、字段动作与提交回执，避免提交期间发布旧字段。
+- `CollectionTable.tsx` 仅在目标行实际滚入自身可见区域后确认，并在定位期间暂停自动翻页；仍需运行编译和专项浏览器验证。
+- 修正 `CollectionTable.reveal` 的严格可选类型以允许显式传入 `undefined`。
+- 保留之前的独立字段选择，人工接管候选时保留该行；请求级暂停同步阻断已经排队的旧选择发布定时器。
+- 更新 Key 定位及延迟读取浏览器合成夹具，提供新增 Hash 处理器与定点读取接口。
+- 新增 `tests/hash-locate-browser.test.ts`，使用合成字段验证目标可见、暂停旧发布、拒绝回退及人工抢先；尚待执行。
+- 修复测试夹具的 Key 展示上下文；字段只有被直接点击才接管候选，筛选更改会取消在途定位；定点行标注来源及采样时间，本地筛选计数只统计扫描缓存。
+- 字段表滚动手势在整个滚轮/拖动周期内使旧动作失效；定位暂停自动续扫并提供明确继续入口，拒绝时恢复原分页意图；扫描开始使在途动作失效、后续采样不再永久显示旧定点值，保留原自动刷新时钟。修正浏览器测试在筛选失效后先等待重新同步。
+- 修正新 Key 候选组件首次 Hash 扫描误使 Key 定位失效：仅对已挂载且实际可发布的详情的后续扫描递增选择版本。
+- 扩展合成 Chromium 回归，覆盖候选期间滚动、延迟读取与搜索抢先、空字段及后续刷新清理定点样本；待执行验证。
+- 固定滚轮与迟到回执的测试时序，验证事件确实使版本失效，并在失败时输出消息、发布及 DOM 状态以定位原因。
+- 增加无选中字段筛选、二进制字段、真实 Chromium 滚动条按住、自动刷新、取消/断流和拒绝后滚动及焦点回退的合成回归，尚待运行。
+- 为字段候选记录定位前的列表滚动位置，拒绝或取消且用户未导航时在候选移除后恢复；用户滚动或选行时保留其新位置。
+- 修正自动刷新测试夹具中控件被其他区域遮挡的布局，使浏览器通过真实点击操作刷新控件。
+- 自动刷新夹具改为真实 KeyBrowser 的 toolbar/inspector 层级，移除临时层级样式，并在点击前断言浏览器实际命中按钮。
+- 按每次扫描信号记录替换或追加，追加页未命中时保留独立字段，命中时采用新扫描样本；用户主动滚动解除定位后的临时续扫保护，恢复原分页意图。
+- 浏览器夹具第二个扫描页返回终止游标，避免合成数据永久返回同一续页导致不真实的连续扫描。
+- 字段表统一鼠标/触摸按下边界，候选按下期间仅保留不可提交的视觉行，按下后移动与取消放弃候选；触摸取消后保持边界至触摸结束，键盘滚动同样维持到按键释放。
+- 字段表按下先触发既有用户接管通知，再建立手势边界，以保留 Key 定位候选详情中的人工选行。
+- 简化字段候选交互：待 Host 确认行明确标注定位中并禁用，取消时立即回退，不跨通道保留视觉 handoff；仅 Key 候选详情的鼠标按下沿用既有接管，触摸滑动不会提前接管。
+- 统一候选交互：待确认的 Key 详情显示定位中并使用原生 `inert`，鼠标、触摸和键盘均等待确认；目录其他 Key 仍可抢先选择；更新旧 Key 回归。
+- 缩短 Key 浏览器夹具单项操作等待，定位统一禁用后的首个真实失败步骤。
+- Key 候选回归改为验证 inert 并从目录切换抢先，回退到旧详情后再验证焦点按钮可用。
+- 删除 KeyBrowser 旧的全局用户选择接管监听；目录明确选 Key 仍走原显式选择处理，树/列表等导航只取消候选。
+
+### RO12 Host 候选连接基础（进行中）
+
+- 修改 src/host/connection-service.ts：增加仅供 Host 内部调用的候选连接预检与同会话状态核验，成功后同步交换 socket；失败、取消和并发连接操作会清理候选并保留当前连接。
+- 影响：尚未注册 RPC 或 AI 工具；资料版本、用户凭据与界面联动仍需后续接入，跨进程资料修改的原子核验尚未实现。
+- 验证：正在执行 TypeScript 编译及合成连接生命周期测试。
+
+- 新增 	ests/candidate-connection.test.ts：使用合成 transport 检查预检失败、取消后迟到连接、并发替换和会话隔离，不连接实际 Redis。
+
+- 补充候选连接竞争、断开、切换数据库和认证失败合成用例，验证过期候选不会覆盖最新会话连接。
+
+- 验证结果：pnpm typecheck 通过；候选连接与现有连接服务合成测试共 23 项通过。测试未启动服务，TEMP/TMP 指向 E 盘。
+
+### RO09 Hash 指针竞态回归（进行中）
+- 修改 tests/hash-locate-browser.test.ts：补充候选字段等待 Host 确认时，用户对已加载字段执行真实鼠标按下、抬起的布局和选择验证，检查候选撤销不能改变指针命中。该测试用于定位未完成的选择竞态，不代表功能已验收。
+
+### RO12 候选连接取消与资源释放修复（进行中）
+
+- 修改 `src/host/connection-service.ts`：拒绝覆盖正在连接或切换数据库的会话；候选连接和校验支持立即取消等待、清理迟到连接；交换后分别尝试解除监听和关闭旧连接，记录未确认释放的资源以便销毁时重试，并返回真实交换状态与旧资源释放状态。该内部能力尚未注册为 AI 工具，保存资料的并发校验及完整验收仍未完成。
+- 本次修复的 TypeScript 检查与并发、取消、资源异常专项测试正在执行，结果见后续记录。
+- 修改 `tests/candidate-connection.test.ts`：覆盖手动连接与 SELECT 期间的抢占拒绝、不响应取消的开启与校验、迟到结果和异常、旧资源单项释放失败及候选资源双重释放失败与重试。`pnpm typecheck` 通过；连接服务及候选连接两组共 30 项测试通过。未连接或修改用户 Redis；外部资料变更与提交之间的原子校验仍待设计和验证。
+
+- 修改 src/client/CollectionTable.tsx 和 src/client/HashView.tsx：记录指针交互起止，定位撤销立即解除事务，但延迟到指针事件结束后移除候选行，避免按下和抬起之间目标行位置变化；手动交互后不恢复旧滚动位置，取消、失焦和卸载沿用现有手势清理。正在进行真实浏览器回归。
+
+- 修改 src/client/HashView.tsx：组件卸载时取消延迟清理并阻止重新调度；修改 tests/hash-locate-browser.test.ts：增加鼠标取消、窗口失焦和触摸取消事件序列，检查候选消失并恢复同步，避免手势状态遗留。
+
+### RO09：List 和 Stream 选中项在途选择校验（进行中）
+
+- 修改 `src/host/list-reader.ts`、`src/host/stream-reader.ts` 和 `src/host/selected-reader.ts`：把调用方的选择有效性校验传入现有只读上下文；Stream 保留原有游标校验，防止读取期间选择变化后继续派发后续命令。
+- 修改 `src/host/ai-reader.ts`：当前选中项通过实际 AI 读取入口时，在命令派发前和响应后使用已确认的界面选择版本；读取结束再次检查，保证未同步的新选择也不会返回旧内容，同时保留同一连接真实失败结果。
+- 新增 `tests/ai-selected-race.test.ts`：通过 DSH 工具注册与调用入口，以合成传输分别在 List 的 TYPE/LRANGE、Stream 的 TYPE/XRANGE 返回前更改界面版本或选中目标，验证后续命令不派发且旧值不返回；未操作用户 Redis。
+- 检查：`pnpm typecheck` 通过；`tests/ai-selected-race.test.ts`、`tests/list-view.test.ts`、`tests/stream-view.test.ts`、`tests/ai-tools.test.ts` 共 4 个文件、71 项测试通过。本项只修复读期间的选择竞态，不代表 List/Stream 程序定位或 RO09 已完成，尚需真实 DSH 和模型验收。
+
+- 修改 tests/hash-locate-browser.test.ts：将真实鼠标竞争回归扩展为未缓存字段与已缓存字段两种候选，验证候选行重排也不会改变用户按下的字段。
+- 补充 `src/host/connection-service.ts` 与 `tests/candidate-connection.test.ts`：宿主已销毁后非合作的 opener 才返回连接时，首次关闭异常会立即再尝试一次；持续异常会保留资源并记录不含异常详情的固定警告，不宣称已经关闭。覆盖首次恢复和持续失败两种情况；`pnpm typecheck` 通过，候选连接与连接服务共 32 项测试通过。该处理不能保证持续抛错或永不返回的外部资源已释放。
+
+- 检查结果：pnpm typecheck 通过；tests/hash-locate-browser.test.ts 与 tests/selection-race-browser.test.ts 共 3 项真实 Chromium 测试通过，包含按下/抬起之间的未缓存与已缓存候选字段、鼠标取消、触摸取消、失焦和既有选择同步场景；git diff --check 通过（仅有换行符提示）。这些是本机合成夹具结果，不等于真实 DSH 和模型验收。
+
+### RO09：List 定位协议基础（进行中）
+
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/host/ui-action-channel.ts`、`src/client/ui-actions.ts` 和 `src/client/ui-pane-presence.ts`：协议升级至 9，增加仅包含 Key 身份与非负 List 下标的动作，并由 Host 从已批准动作生成选择，拒绝普通回执伪装为成功。Client 与工具链尚待接入，本项未完成。
+- 更新 `docs/DSH_AI_READONLY_TASKS.md` 与 `docs/verification/readonly-ro09-key-locate-2026-11-01.md`：标明协议 7 真实模型证据不适用于现有协议 9。
+- 检查：此组修改后 `pnpm typecheck` 通过；尚未进行本协议真实模型验收。
+
+- List 定位 Host 基础：`src/host/ai-reader.ts` 复用选中项的可信会话、选择版本与读取校验；`src/host/ai-locate-tool.ts` 增加 `redis_viewer_locate_list_index`，限制非负 64 位整数文本，仅采样一个下标并明确并发位移语义。Client 接收与界面回执尚未接通，本项未完成；此次编译 `pnpm typecheck` 通过。
+
+- 修改 tests/hash-locate-browser.test.ts：补充超过手势超时的真实鼠标按住、以及定位期间用户滚动后分页恢复的浏览器复现；用于检查现有方案的遗漏，目前尚未宣称修复。
+
+- 复现结果：真实 Chromium 长按超过 10 秒后目标行纵坐标从 195 变为 167，证实手势定时器会提前移除候选；暂时缩短等待以继续单独复现分页问题，修复时恢复长按检查。
+
+- List 定位客户端：`src/client/ui-pane-presence.ts`、`src/client/index.ts` 将动作路由到当前唯一可见 List 视图；`src/client/ListView.tsx` 单独读取下标并暂存候选，界面可见且 Host 确认后才发布选择，样本不混入分页缓存，人工交互或旧目标作废；`src/client/locales.ts` 增加中英位置变化提示。此组 `pnpm typecheck` 通过；专项与真实 DSH/模型验证尚未执行，RO09 未完成。
+
+### RO12 资料同进程事务基础（进行中）
+
+- 修改 `src/host/profile-store.ts`：同进程内使用同一规范化文件路径的资料实例共用串行队列，避免独立实例并发保存时丢失更新；增加内部 `withVerifiedProfile`，在队列内最终读取并比较完整规范化资料快照，再同步调用提交回调。候选网络连接仍须在队列外准备，当前原语未接入连接切换或模型工具。
+- 新增 `tests/profile-transaction.test.ts`：检查独立资料实例并发保存、先写后校验、校验提交先于后续写入、入队时快照、删除及取消。上述队列仅协调同进程按相同规范化路径访问的插件实例；不保护其他进程、人工直接写入或不同路径别名，不能将其描述为文件系统级原子事务。
+- 验证：代码及测试修改后的 `pnpm typecheck` 通过；专项测试结果待运行。资料列表后的凭据输入、候选连接提交整合与真实 DSH 模型验证仍待完成。
+- 补充验证结果：`pnpm exec vitest run tests/profile-transaction.test.ts tests/profile-store.test.ts` 共 2 个文件、14 项测试通过；日志中的专项测试“待运行”状态以此结果为准。
+
+- 修改 src/client/CollectionTable.tsx：移除会误判长按结束的固定超时，改由抬起、取消、失焦、隐藏、卸载或鼠标返回时已松开来结束边界。修改 src/client/HashView.tsx：区分指针交互与真实滚动，拒绝定位时保留用户后续滚动产生的分页状态；修改 tests/hash-locate-browser.test.ts：恢复超过 10 秒的真实长按回归并验证滚动恢复分页。
+
+- 长按测试已越过原 10 秒故障点；分页断言仍失败，暂时增加仅输出合成夹具计数与界面状态的诊断并缩短长按等待，确认是否存在额外状态覆盖。
+
+- 修正分页回归的等待条件：滚轮事件异步分发，必须等选择版本发生变化并重新同步后再断言，避免把滚轮尚未处理误判为分页失败；移除临时输出，恢复真实长按等待。
+
+- 新增 `tests/list-locate.test.ts`：通过注册的 DSH 工具与 Host 动作流验证精确下标、确认提交、选择重新同步、越界、非法参数和伪造成功回执；结果只包含下标，不将采样值放进定位结果。新增 `tests/list-locate-browser.test.ts`：合成分页数据配合真实 Chromium 检查未加载下标、加载计数、用户按下/抬起与迟到读取竞争。
+- 检查：`pnpm typecheck`、`pnpm build` 通过；重建后的 7 个相关测试文件 40 项通过，另有 1 项 Chromium 交互测试通过。独立复审及真实 DSH/模型验收仍待完成，本轮不宣称 RO09 完成。
+
+- 严格等待滚轮处理后分页断言仍失败；暂时记录合成夹具前后的扫描次数和表格尺寸，区分游标耗尽与分页状态覆盖，再恢复长按测试。
+
+- 修正 `src/client/ListView.tsx` 的候选撤回：记录等待期间用户的滚动翻页意图，避免恢复旧暂停状态覆盖用户的新操作；候选行因指针交互延迟移除时，同样保留随后发生的滚动。
+- 扩展 `tests/list-locate-browser.test.ts`：在原本分页暂停时发起定位并滚轮操作，验证撤回后自动分页保持可用、旧选择未被迟到确认覆盖；`pnpm typecheck` 和该 Chromium 测试通过。
+
+### RO12 资料验证与候选连接交换衔接（进行中）
+
+- 修改 `src/host/connection-service.ts`：候选连接在资料队列外完成准备；新增内部 `connectProfileCandidate`，用同一份规范化资料快照构造连接设置并在资料队列中最终比对，通过同步回调执行会话 CAS 和连接交换。旧连接保持到交换成功；取消、最终核对时资料不匹配或会话已改变时不提交候选，尝试释放候选；会话已被其他操作改变时保留该操作的结果。交换完成后若 gate 抛错或取消仍报告已经发生的交换；回执返回前连接又丢失或被替换时标记 `changed` 并返回当前状态，避免误报仍然连接。旧连接释放失败仍标记 `uncertain`，持续失败不声称已经关闭。
+- 修改 `tests/candidate-connection.test.ts`，新增 `tests/profile-connection-transaction.test.ts`：覆盖资料修改与排队取消、连接设置快照绑定、提交后异常、迟到回调及交换后连接失效或被替换。该内部链路尚未注册为 DSH 工具，也未接入界面和凭据输入；资料队列仅协调同进程、相同规范化路径的插件实例，不能保证对其他进程或人工直接修改的排他性。
+- 验证：`pnpm typecheck` 通过；候选连接、普通连接及资料事务 4 个测试文件共 43 项通过。未启动服务或操作 Redis。
+
+- 分页诊断发现断言前更多按钮也不存在，继续记录合成扫描游标以确定是否已自动读完；没有更改 Redis 数据。
+- 同项浏览器测试进一步确认滚轮触发后选择版本实际递增并重新同步，且读取页数未变化、游标未被提前消费，再断言可继续分页；复测通过。
+
+- 诊断确认分页断言时合成游标已读完，前述失败不能证明分页错误。修改 tests/hash-locate-browser.test.ts，让分页专测期间保留后续合成页，并移除临时诊断输出；重新验证实际状态归属。
+- 后续修正：`connectProfileCandidate` 连接前先在共享资料队列中核对快照：若预检读到的资料与原快照不同，则不会打开候选连接；候选意图在初次核对前登记，期间人工操作可以取消。预检后资料若发生变化，网络握手可能已经开始；连接完成后第二次核对若仍不匹配则不交换。资料队列仅协调同进程按相同规范化路径访问的实例，不排除其他进程或不同路径别名的并发更改。新增预检时资料已改变则无网络连接、以及复核等待中用户切换连接两项测试；当时上述 4 个相关测试文件共 45 项通过，`pnpm typecheck` 通过。
+- 核对边界：当前实现只比较预检和最终检查时的规范化内容，没有变更历史或单调版本；资料 A→B→A 若在检查时均为完全相同的 A，仍可能通过并交换，不能宣称任何中间变化都会使候选失效。相应源码注释已修正，功能未接入模型与界面。
+
+- 扩展 tests/hash-locate-browser.test.ts：恢复 10 秒以上长按，增加窗口外松开后返回的恢复，以及暂停翻页时滚轮和鼠标拖动两种用户意图；测试夹具在这些场景确保仍有后续页。
+
+- 检查结果：pnpm typecheck 通过；tests/hash-locate-browser.test.ts 和 tests/selection-race-browser.test.ts 共 3 项浏览器测试通过，覆盖真实鼠标长按超过 10 秒、未缓存/已缓存候选、滚轮及拖动后分页恢复，以及模拟取消、失焦和窗口外松开。夹具与真实触屏、真实 DSH 和模型验收边界仍然不同。
+- 修复空会话断开竞态：`src/host/connection-service.ts` 中，当前会话尚无连接记录时也会取消该会话的在途候选，再返回断开状态；已存在连接时仍先检查目标身份和代次，过期目标不得取消候选。`tests/candidate-connection.test.ts` 覆盖资料复核和连接建立期间取消、迟到连接释放、跨会话隔离及过期目标不会取消。`pnpm typecheck` 通过；候选、资料衔接和现有连接 3 文件共 45 测试通过。该行为尚未接入模型工具。
+
+### RO10 集合刷新互斥（进行中）
+
+- 修改 `src/client/use-collection-scan.ts`：同一目标已有读取时同步拒绝新的刷新或续页，防止忙碌状态尚未渲染时连续触发造成取消和重复读取；切换目标仍使用既有清理逻辑取消旧请求并读取新目标。
+- 新增 `tests/collection-refresh-race-browser.test.ts`：在真实 Chromium 中使用延迟合成读取复现重复刷新，在修改前观察到 3 次调用且前两次被取消；测试同时覆盖切换目标后迟到结果不覆盖新目标。修复后专项测试待执行，本项未接入 AI 动作，RO10 尚未完成。
+
+### Redis 界面动作最终确认（进行中）
+
+- 修改 `src/domain.ts`、`src/host/ui-action-coordinator.ts`、`src/host/ui-action-channel.ts`、`src/client/ui-actions.ts` 和 `src/host/ai-locate-tool.ts`：协议提升至 10，界面动作 Host 提交后等待客户端完成选择发布并同步，再报告 `applied`；提交后确认中断统一返回 `unknown`，定位工具明确说明结果未知。复用现有选择发布通道，不把 Redis 值传入动作帧。专项测试与双向流中断回归尚在进行。
+- 修改 `tests/ui-action-channel.test.ts`：增加接收提交结果前断开、选择发布后同步前断开以及发布了错误选择的可控通道回归，并把成功路径改为等待匹配选择发布和同步。TypeScript 检查通过；本组测试尚待运行。
+- 修改 `tests/ai-locate-tool.test.ts`、`tests/list-locate.test.ts` 和 `tests/ui-action-gateway.test.ts`：真实工具注册和 Gateway 夹具同步模拟客户端选择发布与同步，验证定位成功必须经历新的确认流程。TypeScript 检查通过，集成测试正在执行。
+- 新增 `tests/ui-action-confirmation-browser.test.ts`：连接真实浏览器 ListView、客户端动作流与 Host 协调器，分别检查最终选择确认完成和确认帧丢失后的结果；TypeScript 检查通过，测试正在执行。
+- 为 `tests/ui-action-confirmation-browser.test.ts` 增加失败诊断（仅合成输入与选择版本），定位首次端到端连接未同步；TypeScript 检查通过，测试尚未通过。
+- `tests/ui-action-confirmation-browser.test.ts` 首次运行因 `about:blank` 非安全上下文缺少 `crypto.randomUUID` 而失败；已在合成夹具中提供确定性的合法标识，真实 DSH localhost 的运行环境不同。TypeScript 检查通过；完整确认协议仍在修正人工选择 ABA 竞态。
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/client/selection-epoch.ts`、`src/client/CurrentSelection.tsx`、`src/client/ui-actions.ts` 和 `src/host/ui-action-channel.ts`：为动作完成后的选择发布绑定动作请求 ID；手动选择、滚动或其他失效会清除旧确认，防止改选后又选回原目标的 ABA 误确认；Host 拒绝未匹配发布的同步帧。TypeScript 检查通过，相关回归正在适配。
+- 更新 `tests/ui-action-channel.test.ts`、`tests/ai-locate-tool.test.ts`、`tests/list-locate.test.ts`、`tests/ui-action-gateway.test.ts` 的成功夹具，使选择发布显式携带所属动作 ID；TypeScript 检查通过，专项测试待执行。
+- 更新 `tests/ui-action-confirmation-browser.test.ts` 与 `tests/ui-action-channel.test.ts`：增加真实客户端手动改选再选回的 ABA 竞争、无匹配发布直接伪造同步的测试；TypeScript 检查通过，专项测试待执行。
+
+### Redis 界面动作单次 Host 提交协议设计（进行中）
+
+- `prepare`：Host 校验动作、原选择版本、连接及唯一界面，记录预期目标并将选择状态置为未同步，但不写入新选择；随后回复客户端允许继续。
+- `render/publish`：客户端处理准备结果、提交 React 界面，再用既有 `publishSelection` 发送当前真实选择及动作 ID。Host 仅在动作 ID、连接、内容、版本、期限及唯一界面均匹配时一次性提交新选择；新选择不同或无动作 ID 视为用户操作，结束旧动作为 `unknown` 并按普通选择处理。
+- `applied/sync`：Host 收到并提交匹配发布才返回 `applied`；在客户端收到发布回执并发出同步状态之前，Host 选择仍不可信，不能据此进行无参数读取。准备后若通道断开、取消或超时，报告 `unknown`，不推断界面是否执行；准备前按原有 stale/timeout 等状态报告。
+- 本地选择版本变化会立即取消旧的待回执发布，使最新选择能够发布；迟到回执按 ID 忽略。协议将通过真实浏览器与 Host 相连的成功、丢包、用户 ABA、隐藏、多界面和同步回归验证；当前仍未完成。
+- RO10 集合刷新互斥验证补充：`pnpm typecheck` 通过；新 Chromium 竞态和自动刷新共 10 项测试通过；Hash 与 List 定位各 1 项浏览器回归通过。前述“专项测试待执行”以本条实际结果为准；尚未接入 DSH AI 刷新动作或完成 RO10 验收。
+- 修改 `src/host/ui-action-channel.ts` 和 `src/client/selection-epoch.ts`：准备阶段不再写 Host 选择，带动作 ID 的渲染后发布才执行唯一提交；选择版本变化立即终止旧待回执发布，并忽略迟到回执。TypeScript 检查通过；现有测试正在按新提交时点更新，功能尚待完整回归。
+- 更新 `tests/ui-action-channel.test.ts`、`tests/ui-action-gateway.test.ts` 和 `tests/selection-epoch.test.ts`：以渲染后发布为 Host 提交时点，增加旧发布被新选择立即取代及迟到回执忽略的回归；TypeScript 检查通过，专项测试正在执行。
+- 修正 `tests/ui-action-channel.test.ts`：准备阶段的拒绝改由目标失效触发，不再依赖旧版准备时执行提交的行为。首次单次提交专项运行中 28 项通过、1 项旧断言失败；真实浏览器 ABA 从约 11.6 秒降至约 2.2 秒。TypeScript 检查通过，修改后的测试待重跑。
+- 更新 `tests/ui-action-confirmation-browser.test.ts`：补充模拟面板隐藏、第二个 Host 接收流和动作完成后的重新同步；TypeScript 检查通过，专项测试正在执行。上一轮单次提交相关 8 组 43 项测试通过。
+
+### RO12 内部资料快照令牌（进行中）
+
+- 新增 `src/host/profile-snapshots.ts`：生成随机不透明令牌，按可信会话、资料 ID 和规范化资料快照绑定；同一会话同一资料重新签发会使旧令牌失效。每会话最多 50 项、全局最多 250 项，5 分钟到期；使用单一计时器清理过期数据，支持按会话及服务销毁清理。令牌不编码连接设置，解析只供可信 Host 内部使用并返回独立副本；严格资料校验拒绝密码字段，不记录资料或凭据。
+- 新增 `tests/profile-snapshots.test.ts`：覆盖随机令牌、跨会话与错误 ID 拒绝、快照副本、旧令牌撤销、密码拒绝、到期/销毁清理和容量边界。该存储尚未接入资料列表、连接表单或模型工具，不代表 RO12 已完成。
+- 检查：首次类型检查发现测试中故意注入的密码字面量触发 TS2353，已调整非法夹具写法；随后 `pnpm typecheck` 通过，令牌专项 4 项测试通过。未启动服务或操作 Redis。
+- 更新 `src/host/ui-action-coordinator.ts`、`src/host/ui-action-channel.ts`：保持 Host 单次提交，等客户端收到发布回执并同步同一版本后才报告 `applied`；任意过期、错误或重复动作 ID 的发布均直接拒绝，绝不降级成人工选择。TypeScript 检查通过，对应中断和迟到帧测试正在更新。上一轮 Key/Hash/List、可见性及竞态浏览器共 16 项通过，但需对当前修订再复验。
+- 补充 `src/host/ui-action-channel.ts` 的版本校验：已提交动作后，如果未经新发布直接声称其他版本已同步，则拒绝该通道状态；同步调整 `tests/ui-action-channel.test.ts` 对错误动作身份的预期。TypeScript 检查通过，针对性测试待执行。
+- 更新 `tests/ui-action-confirmation-browser.test.ts`、`tests/ui-action-channel.test.ts`：增加 Host 完成唯一提交但发布回执丢失、用户新选择后旧动作令牌迟到的回归；检查旧帧被拒且不覆盖新选择。TypeScript 检查通过，测试待运行。
+- 完成单次 Host 提交及最终同步回归：`pnpm typecheck` 通过，8 个相关测试文件共 47 项通过，包括真实浏览器连 Host 的确认帧及发布回执丢失、人工 ABA、模拟面板隐藏、第二接收流、同步恢复，以及旧动作令牌不能覆盖更新的人工选择。
+- 当前时效边界：面板在准备后隐藏，若旧动作的发布帧一直未到达 Host，Host 无法区分动作自身与用户导致的未同步版本，会保留该动作至最多 10 秒并返回 `unknown`；此时不声称成功，用户后续动作可能暂时收到 busy。若迟到动作帧到达也必须拒绝，不能当作人工选择。未在真实 DSH 或用户模型上验收协议 10。
+- 诊断性完整检查：`pnpm check` 通过，55 个测试文件共 466 项通过，包含本地浏览器测试。该检查开始时其他资料列表工作可能尚在修改，不能作为源码稳定后的最终检查；集成完成后需重跑。真实 DSH 和用户模型逐项验收仍未完成。
+
+### Redis 状态工具的选择同步边界（进行中）
+
+- 新增 `tests/ai-selection-status-channel.test.ts`：通过真实 Host 双向动作通道及注册的工具，覆盖动作发布后未同步、通道断开和重开后重新同步，同时检查无参数值读取仍拒绝未同步状态。TypeScript 检查通过，正在先验证旧实现是否暴露未确认选择。
+- 调整 `tests/ai-selection-status-channel.test.ts` 的首个前置断言，以便先定位现有状态工具在未同步阶段的实际错误，而非仅因新字段缺失提前失败。TypeScript 检查通过。
+
+### RO12 资料列表快照令牌接入（进行中）
+
+- 修改 `src/host/profile-snapshots.ts`：支持将每页令牌暂存，只有工具结果通过预算校验时才提交；取消或失败时回滚，不撤销先前令牌。按暂存引用计数管理空会话，避免一个请求回滚误使并发请求失效；会话销毁后迟到的暂存不能复活。
+- 修改 `src/host/ai-profile-tools.ts` 与 `src/runtime.ts`：`redis_viewer_profiles` 每项附带按可信会话和完整资料快照绑定的随机短期 `snapshotToken`；容量不足时为 `null`，每页仍独立读取，摘要不包含连接设置或凭据。同一资料重列会替换旧令牌，按 session 和插件销毁清理；尚未注册连接工具，也不接受模型提供密码。
+- 修改 `tests/profile-snapshots.test.ts`、`tests/ai-profile-tools.test.ts`：新增暂存提交/回滚、并发与销毁，以及真实 ToolRuntime 的跨会话、资料变更、取消、容量耗尽和释放验证。首次专项回归因旧摘要断言不接受新增字段而失败，调整断言后复测通过；`pnpm typecheck` 通过，2 文件共 9 项专项测试通过。未运行 DSH 或操作 Redis。
+- 已复现旧问题：动作提交到 Host、客户端未同步时，`redis_viewer_status` 返回了尚未确认的新 Key。修改 `src/host/ai-reader.ts`、`src/remote-service.ts`、`src/host/ai-tools.ts`：复用唯一通道同步状态，未同步时返回 `selectionSync: unavailable` 和空的 `currentSelection`，同步时标记 `synchronized`；说明中明确空选择与不可确认的区别和记录时间含义。无参数值读取的确认逻辑未改。同步适配 `tests/ai-selection-status-channel.test.ts`、`tests/ai-locate-tool.test.ts`、`tests/list-locate.test.ts`、`tests/ai-tools.test.ts` 的注入回调；TypeScript 检查通过，专项回归正在运行。
+- 更新 `docs/AI_READ_USAGE.md`：解释 `selectionSync`、不可确认与无选择的区别，以及 `currentSelection.sampledAt` 是 Host 记录时间。`pnpm typecheck` 通过；真实通道及状态、定位和选择读取竞态共 5 个测试文件、47 项测试通过。真实 DSH/模型整体验收仍待完成。
+
+### RO12 资料令牌并发容量修正
+
+- 修改 `src/host/profile-snapshots.ts`：对尚未提交的新令牌预留全局及当前会话容量；容量已被其他暂存占用时返回 `null`，不再先返回令牌、后因容量竞争整页提交失败。回滚、会话销毁、插件销毁或五分钟暂存过期会释放预留；暂存数量和单个定时器受限，随机令牌同时避开在途和已提交令牌。已提交的其他会话令牌不被驱逐。
+- 修改 `tests/profile-snapshots.test.ts`：覆盖全局 249 项时跨会话竞争最后位置、同会话竞争最后位置、无令牌结果提交、回滚、会话销毁、暂存过期和已提交令牌保留。`pnpm typecheck` 通过，快照与真实 ToolRuntime 列表共 2 文件 12 项测试通过。本次未启动服务或操作 Redis；模型连接工具仍未接入。
+
+### 协议 10 真实 DSH 与模型子项证据
+
+- 新增 `docs/verification/readonly-ro09-protocol10-2026-11-01.md`：归档隔离 DSH `0.2.0-rc.2`、真实 `DeepSeek-V41-Flash` 和合成 Redis 的 Key、Hash、List、资料列表令牌及侧栏可见性状态结果；区分模型实际读取与其他尚未验收的任务，不写入凭据、令牌实值或业务数据。
+- 记录测试包 SHA-256 为 `34d2ea9468dd45ef04c46c63f40f47cc2d7d74029f1f3cbc91d42b6cf5667e36`，该包默认 prepack 为 56 文件、470 测试通过；包早于资料快照容量修复，不将该结果外推到当前源码或新包。文档修改后 `pnpm typecheck` 通过；RO07～RO33 均未据此整体标记完成。
+- 同一测试包在 2026-11-01 20:30（本地时间）从隐藏状态请求 `redis_viewer_show` 时，面板实际打开但工具返回 `stale`；该场景明确记为失败，原因待排查修复。
+
+### RO09 Set 成员定位 Host 基础（进行中）
+- 修改 src/domain.ts、src/typert.shared.ts、src/typert.host.ts、src/typert.remote-client.ts、src/remote-service.ts：协议升至 11，新增严格原始字节 Set 成员点查 DTO 和受信会话 RPC，复用 RedisSelectedReader 的 TYPE、SISMEMBER、TYPE、PTTL，只读且不推进 SSCAN。
+- 修改 src/host/ai-reader.ts、src/host/ai-locate-tool.ts、src/host/ui-action-channel.ts：加入共享预算的精确文本或规范 Base64 成员定位，动作仅包含身份并沿用带令牌的确认链；类型、缺失、失败、超限和不确定确认分别报告。修改 tests/host-typert.test.ts、tests/client-bundle.test.ts：同步端点清单。客户端及完整验收仍在进行。
+
+- 新增 tests/set-member-locate.test.ts：对合成 Host 验证空和二进制成员、精确命令序列、缺失、类型变化、权限、错误回复、请求超限与双端严格编码；通过真实工具注册和 Host 动作流验证只有完成选择确认后才报告 applied，严格拒绝混合参数和写入命令。
+
+### RO09 Set 成员定位客户端（进行中）
+- 修改 src/client/SetView.tsx：新增精确成员点查、候选与独立定位行，保持扫描计数，拒绝时恢复状态并保留用户选择、滚动和翻页意图。修改 src/client/ui-pane-presence.ts、ui-actions.ts、index.ts：通过现有对话级界面通道传送 Set 成员动作和精确点查，复用动作令牌确认。正在编译与浏览器验证。
+
+### Redis 侧栏显示动作与选择版本（进行中）
+
+- 新增 `tests/ai-show-selection-channel.test.ts`：使用真实注册工具、Client 动作处理和 Host 双向通道，模拟打开侧栏导致选择版本变化并观察显示动作结果。TypeScript 检查通过；正在复现实际模型验收中面板打开但返回 stale 的问题。
+
+- 扩展 tests/set-member-locate.test.ts：在 SISMEMBER 等待期间分别改选和替换连接，断言旧采样按 stale 拒绝，不能落到新会话状态；先前 Set/Hash/List 与双端协议共 20 项专项通过。
+- 已用真实工具注册与双向通道复现：侧栏打开且可见，但选择版本变化令 `redis_viewer_show` 错误返回 `stale`。修改 `src/host/ui-action-coordinator.ts`：选择或目标失效仅取消带目标的动作，显示侧栏这类无目标动作继续由可见性、通道、歧义和超时检查决定。TypeScript 检查通过；专项回归正在运行。
+
+- 新增 tests/set-locate-browser.test.ts：通过真实 Chromium 的 Set 视图和 Host 双向动作通道，覆盖筛选外、二进制、空成员、扫描数不增加及用户指针选择抢占；使用合成读取，不操作用户 Redis。
+
+- 检查结果：pnpm typecheck 通过；tests/set-member-locate.test.ts 4 项通过，另外 Hash/List 和双端协议回归通过；这些为合成 Host 测试，真实 Chromium 和 DSH/模型验收仍待完成。
+- 扩充 `tests/ai-show-selection-channel.test.ts`：在打开侧栏时同时触发版本变化和普通选择重新发布，覆盖两条会调用协调器失效入口的实际路径。TypeScript 检查通过；上一轮 6 个专项文件 35 项测试通过，更新后正在重跑。
+
+- 扩展 tests/set-locate-browser.test.ts：增加已缓存成员不重复、点查期间筛选变化取消、准备阶段隐藏面板等浏览器与 Host 通道回归。
+- 完成显示侧栏动作专项回归：`pnpm typecheck` 通过；真实工具注册加 Host/Client 双向通道、协调器、面板可见性及会话通道共 6 个测试文件、35 项通过。目标相关动作仍在选择变化时取消，断流、多接收者与超时保护保留。尚未重新打包或在真实 DSH、用户模型中复验该修复。
+
+- 扩展 Set 浏览器回归：用仍有后续页的合成数据，在定位等待期间滚轮操作后检查自动翻页恢复，防止旧的暂停状态覆盖用户意图。
+- 新增 `tests/show-lifecycle.test.ts`：针对目标为空的 show 动作，覆盖等待期间会话销毁返回 disconnected、第二接收者出现返回 ambiguous、迟到成功回执无效及其他会话不受影响。`pnpm typecheck` 通过；show 生命周期、Host/Client 模拟通道及协调器共 3 文件 10 测试通过。本项为本地测试，不替代真实 DSH 重新验收。
+
+- 执行 pnpm build，重新生成 lib/ 中的 Host 和 Client 构建产物，使新增 Set 成员 RPC 进入 bundle；先前直接运行 bundle 测试因读取旧产物而失败，正对新产物复验。
+
+- 验证：pnpm typecheck 和 pnpm build 通过；Set 成员 Host/读取、Set 视图、Set 浏览器+Host 通道、现有确认通道等 5 文件 41 项测试通过；重建后 tests/client-bundle.test.ts 通过。测试使用合成数据，真实 DSH 和用户模型验收仍待进行。
+
+### RO11 MATCH 预设存储基础（进行中）
+
+- 新增 `src/host/match-preset-store.ts`：固定 DSH profile 的插件数据目录，仅持久化规范化名称、名称摘要 ID 和 MATCH 条件；按名称创建不可覆盖的预设，使用同目录临时文件写完后创建硬链接，目标已存在返回冲突；按 ID 读取和有界分页列表，不接收路径，不保存结果、游标或凭据。读写错误只报告固定类型；列表不是快照。该内部存储尚未接入界面或 AI 工具。
+- 本机 E 盘是 NTFS，隔离目录单进程探针验证硬链接目标已存在时 EEXIST 且原内容不变。Node 官方文件系统 API 及 Microsoft CreateHardLink 说明该方法的平台限制；其他文件系统、网络共享及断电持久性未验证。`pnpm typecheck` 通过；多进程冲突与异常测试正在添加。
+- 新增 `tests/match-preset-store.test.ts`：覆盖 profile 隔离、名称规范化与冲突、分页、非法路径/多余字段拒绝、损坏和过大文件、预取消及多个独立 Windows 进程同名同时保存。首次 TypeScript 检查发现未使用导入并已立即删除，重新检查通过；专项测试正在执行。
+- 多进程测试首次未能启动：Node 的 strip-only 测试模式不支持源码中的 TypeScript 参数属性，故不能据此判断并发行为。已调整 `tests/match-preset-store.test.ts`，由同一源码生成隔离测试模块供子进程运行，并让启动失败及时结束而非等待超时；TypeScript 检查通过，正在重测。
+
+### 协议 11 真实 DSH 与模型子项证据
+
+- 新增 docs/verification/readonly-ro09-protocol11-2026-11-01.md：记录隔离 DSH rc.2、DeepSeek-V41-Flash 与合成 Redis 的真实侧栏打开、Set Key/二进制成员定位、无参读取、缺失成员及筛选外定位结果，明确未使用业务数据。
+- 该次测试包 SHA-256 为 274d22cc1ab0befc15f9a215c30e073195b258cf6a0aca631e976b031a5f795f，默认 prepack 60 文件、481 项测试通过；该包早于动作二次采样 Host 队列失效的后续修复，不能代替新包及完整任务验收。
+- RO11 独立预设存储专项测试通过：7 项覆盖规范化冲突、固定 profile 范围、路径/多余字段拒绝、分页、损坏/超限/取消；8 个独立 Windows 进程同步竞争同名条件时，恰有 1 个成功、7 个返回冲突，最终内容完整且无测试临时文件。TypeScript 检查通过。该结果仅证明本机 E: NTFS 场景，不证明网络共享、其他文件系统或断电后的持久性；尚未接入 UI/AI。
+- 复核后修改 `src/host/match-preset-store.ts`、`tests/match-preset-store.test.ts`：取消导致大量预设无法列出的 10000 目录项硬上限，分页每次扫描目录但仅保留 11 个候选且不承诺快照；严格拒绝实际非法 UTF-8，测试使用真实损坏字节并核验原文件未被修改。TypeScript 检查通过，专项测试正在执行。
+- 明确限制：每页都需遍历目录，目录很大时耗时随条目增长；只在异步 I/O 间检查取消，不能保证阻塞中的单次文件系统调用立即返回。依赖可信 DSH profile 目录，`lstat` 和 `open` 不是防恶意本机替换的原子操作。硬链接成功后若用户取消或进程中断，预设可能已经保存，未来 UI/AI 接入需报告结果未知并回读，不能声称未保存。
+- 修复 `src/host/match-preset-store.ts` 在空目录或不存在路径等待 I/O 时忽略取消的边界，并在 `tests/match-preset-store.test.ts` 加入开始操作后立即取消的实际文件系统回归；TypeScript 检查通过，专项测试正在执行。
+- 新增 `tests/match-preset-cancellation.test.ts`：在真实硬链接成功后立即触发取消，检查已保存预设可回读，避免调用方误称未保存。紧随修改的 TypeScript 检查遇到并行 Set 工作编译错误：`tests/set-member-locate.test.ts` 引用的 `setMemberReadResultSchema` 当前未导出，已通知对应任务处理；本次预设修改未碰该共享文件。
+- 协议任务修复并行的 Set 导出后确认 `pnpm typecheck` 通过；预设存储 2 个测试文件共 9 项通过，包括真实 NTFS 链接完成后立即取消且可回读、多进程同名冲突、非法 UTF-8、分页及 I/O 边界取消。该结果不代表预设已接入 DSH 界面或 AI，整项 RO11 仍未完成。
+
+### 动作二次点查的 Host 校验（协议 12）
+
+- 将 Hash 字段、List 下标、Set 成员定位的界面二次点查统一为 `readActionPoint`：`src/domain.ts`、`src/typert.shared.ts`、`src/typert.host.ts`、`src/typert.remote-client.ts` 定义严格协议；`src/client/HashView.tsx`、`ListView.tsx`、`SetView.tsx`、`src/client/index.ts` 只提交动作 requestId；`src/remote-service.ts` 和 `src/host/ui-action-coordinator.ts` 从可信会话内仍有效的动作取出目标与精确身份，入队前、实际命令派发前和结果返回前重新校验。普通 List 分页仍走原读取流程。
+- 删除生产路径已无调用的旧 Hash 字段和 Set 成员点查 RPC，不保留兼容接口；保留 AI 输入需要的身份校验。`src/host/ai-locate-tool.ts` 将 unknown 文案改为已进入准备阶段、最终结果未知，避免声称动作已提交。
+- 新增 `tests/action-point-race-gateway.test.ts`：通过真实 Typert Gateway 与受控合成 Redis 连接复现延迟取消竞态，覆盖 Hash、List、Set、跨会话与伪造 requestId、额外参数、迟到请求和正常 List 分页。更新 `tests/ui-action-coordinator.test.ts`、`tests/host-typert.test.ts`、`tests/client-bundle.test.ts`、`tests/hash-field-locate.test.ts`、`tests/set-member-locate.test.ts` 及 Hash/List/Set、Key 和并发定位浏览器测试，匹配统一协议。
+- 检查结果：`pnpm typecheck` 通过；动作队列、协调器、协议、Hash/List/Set 定位及 List 视图共 7 个测试文件 46 项通过。此前适配后的 Hash/List/Set 真实 Chromium 夹具通过；这些使用合成数据和受控连接，不代表新协议包已在真实 DSH 和用户模型验收。
+- 边界：只有 Host 已获知动作失效且命令尚未派发时，才能阻止该后续命令；不能撤回已经发出的命令，也不能提前获知仍在传输中的界面选择。新协议须重新构建安装并在真实 DSH 中验证。
+- 修正 `src/remote-service.ts` 动作点查：独立 unary 请求取消时返回 `cancelled`，选择已失效仍返回 `stale`；`tests/action-point-race-gateway.test.ts` 在真实 Gateway + 合成受控连接中取消 unary 请求并验证不派发命令。`pnpm typecheck` 与专项 3 项通过。
+- 收紧 `src/host/ui-action-coordinator.ts` 和 `src/remote-service.ts`：每个有效动作只允许领取一次界面点查，取消后不能重复领取，不同动作独立计数；派发时深拷贝动作，隔离调用方后续修改的嵌套成员身份。限制不阻止已经派发的 Redis 命令，也不把动作通道视为对恶意本机代码的隔离边界。
+- 扩充 `tests/action-point-race-gateway.test.ts` 和 `tests/ui-action-coordinator.test.ts`：覆盖 Hash/List/Set 的成功、独立 unary 取消、Host 已知失效、并发及取消后重复请求，以及连续独立动作和调用方修改嵌套身份。`pnpm typecheck` 通过；Gateway、协调器和通道共 3 文件、34 项通过，使用受控合成连接，尚未在真实 DSH/模型中验收。
+- 复核动作派发：生产动作是普通 JSON 身份数据，`src/host/ui-action-channel.ts` 与协调器的提交校验依赖同一个请求引用。修改 `src/host/ui-action-coordinator.ts`，对复制后的完整请求、目标和嵌套动作身份递归冻结，保留原引用身份，防止接收者或内部 `activeRequest` 查询意外改变点查和提交目标。
+- `tests/ui-action-coordinator.test.ts` 新增接收者及内部查询的嵌套成员、Key、目标 DB 和版本变更尝试，并确认单次点查领取与正常回执仍可用。`pnpm typecheck` 通过；协调器、动作通道、真实 Gateway 加受控连接、AI 工具共 4 文件 39 项通过。此修复维护 Host 内部不变量，未证明存在外部可利用路径，也未替代真实 DSH 与模型验收。
+- 新增 `tests/zset-locate-browser.test.ts`：使用合成 ZSet 数据、真实 Chromium 和 Host 动作通道，准备覆盖 range 页外不伪造排名、筛选外、二进制及空成员、原始 score、缓存去重、用户选择抢占与点查中断。`pnpm typecheck` 通过；ZSet UI 接口仍在开发，浏览器专项尚未运行，不代表功能或真实 DSH/模型验收完成。
+
+### RO09 ZSet 精确成员定位（进行中）
+- 更新 `src/domain.ts`、`src/typert.shared.ts` 和 `src/remote-service.ts`：协议升至 13，新增 ZSet 动作并在原一次性点查 DTO 中传递严格校验的 Redis 原始 score 文本；点查身份仍由可信会话内有效动作提供。`src/host/ai-reader.ts`、`src/host/ai-locate-tool.ts` 新增当前 Key 的只读 ZSCORE 采样工具，文本或规范 base64 二选一并使用现有预算。
+- 更新 `src/host/ui-action-channel.ts`、`src/client/ui-actions.ts`、`src/client/ui-pane-presence.ts`、`src/client/index.ts` 和 `src/client/ZSetView.tsx` 类型接线，使 ZSet 动作走现有准备/发布确认。上述每组 `pnpm typecheck` 均通过；ZSet 界面实现及专项验证正在进行，尚不能视为完成。
+- 修改 `src/host/match-preset-store.ts`：采用 256 个固定槽及名称哈希线性探测，使用独立 `match-preset-slots` 固定目录，创建仍以硬链接避免覆盖；满槽明确返回 full，列表及按 ID 查询每次最多检查 256 槽，读取在关闭句柄后再次检查取消。旧的未接入目录没有修改或清理。TypeScript 检查通过，容量、多进程碰撞及迟到 close 专项测试正在适配。
+- 完善 `src/host/match-preset-store.ts` 的固定槽文件解析：无效或不匹配的内部 ID 统一作为存储损坏处理，不把损坏文件冒充合法输入错误；TypeScript 检查通过。
+- ZSet 浏览器专项执行通过：真实 Chromium + Host 动作通道、合成点查/分页，覆盖范围外无排名、筛选外、二进制与空成员、原始 score、缓存内去重、手动选择抢占、延迟采样取消；补充刷新后恢复分页原 score 与 rank、计数不变的回归。`pnpm typecheck` 和 `tests/zset-locate-browser.test.ts` 通过；未在此测试中使用真实 Gateway、Redis 或 DSH 模型。
+- 更新 `tests/match-preset-store.test.ts`：适配固定槽目录及按槽分页，增加 8 个独立进程争用两个同起始槽的不同名称、256 槽满后不改变已有预设的回归；TypeScript 检查通过，测试正在执行。
+- 修改 `tests/match-preset-cancellation.test.ts`：通过受控延迟真实文件句柄关闭，分别验证 get/list 在 close 等待期间收到取消后不会返回成功；TypeScript 检查通过。固定槽上一轮两文件 11 项测试通过，新增用例正在运行。
+- 固定 256 槽实现专项完成：`pnpm typecheck` 通过，2 个测试文件共 13 项通过，含独立 Windows 进程同名竞争、同起始槽不同名称并发、满槽不修改 256 条已有记录、非法 UTF-8、读取 close 等待期间取消以及硬链接成功后取消可回读。分页/按 ID 最多检查 256 槽；此前无界存储目录未被修改或删除。
+- 边界：槽数仅限制正常已发布记录及每次遍历槽数，并不限制同时运行或崩溃进程留下的临时文件总量，也不保证单次 I/O 耗时。依赖受信任本机 profile 目录，不能防同权限本机进程直接替换文件；链接成功后的取消/断流需要调用方报告未知并回读。当前未接入 UI/AI，RO11 尚未完成。
+- 实现 `src/client/ZSetView.tsx` 临时候选和确认：页外或筛选外成员显示独立采样行，排名为空，分数字符串及采样时间可见，不写入分页缓存；用户操作、目标变化或通道失效阻止旧动作提交，随后同身份分页或刷新替换临时样本。
+- 更新 `src/typert.host.ts` 与 `tests/set-member-locate.test.ts` 的双端严格 score 字段；扩充 `tests/action-point-race-gateway.test.ts` 覆盖 ZSet 原始成员 bytes、分数、跨会话、并发领取、取消和失效；`docs/AI_READ_USAGE.md` 补充定位与两次采样的边界。
+- `pnpm typecheck` 通过；真实 Gateway 配合受控合成连接及协议/通道专项 6 文件 52 项通过；`tests/zset-locate-browser.test.ts` 使用真实 Chromium 与合成读数，覆盖排名页外、筛选外、二进制/空成员、分数原文、去重、刷新、用户选择抢占和取消。真实 DSH 及用户模型尚未验证。
+- 新增 `tests/zset-member-locate.test.ts`：真实 ToolRuntime 与 Host 双阶段通道配合合成 Redis 响应，覆盖二进制和空成员、原始分数、确认后无参读取、缺失成员、类型变化及非法参数。
+- 独立复核发现 `ZSCORE` 后的 TYPE/PTTL 排队会使分数时间偏晚；修改 `src/host/selected-reader.ts` 在分数响应后立即记录该次采样时间，后续类型和 TTL 仍独立核验。受控时钟测试使 TTL 阶段延迟 5 秒，验证分数时间保持原采样时刻。
+- 检查结果：`pnpm typecheck` 通过；ZSet 新回归及原动作/协议组合 9 文件 62 项通过，Hash/List/Set 浏览器与通道相关 6 文件 15 项通过；时间修正后 ZSet 工具和 Gateway 2 文件 14 项通过。真实 Chromium 和真实 Gateway 均使用受控合成 Redis 数据；当前协议 13 尚未在真实 DSH 和用户模型验收。
+
+### 2026-11-01 RO11 预设存储重复身份检查
+
+- 修改 `src/host/match-preset-store.ts`：单条读取和分页返回前都遍历最多 256 个固定槽，检测所有有效记录的 ID；出现重复 ID 时返回 `storage`，保存操作的预检查也因此拒绝在损坏状态下继续写入。分页仍是非快照，并发外部篡改期间不能保证读取到某个时刻的完整状态；该检查不改变可信目录假设。
+- 修改 `tests/match-preset-store.test.ts`：实际写入跨页重复 ID（内容不同）的槽文件，核验查询、任意分页和新建操作均失败，且原文件不变；同时重新运行已有 Windows 多进程同名/哈希碰撞、容量及取消测试。
+- 每次代码修改后 `pnpm typecheck` 通过；专项 `vitest` 共 2 个文件、14 项通过。满额 256 条记录分 26 页反复完整检查约 10.3 秒（本机测试结果，并非时间上限）；每页 I/O 有 256 槽数量上限，单次文件系统操作的耗时和外部篡改不受此约束。该存储尚未接入界面或 AI，不能视为 RO11 端到端完成。
+- 修复 Host 动作提交门槛：`src/host/ui-action-coordinator.ts` 记录与当前动作绑定的一次点查成功，`src/remote-service.ts` 只在真实读取成功且会话、动作仍有效时标记，`src/host/ui-action-channel.ts` 仅允许 Hash/List/Set/ZSet 点查成功后准备提交；Key 和 show 继续沿用各自语义。`tests/action-point-race-gateway.test.ts` 先复现四类动作跳过、缺失和取消后仍被接受，再验证成功、跳过、缺失、权限拒绝、取消、失效及伪造发布；测试使用真实 Gateway 和受控合成 RedisLink。
+- 改造 `tests/action-point-fixture.ts`、`tests/ai-locate-tool.test.ts`、`tests/list-locate.test.ts`、`tests/set-member-locate.test.ts`、`tests/zset-member-locate.test.ts`、`tests/ui-action-channel.test.ts` 及 `tests/hash-locate-browser.test.ts`、`tests/set-locate-browser.test.ts`、`tests/zset-locate-browser.test.ts`，使用实际 Host 点查配合受控连接完成动作，而非手工置位成功；Hash/List 原浏览器交互模拟测试保留，并新增真实 Host 点查集成场景。
+- 修复 `src/host/ai-locate-tool.ts` 的文本身份编码：Key、Hash 字段、Set 与 ZSet 成员拒绝不配对的 UTF-16 代理项，保留合法非 BMP 文本及规范 Base64 字节。`tests/locate-unicode.test.ts` 通过真实工具注册验证四类输入；失败不向 Redis 发出点查。
+- ZSet 工具描述及结果明确 `score` / `sampledAt` 属于第一次工具预采样，界面再次采样可得到不同分数和时间。`tests/zset-two-samples-browser.test.ts` 联合真实 ToolRuntime、Host 点查与 Chromium，受控夹具返回不同原始分数和时间，并核验工具结果与界面各自对应的采样。
+- 检查结果：每组修改后 `pnpm typecheck` 通过；Gateway、Unicode 及双采样浏览器共 3 文件 26 项通过；四类浏览器回归 4 文件 6 项通过。上述真实 Gateway/Chromium 均使用合成 Redis，尚未完成协议 13 在真实 DSH 和用户模型中的验证。
+
+### RO09 动作点查门控回归补充
+- 修改 `tests/action-point-race-gateway.test.ts`：覆盖 Hash、List、Set、ZSet 点查成功后旧动作失效、新动作不得复用成功状态，以及成功采样后到期的提交必须拒绝；使用真实 Host/Gateway 和合成 Redis 链路，避免影响用户数据。
+- 原因与影响：验证动作身份及期限边界；仅增加测试，不改变运行行为。
+- 验证：正在执行 TypeScript 类型检查和专项测试。
+
+- 类型检查首次发现网关返回值为 unknown，测试按已有消息 schema 解析，确保类型安全。
+- 验证结果：pnpm typecheck 通过；Host/Gateway 专项 32 项通过，覆盖四种集合的旧动作成功状态隔离和到期拒绝。Redis 链接为合成夹具，未连接或修改用户 Redis。
 
 ### 2026-11-01 RO11 预设存储基础 Git 检查点
 
 - 新增 `src/host/match-preset-store.ts`，在可信 DSH profile 目录内以 256 个固定槽保存名称、摘要 ID 与 MATCH 条件；使用同目录硬链接原子创建，拒绝覆盖，满槽和损坏内容明确报错。分页非快照；不保存 Redis 数据、凭据或用户指定路径。
 - 新增 `tests/match-preset-store.test.ts` 和 `tests/match-preset-cancellation.test.ts`，覆盖真实 Windows 多进程同名和哈希碰撞、容量满、重复 ID、非法 UTF-8 及取消时序。以干净基线 `7be8f4a` 加上述三个文件独立验证：`pnpm typecheck` 通过，两个专项文件共 14 项通过。
 - 该节点仅为 Host 内部存储，尚未接入界面和模型；正常已发布条目与单次遍历受 256 槽限制，崩溃遗留临时文件、单次 I/O 时长和外部篡改不在该限制内。RO11 整体尚未完成。
+
+### 2026-11-01 开发协议文档校正
+
+- 修改 `docs/DEVELOPMENT.md`：按当前 `src/domain.ts` 和 `src/typert.remote-client.ts` 将开发版协议更新为 13、20 个 RPC 方法，工具说明指向当前 AI 使用文档；发布版 v0.1.0 的历史协议说明保留。原因是开发过程已增加界面联动和动作点查，旧的协议 4、19 方法描述不再准确；影响仅为开发文档，不改变运行行为。
+
+### 协议 13 界面动作确认夹具修正
+- 修改 `tests/ui-action-confirmation-browser.test.ts`：为六种 List 动作确认场景接入真实 Host/Gateway 点查与独立合成 Redis 连接，使用实际连接目标并核验 LRANGE。
+- 原因与影响：原夹具缺少协议 13 必需的点查导致六项失败；仅修复测试接线，不修改产品行为或用户 Redis。
+- 验证：正在执行类型检查和浏览器专项。
+
+- 验证结果：pnpm typecheck 通过；真实 Chromium + Host/Gateway 合成连接确认场景 6 项和点查网关回归 32 项，共 38 项通过。隐藏后已准备动作可能等待至期限后返回 unknown，此为既有状态机限制。
+
+### RO09 Stream 消息字段精确定位（协议 14，进行中）
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/typert.host.ts`、`src/remote-service.ts`，新增带消息 ID、字段对位置及原始字段字节的动作；UI 一次性点查返回该次完整受限消息及目标值。先检查整个 DTO 的序列化大小，再标记点查成功，超限不能提交；普通 AI 单字段读取不携带整条消息。
+- 修改 `src/host/selected-reader.ts`、`src/host/ai-reader.ts`、`src/host/ai-locate-tool.ts`，以独立 `XRANGE` 采样当前 Stream Key，按零基字段对位置识别重复字段，重新点查时核对原始字段字节；只使用既有只读命令，不推进消费组。消息或字段不存在、类型变化、权限与超限保留明确结果；两次采样不是事务快照。
+- 修改 `src/host/ui-action-channel.ts`、`src/client/ui-actions.ts`、`src/client/ui-pane-presence.ts`、`src/client/index.ts`、`src/client/StreamView.tsx`：消息和字段两张表都显示目标后才进入提交；页外样本独立于分页缓存，用户切换、滚动、隐藏等竞争会使旧动作失效。`docs/AI_READ_USAGE.md` 增加工具参数和边界。
+- 新增 `tests/stream-locate.test.ts`、`tests/stream-locate-browser.test.ts`，并更新 `tests/set-member-locate.test.ts` 协议夹具。TypeScript 检查通过；Stream、既有动作 Gateway、单字段 AI 隐私、协议和读取器共 6 文件 113 项通过。Stream 真实 Chromium 与 Host 点查专项也已通过，所有上述 Redis 响应均为受控合成数据；协议 14 尚未在真实 DSH 和用户模型验收。
+- 补充协议 14 的双端严格 codec、重复/空/二进制字段、超限响应、普通 AI 单字段不附带其他字段值的验证。Stream 独立 Host/Gateway 专项共 12 项通过；Stream、Hash、List、Set、ZSet 浏览器定位及 ZSet 双采样重跑共 6 文件 8 项通过，使用真实 Chromium 和 Host 动作路径、受控合成 RedisLink。独立代码复核未发现可证实的 Stream 门控缺陷；不代表真实 DSH、Redis 业务数据或用户模型验收。
+
+### 2026-11-02 从用户任务重新构建只读方案
+
+- 重写 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md`：移除旧编号和阶段串行结构，按用户提出问题、确认范围、查找目标、读取分析、回答及按需界面核对构建方案；保留数据和只读边界、成本预算、已有基础、当前未完成状态及真实 DSH/用户模型验收要求。
+- 重写 `docs/DSH_AI_READONLY_TASKS.md`：将原有任务合并为开发基线、直接查询、线索查找、范围筛选、诊断、界面、连接、专业数据和交付九个节点；每个节点记录现状、工作范围、前置及验收。保留原授权能力和五类暂缓写入；历史清单可通过 Git 提交 `d6a12f8` 追溯，不继续在现行清单堆叠旧编号。
+- 修改 `docs/RO21_CONNECTION_ARCHITECTURE_PLAN.md`：专题显示标题去掉旧任务编号，保留文件路径及原技术研究，避免历史引用失效。
+- 原因与影响：用户要求完全重构方案，合并重复任务、不继续叠加旧编号；本轮只修改规划文档，不修改 Redis、服务或运行代码。历史验证仅对应各自记录的构建，不能冒充当前工作区验收。
+- 验证：三份现行方案的相对链接、代码围栏和九个交付节点通过检查，主方案与任务清单不再使用旧任务编号；`git diff --check` 通过。`pnpm typecheck` 仍因暂停前 `src/host/ai-match-tools.ts` 第 19、40 行的两处 TS2345 失败；恢复代码工作需先修复，文档检查与本次 Git 提交单独进行。
 
 ### 2026-11-02 只读方案按用户问题重新排序
 
@@ -1759,10 +2624,36 @@
 - 原因与影响：用户要求优先围绕直接提问、发现和分析，而非强制界面选中；本轮仅重排规划，不改变 Redis、服务或运行代码，不把计划写成已经交付。
 - 验证：三份现行方案的相对链接、代码围栏、RO01—RO36 标题及 W01—W05 均已检查；`git diff --check` 通过。`pnpm typecheck` 仍因暂停前 `src/host/ai-match-tools.ts` 第 19、40 行两处 TS2345 失败；这不是文档改动造成，恢复代码开发时需优先修复。本轮不以历史测试替代当前构建检查。
 
-### 2026-11-02 从用户任务重新构建只读方案
+### 2026-11-01 Stream 动作协议文档同步
 
-- 重写 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md`：移除旧编号和阶段串行结构，按用户提出问题、确认范围、查找目标、读取分析、回答及按需界面核对构建方案；保留数据和只读边界、成本预算、已有基础、当前未完成状态及真实 DSH/用户模型验收要求。
-- 重写 `docs/DSH_AI_READONLY_TASKS.md`：将原有任务合并为开发基线、直接查询、线索查找、范围筛选、诊断、界面、连接、专业数据和交付九个节点；每个节点记录现状、工作范围、前置及验收。保留原授权能力和五类暂缓写入；历史清单可通过 Git 提交 `d6a12f8` 追溯，不继续在现行清单堆叠旧编号。
-- 修改 `docs/RO21_CONNECTION_ARCHITECTURE_PLAN.md`：专题显示标题去掉旧任务编号，保留文件路径及原技术研究，避免历史引用失效。
-- 原因与影响：用户要求完全重构方案，合并重复任务、不继续叠加旧编号；本轮只修改规划文档，不修改 Redis、服务或运行代码。历史验证仅对应各自记录的构建，不能冒充当前工作区验收。
-- 验证：三份现行方案的相对链接、代码围栏和九个交付节点通过检查，主方案与任务清单不再使用旧任务编号；`git diff --check` 通过。`pnpm typecheck` 仍因暂停前 `src/host/ai-match-tools.ts` 第 19、40 行的两处 TS2345 失败；恢复代码工作需先修复，文档检查与本次 Git 提交单独进行。
+- 修改 `docs/DEVELOPMENT.md`：依据 `src/domain.ts` 将开发版协议更新为 14，RPC 方法仍为 20 个。原因是 Stream 重复字段定位扩展了动作与点查结果；影响仅为开发文档，真实 DSH 和模型验收另行记录。
+
+## 2026-11-04：适配 DSH 0.2.1-rc.5（进行中）
+
+- 更新 `package.json` 中的 DSH 引擎、peer 及开发依赖版本，以当前运行时的实际接口编译并消除旧版本阻止加载的问题；保留其他已有工作区修改。依赖锁文件和验证结果待更新。
+- 同步将 `@deepseek-ai/cordis` 升级至 4.0.5，以满足 DSH 0.2.1-rc.5 的 peer 要求。
+- 修改 `src/host/ai-match-tools.ts`：将预设和分页结果构造为普通 JSON 对象，修复原有两处 TS2345，字段和业务行为不变。
+- 新增 `tests/gateway-fixture.ts`，更新四个 Gateway 测试文件以注入官方 `dsh-api-remote-access` 和 owner Peer，适配新版调用契约；`package.json`、`pnpm-lock.yaml` 加入该测试依赖。仅影响测试环境。
+- `package.json` 将插件版本升为 0.1.1，用于与现有 0.1.0 安装包区分；待完整测试后打包。
+- 验证：`pnpm typecheck`、构建、`pnpm peers check` 通过；完整 `pnpm test` 为 69 个文件 551 项通过，含 Chromium 及合成 Redis/Gateway 测试。
+- 构建 `.scratch/dsh-redis-0.1.1.tgz`，安装至本机 DSH `web` profile；`dsh web --dump-config` 已包含 Redis 和 Git Graph，不再显示两者版本拦截。配置加载不等于真实页面、真实 Redis 或模型验收；打包包含工作区原有未提交修改。
+- OPC UA 旧包仍因版本不兼容而被跳过；安装器还提示 input-plus 和 web-search 依赖不兼容。未运行前后端开发服务。
+
+### 2026-11-04 筛选预设工具基线验证
+
+- 新增 `tests/ai-match-tools.test.ts`：通过 DSH ToolRuntime 和独立本地资料目录验证预设列表、保存、同名冲突、无效参数以及保存后中断的未知结果和回读；测试仅使用合成条件，不连接 Redis。
+- 原因与影响：暂停前的预设工具虽然已修复类型并注册，尚缺入口级行为验证；该改动只增加专项测试，不视为完整 UI 或真实模型验收。`pnpm typecheck` 通过，预设工具及存储专项 3 文件/15 项通过。
+
+### 2026-11-04 当前开发基线检查点
+
+- 归档此前工作区的只读 Host/Client、选择动作、预算分页、连接候选、筛选预设工具、DSH 0.2.1-rc.5 依赖及相应测试；具体文件和先前实施记录见本日志各节及此提交差异。界面动作、AI 连接和预设应用仍是进行中，不能因基线提交而称其完整交付。
+- 清理 `src/client/selection-epoch.ts` 文件末尾多余空行，以通过 Git 格式检查；不改变运行逻辑。
+- 验证：新增显式字段功能之前，当前工作区 `pnpm check` 通过，69 文件/551 项测试通过；新增的预设工具专项另行通过。构建基线与用户日常 DSH 已安装包不同，原生界面和真实模型必须按后续构建分别验收。此节点只提交本地，不推送；业务 Redis 未操作。
+- 将暂存区精确应用到独立工作区 `.scratch/runtime/baseline-review-20261104-a` 后，类型检查、构建和基础/预设工具 2 文件 38 项测试通过；清理其中依赖目录联接时被自动审批拒绝，临时工作区与联接保留，未删除原始依赖。
+
+### Redis 适配版推送与重新安装
+
+- 按用户要求仅处理 Redis；在独立工作区基于已提交代码更新双语 README、依赖、锁文件、CHANGELOG、更新日志及 esbuild 构建许可，保留原工作区未提交功能。
+- 独立版本 `pnpm typecheck`、构建和 23 文件 219 项测试通过；提交 `d6cd51aa6074096c295756c19bd92c8af7e62ddc` 已推送到 origin/main，同时推送该分支此前已有的三个提交。
+- 从该提交构建 `.scratch/artifacts/d6cd51a/dsh-redis-0.1.1.tgz`，重新安装到 DSH web profile；回读版本 0.1.1、引擎 0.2.1-rc.5，客户端文件哈希与构建一致，配置包含 Redis。真实 DSH 页面、真实 Redis 和模型尚未验收。
+- 原工作区保留在原提交及未提交修改；推送版在独立工作区，避免覆盖现有工作。

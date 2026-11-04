@@ -9,8 +9,8 @@ const MAX_INTEGER = (1n << 63n) - 1n
 /** Fixed nonnegative LRANGE interval, preserving repeated values and positions. */
 export class RedisLists {
   constructor(private readonly connections: RedisConnections) {}
-  async read(sessionId: string, request: ListReadRequest, signal: AbortSignal): Promise<ListReadResult> {
-    const context = new RedisReadContext(this.connections, sessionId, request.target, signal)
+  async read(sessionId: string, request: ListReadRequest, signal: AbortSignal, validate: () => void = () => undefined): Promise<ListReadResult> {
+    const context = new RedisReadContext(this.connections, sessionId, request.target, signal, validate)
     const result = (state: ListReadResult['state'], error: ListReadResult['error'] = null, metadata: KeyMetadata | null = null): ListReadResult => ({ state, error, metadata, entries: [], offset: request.offset, nextOffset: null, sampledAt: new Date().toISOString() })
     try {
       const key = Buffer.from(request.keyBase64, 'base64'), firstType = await context.type(key)

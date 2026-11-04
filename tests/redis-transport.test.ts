@@ -13,7 +13,7 @@ function deferred<T>() {
 /** A scripted loopback peer exercises transport ordering and deliberately invalid replies.
  * Official Redis container checks independently verify the real command/protocol semantics.
  */
-async function withPeer(run: (transport: RedisTransport, commands: string[]) => Promise<void>, reply: (socket: Socket, arguments_: RedisReply[]) => void): Promise<void> {
+async function withPeer(run: (transport: RedisTransport, commands: string[]) => Promise<void>, reply: (socket: Socket, arguments_: RedisReply[]) => void, password = ''): Promise<void> {
   const sockets = new Set<Socket>()
   const commands: string[] = []
   const server = createServer(socket => {
@@ -38,7 +38,7 @@ async function withPeer(run: (transport: RedisTransport, commands: string[]) => 
   if (address === null || typeof address === 'string') throw new Error('Expected owned TCP address')
   let transport: RedisTransport | undefined
   try {
-    transport = await RedisTransport.open({ host: '127.0.0.1', port: address.port, username: '', password: '', tls: null }, signal())
+    transport = await RedisTransport.open({ host: '127.0.0.1', port: address.port, username: '', password, tls: null }, signal())
     await run(transport, commands)
   } finally {
     transport?.close()
@@ -49,6 +49,21 @@ async function withPeer(run: (transport: RedisTransport, commands: string[]) => 
 const SCAN_EMPTY = '*2\r\n$1\r\n0\r\n*0\r\n'
 
 describe('bounded Redis socket transport', () => {
+  it('separates authentication and connection commands from explicit DB selection and reads', async () => {
+    await withPeer(async (transport, commands) => {
+      expect(commands).toEqual(['AUTH', 'PING'])
+      expect(await transport.execute('SELECT', ['1'], signal(), () => undefined)).toBe('OK')
+      expect(await transport.execute('SCAN', ['0'], signal(), () => undefined)).toEqual([Buffer.from('0'), []])
+      expect(commands).toEqual(['AUTH', 'PING', 'SELECT', 'SCAN'])
+    }, (socket, args) => {
+      const parts = args.map(arg => Buffer.isBuffer(arg) ? arg.toString('utf8') : arg)
+      const command = parts[0]
+      if (command === 'AUTH') { expect(parts).toEqual(['AUTH', 'synthetic-fixture-password']); socket.write('+OK\r\n') }
+      else if (command === 'SELECT') { expect(parts).toEqual(['SELECT', '1']); socket.write('+OK\r\n') }
+      else if (command === 'SCAN') { expect(parts).toEqual(['SCAN', '0']); socket.write(SCAN_EMPTY) }
+      else throw new Error('Unexpected command reached the peer')
+    }, 'synthetic-fixture-password')
+  })
   it('rejects huge declared arrays/bulks and announces connection failure', async () => {
     for (const header of ['$536870912\r\n', '*1000000000\r\n']) {
       await withPeer(async transport => {

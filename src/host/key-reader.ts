@@ -36,7 +36,15 @@ export class RedisKeys {
       if (Buffer.byteLength(JSON.stringify(result)) > MAX_SCAN_JSON_BYTES) throw new RedisFrameError('oversize')
       return result
     } catch (error) {
-      if (scan !== undefined) this.scans.discard(sessionId, scan)
+      if (scan !== undefined) {
+        // SCAN has no server-side cursor state; only restore if this remains
+        // the same connection and no newer scan has replaced this state.
+        let restored = false
+        if (signal.aborted) {
+          try { this.connections.assertTarget(sessionId, request.target); restored = this.scans.restore(sessionId, scan, request.cursor) } catch { /* target changed */ }
+        }
+        if (!restored) this.scans.discard(sessionId, scan)
+      }
       return { state: 'failed', error: signal.aborted ? 'cancelled' : connectionErrorCode(error), keys: [], cursor: null, sampledAt: new Date().toISOString() }
     }
   }

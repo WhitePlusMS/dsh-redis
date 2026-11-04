@@ -30,6 +30,13 @@ export class RedisScanCursors {
   validate(sessionId: string, state: ScanState): void {
     if (this.sessions.get(sessionId) !== state) throw new ConnectionFailure('stale')
   }
+  /** A cancelled SCAN can retry the same stateless cursor after its reply drains. */
+  restore(sessionId: string, state: ScanState, token: string | null): boolean {
+    if (this.sessions.get(sessionId) !== state || state.token !== null) return false
+    if (token === null) this.sessions.delete(sessionId)
+    else state.token = token
+    return true
+  }
   advance(sessionId: string, state: ScanState, cursor: string): string | null {
     this.validate(sessionId, state)
     const token = cursor === '0' ? null : randomUUID()

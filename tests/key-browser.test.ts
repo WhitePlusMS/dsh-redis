@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
+import { ConnectionFailure, RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import { RedisKeys } from '../src/host/key-reader.ts'
 import { RedisReplyError, type RedisReply } from '../src/host/resp.ts'
 import type { ConnectionView, DatabaseTarget, RedisKey } from '../src/domain.ts'
@@ -29,6 +29,19 @@ async function setup(reply: RedisLink['execute']) {
 const page = (cursor: string, ...keys: Buffer[]): RedisReply => [Buffer.from(cursor), keys]
 
 describe('DB and scan identity', () => {
+  it('rejects SELECT through the read path without desynchronizing the session DB', async () => {
+    const execute = vi.fn<RedisLink['execute']>(async () => 'OK')
+    const { connections, connection } = await setup(execute)
+    try {
+      await expect(connections.read('a', target(connection), 'SELECT' as never, ['2'], signal())).rejects.toMatchObject({ code: 'protocol' })
+      expect(execute).not.toHaveBeenCalled()
+      expect(connections.status('a')).toEqual(connection)
+      const selected = await connections.selectDatabase('a', { ...target(connection), db: 2 }, signal())
+      expect(selected).toMatchObject({ state: 'connected', db: 2 })
+      expect(selected.generation).toBeGreaterThan(connection.generation)
+      expect(execute.mock.calls[0]?.slice(0, 2)).toEqual(['SELECT', ['2']])
+    } finally { connections.dispose() }
+  })
   it('changes generation before SELECT, keeps sessions isolated and rejects old/wrong-DB targets', async () => {
     const execute = vi.fn<RedisLink['execute']>(async () => 'OK')
     const { connections, connection } = await setup(execute)
@@ -55,6 +68,22 @@ describe('DB and scan identity', () => {
         expect(close).not.toHaveBeenCalled()
       } finally { connections.dispose() }
     }
+  })
+  it.each(['success', 'permission', 'cancelled'] as const)('does not undo a disconnect when a pending SELECT ends with %s', async outcome => {
+    let resolve!: (value: RedisReply) => void, reject!: (error: Error) => void
+    const pending = new Promise<RedisReply>((accept, fail) => { resolve = accept; reject = fail })
+    const { connections, connection, close } = await setup(async () => pending)
+    try {
+      const operation = connections.selectDatabase('a', { ...target(connection), db: 2 }, signal())
+      const switching = connections.status('a')
+      expect(switching.state).toBe('connecting')
+      expect(connections.disconnect('a', target(switching)).state).toBe('disconnected')
+      if (outcome === 'success') resolve('OK')
+      else reject(outcome === 'permission' ? new RedisReplyError('NOPERM fixture denied') : new ConnectionFailure('cancelled'))
+      expect(await operation).toMatchObject({ state: 'disconnected', error: 'stale' })
+      expect(connections.status('a')).toMatchObject({ state: 'disconnected', error: null, db: 0 })
+      expect(close).toHaveBeenCalledTimes(1)
+    } finally { connections.dispose() }
   })
   it('discards an uncertain cancelled SELECT without closing another session', async () => {
     const controller = new AbortController()

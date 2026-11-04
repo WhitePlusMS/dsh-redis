@@ -57,10 +57,11 @@ flowchart LR
   Transport -->|node:net 或 node:tls| Redis[单机 Redis]
 ```
 
-- 这是 DSH 原生插件，未实现 MCP server。四个自定义工具名见 README，不另开 MCP 端口，也不要求用户添加 MCP 配置。
-- 当前 RPC 协议版本为 `2`，包含 `17` 个方法。Host、shared 和 Client 的 schema 必须一致；错误版本应暴露问题，不加静默兼容层。
+- 这是 DSH 原生插件，未实现 MCP server。基础读取及界面联动工具见 AI_READ_USAGE.md，不另开 MCP 端口，也不要求用户添加 MCP 配置。
+- 当前开发版 RPC 协议版本为 `14`，包含 `20` 个方法；已发布 v0.1.0 的协议版本为 `2`。Host、shared 和 Client 的 schema 必须一致；错误版本应暴露问题，不加静默兼容层。
 - 正式 Redis 访问由项目的 `RedisTransport` 通过 `node:net`/`node:tls` 和有预算的 RESP2 解析完成。`redis` npm 依赖用于测试/辅助脚本，不应据依赖名把正式读取链路描述成 node-redis。
 - 工具会话身份来自 DSH 的 `exec.agent.session.id`，不能让模型传入另一个 session 来选连接。未连接时明确拒绝，不替用户选服务器或自动重连。
+- 四工具共用会话级 AI 预算：每轮最多执行 32 次、返回 1 MiB JSON，单次最多 64 KiB。仅计算通过宿主参数校验并进入工具执行的调用；执行中失败或取消仍计次。切库和重连不重置，预算耗尽后用户可在侧栏查看并手动继续，在途请求未结束时不得恢复。会话释放才清除该会话的预算。
 - UI 与 AI 有各自的游标状态，复用同一真实连接。连接替换、断开、会话和插件释放时，一并清理对应 reader、游标与选择。
 - Client 只同步选中的原始 Key/字段/成员/下标/Stream 字段序号标识，约 60 ms 合并快速选择并串行发送；工具调用时重读值，不把展示文本当二进制身份。
 - 显式切 DB 复用已有连接和目标代次保护。侧栏可见时约每秒核对 Host 内存状态，变化才应用；状态同步不读取 Redis 值，不开启内容自动刷新。

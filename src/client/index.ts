@@ -10,16 +10,29 @@ import { RedisWorkspace, type RedisWorkspaceInjected } from './RedisWorkspace.ts
 import { installRedisStyles } from './styles.ts'
 import { en, NS, zh } from './locales.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { ConnectionHandle } from '@deepseek-ai/dsh-api-remotes/client'
 import type { SetSelectionRequest } from '../domain.ts'
+import { consumeUiActions } from './ui-actions.ts'
+import { showRedisPane, UiPanePresence } from './ui-pane-presence.ts'
+import { SelectionEpoch } from './selection-epoch.ts'
 
-export const inject = ['remote', 'slots', 'locale', 'sidebarRightTabs']
+export const inject = ['remote', 'connection', 'slots', 'locale', 'sidebarRightTabs', 'sidebarRight']
 
 export function apply(ctx: Context): void {
   ctx.effect(installRedisStyles)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'redis dictionaries')
   const t = ctx.locale.bind(NS)
+  const panePresence = new UiPanePresence()
+  const epochs = new Map<SessionId, SelectionEpoch>()
+  const epochFor = (sessionId: SessionId): SelectionEpoch => {
+    let epoch = epochs.get(sessionId)
+    if (epoch === undefined) { epoch = new SelectionEpoch(); epochs.set(sessionId, epoch) }
+    return epoch
+  }
+  ctx.effect(() => () => epochs.clear(), 'redis selection epochs')
   let remoteReady: ReturnType<typeof ctx.remote.$mount> | undefined
   const selectionUpdates = new Map<SessionId, Promise<unknown>>()
+  let retryChannel: (sessionId: SessionId) => void = () => undefined
   // Rejected mounts are not cached, so an explicit retry can discover a recovered Host.
   const remote = async () => {
     if (remoteReady === undefined) {
@@ -33,11 +46,14 @@ export function apply(ctx: Context): void {
     await remoteReady
     return ctx.get('remote.redisViewer') as typeof ctx.remote.redisViewer
   }
-  // Serialize selection writes across keyed pane owners and remounts. Requests
-  // contain identities only; a replacement cannot race its predecessor's clear.
+  // Serialize identity-only publications over the owning session stream.
   const setSelection = (sessionId: SessionId, request: SetSelectionRequest, signal: AbortSignal) => {
+    const epoch = epochFor(sessionId), revision = epoch.snapshot().revision
     const previous = selectionUpdates.get(sessionId) ?? Promise.resolve()
-    const pending = previous.catch(() => undefined).then(async () => (await remote()).setSelection(sessionId, request, signal))
+    const pending = previous.catch(() => undefined).then(() => {
+      if (panePresence.count(sessionId) !== 1 || ctx.sidebarRight.mounted.getSnapshot() !== sessionId) throw new Error('Redis selection has no unique visible pane')
+      return epoch.publish(request, revision, signal)
+    })
     selectionUpdates.set(sessionId, pending)
     const settled = () => { if (selectionUpdates.get(sessionId) === pending) selectionUpdates.delete(sessionId) }
     void pending.then(settled, settled)
@@ -51,7 +67,18 @@ export function apply(ctx: Context): void {
     name: 'sidebar.right.pane.tab', key: 'dsh-redis', locale: NS,
     inject: (sessionId): RedisWorkspaceInjected => ({
       sessionKey: sessionId,
+      selectionEpoch: epochFor(sessionId),
+      retrySelection: () => { epochFor(sessionId).invalidate(); retryChannel(sessionId) },
       status: async signal => (await remote()).status(sessionId, {}, signal),
+      aiBudgetStatus: async signal => (await remote()).aiBudgetStatus(sessionId, {}, signal),
+      resumeAiBudget: async signal => (await remote()).resumeAiBudget(sessionId, {}, signal),
+      registerVisiblePane: () => panePresence.attach(sessionId),
+      registerKeyHandler: handler => panePresence.registerKeyHandler(sessionId, handler),
+      registerHashHandler: handler => panePresence.registerHashHandler(sessionId, handler),
+      registerListHandler: handler => panePresence.registerListHandler(sessionId, handler),
+      registerSetHandler: handler => panePresence.registerSetHandler(sessionId, handler),
+      registerZSetHandler: handler => panePresence.registerZSetHandler(sessionId, handler),
+      registerStreamHandler: handler => panePresence.registerStreamHandler(sessionId, handler),
       connect: async (request, signal) => (await remote()).connect(sessionId, request, signal),
       disconnect: async (request, signal) => (await remote()).disconnect(sessionId, request, signal),
       connectionStatus: async signal => (await remote()).connectionStatus(sessionId, {}, signal),
@@ -64,11 +91,62 @@ export function apply(ctx: Context): void {
       scanKeys: async (request, signal) => (await remote()).scanKeys(sessionId, request, signal),
       readString: async (request, signal) => (await remote()).readString(sessionId, request, signal),
       scanHash: async (request, signal) => (await remote()).scanHash(sessionId, request, signal),
+      readActionPoint: async (request, signal) => (await remote()).readActionPoint(sessionId, request, signal),
       readList: async (request, signal) => (await remote()).readList(sessionId, request, signal),
       scanSet: async (request, signal) => (await remote()).scanSet(sessionId, request, signal),
       readZSet: async (request, signal) => (await remote()).readZSet(sessionId, request, signal),
       readStream: async (request, signal) => (await remote()).readStream(sessionId, request, signal),
     }),
   }, RedisWorkspace)), 'redis tab body')
+  // The on-screen Session exists even while its Redis pane is closed.
+  ctx.effect(() => {
+    const connection = ctx.get('connection') as ConnectionHandle
+    let current: { readonly session: SessionId; readonly generation: number; readonly controller: AbortController } | undefined
+    let retry: ReturnType<typeof setTimeout> | undefined
+    let attempts = 0
+    const update = () => {
+      const session = ctx.sidebarRight.mounted.getSnapshot()
+      const generation = connection.generation.getSnapshot()
+      if (session === current?.session && generation?.id === current?.generation) return
+      if (retry !== undefined) { clearTimeout(retry); retry = undefined }
+      current?.controller.abort(); current = undefined; attempts = 0
+      if (session === undefined || generation === undefined) return
+      const controller = new AbortController()
+      current = { session, generation: generation.id, controller }
+      const start = () => {
+        void consumeUiActions(async signal => (await remote()).openUiChannel(session, {}, signal), controller.signal, (request, signal) => {
+          if (request.action.kind === 'confirmSelection') {
+            const count = panePresence.count(session)
+            return Promise.resolve(signal.aborted || document.visibilityState !== 'visible' || ctx.sidebarRight.mounted.getSnapshot() !== session || count === 0 ? 'stale' : count === 1 ? 'applied' : 'ambiguous')
+          }
+          if (document.visibilityState !== 'visible') return Promise.resolve('stale')
+          if (request.action.kind === 'selectKey') return panePresence.selectKey(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'selectHashField') return panePresence.selectHashField(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'selectListIndex') return panePresence.selectListIndex(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'selectSetMember') return panePresence.selectSetMember(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'selectZSetMember') return panePresence.selectZSetMember(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'selectStreamField') return panePresence.selectStreamField(session, { ...request, action: request.action }, signal)
+          return showRedisPane(panePresence, session, () => ctx.sidebarRight.mounted.getSnapshot() === session, () => ctx.sidebarRight.openTab('redis'), request.expiresAt, signal)
+        }, epochFor(session),
+        ).catch(() => { if (!controller.signal.aborted) console.warn('[dsh-redis] UI action channel unavailable') }).then(() => {
+          if (controller.signal.aborted) return
+          if (attempts >= 3) { const epoch = epochFor(session); epoch.fail(epoch.snapshot().revision); return }
+          attempts += 1
+          retry = setTimeout(() => { retry = undefined; start() }, attempts * 1000)
+        })
+      }
+      start()
+    }
+    const unsubscribe = ctx.sidebarRight.mounted.subscribe(update)
+    const unsubscribeGeneration = connection.generation.subscribe(update)
+    retryChannel = sessionId => {
+      if (ctx.sidebarRight.mounted.getSnapshot() !== sessionId) return
+      if (retry !== undefined) { clearTimeout(retry); retry = undefined }
+      current?.controller.abort(); current = undefined
+      update()
+    }
+    update()
+    return () => { retryChannel = () => undefined; unsubscribe(); unsubscribeGeneration(); if (retry !== undefined) clearTimeout(retry); current?.controller.abort() }
+  }, 'redis session UI action channel')
   console.info('[dsh-redis] Native sidebar registered')
 }

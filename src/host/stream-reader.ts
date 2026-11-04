@@ -10,13 +10,13 @@ import { valuePrefix } from './value-prefix.ts'
 /** XRANGE/XREVRANGE do not advance consumer groups, add Pending entries or ACK. */
 export class RedisStreams {
   private readonly pages = new RedisScanCursors()
-  constructor(private readonly connections: RedisConnections) {}
+  constructor(private readonly connections: RedisConnections, private readonly retryCancelled = false) {}
   disposeSession(sessionId: string): void { this.pages.disposeSession(sessionId) }
   dispose(): void { this.pages.dispose() }
 
-  async read(sessionId: string, request: StreamReadRequest, signal: AbortSignal): Promise<StreamReadResult> {
+  async read(sessionId: string, request: StreamReadRequest, signal: AbortSignal, validate: () => void = () => undefined): Promise<StreamReadResult> {
     let pageState: ScanState | undefined
-    const context = new RedisReadContext(this.connections, sessionId, request.target, signal, () => { if (pageState !== undefined) this.pages.validate(sessionId, pageState) })
+    const context = new RedisReadContext(this.connections, sessionId, request.target, signal, () => { validate(); if (pageState !== undefined) this.pages.validate(sessionId, pageState) })
     const result = (state: StreamReadResult['state'], error: StreamReadResult['error'] = null, metadata: KeyMetadata | null = null): StreamReadResult => ({ state, error, metadata, direction: request.direction, start: request.start, end: request.end, messages: [], cursor: null, sampledAt: new Date().toISOString() })
     try {
       signal.throwIfAborted(); this.connections.assertTarget(sessionId, request.target)
@@ -65,6 +65,10 @@ export class RedisStreams {
       return { ...page, cursor: token }
     } catch (error) {
       const code = context.error(error)
+      // AI continuation may retry a cancelled range while the target is current.
+      if (this.retryCancelled && signal.aborted && pageState !== undefined) {
+        try { this.connections.assertTarget(sessionId, request.target); if (this.pages.restore(sessionId, pageState, request.cursor)) pageState = undefined } catch { /* target changed */ }
+      }
       return code === 'type-changed' ? result('changed') : result('failed', code)
     } finally {
       if (pageState !== undefined) this.pages.discard(sessionId, pageState)

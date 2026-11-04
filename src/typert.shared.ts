@@ -1,15 +1,17 @@
 import { MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
+import type { UiAction, UiActionAck, UiChannelInput, UiChannelMessage } from './domain.ts'
 import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
+import type { AiBudgetResume, AiBudgetStatus } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
 import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
 import { MAX_KEY_BYTES, MAX_SCAN_KEYS, MAX_SCAN_JSON_BYTES, type DatabaseTarget, type RedisKey, type ScanKeysRequest, type ScanKeysResult } from './domain.ts'
 import { MAX_VALUE_BYTES, type StringReadRequest, type StringReadResult, type KeyMetadata } from './domain.ts'
-import type { BytePrefix, ScanHashRequest, ScanHashResult } from './domain.ts'
+import type { ActionPointReadRequest, ActionPointReadResult, BytePrefix, HashFieldReadRequest, ScanHashRequest, ScanHashResult } from './domain.ts'
 import { MAX_LIST_ITEMS, type ListReadRequest, type ListReadResult } from './domain.ts'
-import type { ScanSetRequest, ScanSetResult } from './domain.ts'
+import type { ScanSetRequest, ScanSetResult, SetMemberReadRequest } from './domain.ts'
 import type { ZSetReadRequest, ZSetReadResult } from './domain.ts'
 import { isRedisScore } from './redis-score.ts'
 import { MAX_STREAM_MESSAGES, type StreamReadRequest, type StreamReadResult } from './domain.ts'
@@ -74,15 +76,23 @@ function address(value: unknown): Pick<ConnectionRequest, 'host' | 'port' | 'use
   if (host.length === 0 || /[\s/\\@?#\0]/u.test(host)) throw new TypeError('Redis RPC: invalid host')
   return { host, port: integerAt(object.port, 1, 65535), username: stringAt(object.username, 256) }
 }
+function environmentAt(value: unknown): string | undefined {
+  if (value === undefined) return undefined
+  const environment = stringAt(value, 80)
+  if (environment.length === 0 || environment.trim() !== environment || /[\u0000-\u001f\u007f]/u.test(environment)) throw new TypeError('Redis RPC: invalid environment')
+  return environment
+}
 function publicTarget(value: unknown): NonNullable<ConnectionView['target']> {
-  const object = objectAt(value, ['host', 'port', 'username', 'tls'])
+  const object = objectAt(value, ['host', 'port', 'username', 'environment', 'tls'])
   if (typeof object.tls !== 'boolean') throw new TypeError('Redis RPC: invalid TLS status')
-  return { ...address({ host: object.host, port: object.port, username: object.username }), tls: object.tls }
+  const environment = environmentAt(object.environment)
+  return { ...address({ host: object.host, port: object.port, username: object.username }), ...(environment === undefined ? {} : { environment }), tls: object.tls }
 }
 export const connectionRequestSchema: TypertSchema<ConnectionRequest> = { parse(value) {
-  const object = objectAt(value, ['host', 'port', 'username', 'password', 'tls'])
+  const object = objectAt(value, ['host', 'port', 'username', 'password', 'environment', 'tls'])
   const tls = object.tls === null ? null : { caPem: stringAt(objectAt(object.tls, ['caPem']).caPem, 65536) }
-  return { ...address({ host: object.host, port: object.port, username: object.username }), password: stringAt(object.password, 4096), tls }
+  const environment = environmentAt(object.environment)
+  return { ...address({ host: object.host, port: object.port, username: object.username }), password: stringAt(object.password, 4096), ...(environment === undefined ? {} : { environment }), tls }
 } }
 export const connectionTargetSchema: TypertSchema<ConnectionTarget> = { parse(value) {
   const object = objectAt(value, ['id', 'generation'])
@@ -108,7 +118,7 @@ function profileName(value: unknown): string {
   return name
 }
 export const connectionSettingsSchema: TypertSchema<ConnectionSettings> = { parse(value) {
-  const object = objectAt(value, ['host', 'port', 'username', 'tls'])
+  const object = objectAt(value, ['host', 'port', 'username', 'environment', 'tls'])
   const { password: _password, ...settings } = connectionRequestSchema.parse({ ...object, password: '' })
   return settings
 } }
@@ -135,6 +145,69 @@ export const databaseTargetSchema: TypertSchema<DatabaseTarget> = { parse(value)
   const object = objectAt(value, ['id', 'generation', 'db'])
   return { ...connectionTargetSchema.parse({ id: object.id, generation: object.generation }), db: integerAt(object.db, 0, 65535) }
 } }
+
+/** Stream frames are parsed on the client too: rc.2 does not decode stream items. */
+function uiRequestId(value: unknown): string {
+  const id = stringAt(value, 36)
+  if (!/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/u.test(id)) throw new TypeError('Redis RPC: invalid UI request identity')
+  return id
+}
+export const actionPointReadRequestSchema: TypertSchema<ActionPointReadRequest> = { parse(value) {
+  return { requestId: uiRequestId(objectAt(value, ['requestId']).requestId) }
+} }
+export const uiActionAckSchema: TypertSchema<UiActionAck> = { parse(value) {
+  const raw = objectAt(value, ['requestId', 'target', 'selectionRevision', 'outcome'])
+  if (raw.outcome !== 'applied' && raw.outcome !== 'unsupported' && raw.outcome !== 'failed' && raw.outcome !== 'stale' && raw.outcome !== 'ambiguous') throw new TypeError('Redis RPC: invalid UI outcome')
+  return { requestId: uiRequestId(raw.requestId), target: raw.target === null ? null : databaseTargetSchema.parse(raw.target), selectionRevision: integerAt(raw.selectionRevision, 0, Number.MAX_SAFE_INTEGER), outcome: raw.outcome }
+} }
+export const uiChannelInputSchema: TypertSchema<UiChannelInput> = { parse(value) {
+  if (typeof value === 'object' && value !== null && 'kind' in value) {
+    const kind = objectAt(value, ['kind', 'revision', 'synchronized', 'requestId', 'request', 'nextRevision', 'actionRequestId']).kind
+    if (kind === 'commitSelection') {
+      const raw = objectAt(value, ['kind', 'requestId', 'revision', 'nextRevision'])
+      return { kind, requestId: uiRequestId(raw.requestId), revision: integerAt(raw.revision, 0, Number.MAX_SAFE_INTEGER), nextRevision: integerAt(raw.nextRevision, 0, Number.MAX_SAFE_INTEGER) }
+    }
+    if (kind === 'publishSelection') {
+      const raw = objectAt(value, ['kind', 'requestId', 'revision', 'request', 'actionRequestId'])
+      return { kind, requestId: uiRequestId(raw.requestId), revision: integerAt(raw.revision, 0, Number.MAX_SAFE_INTEGER), request: setSelectionRequestSchema.parse(raw.request), ...(raw.actionRequestId === undefined ? {} : { actionRequestId: uiRequestId(raw.actionRequestId) }) }
+    }
+    const raw = objectAt(value, ['kind', 'revision', 'synchronized'])
+    if (raw.kind !== 'selection' || typeof raw.synchronized !== 'boolean') throw new TypeError('Redis RPC: invalid selection state')
+    return { kind: 'selection', revision: integerAt(raw.revision, 0, Number.MAX_SAFE_INTEGER), synchronized: raw.synchronized }
+  }
+  return uiActionAckSchema.parse(value)
+} }
+export const uiChannelMessageSchema: TypertSchema<UiChannelMessage> = { parse(value) {
+  const kind = objectAt(value, ['kind', 'request', 'requestId', 'accepted']).kind
+  if (kind === 'selectionResult') {
+    const raw = objectAt(value, ['kind', 'requestId', 'accepted'])
+    if (typeof raw.accepted !== 'boolean') throw new TypeError('Redis RPC: invalid selection result')
+    return { kind, requestId: uiRequestId(raw.requestId), accepted: raw.accepted }
+  }
+  if (kind === 'cancel') {
+    const raw = objectAt(value, ['kind', 'requestId'])
+    return { kind, requestId: uiRequestId(raw.requestId) }
+  }
+  if (kind !== 'action') throw new TypeError('Redis RPC: invalid UI message')
+  const raw = objectAt(value, ['kind', 'request']), request = objectAt(raw.request, ['requestId', 'action', 'target', 'selectionRevision', 'expiresAt'])
+  const action = objectAt(request.action, ['kind', 'key', 'keyBase64', 'field', 'index', 'member', 'id', 'fieldIndex', 'fieldBase64'])
+  if (action.kind !== 'show' && action.kind !== 'confirmSelection' && action.kind !== 'selectKey' && action.kind !== 'selectHashField' && action.kind !== 'selectListIndex' && action.kind !== 'selectSetMember' && action.kind !== 'selectZSetMember' && action.kind !== 'selectStreamField') throw new TypeError('Redis RPC: unsupported UI action')
+  let parsedAction: UiAction
+  if (action.kind === 'selectKey') parsedAction = { kind: action.kind, key: identityAt(objectAt(request.action, ['kind', 'key']).key) }
+  else if (action.kind === 'selectHashField') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'field']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), field: identityAt(raw.field) } }
+  else if (action.kind === 'selectListIndex') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'index']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), index: unsignedIntegerAt(raw.index) } }
+  else if (action.kind === 'selectSetMember' || action.kind === 'selectZSetMember') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'member']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), member: identityAt(raw.member) } }
+  else if (action.kind === 'selectStreamField') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'id', 'fieldIndex', 'fieldBase64']), id = stringAt(raw.id, 41); if (!isStreamId(id) || id === '0-0') throw new TypeError('Redis RPC: invalid Stream ID'); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), id, fieldIndex: integerAt(raw.fieldIndex, 0, MAX_SCAN_KEYS - 1), fieldBase64: byteStringAt(raw.fieldBase64, MAX_KEY_BYTES) } }
+  else { objectAt(request.action, ['kind']); parsedAction = { kind: action.kind } }
+  if ((action.kind === 'show') !== (request.target === null)) throw new TypeError('Redis RPC: invalid UI action target')
+  return { kind, request: { requestId: uiRequestId(request.requestId), action: parsedAction, target: request.target === null ? null : databaseTargetSchema.parse(request.target), selectionRevision: integerAt(request.selectionRevision, 0, Number.MAX_SAFE_INTEGER), expiresAt: integerAt(request.expiresAt, 1, Number.MAX_SAFE_INTEGER) } }
+} }
+
+/** One scoped stream carries Host actions down and their acknowledgements up. */
+export function createRedisUiStreamInvocation(input: TypertSchema, output: TypertSchema, ack: TypertSchema, session: TypertSchema): InvocationDescriptor {
+  return { ...createRedisInvocation('openUiChannel', 'EmptyRequest', 'UiChannelMessage', input, output, session), mode: 'stream',
+    uplink: { codec: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#UiChannelInput`, create: () => ack } } }
+}
 function scanToken(value: unknown): string | null {
   const cursor = value === null ? null : stringAt(value, 36)
   if (cursor !== null && !/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/u.test(cursor)) throw new TypeError('Redis RPC: invalid scan token')
@@ -227,6 +300,28 @@ function bytePrefixAt(value: unknown): BytePrefix {
   if (atob(base64).length !== byteLength || byteLength !== Math.min(fullByteLength, MAX_VALUE_BYTES) || atob(suffix).length !== Math.min(3, fullByteLength - byteLength)) throw new TypeError('Redis RPC: invalid Hash value prefix')
   return { base64, byteLength, fullByteLength, suffix }
 }
+export const hashFieldReadRequestSchema: TypertSchema<HashFieldReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target', 'keyBase64', 'fieldBase64'])
+  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), fieldBase64: byteStringAt(object.fieldBase64, MAX_KEY_BYTES) }
+} }
+export const actionPointReadResultSchema: TypertSchema<ActionPointReadResult> = { parse(value) {
+  const object = objectAt(value, ['state', 'error', 'cell', 'score', 'streamMessage', 'sampledAt'])
+  const state = object.state, error = errorAt(object.error)
+  if (state !== 'value' && state !== 'selection-missing' && state !== 'missing' && state !== 'changed' && state !== 'failed') throw new TypeError('Redis RPC: invalid action point state')
+  if ((state === 'failed') !== (error !== null) || (state === 'value') !== (object.cell !== null)) throw new TypeError('Redis RPC: invalid action point result')
+  const cell = object.cell === null ? null : bytePrefixAt(object.cell)
+  const score = object.score === null ? null : stringAt(object.score, 128)
+  if (score !== null && (state !== 'value' || !isRedisScore(score))) throw new TypeError('Redis RPC: invalid action point score')
+  const streamMessage = object.streamMessage === null ? null : (() => {
+    const raw = objectAt(object.streamMessage, ['id', 'fields']), id = stringAt(raw.id, 41)
+    if (!isStreamId(id) || id === '0-0' || !Array.isArray(raw.fields) || raw.fields.length === 0 || raw.fields.length > MAX_SCAN_KEYS) throw new TypeError('Redis RPC: invalid point Stream message')
+    return { id, fields: raw.fields.map((value: unknown) => { const pair = objectAt(value, ['field', 'value']); return { field: identityAt(pair.field), value: bytePrefixAt(pair.value) } }) }
+  })()
+  if (streamMessage !== null && (state !== 'value' || score !== null)) throw new TypeError('Redis RPC: invalid point Stream state')
+  const result: ActionPointReadResult = { state, error, cell, score, streamMessage, sampledAt: sampleTimeAt(object.sampledAt) }
+  if (new TextEncoder().encode(JSON.stringify(result)).length > MAX_SCAN_JSON_BYTES) throw new TypeError('Redis RPC: point result budget exceeded')
+  return result
+} }
 export const scanHashResultSchema: TypertSchema<ScanHashResult> = { parse(value) {
   const object = objectAt(value, ['state', 'error', 'metadata', 'entries', 'cursor', 'sampledAt'])
   const state = object.state, error = errorAt(object.error), metadata = metadataAt(object.metadata)
@@ -278,6 +373,10 @@ export const listReadResultSchema: TypertSchema<ListReadResult> = { parse(value)
 export const scanSetRequestSchema: TypertSchema<ScanSetRequest> = { parse(value) {
   const object = objectAt(value, ['target', 'keyBase64', 'pattern', 'cursor'])
   return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), pattern: stringAt(object.pattern, 256), cursor: scanToken(object.cursor) }
+} }
+export const setMemberReadRequestSchema: TypertSchema<SetMemberReadRequest> = { parse(value) {
+  const object = objectAt(value, ['target', 'keyBase64', 'memberBase64'])
+  return { target: databaseTargetSchema.parse(object.target), keyBase64: byteStringAt(object.keyBase64, MAX_KEY_BYTES), memberBase64: byteStringAt(object.memberBase64, MAX_KEY_BYTES) }
 } }
 export const scanSetResultSchema: TypertSchema<ScanSetResult> = { parse(value) {
   const object = objectAt(value, ['state', 'error', 'metadata', 'members', 'cursor', 'sampledAt'])
@@ -419,6 +518,19 @@ export const selectionAckSchema: TypertSchema<SelectionAck> = { parse(value) {
   return { accepted: raw.accepted }
 } }
 
+export const aiBudgetStatusSchema: TypertSchema<AiBudgetStatus> = { parse(value) {
+  const raw = objectAt(value, ['callsUsed', 'maxCalls', 'bytesUsed', 'maxBytes', 'inFlight', 'stopped'])
+  const maxCalls = integerAt(raw.maxCalls, 1, Number.MAX_SAFE_INTEGER), maxBytes = integerAt(raw.maxBytes, 1, Number.MAX_SAFE_INTEGER)
+  const callsUsed = integerAt(raw.callsUsed, 0, maxCalls), bytesUsed = integerAt(raw.bytesUsed, 0, maxBytes), inFlight = integerAt(raw.inFlight, 0, callsUsed)
+  if (typeof raw.stopped !== 'boolean') throw new TypeError('Redis RPC: invalid AI budget')
+  return { callsUsed, maxCalls, bytesUsed, maxBytes, inFlight, stopped: raw.stopped }
+} }
+export const aiBudgetResumeSchema: TypertSchema<AiBudgetResume> = { parse(value) {
+  const raw = objectAt(value, ['accepted', 'status'])
+  if (typeof raw.accepted !== 'boolean') throw new TypeError('Redis RPC: invalid AI budget acknowledgement')
+  return { accepted: raw.accepted, status: aiBudgetStatusSchema.parse(raw.status) }
+} }
+
 export const redisDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema, sessionIdSchema),
@@ -431,10 +543,13 @@ export const redisDescriptors = [
   createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scanKeysRequestSchema, scanKeysResultSchema, sessionIdSchema),
   createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringReadRequestSchema, stringReadResultSchema, sessionIdSchema),
   createRedisInvocation('scanHash', 'ScanHashRequest', 'ScanHashResult', scanHashRequestSchema, scanHashResultSchema, sessionIdSchema),
+  createRedisInvocation('readActionPoint', 'ActionPointReadRequest', 'ActionPointReadResult', actionPointReadRequestSchema, actionPointReadResultSchema, sessionIdSchema),
   createRedisInvocation('readList', 'ListReadRequest', 'ListReadResult', listReadRequestSchema, listReadResultSchema, sessionIdSchema),
   createRedisInvocation('scanSet', 'ScanSetRequest', 'ScanSetResult', scanSetRequestSchema, scanSetResultSchema, sessionIdSchema),
   createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetReadRequestSchema, zsetReadResultSchema, sessionIdSchema),
   createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamReadRequestSchema, streamReadResultSchema, sessionIdSchema),
   createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema, sessionIdSchema),
-  createRedisInvocation('setSelection', 'SetSelectionRequest', 'SelectionAck', setSelectionRequestSchema, selectionAckSchema, sessionIdSchema),
+  createRedisInvocation('aiBudgetStatus', 'EmptyRequest', 'AiBudgetStatus', emptyRequestSchema, aiBudgetStatusSchema, sessionIdSchema),
+  createRedisInvocation('resumeAiBudget', 'EmptyRequest', 'AiBudgetResume', emptyRequestSchema, aiBudgetResumeSchema, sessionIdSchema),
+  createRedisUiStreamInvocation(emptyRequestSchema, uiChannelMessageSchema, uiChannelInputSchema, sessionIdSchema),
 ] as const

@@ -9,7 +9,7 @@ import { valuePrefix } from './value-prefix.ts'
 /** One HSCAN per explicit action. COUNT is a hint, never a memory guarantee. */
 export class RedisHashes {
   private readonly scans = new RedisScanCursors()
-  constructor(private readonly connections: RedisConnections) {}
+  constructor(private readonly connections: RedisConnections, private readonly retryCancelled = false) {}
   disposeSession(sessionId: string): void { this.scans.disposeSession(sessionId) }
   dispose(): void { this.scans.dispose() }
 
@@ -54,6 +54,11 @@ export class RedisHashes {
       return { ...page, cursor: token }
     } catch (error) {
       const code = context.error(error)
+      // Only the AI reader opts in; an explicit cancellation may retry its
+      // original stateless cursor if this session and scan are still current.
+      if (this.retryCancelled && signal.aborted && scan !== undefined) {
+        try { this.connections.assertTarget(sessionId, request.target); if (this.scans.restore(sessionId, scan, request.cursor)) scan = undefined } catch { /* target changed */ }
+      }
       return code === 'type-changed' ? result('changed') : result('failed', code)
     } finally {
       if (scan !== undefined) this.scans.discard(sessionId, scan)

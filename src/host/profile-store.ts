@@ -1,22 +1,29 @@
 /** Profile-owned configuration only. No credential protection or network code belongs here. */
 import { randomUUID } from 'node:crypto'
 import { mkdir, readFile, rename, rm, stat, writeFile } from 'node:fs/promises'
-import { dirname, join } from 'node:path'
-import { MAX_PROFILES, type ProfileCollection, type ProfileId, type SaveProfileRequest } from '../domain.ts'
+import { dirname, resolve } from 'node:path'
+import { MAX_PROFILES, type ProfileCollection, type ProfileId, type SavedConnection, type SaveProfileRequest } from '../domain.ts'
 import { profileCollectionSchema, profileIdSchema, saveProfileSchema } from '../typert.shared.ts'
 
 const MAX_FILE_BYTES = 4 * 1024 * 1024
 const storageError = () => new Error('Redis connection profiles could not be read or saved.')
+// Only plugin instances in this process participate; external file writers do not.
+const pendingByPath = new Map<string, Promise<void>>()
 
 export class RedisProfiles {
   private readonly file: string
-  private pending = Promise.resolve()
-  constructor(profileDirectory: string) { this.file = join(profileDirectory, 'data', 'dsh-redis', 'connections.json') }
+  private readonly queueKey: string
+  constructor(profileDirectory: string) {
+    this.file = resolve(profileDirectory, 'data', 'dsh-redis', 'connections.json')
+    this.queueKey = process.platform === 'win32' ? this.file.toLowerCase() : this.file
+  }
 
-  /** Serialize read-modify-write operations so concurrent panes cannot lose updates. */
+  /** Serialize cooperating instances using the same normalized file path. */
   private queue<T>(signal: AbortSignal, operation: () => Promise<T>): Promise<T> {
-    const result = this.pending.then(() => { signal.throwIfAborted(); return operation() })
-    this.pending = result.then(() => undefined, () => undefined)
+    const result = (pendingByPath.get(this.queueKey) ?? Promise.resolve()).then(() => { signal.throwIfAborted(); return operation() })
+    const tail = result.then(() => undefined, () => undefined)
+    pendingByPath.set(this.queueKey, tail)
+    void tail.then(() => { if (pendingByPath.get(this.queueKey) === tail) pendingByPath.delete(this.queueKey) })
     return result
   }
   private async read(): Promise<ProfileCollection> {
@@ -51,6 +58,19 @@ export class RedisProfiles {
     }
   }
   list(signal: AbortSignal): Promise<ProfileCollection> { return this.queue(signal, () => this.read()) }
+  /** Caller prepares its candidate first. No asynchronous work is allowed in commit. */
+  withVerifiedProfile(expected: SavedConnection, signal: AbortSignal, commit: () => undefined): Promise<boolean> {
+    // Parse now to snapshot nested settings before this operation enters the queue.
+    const snapshot = profileCollectionSchema.parse({ profiles: [expected], selectedId: null }).profiles[0]!
+    const normalized = JSON.stringify(snapshot)
+    return this.queue(signal, async () => {
+      const current = (await this.read()).profiles.find(value => value.id === snapshot.id)
+      signal.throwIfAborted()
+      if (current === undefined || JSON.stringify(current) !== normalized) return false
+      if (commit() !== undefined) throw new TypeError('Redis profile commit must be synchronous.')
+      return true
+    })
+  }
   save(request: SaveProfileRequest, signal: AbortSignal): Promise<ProfileCollection> {
     const input = saveProfileSchema.parse(request)
     return this.queue(signal, async () => {

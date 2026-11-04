@@ -36,8 +36,8 @@ export function useCollectionScan<Cache extends { readonly limited: boolean }, P
   }
   function cancel(): void { auto.reset('cancelled'); stop(); setBusy(false); setError('cancelled'); setCursor(null); setProgress('idle') }
   async function scan(more: boolean): Promise<void> {
-    // Scroll events may arrive twice before busy is rendered. Never consume a cursor twice.
-    if (more && (reading.current || cursor === null || cache.limited || progress !== 'more')) return
+    // Reject duplicate work synchronously, before React renders the busy state.
+    if (reading.current || (more && (cursor === null || cache.limited || progress !== 'more'))) return
     if (more && pages.current >= 1000) { setCursor(null); setProgress('limited'); return }
     if (!auto.begin()) return
     reading.current = true

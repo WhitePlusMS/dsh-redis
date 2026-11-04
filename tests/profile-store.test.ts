@@ -2,7 +2,11 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest'
 import { mkdir, mkdtemp, readFile, readdir, realpath, rm, rmdir, writeFile } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { RedisProfiles } from '../src/host/profile-store.ts'
+import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
+import { RedisRemoteService } from '../src/remote-service.ts'
+import type { Agent } from '@deepseek-ai/dsh-agent'
 import { MAX_PROFILES, type SaveProfileRequest } from '../src/domain.ts'
+import { renderLogs } from './log-output.ts'
 
 const runtime = resolve(import.meta.dirname, '../.scratch/runtime')
 let directory: string
@@ -36,6 +40,27 @@ describe('profile-owned non-secret connection persistence', () => {
     expect(reopened.profiles[1]?.settings.tls?.caPem).toBe('public fixture certificate')
     expect(await readdir(dirname(file()))).toEqual(['connections.json'])
   })
+  it('stores an optional environment label with the selected profile without saving credentials', async () => {
+    const store = new RedisProfiles(directory)
+    const saved = await store.save({ ...input, settings: { ...input.settings, environment: '测试' } }, signal())
+    expect(saved.profiles[0]?.settings.environment).toBe('测试')
+    const reopened = await new RedisProfiles(directory).list(signal())
+    expect(reopened.profiles[0]?.settings.environment).toBe('测试')
+    expect(await readFile(file(), 'utf8')).not.toContain('password')
+  })
+  it('saving another profile does not change the active connection', async () => {
+    const transport: RedisLink = { close: vi.fn(), execute: async () => null, onFailure: () => () => undefined }
+    const open = vi.fn(async () => transport), connections = new RedisConnections(open), profiles = new RedisProfiles(directory)
+    const remote = Object.create(RedisRemoteService.prototype) as RedisRemoteService
+    Reflect.set(remote, 'profiles', profiles); Reflect.set(remote, 'connections', connections)
+    const agent = { session: { id: 'a' } } as unknown as Agent
+    try {
+      const active = await connections.connect('a', { ...input.settings, password: 'ro04-synthetic-password' }, signal())
+      expect(active.target).not.toHaveProperty('environment')
+      await remote.saveProfile(agent, { ...input, name: 'Other', settings: { ...input.settings, host: 'other.example', environment: 'test' } }, signal())
+      expect(connections.status('a')).toEqual(active); expect(open).toHaveBeenCalledTimes(1)
+    } finally { connections.dispose() }
+  })
   it('updates/removes a stable identity and never silently recreates an unknown profile', async () => {
     const store = new RedisProfiles(directory)
     const created = await store.save(input, signal())
@@ -61,6 +86,24 @@ describe('profile-owned non-secret connection persistence', () => {
   it('rejects a password in saved settings before touching storage', () => {
     const invalid = { ...input, settings: { ...input.settings, password: 'never-persist-this' } }
     expect(() => new RedisProfiles(directory).save(invalid, signal())).toThrow()
+  })
+  it('does not log injected credentials or storage contents during profile operations', async () => {
+    const password = 'ro04-fake-profile-password', marker = 'ro04-fake-profile-marker'
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const store = new RedisProfiles(directory)
+    const saved = await store.save({ ...input, name: marker, settings: { ...input.settings, username: marker, tls: { caPem: marker } } }, signal())
+    if (saved.selectedId === null) throw new Error('Missing profile identity')
+    await store.remove({ id: saved.selectedId }, signal())
+    const invalid = { ...input, settings: { ...input.settings, password } }
+    let rejection: unknown
+    try { store.save(invalid, signal()) } catch (caught) { rejection = caught }
+    expect(rejection).toBeInstanceOf(Error); expect(String(rejection)).not.toContain(password)
+    await writeFile(file(), password + marker, 'utf8')
+    await expect(store.list(signal())).rejects.toThrow('could not be read or saved')
+    expect(vi.mocked(console.info).mock.calls.length).toBeGreaterThan(0)
+    expect(vi.mocked(console.warn).mock.calls.length).toBeGreaterThan(0)
+    const captured = renderLogs([...vi.mocked(console.info).mock.calls, ...vi.mocked(console.warn).mock.calls, ...error.mock.calls])
+    expect(captured).not.toContain(password); expect(captured).not.toContain(marker)
   })
   it('preserves corrupt, unknown-version and duplicate-id files on read/save failure', async () => {
     await mkdir(dirname(file()), { recursive: true })

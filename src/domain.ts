@@ -1,7 +1,11 @@
 /** Exact runtime baseline selected by the user. */
 export const DSH_VERSION = '0.2.0-rc.2' as const
-export const PROTOCOL_VERSION = 2 as const
+export const PROTOCOL_VERSION = 14 as const
 export type EmptyRequest = Record<string, never>
+
+/** Current conversation's AI result budget, without Redis contents. */
+export interface AiBudgetStatus { readonly callsUsed: number; readonly maxCalls: number; readonly bytesUsed: number; readonly maxBytes: number; readonly inFlight: number; readonly stopped: boolean }
+export interface AiBudgetResume { readonly accepted: boolean; readonly status: AiBudgetStatus }
 
 /** Public Host status contains no connection credentials or Redis data. */
 export interface RedisHostStatus {
@@ -17,6 +21,8 @@ export interface ConnectionRequest {
   readonly port: number
   readonly username: string
   readonly password: string
+  /** User-supplied label; an absent label means the environment is unknown. */
+  readonly environment?: string
   readonly tls: { readonly caPem: string } | null
 }
 export interface ConnectionTarget { readonly id: string; readonly generation: number }
@@ -27,7 +33,7 @@ export interface ConnectionView {
   readonly db: number
   readonly state: 'connecting' | 'connected' | 'disconnected' | 'error'
   readonly error: ConnectionErrorCode | null
-  readonly target: { readonly host: string; readonly port: number; readonly username: string; readonly tls: boolean } | null
+  readonly target: { readonly host: string; readonly port: number; readonly username: string; readonly environment?: string; readonly tls: boolean } | null
 }
 
 /** Saved connection settings contain no password or live socket identity. */
@@ -51,6 +57,14 @@ export type RedisSelectionItem =
 export interface RedisSelection { readonly keyBase64: string; readonly item: RedisSelectionItem | null }
 export interface SetSelectionRequest { readonly target: DatabaseTarget; readonly selection: RedisSelection | null }
 export interface SelectionAck { readonly accepted: boolean }
+
+/** UI action frames contain identities only, never Redis values or credentials. */
+export type UiActionOutcome = 'applied' | 'unknown' | 'unsupported' | 'failed' | 'stale' | 'cancelled' | 'timeout' | 'disconnected' | 'no_receiver' | 'ambiguous' | 'busy'
+export type UiAction = { readonly kind: 'show' } | { readonly kind: 'confirmSelection' } | { readonly kind: 'selectKey'; readonly key: RedisKey } | { readonly kind: 'selectHashField'; readonly keyBase64: string; readonly field: RedisKey } | { readonly kind: 'selectListIndex'; readonly keyBase64: string; readonly index: string } | { readonly kind: 'selectSetMember'; readonly keyBase64: string; readonly member: RedisKey } | { readonly kind: 'selectZSetMember'; readonly keyBase64: string; readonly member: RedisKey } | { readonly kind: 'selectStreamField'; readonly keyBase64: string; readonly id: string; readonly fieldIndex: number; readonly fieldBase64: string }
+export interface UiActionRequest<Action> { readonly requestId: string; readonly action: Action; readonly target: DatabaseTarget | null; readonly selectionRevision: number; readonly expiresAt: number }
+export interface UiActionAck { readonly requestId: string; readonly target: DatabaseTarget | null; readonly selectionRevision: number; readonly outcome: 'applied' | 'unsupported' | 'failed' | 'stale' | 'ambiguous' }
+export type UiChannelInput = UiActionAck | { readonly kind: 'selection'; readonly revision: number; readonly synchronized: boolean } | { readonly kind: 'publishSelection'; readonly requestId: string; readonly revision: number; readonly request: SetSelectionRequest; readonly actionRequestId?: string } | { readonly kind: 'commitSelection'; readonly requestId: string; readonly revision: number; readonly nextRevision: number }
+export type UiChannelMessage = { readonly kind: 'action'; readonly request: UiActionRequest<UiAction> } | { readonly kind: 'cancel'; readonly requestId: string } | { readonly kind: 'selectionResult'; readonly requestId: string; readonly accepted: boolean }
 export interface ScanKeysRequest { readonly target: DatabaseTarget; readonly pattern: string; readonly cursor: string | null }
 export interface RedisKey { readonly base64: string; readonly byteLength: number; readonly label: string }
 export interface ScanKeysResult {
@@ -105,6 +119,18 @@ export const MAX_VALUE_BYTES = 65536
 export interface BytePrefix { readonly base64: string; readonly byteLength: number; readonly fullByteLength: number; readonly suffix: string }
 export interface HashEntry { readonly field: RedisKey; readonly value: BytePrefix }
 export interface ScanHashRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly pattern: string; readonly cursor: string | null }
+/** A direct Hash field sample is separate from HSCAN and its pagination state. */
+export interface HashFieldReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly fieldBase64: string }
+export interface ActionPointReadResult {
+  readonly state: 'value' | 'selection-missing' | 'missing' | 'changed' | 'failed'
+  readonly error: ConnectionErrorCode | null
+  readonly cell: BytePrefix | null
+  readonly score: string | null
+  readonly streamMessage: StreamMessage | null
+  readonly sampledAt: string
+}
+/** A UI action samples only the exact item held by its Host-owned request. */
+export interface ActionPointReadRequest { readonly requestId: string }
 export interface ScanHashResult {
   readonly state: 'page' | 'missing' | 'unsupported' | 'changed' | 'failed'
   readonly error: ConnectionErrorCode | null
@@ -132,6 +158,8 @@ export const MAX_LIST_ITEMS = 100
  * Oversized identities are refused, never silently replaced by a prefix.
  */
 export interface ScanSetRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly pattern: string; readonly cursor: string | null }
+/** A direct membership sample never advances the Set scan. */
+export interface SetMemberReadRequest { readonly target: DatabaseTarget; readonly keyBase64: string; readonly memberBase64: string }
 export interface ScanSetResult {
   readonly state: 'page' | 'missing' | 'unsupported' | 'changed' | 'failed'
   readonly error: ConnectionErrorCode | null

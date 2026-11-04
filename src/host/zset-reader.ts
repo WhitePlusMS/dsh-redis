@@ -10,7 +10,7 @@ const MAX_INTEGER = (1n << 63n) - 1n
 /** Fixed ascending ZRANGE WITHSCORES or one unordered ZSCAN, never a write path. */
 export class RedisZSets {
   private readonly scans = new RedisScanCursors()
-  constructor(private readonly connections: RedisConnections) {}
+  constructor(private readonly connections: RedisConnections, private readonly retryCancelled = false) {}
   disposeSession(sessionId: string): void { this.scans.disposeSession(sessionId) }
   dispose(): void { this.scans.dispose() }
 
@@ -60,6 +60,10 @@ export class RedisZSets {
       return page
     } catch (error) {
       const code = context.error(error)
+      // Only AI ZSCAN retries an explicitly cancelled, still-current cursor.
+      if (this.retryCancelled && signal.aborted && request.mode === 'scan' && scan !== undefined) {
+        try { this.connections.assertTarget(sessionId, request.target); if (this.scans.restore(sessionId, scan, request.cursor)) scan = undefined } catch { /* target changed */ }
+      }
       return code === 'type-changed' ? result('changed') : result('failed', code)
     } finally {
       if (scan !== undefined) this.scans.discard(sessionId, scan)

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConnectionFailure, RedisConnections, connectionErrorCode, type RedisLink, type RedisOpener } from '../src/host/connection-service.ts'
 import type { ConnectionRequest, ConnectionView, ConnectionErrorCode } from '../src/domain.ts'
+import { renderLogs } from './log-output.ts'
 
 const settings: ConnectionRequest = { host: '127.0.0.1', port: 6379, username: 'reader', password: 'never-return-this-secret', tls: null }
 const signal = () => new AbortController().signal
@@ -23,6 +24,12 @@ beforeEach(() => { vi.spyOn(console, 'info').mockImplementation(() => undefined)
 afterEach(() => { vi.restoreAllMocks() })
 
 describe('connection ownership and lifecycle', () => {
+  it('detects secrets in Error messages and nested causes as Node console would', () => {
+    const marker = 'ro04-synthetic-error-marker', failure = new Error(marker)
+    expect(JSON.stringify(failure)).not.toContain(marker)
+    expect(renderLogs([[failure]])).toContain(marker)
+    expect(renderLogs([[new Error('outer', { cause: failure })]])).toContain(marker)
+  })
   it('distinguishes certificate trust and hostname errors without exposing server messages', () => {
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'ERR_TLS_CERT_ALTNAME_INVALID' }))).toBe('tls-hostname')
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' }))).toBe('tls-certificate')
@@ -35,6 +42,48 @@ describe('connection ownership and lifecycle', () => {
     expect(connected).toMatchObject({ state: 'error', error: 'auth' })
     expect(JSON.stringify(connected)).not.toContain(settings.password)
     service.dispose()
+  })
+  it('does not log injected credentials on connection success, failure or disconnect', async () => {
+    const password = 'ro04-fake-password-marker', certificate = 'ro04-fake-certificate-marker'
+    const request: ConnectionRequest = { ...settings, password, tls: { caPem: certificate } }
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    const error = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    const client = link(), service = new RedisConnections(async () => client.transport)
+    const failures: readonly [string, Error, ConnectionErrorCode][] = [
+      ['auth', new Error('WRONGPASS ' + password + ' ' + certificate), 'auth'],
+      ['hostname', Object.assign(new Error(password + ' ' + certificate), { code: 'ERR_TLS_CERT_ALTNAME_INVALID' }), 'tls-hostname'],
+      ['certificate', Object.assign(new Error(password + ' ' + certificate), { code: 'CERT_HAS_EXPIRED' }), 'tls-certificate'],
+    ]
+    try {
+      const connected = await service.connect('a', request, signal())
+      expect(connected.state).toBe('connected')
+      client.fail('network')
+      const replacement = await service.connect('a', request, signal())
+      service.disconnect('a', target(replacement))
+      for (const [session, failure, code] of failures) {
+        const failing = new RedisConnections(async () => { throw failure })
+        try {
+          const result = await failing.connect(session, request, signal())
+          expect(result).toMatchObject({ state: 'error', error: code })
+          expect(JSON.stringify(result)).not.toContain(password)
+          expect(JSON.stringify(result)).not.toContain(certificate)
+        } finally { failing.dispose() }
+      }
+      expect(vi.mocked(console.info).mock.calls.length).toBeGreaterThan(0)
+      const captured = renderLogs([...vi.mocked(console.info).mock.calls, ...warn.mock.calls, ...error.mock.calls])
+      expect(captured).not.toContain(password); expect(captured).not.toContain(certificate)
+    } finally { service.dispose() }
+  })
+  it('keeps the connected environment as a snapshot of the submitted settings', async () => {
+    const client = link(), service = new RedisConnections(async () => client.transport)
+    try {
+      const draft = { ...settings, environment: '测试' }
+      const connected = await service.connect('a', draft, signal())
+      draft.environment = '生产'
+      expect(connected.target?.environment).toBe('测试')
+      expect(service.status('a').target?.environment).toBe('测试')
+      expect(JSON.stringify(connected)).not.toContain(settings.password)
+    } finally { service.dispose() }
   })
   it('keeps a stable identity but advances generation; an old disconnect cannot close a replacement', async () => {
     const first = link(), second = link()
@@ -106,6 +155,22 @@ describe('connection ownership and lifecycle', () => {
     expect(open).toHaveBeenCalledTimes(1)
     service.dispose()
     expect(client.close).toHaveBeenCalledTimes(1)
+  })
+  it('preserves a transport failure reported while SELECT is in flight', async () => {
+    const client = link()
+    let reject!: (error: Error) => void
+    const pending = new Promise<null>((_resolve, fail) => { reject = fail })
+    const transport: RedisLink = { ...client.transport, execute: async () => pending }
+    const service = new RedisConnections(async () => transport)
+    try {
+      const connected = await service.connect('a', settings, signal())
+      const operation = service.selectDatabase('a', { ...target(connected), db: 2 }, signal())
+      client.fail('network')
+      reject(new ConnectionFailure('network'))
+      expect(await operation).toMatchObject({ state: 'error', error: 'network', db: 0 })
+      expect(service.status('a')).toMatchObject({ state: 'error', error: 'network' })
+      expect(client.close).toHaveBeenCalledTimes(1)
+    } finally { service.dispose() }
   })
   it('preserves explicit timeout failures and never opens an already cancelled request', async () => {
     const open = vi.fn<RedisOpener>().mockRejectedValue(new ConnectionFailure('timeout'))

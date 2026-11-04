@@ -1,14 +1,18 @@
 import { RedisDatabases } from './host/database-reader.ts'
+import { UiActionCoordinator } from './host/ui-action-coordinator.ts'
+import { openUiActionChannel } from './host/ui-action-channel.ts'
+import type { UiAction, UiChannelInput, UiChannelMessage } from './domain.ts'
+import type { RemoteStream } from '@deepseek-ai/dsh-typert-protocol'
 import { RedisAiReader } from './host/ai-reader.ts'
-import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
-import type { SetSelectionRequest, SelectionAck } from './domain.ts'
+import type { AiBudgetResume, AiBudgetStatus, DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
-import { RedisConnections } from './host/connection-service.ts'
+import { ConnectionFailure, RedisConnections } from './host/connection-service.ts'
 import { RedisProfiles } from './host/profile-store.ts'
 import { RedisKeys } from './host/key-reader.ts'
 import { RedisStrings } from './host/string-reader.ts'
 import { RedisHashes } from './host/hash-reader.ts'
+import { RedisSelectedReader } from './host/selected-reader.ts'
 import { RedisLists } from './host/list-reader.ts'
 import { RedisSets } from './host/set-reader.ts'
 import { RedisZSets } from './host/zset-reader.ts'
@@ -18,6 +22,7 @@ import type { StreamReadRequest, StreamReadResult } from './domain.ts'
 import type { ScanSetRequest, ScanSetResult } from './domain.ts'
 import type { ListReadRequest, ListReadResult } from './domain.ts'
 import type { ScanHashRequest, ScanHashResult } from './domain.ts'
+import type { ActionPointReadRequest, ActionPointReadResult, RedisSelectionItem } from './domain.ts'
 import type { StringReadRequest, StringReadResult } from './domain.ts'
 import type { DatabaseTarget, ScanKeysRequest, ScanKeysResult } from './domain.ts'
 import type { SaveProfileRequest, ProfileId, ProfileCollection } from './domain.ts'
@@ -25,12 +30,20 @@ import type { ConnectionRequest, ConnectionTarget, ConnectionView } from './doma
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
+import { DSH_VERSION, PROTOCOL_VERSION, MAX_SCAN_JSON_BYTES, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 
 /** Typert supplies the trusted Agent; clients cannot select an arbitrary owner. */
 export class RedisRemoteService extends TypertRemoteService {
+  readonly uiActions = new UiActionCoordinator<UiAction>()
   private readonly connections = new RedisConnections()
-  readonly ai = new RedisAiReader(this.connections)
+  readonly ai = new RedisAiReader(this.connections, sessionId => this.uiActions.invalidateSession(sessionId), async (sessionId, target, expected, signal) => {
+    const revision = this.uiActions.selectionRevision(sessionId)
+    if (revision === null || (expected !== null && revision !== expected)) throw new Error('侧栏选择正在变化或界面不可用，请在当前对话打开唯一 Redis 面板并重试。')
+    const current = () => this.uiActions.selectionRevision(sessionId) === revision
+    const outcome = await this.uiActions.dispatch(sessionId, { kind: 'confirmSelection' }, target, revision, current, signal, 3000)
+    if (outcome !== 'applied' || !current()) throw new Error('侧栏选择已变化或界面不可用，请重新选择后重试。')
+    return revision
+  }, (sessionId, revision) => { const current = this.uiActions.selectionRevision(sessionId); return current !== null && (revision === null || current === revision) })
   private readonly databases = new RedisDatabases(this.connections)
   private readonly keys = new RedisKeys(this.connections)
   private readonly strings = new RedisStrings(this.connections)
@@ -43,12 +56,20 @@ export class RedisRemoteService extends TypertRemoteService {
   constructor(ctx: Context) {
     super(ctx, 'redisViewer')
     this.profiles = new RedisProfiles(ctx.profileContext.dir)
-    ctx.effect(() => () => { this.ai.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose(); this.connections.dispose(); }, 'redis connections')
-    ctx.on('session/disposed', session => { this.ai.disposeSession(session.id); this.keys.disposeSession(session.id); this.hashes.disposeSession(session.id); this.sets.disposeSession(session.id); this.zsets.disposeSession(session.id); this.streams.disposeSession(session.id); this.connections.disposeSession(session.id); })
+    ctx.effect(() => () => { this.uiActions.dispose(); this.ai.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose(); this.connections.dispose(); }, 'redis connections')
+    ctx.on('session/disposed', session => { this.uiActions.disposeSession(session.id); this.ai.disposeSession(session.id); this.keys.disposeSession(session.id); this.hashes.disposeSession(session.id); this.sets.disposeSession(session.id); this.zsets.disposeSession(session.id); this.streams.disposeSession(session.id); this.connections.disposeSession(session.id); })
+  }
+  /** The Gateway supplies both the trusted Agent and this stream's uplink. */
+  async *openUiChannel(agent: Agent, _request: EmptyRequest, signal: AbortSignal): RemoteStream<UiChannelMessage, UiChannelInput> {
+    signal.throwIfAborted()
+    const invocation = this.ctx.invocation
+    if (invocation === undefined) throw new Error('界面动作通道缺少有效调用上下文。')
+    yield* openUiActionChannel(this.uiActions, agent.session.id, signal, invocation.uplink<UiChannelInput>(), (request, source) => source === 'action' ? this.ai.commitSelection(agent.session.id, request) : this.ai.setSelection(agent.session.id, request))
   }
   async connect(agent: Agent, request: ConnectionRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
-    this.ai.disposeSession(agent.session.id)
+    this.uiActions.invalidateSession(agent.session.id)
+    this.ai.clearTarget(agent.session.id)
     this.keys.disposeSession(agent.session.id)
     this.hashes.disposeSession(agent.session.id)
     this.sets.disposeSession(agent.session.id)
@@ -59,13 +80,15 @@ export class RedisRemoteService extends TypertRemoteService {
   async disconnect(agent: Agent, request: ConnectionTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     const view = this.connections.disconnect(agent.session.id, request)
-    if (view.state === 'disconnected') { this.ai.disposeSession(agent.session.id); this.keys.disposeSession(agent.session.id); this.hashes.disposeSession(agent.session.id); this.sets.disposeSession(agent.session.id); this.zsets.disposeSession(agent.session.id); this.streams.disposeSession(agent.session.id) }
+    if (view.state === 'disconnected') { this.uiActions.invalidateSession(agent.session.id); this.ai.clearTarget(agent.session.id); this.keys.disposeSession(agent.session.id); this.hashes.disposeSession(agent.session.id); this.sets.disposeSession(agent.session.id); this.zsets.disposeSession(agent.session.id); this.streams.disposeSession(agent.session.id) }
     return view
   }
   async selectDatabase(agent: Agent, request: DatabaseTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
-    const view = await this.connections.selectDatabase(agent.session.id, request, signal)
-    if (view.generation !== request.generation) this.ai.disposeSession(agent.session.id)
+    this.uiActions.invalidateSession(agent.session.id)
+    const view = await this.connections.selectDatabase(agent.session.id, request, signal, () => this.ai.clearTarget(agent.session.id))
+    // An obsolete response must not clear selection state for a newer connection.
+    if (!this.connections.isCurrentView(agent.session.id, view)) return { ...this.connections.status(agent.session.id), error: 'stale' }
     return view
   }
   async scanKeys(agent: Agent, request: ScanKeysRequest, signal: AbortSignal): Promise<ScanKeysResult> {
@@ -76,6 +99,33 @@ export class RedisRemoteService extends TypertRemoteService {
   }
   async scanHash(agent: Agent, request: ScanHashRequest, signal: AbortSignal): Promise<ScanHashResult> {
     return this.hashes.scan(agent.session.id, request, signal)
+  }
+  async readActionPoint(agent: Agent, request: ActionPointReadRequest, signal: AbortSignal): Promise<ActionPointReadResult> {
+    const sessionId = agent.session.id, action = this.uiActions.activeRequest(sessionId, request.requestId)
+    const failed = (error: 'stale' | 'cancelled' | 'oversize'): ActionPointReadResult => ({ state: 'failed', error, cell: null, score: null, streamMessage: null, sampledAt: new Date().toISOString() })
+    const stale = () => failed('stale')
+    if (signal.aborted) return failed('cancelled')
+    if (action === null || action.target === null) return stale()
+    let item: RedisSelectionItem
+    let keyBase64: string
+    if (action.action.kind === 'selectHashField') { keyBase64 = action.action.keyBase64; item = { kind: 'hash', fieldBase64: action.action.field.base64 } }
+    else if (action.action.kind === 'selectListIndex') { keyBase64 = action.action.keyBase64; item = { kind: 'list', index: action.action.index } }
+    else if (action.action.kind === 'selectSetMember') { keyBase64 = action.action.keyBase64; item = { kind: 'set', memberBase64: action.action.member.base64 } }
+    else if (action.action.kind === 'selectZSetMember') { keyBase64 = action.action.keyBase64; item = { kind: 'zset', memberBase64: action.action.member.base64 } }
+    else if (action.action.kind === 'selectStreamField') { keyBase64 = action.action.keyBase64; item = { kind: 'stream', id: action.action.id, fieldIndex: action.action.fieldIndex, fieldBase64: action.action.fieldBase64 } }
+    else return stale()
+    if (!this.uiActions.claimPoint(sessionId, action)) return stale()
+    const validate = () => { if (this.uiActions.activeRequest(sessionId, request.requestId) !== action) throw new ConnectionFailure('stale') }
+    const reader = new RedisSelectedReader(this.connections)
+    const stream = item.kind === 'stream' ? await reader.readStream(sessionId, action.target, keyBase64, item.id, item.fieldIndex, item.fieldBase64, signal, validate) : null
+    const sample = stream === null ? await reader.read(sessionId, action.target, keyBase64, item, signal, validate) : stream.selected
+    if (signal.aborted) return failed('cancelled')
+    try { validate() } catch { return stale() }
+    const state = sample.state === 'value' || sample.state === 'selection-missing' || sample.state === 'missing' || sample.state === 'failed' ? sample.state : 'changed'
+    const result: ActionPointReadResult = { state, error: state === 'failed' ? sample.error : null, cell: state === 'value' ? sample.cell : null, score: state === 'value' ? sample.score : null, streamMessage: state === 'value' ? stream?.message ?? null : null, sampledAt: sample.sampledAt }
+    if (Buffer.byteLength(JSON.stringify(result)) > MAX_SCAN_JSON_BYTES) return failed('oversize')
+    if (state === 'value' && !this.uiActions.markPointSucceeded(sessionId, action)) return stale()
+    return result
   }
   async readList(agent: Agent, request: ListReadRequest, signal: AbortSignal): Promise<ListReadResult> {
     return this.lists.read(agent.session.id, request, signal)
@@ -90,7 +140,8 @@ export class RedisRemoteService extends TypertRemoteService {
     return this.streams.read(agent.session.id, request, signal)
   }
   async readDatabases(agent: Agent, request: DatabasesReadRequest, signal: AbortSignal): Promise<DatabasesReadResult> { return this.databases.read(agent.session.id, request, signal) }
-  async setSelection(agent: Agent, request: SetSelectionRequest, signal: AbortSignal): Promise<SelectionAck> { signal.throwIfAborted(); return this.ai.setSelection(agent.session.id, request) }
+  async aiBudgetStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<AiBudgetStatus> { signal.throwIfAborted(); return this.ai.budgetStatus(agent.session.id) }
+  async resumeAiBudget(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<AiBudgetResume> { signal.throwIfAborted(); return this.ai.resumeBudget(agent.session.id) }
   async connectionStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     return this.connections.status(agent.session.id)
