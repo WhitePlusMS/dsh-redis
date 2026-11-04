@@ -205,6 +205,19 @@ describe('bounded Redis socket transport', () => {
       else { expect(text).toEqual(['CONFIG', 'GET', 'databases']); socket.write('*2\r\n$9\r\ndatabases\r\n$2\r\n16\r\n') }
     })
   })
+  it('allows only a fixed, bounded MEMORY USAGE request', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['PURGE'], ['USAGE', Buffer.from('key')], ['USAGE', 'key', 'SAMPLES', '5'], ['USAGE', Buffer.from('key'), 'SAMPLES', '0'], ['USAGE', Buffer.from('key'), 'SAMPLES', '5', 'extra']]) {
+        await expect(transport.execute('MEMORY', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      }
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('MEMORY', ['USAGE', Buffer.from([0, 255]), 'SAMPLES', '5'], signal(), () => undefined)).toBe(128n)
+      expect(commands).toEqual(['PING', 'MEMORY'])
+    }, (socket, args) => {
+      expect(args).toEqual([Buffer.from('MEMORY'), Buffer.from('USAGE'), Buffer.from([0, 255]), Buffer.from('SAMPLES'), Buffer.from('5')])
+      socket.write(':128\r\n')
+    })
+  })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {
       const controller = new AbortController(); controller.abort()

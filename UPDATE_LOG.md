@@ -1,5 +1,14 @@
 # 更新说明
 
+## 2026-11-04 增加明确 Key 的内存只读诊断
+
+- 修改 `src/host/redis-transport.ts`：只允许固定形状的 `MEMORY USAGE <二进制 Key> SAMPLES 5`，拒绝其他 MEMORY 子命令、全量采样和额外参数。
+- 修改 `src/host/ai-reader.ts` 和 `src/host/ai-tools.ts`：增加当前会话及 DB 内的显式 Key 内存估计，复用目标校验、期限、取消、会话预算和固定错误说明；结果包含采样时间与估计字节数，不读取值或依赖界面选择。
+- 原因和影响：回答用户“这个 Key 占多少内存”，采样结果不能描述为精确值；权限不足、Key 不存在和连接变化分别处理。针对命令门禁、真实工具调用和隔离 Redis 补充验证。
+- 新增测试覆盖非法子命令、无界采样、二进制 Key、权限拒绝、缺失 Key 和在途连接替换；只对本任务的合成数据运行。
+- 新增 `scripts/smoke-ai-memory.mjs` 以隔离 Redis 和实际 DSH ToolRuntime 核验内存估计与数据、过期时间不变；更新 `docs/AI_READ_USAGE.md` 说明实际接口与估计边界。真实用户模型验收仍待对新构建执行。
+- 验证：`pnpm typecheck`、构建以及 2 个测试文件/59 项通过；Redis 8.2.6 隔离实例的二进制 Key、缺失 Key 和数据/过期时间回读通过，夹具已停止。
+
 ## 2026-11-04 重构 Redis AI 只读方案
 
 - 重写 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md`：从用户问题、连接范围、证据取得、回答与按需界面核对出发，重新确定产品范围、架构边界、优先级和验收方式，明确普通查询不依赖预选 Key。

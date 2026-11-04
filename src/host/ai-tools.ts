@@ -38,6 +38,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。使用 MEMORY USAGE 和固定 SAMPLES 5，聚合类型为采样估计而非精确总量；bytes 为十进制字符串。Key 不存在、权限不足和读取失败分别报告，不读取值、不跨库。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_select_db', description: '仅在用户明确要求切换DB时使用：切换当前对话已连接Redis的数据库，并让侧栏同步。结果的 requestedDb 是请求目标，connection 是实际状态，sampledAt 是本次状态时间。' + connectionViewMeaning + '普通查询必须沿用当前DB，不能为了搜索自行切库；不会连接其他服务器或写入Redis数据。',
     parameters: { db: { type: 'integer', required: true, description: '用户明确要求的DB编号，0到65535。' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['db']); return reader.selectDatabase(session, args.db, exec.signal) }) },

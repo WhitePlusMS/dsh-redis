@@ -10,6 +10,7 @@ import { RedisZSets } from './zset-reader.ts'
 import { RedisStreams } from './stream-reader.ts'
 import { RedisSelectedReader } from './selected-reader.ts'
 import { RedisReadContext } from './read-context.ts'
+import { RedisFrameError } from './resp.ts'
 import { MAX_AI_RESULT_BYTES, RedisAiBudget } from './ai-budget.ts'
 import { RedisAiKeyPages } from './ai-key-pages.ts'
 import type { PreparedAiPage } from './ai-page-store.ts'
@@ -220,6 +221,27 @@ export class RedisAiReader {
     hashFieldReadRequestSchema.parse({ target, keyBase64: '', fieldBase64 })
     const page = await this.hashFilter.prepare(sessionId, target, request.pattern, fieldBase64, expectedBase64, args.cursor ?? null, signal)
     try { stage(page); return page.result } catch (error) { page.rollback(); throw error }
+  }
+  /** MEMORY USAGE is a bounded estimate for one explicit Key, not a value read. */
+  async memoryUsage(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const key = byteIdentity(Buffer.from(request.keyBase64, 'base64'))
+    const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    try {
+      const reply = await context.command('MEMORY', ['USAGE', Buffer.from(request.keyBase64, 'base64'), 'SAMPLES', '5'])
+      signal.throwIfAborted()
+      if (reply !== null && (typeof reply !== 'bigint' || reply < 0n)) throw new RedisFrameError('protocol')
+      this.connections.assertTarget(sessionId, target)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: reply === null ? 'missing' : 'value', bytes: reply === null ? null : reply.toString(), samples: 5, sampledAt: new Date().toISOString(), error: null, errorMessage: reply === null ? keyStateMessages.missing.zh : null })
+    } catch (error) {
+      signal.throwIfAborted()
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, samples: 5, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+    } finally { context.dispose() }
   }
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()

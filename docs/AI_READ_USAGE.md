@@ -16,6 +16,7 @@
 - “读取 `order:1001`，解释其中的字段。”
 - “读取 `order:1001` 的 `status` 字段。”
 - “检查 `active:users` 中是否包含 `user:123`。”
+- “估计 `order:1001` 占用多少内存。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “明确切到DB1，再查询 `order:1001`。”
 
@@ -42,6 +43,7 @@
 | `redis_viewer_keys` | 可选`match`、`cursor` | 当前DB的SCAN批次；`returnedCount`为本次返回的Key数，不是全库总数；续读保持同一MATCH，空页不一定结束 |
 | `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
+| `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
@@ -58,7 +60,7 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 
 ## 只读及运行边界
 
-工具不接收sessionId或自由命令，不自动建立连接，不返回密码，也不新增快照、诊断或特殊类型。DB切换只影响所属连接的逻辑DB，不修改Redis业务数据。连接断开、代次变化、会话或插件释放会清理AI选择及游标。
+工具不接收sessionId或自由命令，不自动建立连接，不返回密码；内存估计按明确 Key 单独调用，不提供其他诊断或特殊类型的泛化承诺。DB切换只影响所属连接的逻辑DB，不修改Redis业务数据。连接断开、代次变化、会话或插件释放会清理AI选择及游标。
 
 实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[实施记录](AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
 
