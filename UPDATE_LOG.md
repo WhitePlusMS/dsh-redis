@@ -1,5 +1,15 @@
 # 更新说明
 
+## 2026-11-04 接入保存的连接资料
+
+- 新增 `src/host/ai-connection-tools.ts`，仅允许当前会话使用最近列出的资料 ID 和短期令牌连接；模型不接收密码，也不能提交任意主机。认证失败提示使用本地表单。
+- 修改 `src/remote-service.ts`、`src/runtime.ts`、`src/host/connection-service.ts`：复用资料前后核对与候选连接，成功交换时同步清理旧目标的选择、游标和界面动作；失败保留原连接。
+- 原因和影响：支持用户明确要求连接已保存资料，避免连接失败或资料变化时覆盖当前连接；取消或回执丢失后的结果必须重新查询状态。
+- 连接交换前再次校验令牌仍属于同一会话且尚未过期或被重新列出替换，防止建立连接期间资料引用失效后仍切换。
+- 新增 `tests/ai-connection-tools.test.ts`，经真实 ToolRuntime 检查令牌隔离、认证失败、旧连接保留和连接中令牌失效。
+- 新增 `scripts/smoke-ai-connect-profile.mjs` 验证隔离 Redis 的资料连接交换和后续读取；`docs/AI_READ_USAGE.md` 更新资料连接及凭据边界。
+- 验证：`pnpm typecheck`、构建与 3 个测试文件/34 项通过；隔离 Redis 8.2.6 及实际 ToolRuntime 验证令牌连接、连接代次、后续读取和数据不变，夹具已停止。真实 DSH 界面与用户模型验收待执行。
+
 ## 2026-11-04 增加 Stream 消费组只读诊断
 
 - 新增 `src/host/stream-groups.ts`：解析受限的 `XINFO GROUPS` 响应，保留组名原始字节、待确认数与未投递数，区分 lag 未知及服务器未报告，限制模型输出数量和字节。

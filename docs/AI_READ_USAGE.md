@@ -4,7 +4,7 @@
 
 ## 使用顺序
 
-1. 打开目标DSH会话的Redis侧栏，手动连接服务器。连接仅属于这个会话；保存的资料不代表已连接。
+1. 在目标 DSH 会话的 Redis 侧栏手动连接服务器，或明确要求 AI 连接已保存资料；需要密码时在本地表单填写。连接仅属于这个会话；保存的资料不代表已连接。
 2. 在同一会话输入问题；已知 Key 名称时可直接提问，已知 Hash 字段时可同时指定 Key 和字段，无需先在面板选中。模型服务及该会话的工具策略必须可用。
 3. 如果希望询问界面上看到的“当前这一项”，先在侧栏选中对应 Key 或行，再回到同一会话提问；Stream 可选择消息中的具体字段对。
 
@@ -50,6 +50,7 @@
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志时间、耗时和命令名，不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
 | `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |
+| `redis_viewer_profiles` / `redis_viewer_connect_profile` | 先列出资料，再提供同一会话返回的 `id` 与 `snapshotToken` | 用户明确选择已有资料时尝试连接；资料或令牌变化会拒绝，失败保留原连接，密码须在本地表单填写 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
@@ -66,7 +67,7 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 
 ## 只读及运行边界
 
-工具不接收sessionId或自由命令，不自动建立连接，不返回密码；内存估计按明确 Key 单独调用，慢日志仅提供有界、去除参数的服务器记录。DB切换只影响所属连接的逻辑DB，不修改Redis业务数据。连接断开、代次变化、会话或插件释放会清理AI选择及游标。
+工具不接收 sessionId、任意连接地址、密码或自由命令；连接仅在用户明确要求并确定已保存资料时进行。内存估计按明确 Key 单独调用，慢日志仅提供有界、去除参数的服务器记录。DB 切换只影响所属连接的逻辑 DB，不修改 Redis 业务数据。连接断开、代次变化、会话或插件释放会清理 AI 选择及游标。
 
 消费组查询不读取或确认消息。`pending` 是已投递但尚未确认的数量，`lag` 是尚未投递的数量，后者可能不可计算；一次采样不能证明积压原因或变化趋势。Redis `XINFO GROUPS` 没有服务端分页，实际响应仍需完整接收并受 RESP 限额约束，超限会明确失败。
 

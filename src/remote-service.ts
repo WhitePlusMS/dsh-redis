@@ -25,7 +25,7 @@ import type { ScanHashRequest, ScanHashResult } from './domain.ts'
 import type { ActionPointReadRequest, ActionPointReadResult, RedisSelectionItem } from './domain.ts'
 import type { StringReadRequest, StringReadResult } from './domain.ts'
 import type { DatabaseTarget, ScanKeysRequest, ScanKeysResult } from './domain.ts'
-import type { SaveProfileRequest, ProfileId, ProfileCollection } from './domain.ts'
+import type { SaveProfileRequest, ProfileId, ProfileCollection, SavedConnection } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView } from './domain.ts'
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -147,6 +147,15 @@ export class RedisRemoteService extends TypertRemoteService {
     return this.connections.status(agent.session.id)
   }
   async listProfiles(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.list(signal) }
+  /** Saved profiles contain no password; authentication failures require the local form. */
+  connectSavedProfile(agent: Agent, profile: SavedConnection, signal: AbortSignal, isCurrent: () => boolean) {
+    const sessionId = agent.session.id
+    return this.connections.connectProfileCandidate(sessionId, profile, '', signal, this.profiles, () => {
+      if (!isCurrent()) throw new ConnectionFailure('stale')
+      this.uiActions.invalidateSession(sessionId); this.ai.clearTarget(sessionId)
+      this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.streams.disposeSession(sessionId)
+    })
+  }
   async saveProfile(_agent: Agent, request: SaveProfileRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.save(request, signal) }
   async removeProfile(_agent: Agent, request: ProfileId, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.remove(request, signal) }
 

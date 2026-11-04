@@ -119,7 +119,7 @@ export class RedisConnections {
   }
 
   /** Internal preparation only: the gate owns authorization and must call commit synchronously. */
-  async connectCandidate(sessionId: string, settings: ConnectionRequest, signal: AbortSignal, gate: CandidateCommitGate, preflight: (signal: AbortSignal) => boolean | Promise<boolean>): Promise<CandidateConnectionResult> {
+  async connectCandidate(sessionId: string, settings: ConnectionRequest, signal: AbortSignal, gate: CandidateCommitGate, preflight: (signal: AbortSignal) => boolean | Promise<boolean>, beforeExchange: () => void = () => undefined): Promise<CandidateConnectionResult> {
     signal.throwIfAborted()
     if (this.status(sessionId).state === 'connecting') return { state: 'failed', error: 'stale' }
     this.cancelCandidate(sessionId)
@@ -175,6 +175,9 @@ export class RedisConnections {
           cancellation: new AbortController(), state: 'connected', error: null, link: resources.link,
           ...(resources.unsubscribe === undefined ? {} : { unsubscribe: resources.unsubscribe }),
         }
+        // Clear the old target's owned state in the same synchronous exchange;
+        // if cleanup fails, the old connection stays in place.
+        beforeExchange()
         promoted = record
         this.sessions.set(sessionId, record)
         delete resources.link; delete resources.unsubscribe
@@ -198,9 +201,9 @@ export class RedisConnections {
   }
 
   /** Bind candidate settings to the same normalized profile verified at commit. */
-  connectProfileCandidate(sessionId: string, profile: SavedConnection, password: string, signal: AbortSignal, profiles: RedisProfiles): Promise<CandidateConnectionResult> {
+  connectProfileCandidate(sessionId: string, profile: SavedConnection, password: string, signal: AbortSignal, profiles: RedisProfiles, beforeExchange: () => void = () => undefined): Promise<CandidateConnectionResult> {
     const expected = profileCollectionSchema.parse({ profiles: [profile], selectedId: null }).profiles[0]!
-    return this.connectCandidate(sessionId, { ...expected.settings, password }, signal, (candidateSignal, commit) => profiles.withVerifiedProfile(expected, candidateSignal, commit), candidateSignal => profiles.withVerifiedProfile(expected, candidateSignal, () => undefined))
+    return this.connectCandidate(sessionId, { ...expected.settings, password }, signal, (candidateSignal, commit) => profiles.withVerifiedProfile(expected, candidateSignal, commit), candidateSignal => profiles.withVerifiedProfile(expected, candidateSignal, () => undefined), beforeExchange)
   }
 
   async connect(sessionId: string, settings: ConnectionRequest, signal: AbortSignal): Promise<ConnectionView> {

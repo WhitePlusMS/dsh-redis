@@ -7,6 +7,7 @@ import { registerRedisLocateTool } from './host/ai-locate-tool.ts'
 import { RedisProfileSnapshots } from './host/profile-snapshots.ts'
 import { RedisMatchPresets } from './host/match-preset-store.ts'
 import { registerRedisMatchTools } from './host/ai-match-tools.ts'
+import { registerRedisConnectionTools } from './host/ai-connection-tools.ts'
 
 /** Sidebar and model tools share one Host-owned connection per trusted session. */
 export function apply(ctx: Context): void {
@@ -14,6 +15,7 @@ export function apply(ctx: Context): void {
   const snapshots = new RedisProfileSnapshots()
   registerRedisTools(ctx, service.ai)
   registerRedisProfileTools(ctx, service.ai, snapshots, (agent, signal) => service.listProfiles(agent, {}, signal))
+  registerRedisConnectionTools(ctx, service.ai, snapshots, (agent, profile, signal, isCurrent) => service.connectSavedProfile(agent, profile, signal, isCurrent))
   registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir))
   registerRedisLocateTool(ctx, service.ai, service.uiActions)
   registerRedisUiTools(ctx, service.uiActions)
