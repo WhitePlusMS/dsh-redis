@@ -36,7 +36,7 @@ try {
       await ctx.plugin({ name: 'ai-connect-smoke', inject: ['tools'], apply: scope => {
         registerRedisTools(scope, service.ai)
         registerRedisProfileTools(scope, service.ai, snapshots, (owner, s) => service.listProfiles(owner, {}, s))
-        registerRedisConnectionTools(scope, service.ai, snapshots, (owner, profile, s, current) => service.connectSavedProfile(owner, profile, s, current))
+        registerRedisConnectionTools(scope, service.ai, snapshots, (owner, profile, s, current) => service.connectSavedProfile(owner, profile, s, current), (owner, target, s) => service.disconnect(owner, target, s))
       } })
       const call = async (name, arguments_) => {
         const result = await ctx.tools.execute({ callId: 'fixture-call', name, arguments: arguments_, agent, signal })
@@ -49,11 +49,13 @@ try {
       assert(connected.connection.generation > initial.generation)
       const value = await call('redis_viewer_value', { key: 'fixture:key' })
       assert.equal(value.value.text, 'synthetic-value')
+      const disconnected = await call('redis_viewer_disconnect', { id: connected.connection.id, generation: connected.connection.generation })
+      assert.equal(disconnected.state, 'disconnected')
       assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:key']), before)
     } finally { await ctx.fiber.dispose() }
   }, { passwordRequired: false })
   assert(fixture.stopped)
-  console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['saved-profile token', 'connection exchange', 'subsequent read', 'unchanged Key'] }))
+  console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['saved-profile token', 'connection exchange', 'subsequent read and disconnect', 'unchanged Key'] }))
 } finally {
   const actual = await realpath(directory)
   if (dirname(actual) !== await realpath(runtime) || !basename(actual).startsWith('ai-connect-smoke-')) throw new Error('Refusing cleanup outside the owned test directory')

@@ -1,13 +1,14 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { defineTool } from '@deepseek-ai/dsh-tools'
-import type { SavedConnection } from '../domain.ts'
+import type { ConnectionTarget, ConnectionView, SavedConnection } from '../domain.ts'
+import { connectionTargetSchema } from '../typert.shared.ts'
 import type { RedisAiReader } from './ai-reader.ts'
 import type { CandidateConnectionResult } from './connection-service.ts'
 import type { RedisProfileSnapshots } from './profile-snapshots.ts'
 
 /** A model can refer only to a recently listed, unchanged local connection profile. */
-export function registerRedisConnectionTools(ctx: Context, reader: RedisAiReader, snapshots: RedisProfileSnapshots, connect: (agent: Agent, profile: SavedConnection, signal: AbortSignal, isCurrent: () => boolean) => Promise<CandidateConnectionResult>): void {
+export function registerRedisConnectionTools(ctx: Context, reader: RedisAiReader, snapshots: RedisProfileSnapshots, connect: (agent: Agent, profile: SavedConnection, signal: AbortSignal, isCurrent: () => boolean) => Promise<CandidateConnectionResult>, disconnect: (agent: Agent, target: ConnectionTarget, signal: AbortSignal) => Promise<ConnectionView>): void {
   ctx.tools.register(defineTool({
     name: 'redis_viewer_connect_profile',
     description: '仅在用户明确要求连接或切换到某个已保存 Redis 资料，且名称已唯一确定时使用。先调用 redis_viewer_profiles，传入同一会话最近列出的 id 和 snapshotToken；资料变化、令牌过期或会话不匹配会拒绝。不会接收地址、密码或凭据；若需要密码，请用户在 Redis 本地连接表单填写。失败保留旧连接；成功从 DB 0 开始。取消或回执丢失后连接结果可能未知，先查看状态，不盲目重试。',
@@ -26,6 +27,23 @@ export function registerRedisConnectionTools(ctx: Context, reader: RedisAiReader
         const result = await connect(agent, profile, exec.signal, isCurrent)
         const view = result.state === 'failed' ? null : result.view
         return { state: result.state, error: result.state === 'failed' ? result.error : view?.error ?? null, previousRelease: result.state === 'failed' ? null : result.previousRelease, connection: view === null ? null : { id: view.id, generation: view.generation, db: view.db, state: view.state }, message: result.state === 'failed' && result.error === 'auth' ? '需要认证，请在 Redis 本地连接表单输入凭据。' : result.state === 'failed' && result.error === 'stale' ? '连接资料或当前目标已变化，请查看状态并重新选择。' : result.state === 'changed' ? '连接交换后状态已变化，请查看当前状态。' : null, sampledAt: new Date().toISOString() }
+      })
+    },
+  }))
+  ctx.tools.register(defineTool({
+    name: 'redis_viewer_disconnect',
+    description: '仅在用户明确要求断开当前对话的 Redis 连接时调用。先调用 redis_viewer_status，并传入该结果的 connection.id 与 connection.generation；连接已变化时拒绝，不影响其他会话。取消或回执丢失后结果可能未知，先查询当前状态。',
+    parameters: { id: { type: 'string', required: true }, generation: { type: 'integer', required: true } },
+    output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
+    async execute(args, exec) {
+      exec.signal.throwIfAborted()
+      const agent = exec.agent
+      if (agent === undefined) throw new Error('Redis 工具调用缺少有效的 DSH 对话身份。')
+      if (Object.keys(args).some(key => key !== 'id' && key !== 'generation')) throw new Error('Redis 工具包含不支持的参数。')
+      const target = connectionTargetSchema.parse(args)
+      return reader.withBudget(agent.session.id, exec.signal, async () => {
+        const view = await disconnect(agent, target, exec.signal)
+        return { state: view.error === 'stale' ? 'stale' : view.state === 'disconnected' ? 'disconnected' : 'failed', connection: { id: view.id, generation: view.generation, db: view.db, state: view.state }, error: view.error, sampledAt: new Date().toISOString() }
       })
     },
   }))

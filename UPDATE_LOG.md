@@ -1,5 +1,12 @@
 # 更新说明
 
+## 2026-11-04 增加 AI 会话断开连接
+
+- 修改 `src/host/ai-connection-tools.ts`、`src/runtime.ts`：按用户明确请求断开当前对话的 Redis，必须携带状态中获取的连接 ID 和代次；旧身份返回 stale，不触及替换后的连接或其他会话。
+- 扩展 `tests/ai-connection-tools.test.ts` 和 `scripts/smoke-ai-connect-profile.mjs`：验证旧身份拒绝、参数边界及隔离 Redis 的实际连接后断开。
+- 原因和影响：补齐连接生命周期；取消或回执丢失时先查状态，不能假定操作未发生。不会修改 Redis 业务数据。
+- 验证：`pnpm typecheck`、构建、3 个文件/41 项专项通过；隔离 Redis 8.2.6 和 DSH ToolRuntime 实测连接后断开及 Key 不变，夹具已停止。真实 DSH 与用户模型仍待验收。
+
 ## 2026-11-04 接入保存的连接资料
 
 - 新增 `src/host/ai-connection-tools.ts`，仅允许当前会话使用最近列出的资料 ID 和短期令牌连接；模型不接收密码，也不能提交任意主机。认证失败提示使用本地表单。

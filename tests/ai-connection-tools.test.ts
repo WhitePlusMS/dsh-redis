@@ -41,7 +41,7 @@ it('connects only an unchanged, current-session profile and keeps the old connec
   const waitProfile = (await profiles.save({ id: null, name: 'Wait fixture', settings: { host: 'wait.fixture', port: 6379, username: '', tls: null } }, signal)).profiles.find(p => p.name === 'Wait fixture')!
   await ctx.plugin({ name: 'ai-connection-test', inject: ['tools'], apply: (scope: Context) => {
     registerRedisProfileTools(scope, service.ai, snapshots, (agent, s) => service.listProfiles(agent, {}, s))
-    registerRedisConnectionTools(scope, service.ai, snapshots, (agent, profile, s, current) => service.connectSavedProfile(agent, profile, s, current))
+    registerRedisConnectionTools(scope, service.ai, snapshots, (agent, profile, s, current) => service.connectSavedProfile(agent, profile, s, current), (agent, target, s) => service.disconnect(agent, target, s))
   } })
   const agent = (id: string) => ({ id, ctx, session: { id } }) as unknown as Agent
   const call = (name: string, args: unknown, session = 'a') => ctx.tools.execute({ callId: 'fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent: agent(session), signal })
@@ -66,6 +66,11 @@ it('connects only an unchanged, current-session profile and keeps the old connec
     release(makeLink(closeLate))
     expect(JSON.parse(content(await pending))).toMatchObject({ state: 'failed', error: 'stale' })
     expect(connections.status('a')).toEqual(current); expect(closeNew).not.toHaveBeenCalled(); expect(closeLate).toHaveBeenCalledOnce(); expect(clear).toHaveBeenCalledOnce()
+    expect(JSON.parse(content(await call('redis_viewer_disconnect', { id: before.id, generation: before.generation })))).toMatchObject({ state: 'stale', error: 'stale' })
+    expect(connections.status('a')).toEqual(current); expect(closeNew).not.toHaveBeenCalled()
+    expect((await call('redis_viewer_disconnect', { id: current.id, generation: current.generation, sessionId: 'b' })).isError).toBe(true)
+    expect(JSON.parse(content(await call('redis_viewer_disconnect', { id: current.id, generation: current.generation })))).toMatchObject({ state: 'disconnected', connection: { state: 'disconnected' } })
+    expect(closeNew).toHaveBeenCalledOnce()
   } finally {
     release(makeLink(closeLate)); await ctx.fiber.dispose()
     const actual = await realpath(directory)
