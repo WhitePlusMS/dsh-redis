@@ -19,6 +19,7 @@
 - “估计 `order:1001` 占用多少内存。”
 - “看看最近有哪些慢查询。”
 - “看看 Redis 当前内存和连接数。”
+- “查看当前客户端连接的空闲时间。”
 - “查看 `events:orders` 的消费组积压情况。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “明确切到DB1，再查询 `order:1001`。”
@@ -49,6 +50,7 @@
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志时间、耗时和命令名，不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
+| `redis_viewer_clients` | 无 | 只读服务器客户端列表，最多展示 20 条 ID、连接及空闲秒数、DB 和标志；不返回客户端地址、名称、用户名或命令。当前连接视图仍包含目标服务器地址 |
 | `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |
 | `redis_viewer_profiles` / `redis_viewer_connect_profile` | 先列出资料，再提供同一会话返回的 `id` 与 `snapshotToken` | 用户明确选择已有资料时尝试连接；资料或令牌变化会拒绝，失败保留原连接，密码须在本地表单填写 |
 | `redis_viewer_disconnect` | `id` 和 `generation` 均来自当前状态 | 用户明确要求时断开当前会话；连接身份已变化则拒绝，取消或回执丢失后须查询状态 |
@@ -71,6 +73,8 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 工具不接收 sessionId、任意连接地址、密码或自由命令；连接仅在用户明确要求并确定已保存资料时进行。内存估计按明确 Key 单独调用，慢日志仅提供有界、去除参数的服务器记录。DB 切换只影响所属连接的逻辑 DB，不修改 Redis 业务数据。连接断开、代次变化、会话或插件释放会清理 AI 选择及游标。
 
 消费组查询不读取或确认消息。`pending` 是已投递但尚未确认的数量，`lag` 是尚未投递的数量，后者可能不可计算；一次采样不能证明积压原因或变化趋势。Redis `XINFO GROUPS` 没有服务端分页，实际响应仍需完整接收并受 RESP 限额约束，超限会明确失败。
+
+客户端列表同样没有服务端分页，Redis 需遍历连接并返回完整响应，受 RESP 大小限制；`complete: false` 表示只展示前 20 条，权限不足和超限不是空列表。
 
 实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[实施记录](AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
 

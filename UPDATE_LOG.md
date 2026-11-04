@@ -1,5 +1,12 @@
 # 更新说明
 
+## 2026-11-04 更新 AI 对话使用说明
+
+- 修改 `README.md`、`README.zh.md` 和 `docs/AI_READ_USAGE.md`：按用户问题介绍直接读取与按需界面核对，列出当前开发版诊断和连接能力，区分旧版 Release、当前源码和真实模型待验收状态。
+- 修改 `src/host/ai-tools.ts`：明确客户端列表不包含客户端地址，但既有 `connection` 仍提供目标服务器信息，避免对隐私范围产生误解。
+- 原因和影响：纠正旧文档要求先选中 Key 以及“没有诊断”的过时表述；不改变 Redis 命令或读取行为。
+- 验证：`pnpm typecheck` 和 AI 工具 53 项专项通过；README 对未随包分发的说明与验收记录使用源码仓库链接。本次不声称完成新一轮真实 DSH 或模型验收。
+
 ## 2026-11-04 增加 AI 客户端只读诊断
 
 - 修改 `src/host/redis-transport.ts`、`src/host/client-list.ts`、`src/host/ai-reader.ts` 和 `src/host/ai-tools.ts`：增加连接状态采样，只允许 `CLIENT LIST`，屏蔽地址、名称、用户名及命令，最多返回 20 条。该命令无服务端分页，超出响应限制时报错。

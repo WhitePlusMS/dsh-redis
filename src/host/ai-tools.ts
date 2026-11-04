@@ -53,7 +53,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['section']); return reader.overview(session, args.section, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_clients', description: '仅在用户询问连接明细时只读采样当前 Redis 服务器客户端。最多返回 20 个连接的 ID、连接时长、空闲秒数、DB 和标志，不返回地址、名称、用户名或命令；totalCount 是收到的总数，complete 为 false 表示只展示部分。CLIENT LIST 是服务器范围且无服务端分页，会遍历所有连接；超大响应和权限不足明确报错。单次采样不能代表趋势或断言故障原因。',
+    name: 'redis_viewer_clients', description: '仅在用户询问连接明细时只读采样当前 Redis 服务器客户端。最多返回 20 个连接的 ID、连接时长、空闲秒数、DB 和标志，不返回客户端地址、名称、用户名或命令；当前服务器连接信息仍包含在 connection 中。totalCount 是收到的总数，complete 为 false 表示只展示部分。CLIENT LIST 是服务器范围且无服务端分页，会遍历所有连接；超大响应和权限不足明确报错。单次采样不能代表趋势或断言故障原因。',
     parameters: {}, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, []); return reader.clients(session, exec.signal) }) },
   }))
