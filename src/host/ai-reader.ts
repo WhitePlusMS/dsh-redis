@@ -252,6 +252,22 @@ export class RedisAiReader {
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, samples: 5, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
+  /** Compare at most the first 4096 bytes per String; values never enter the tool result. */
+  async compareStrings(sessionId: string, args: { readonly left?: string; readonly leftBase64?: string; readonly right?: string; readonly rightBase64?: string }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.left === undefined) === (args.leftBase64 === undefined) || (args.right === undefined) === (args.rightBase64 === undefined)) throw new Error('每侧须明确提供文本 Key 或规范 Base64 Key 中的一个。')
+    const target = this.target(sessionId)
+    const request = (key: string | undefined, base64: string | undefined) => stringReadRequestSchema.parse({ target, keyBase64: key === undefined ? base64 : encodeIdentity(key), offset: '0', count: MAX_AI_VALUE_BYTES })
+    const leftRequest = request(args.left, args.leftBase64), rightRequest = request(args.right, args.rightBase64)
+    const left = await this.strings.read(sessionId, leftRequest, signal)
+    signal.throwIfAborted(); this.connections.assertReadResult(sessionId, target, left.error)
+    const right = await this.strings.read(sessionId, rightRequest, signal)
+    signal.throwIfAborted(); this.connections.assertReadResult(sessionId, target, right.error)
+    const both = left.state === 'value' && right.state === 'value' && left.metadata !== null && right.metadata !== null
+    const comparison = !both ? 'unavailable' : left.metadata?.length !== right.metadata?.length || left.base64 !== right.base64 ? 'different' : left.complete && right.complete ? 'equal' : 'undetermined'
+    const evidence = (key: string, sample: typeof left) => ({ key: byteIdentity(Buffer.from(key, 'base64')), state: sample.state, length: sample.metadata?.length ?? null, complete: sample.complete, sampledAt: sample.sampledAt, error: sample.error, errorMessage: explainValue(sample.error, sample) })
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), comparison, left: evidence(leftRequest.keyBase64, left), right: evidence(rightRequest.keyBase64, right), bytesComparedPerKey: MAX_AI_VALUE_BYTES, snapshot: false })
+  }
   /** Slow log is server-wide: return only bounded metadata, never argument bytes. */
   async slowLog(sessionId: string, count: number, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()

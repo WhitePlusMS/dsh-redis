@@ -20,7 +20,7 @@ const cleanups: (() => Promise<void> | void)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 /** Synthetic transport with two-page cursors exposes cross-consumer races. */
-async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute']) {
+async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute'], compareRead?: RedisLink['execute']) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   let changingTypeReads = 0
@@ -47,7 +47,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
         case 'PTTL': return -1n
         case 'STRLEN': return key === 'large' ? 9000n : key === 'changing' ? 6n : 5n
-        case 'GETRANGE': return bulk(key === 'large' ? 'x'.repeat(9000) : 'hello').subarray(Number(args[1]), Number(args[2]) + 1)
+        case 'GETRANGE': return compareRead === undefined ? bulk(key === 'large' ? 'x'.repeat(9000) : 'hello').subarray(Number(args[1]), Number(args[2]) + 1) : compareRead(command, args, signal, guard)
         case 'SCAN': if (scan !== undefined) return scan(command, args, signal, guard); if (args[2] === 'network*') failNetwork(); if (args[2] === 'denied*') throw new RedisReplyError('NOPERM fixture denied'); return [bulk(args[0] === '0' ? '7' : '0'), [bulk(args[0] === '0' ? 'plain' : 'hash')]]
         case 'HLEN': return 2n
         case 'HSCAN': return [bulk(args[1] === '0' ? '7' : '0'), [bulk(args[1] === '0' ? 'first' : 'second'), bulk('字段值')]]
@@ -142,6 +142,30 @@ describe('official Redis model tools', () => {
     await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, new AbortController().signal)
     release([])
     expect((await operation).isError).toBe(true)
+  })
+  it('compares String samples without exposing values or asserting equality for prefixes', async () => {
+    const f = await fixture()
+    const equal = content(await f.call('redis_viewer_compare_strings', { left: 'plain', right: 'plain' }))
+    expect(JSON.parse(equal)).toMatchObject({ comparison: 'equal', snapshot: false, left: { state: 'value', complete: true }, right: { state: 'value', complete: true } })
+    expect(equal).not.toContain('hello'); expect(equal).not.toContain('aGVsbG8=')
+    expect(JSON.parse(content(await f.call('redis_viewer_compare_strings', { left: 'large', right: 'large' })))).toMatchObject({ comparison: 'undetermined', left: { complete: false }, right: { complete: false } })
+    expect(JSON.parse(content(await f.call('redis_viewer_compare_strings', { left: 'plain', right: 'large' })))).toMatchObject({ comparison: 'different' })
+    expect(JSON.parse(content(await f.call('redis_viewer_compare_strings', { left: 'missing', right: 'hash' })))).toMatchObject({ comparison: 'unavailable', left: { state: 'missing' }, right: { state: 'unsupported' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_compare_strings', { leftBase64: Buffer.from('plain').toString('base64'), right: 'plain' })))).toMatchObject({ comparison: 'equal' })
+    for (const args of [{ left: 'plain' }, { left: 'plain', leftBase64: 'cGxhaW4=', right: 'plain' }, { leftBase64: 'invalid', right: 'plain' }]) expect((await f.call('redis_viewer_compare_strings', args)).isError).toBe(true)
+    expect((await f.call('redis_viewer_compare_strings', { left: 'plain', right: 'plain', command: 'SET' })).isError).toBe(true)
+  })
+  it('rejects a comparison when its connection changes during the first read', async () => {
+    let release!: (value: RedisReply) => void, observed!: () => void
+    const pending = new Promise<RedisReply>(resolve => { release = resolve })
+    const started = new Promise<void>(resolve => { observed = resolve })
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => { observed(); return pending })
+    const operation = f.call('redis_viewer_compare_strings', { left: 'plain', right: 'plain' })
+    await started
+    await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, new AbortController().signal)
+    release(Buffer.from('hello'))
+    expect((await operation).isError).toBe(true)
+    expect(f.commands.filter(command => command === 'GETRANGE')).toHaveLength(1)
   })
   it('projects bounded client details without addresses, names or commands', async () => {
     const row = 'id=12 addr=private:6379 name=synthetic-secret age=90 idle=3 flags=N db=2 cmd=get user=private\n'
@@ -587,7 +611,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_clients', 'redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })
