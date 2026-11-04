@@ -8,7 +8,7 @@
 
 [DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **WhitePlusMS** 开发的 **DeepSeek Harness（DSH）** 社区插件，把 Redis 查看放进当前对话所在的工作区。先定位 Key，选中一行查看详情，再围绕当前选择向 DSH 提问。支持六种基础类型，复用这个对话中手动建立的 Redis 连接。
 
-**只读查看 · 单机 Redis + TLS · Windows / DSH Web `0.2.0-rc.2`（预发布版）**
+**只读查看 · 单机 Redis + TLS · Windows / DSH Web `0.2.1-rc.5`（预发布版）**
 
 [安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
 
@@ -20,55 +20,16 @@
 
 ## 安装与更新
 
-使用已验证的 **DSH Web `0.2.0-rc.2`**，Host 上须有可用的 pnpm；命令行方式还需要能调用 `dsh`。下面两种方式安装的是同一个 Release 成品 `.tgz`，使用 DSH 官方支持的 tarball 安装机制。依据见[官方打包说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md)和[插件管理器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md)。
-
-**当前版本：`v0.1.0`。** 在[对应 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 获取 `dsh-redis-0.1.0.tgz` 和 `SHA256SUMS.txt`。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载前须登录有仓库访问权限的账号。
-
-维护者的交付顺序是：**核对提交 → 构建并 `pnpm pack` → `v<version>` tag → GitHub Release 上传 `.tgz` 与 `SHA256SUMS.txt` → 用户安装**。普通用户使用成品包；[版本发布步骤](docs/DEVELOPMENT.md#8-版本化发布与安装入口)由维护者完成。
-
-### 方式一：从 DSH 界面安装
-
-1. 在 [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) 选择一个已发布版本，取得该版本的 `dsh-redis-<version>.tgz` 和 `SHA256SUMS.txt`，核对校验值。
-2. 打开 DSH 的**插件 → 添加插件**。公开 Release 可以直接粘贴完整的固定版本附件 URL；当前私有仓库则需先登录 GitHub 下载附件，将文件放到 Host，再填入该文件的绝对路径。
-3. 安装后选择**立即启用**，在已安装插件的详情里核对 `dsh-redis`、`v0.1.0` 和 `ui-redis` 运行状态，再在对话右侧栏打开 **Redis**。没有热重载时，按提示重启原 Host。
-
-`v0.1.0` 固定附件地址（私有期间需要下载授权）：
-
-```text
-https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
-```
-
-浏览器的 GitHub 登录不会传给 Host 的包安装器；仓库保持私有时，采用登录下载后安装本地文件的方式。
-
-### 方式二：从 CLI 安装
-
-已有公开可下载的 Release 时，在 Host 终端执行：
+当前源码版本 `0.1.1` 适配 DSH Web `0.2.1-rc.5`。0.1.1 尚未发布 GitHub Release，可在 Host 上从本仓库源码构建并安装：
 
 ```powershell
-dsh plugin --profile web add https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
-dsh plugin --profile web list dsh-redis
-```
-
-私有 Release 则先下载同一个附件，把示例路径换成它在 Host 上的实际位置，再执行：
-
-```powershell
-$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
-dsh plugin --profile web add $packageForInstall
-dsh plugin --profile web list dsh-redis
-```
-
-安装、启动和卸载使用服务当前浏览器的同一个 profile 与 `DSH_HOME`；`web` 是 Web 示例，不代表 Desktop。沿用原命令启动 Web（默认 Web 为 `dsh web`），需要重启时重启原实例。Release 成品包含 `lib/`，与 GitHub 自动生成的 **Source code** 源码归档不同。
-
-### 更新已安装版本
-
-取得目标版本的 Release 附件和校验文件。在**插件**中卸载旧包，按相同方式安装新包并启用。通过 CLI 替换时，按需要先停止目标 Host，再执行：
-
-```powershell
-dsh plugin --profile web remove dsh-redis
+pnpm install --frozen-lockfile
+pnpm pack --pack-destination .release
+$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
 dsh plugin --profile web add $packageForInstall
 ```
 
-这里的 `$packageForInstall` 应指向**新版**已核对的附件路径，或公开可下载的固定版本 URL。需要时重启同一个 profile，保留旧包用于回退。profile 检查、本地构建、更新回退和资料保存见[安装指南](docs/INSTALLATION.zh.md)。
+打包命令会执行类型检查、构建和测试。profile 引用该归档期间请保留文件；需要时重启同一个 DSH profile。此前的 [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 面向 DSH 0.2.0-rc.2，不适用于 0.2.1-rc.5。[旧安装指南](docs/INSTALLATION.zh.md)描述的是该旧版。
 
 ## 开始使用
 
@@ -117,7 +78,7 @@ dsh plugin --profile web add $packageForInstall
 
 ## 环境要求
 
-- **宿主：** DSH Web `0.2.0-rc.2`，使用 `package.json` 声明的匹配 DSH peer 包。
+- **宿主：** DSH Web `0.2.1-rc.5`，使用 `package.json` 声明的匹配 DSH peer 包。
 - **运行与构建：** Node.js `^22.19.0 || >=24.0.0`；实际使用 Node.js `22.22.1`、pnpm `11.22.0` 验证。
 - **Redis：** Host 能访问的单机服务器。已有 Redis `8.2.6` 六类型隔离验收及 Redis `8.10.0` 真实 Hash 验收，不声明完整的 Redis 版本兼容矩阵。
 - **对话：** DSH 已配置可用模型，并允许使用插件工具。侧栏查看不需要另配模型 API Key。

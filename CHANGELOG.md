@@ -4,7 +4,8 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 ## [Unreleased]
 
-Future changes will be recorded here. / 后续改动记录在此。
+- Adapt the source package to DSH 0.2.1-rc.5 and Cordis 4.0.5; the 0.1.1 GitHub Release is not yet published.
+- 源码包适配 DSH 0.2.1-rc.5 和 Cordis 4.0.5；0.1.1 尚未发布 GitHub Release。
 
 ## [0.1.0] — 2026-10-20
 

@@ -1766,3 +1766,12 @@
 - 修改 `docs/RO21_CONNECTION_ARCHITECTURE_PLAN.md`：专题显示标题去掉旧任务编号，保留文件路径及原技术研究，避免历史引用失效。
 - 原因与影响：用户要求完全重构方案，合并重复任务、不继续叠加旧编号；本轮只修改规划文档，不修改 Redis、服务或运行代码。历史验证仅对应各自记录的构建，不能冒充当前工作区验收。
 - 验证：三份现行方案的相对链接、代码围栏和九个交付节点通过检查，主方案与任务清单不再使用旧任务编号；`git diff --check` 通过。`pnpm typecheck` 仍因暂停前 `src/host/ai-match-tools.ts` 第 19、40 行的两处 TS2345 失败；恢复代码工作需先修复，文档检查与本次 Git 提交单独进行。
+
+## 2026-11-04：Redis 插件 DSH 0.2.1-rc.5 适配
+
+- `package.json`、`pnpm-lock.yaml`：版本升级至 0.1.1，DSH 与 Cordis 依赖更新至目标宿主版本，解决宿主拒绝加载。
+- `README.md`、`README.zh.md`：更新宿主要求和源码打包安装命令，保留旧截图的真实环境，说明 0.1.1 尚无 GitHub Release。
+- `CHANGELOG.md`：在 Unreleased 记录适配，不假称发布。
+- 此版本基于已提交代码；原工作区未提交的功能改动不包含在内。验证与安装结果待补充。
+- 新增 `pnpm-workspace.yaml`：仅允许现有 esbuild 安装脚本运行，解决 pnpm 11 新检出安装阻塞。
+- 验证：独立工作区 `pnpm typecheck`、`pnpm test`（23 文件、219 项）及构建通过；使用模拟 Redis，尚未在新宿主进行真实数据和模型验收。

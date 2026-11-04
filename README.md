@@ -8,7 +8,7 @@ English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme
 
 [DSH Redis](https://github.com/WhitePlusMS/dsh-redis) by **WhitePlusMS** is a community plugin for **DeepSeek Harness (DSH)** that brings Redis browsing into the same workspace as the conversation. Find a Key, select a row to inspect its details, then ask DSH about the current selection. It supports six core Redis types and reads through the connection opened manually in that conversation.
 
-**Read-only · Standalone Redis + TLS · Windows / DSH Web `0.2.0-rc.2` (prerelease)**
+**Read-only · Standalone Redis + TLS · Windows / DSH Web `0.2.1-rc.5` (prerelease)**
 
 [Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
 
@@ -20,55 +20,16 @@ English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme
 
 ## Install and update
 
-Use the verified **DSH Web `0.2.0-rc.2`** environment and a working pnpm on the Host. The CLI method also requires `dsh` in that Host's terminal. Both methods below install the same prebuilt Release `.tgz`, using DSH's supported tarball mechanism. See the [official packaging guide](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md) and [plugin manager](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md).
-
-**Version: `v0.1.0`.** Obtain `dsh-redis-0.1.0.tgz` and `SHA256SUMS.txt` from the [versioned Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0). [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private, so sign in with an account that has repository access before downloading.
-
-The maintainer's delivery order is **checked commit → build and `pnpm pack` → `v<version>` tag → GitHub Release with `.tgz` and `SHA256SUMS.txt` → installation**. Ordinary users receive the built package; [release preparation](docs/DEVELOPMENT.md#8-版本化发布与安装入口) belongs to the maintainer.
-
-### 1. Install through DSH
-
-1. Open [Releases](https://github.com/WhitePlusMS/dsh-redis/releases) and select a published version. Obtain its `dsh-redis-<version>.tgz` and `SHA256SUMS.txt`, and verify the checksum.
-2. In DSH, open **Plugins → Add plugin**. For a public Release, paste its complete, versioned asset URL. For this private repository, sign in to GitHub, download the asset, place it on the Host, and enter that file's absolute path.
-3. Install, then choose **Enable now**. Open the installed plugin's details to confirm `dsh-redis`, `v0.1.0` and its running `ui-redis` component, then open **Redis** in a conversation's right sidebar. Follow a Host restart notice when live reload is unavailable.
-
-Fixed `v0.1.0` asset address (authenticated access required while private):
-
-```text
-https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
-```
-
-A browser's GitHub login is not passed to the Host's package installer. Keep using the authenticated-download/local-file route while the repository is private.
-
-### 2. Install through the CLI
-
-For a published, publicly downloadable Release, run on the Host:
+Version `0.1.1` targets DSH Web `0.2.1-rc.5`. This version is available from the repository source; a 0.1.1 GitHub Release has not been published. On the Host, from this checkout:
 
 ```powershell
-dsh plugin --profile web add https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
-dsh plugin --profile web list dsh-redis
-```
-
-For a private Release, download the same asset first, replace this example path with its actual Host location, then run:
-
-```powershell
-$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
-dsh plugin --profile web add $packageForInstall
-dsh plugin --profile web list dsh-redis
-```
-
-Use the profile and `DSH_HOME` that serve your browser; `web` is the Web example, not a Desktop profile. Start Web with its existing command (`dsh web` for the default Web setup), or restart that original instance if required. The Release archive contains `lib/`; GitHub's automatically generated **Source code** archive is a different artifact.
-
-### Update an installed version
-
-Obtain the target version's Release asset and checksum. In **Plugins**, uninstall the old package, install the new asset through the same route, then enable it. For CLI replacement, stop the target Host when needed and run:
-
-```powershell
-dsh plugin --profile web remove dsh-redis
+pnpm install --frozen-lockfile
+pnpm pack --pack-destination .release
+$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
 dsh plugin --profile web add $packageForInstall
 ```
 
-Here `$packageForInstall` must identify the **new** verified asset path or its publicly downloadable fixed-version URL. Restart the same profile when required. Keep the old asset for rollback; see the [installation guide](docs/INSTALLATION.md) for profile checks, local builds, update/rollback and saved data.
+The pack command runs type checking, build and tests. Keep the archive at that path while the profile references it, and restart the same DSH profile if needed. The earlier [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) targets DSH 0.2.0-rc.2; do not use it with 0.2.1-rc.5. The older [installation guide](docs/INSTALLATION.md) describes that earlier release.
 
 ## First use
 
@@ -117,7 +78,7 @@ The compact Stream layout uses the same row-selection workflow:
 
 ## Requirements
 
-- **Host:** DSH Web `0.2.0-rc.2`, with matching DSH peer packages declared in `package.json`.
+- **Host:** DSH Web `0.2.1-rc.5`, with matching DSH peer packages declared in `package.json`.
 - **Runtime/build:** Node.js `^22.19.0 || >=24.0.0`; verified locally with Node.js `22.22.1` and pnpm `11.22.0`.
 - **Redis:** a standalone server reachable from the DSH Host. Existing evidence covers isolated Redis `8.2.6` for six types and live Redis `8.10.0` for Hash, rather than an exhaustive version matrix.
 - **Chat:** an available model configured in DSH and permission to use the plugin's tools. Sidebar browsing does not require a separate model API key.
