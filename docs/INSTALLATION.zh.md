@@ -126,7 +126,7 @@ dsh plugin --profile web list dsh-redis
 
 `DSH_HOME` 默认是 `~/.dsh`。Windows 默认 `web` profile 的资料文件为 `%USERPROFILE%\.dsh\profiles\web\data\dsh-redis\connections.json`；自定义 home 时位置随之改变。资料只在同一个 DSH profile 内共用，文件可能含内网地址、用户名及 CA 内容。
 
-插件不另设模型 API Key：侧栏查看使用 Redis 连接，对话使用 DSH 已配置的模型。历史 Release 不提供诊断快照导出。当前源码可按明确请求将服务器概况保存到 `data/dsh-redis/reports`；卸载后报告和已保存的 MATCH 预设仍留在 profile 中。
+插件不另设模型 API Key：侧栏查看使用 Redis 连接，对话使用 DSH 已配置的模型。历史 Release 不提供诊断快照导出。当前源码可按明确请求将诊断采样保存到 `data/dsh-redis/reports`；卸载后报告和已保存的 MATCH 预设仍留在 profile 中。
 
 ## 停用、卸载与清理资料
 

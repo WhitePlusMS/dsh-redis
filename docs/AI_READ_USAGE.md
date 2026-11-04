@@ -63,7 +63,7 @@
 | `redis_viewer_refresh` | 无 | 用户明确要求时刷新当前唯一可见面板的选中 Key；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。失败或回执丢失后检查面板，不能断言刷新没有发生 |
 | `redis_viewer_format` | 必填 `format`：`text`、`json`、`hex` 或 `base64` | 用户明确要求时切换当前可见值预览；成功须确认对应格式已渲染。无效或不完整 JSON 返回失败，字段名预览不会随值格式动作改变 |
 | `redis_viewer_match_presets` / `redis_viewer_save_match_preset` / `redis_viewer_apply_match_preset` | 列出预设；保存时提供名称和 MATCH；应用时提供已列出的 `id` | 预设存于本地 profile；仅用户明确要求时保存或应用。应用会清除当前 Key 选择、设置界面筛选并启动扫描；`applied` 不表示扫描已经完成 |
-| `redis_viewer_prepare_overview_report` / `redis_viewer_save_overview_report` | 准备时指定 `server`、`memory`、`clients` 或 `stats`；保存时提供同一会话的 `sampleId` | 明确要求时重新采样并保存到 DSH profile 的 `data/dsh-redis/reports`。报告只含概况白名单指标、连接身份、范围和采样时间，不接收自由文本、路径或 Redis 值；采样只在会话内暂存，保存中断时检查目录 |
+| `redis_viewer_prepare_diagnostic_report` / `redis_viewer_save_diagnostic_report` | 准备时指定诊断类型及所需范围或 Key；保存时提供同一会话的 `sampleId` | 明确要求时重新采样并保存到 DSH profile 的 `data/dsh-redis/reports`。支持概况、慢日志、客户端、Key 内存、String 比较及消费组；Key 和组名以 SHA-256 身份记录，慢日志报告不含命令名称或参数。不接收自由文本、路径或 Redis 值；采样在会话内暂存，保存中断时检查目录 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。

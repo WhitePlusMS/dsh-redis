@@ -126,7 +126,7 @@ To roll back, repeat the same removal and installation steps with the old verifi
 
 `DSH_HOME` defaults to `~/.dsh`. For a default Windows `web` profile, the connection file is `%USERPROFILE%\.dsh\profiles\web\data\dsh-redis\connections.json`. A custom `DSH_HOME` changes that location. Connection profiles are shared only within that DSH profile, and the file can contain private addresses, usernames and CA material.
 
-There is no Redis-specific model API key. Sidebar browsing uses the Redis connection; chat uses the model already configured in DSH. The historical Release does not export diagnostic snapshots. Current source can save an explicitly requested server overview report under `data/dsh-redis/reports`; these files and saved MATCH presets remain in the profile after uninstall.
+There is no Redis-specific model API key. Sidebar browsing uses the Redis connection; chat uses the model already configured in DSH. The historical Release does not export diagnostic snapshots. Current source can save explicitly requested diagnostic reports under `data/dsh-redis/reports`; these files and saved MATCH presets remain in the profile after uninstall.
 
 ## Disable, uninstall or remove saved connections
 

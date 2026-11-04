@@ -18,6 +18,8 @@ try {
     const ctx = new Context(), samples = new RedisReportSamples(), reports = new RedisReports(directory)
     try {
       await admin.sendCommand(['SET', 'fixture:report', 'synthetic-secret-value'])
+      await admin.sendCommand(['SET', 'fixture:report-copy', 'synthetic-secret-value'])
+      await admin.sendCommand(['XGROUP', 'CREATE', 'fixture:stream', 'synthetic-group', '0', 'MKSTREAM'])
       const before = await admin.sendCommand(['GET', 'fixture:report'])
       assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
       await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
@@ -30,18 +32,29 @@ try {
         return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
       }
       for (const [section, field] of [['server', 'redis_version'], ['memory', 'used_memory'], ['clients', 'connected_clients'], ['stats', 'total_commands_processed']]) {
-        const prepared = await call('redis_viewer_prepare_overview_report', { section })
-        assert.equal(prepared.sample.scope, 'server'); assert.equal(typeof prepared.sample.fields[field], 'string')
-        const saved = await call('redis_viewer_save_overview_report', { sampleId: prepared.sampleId })
+        const prepared = await call('redis_viewer_prepare_diagnostic_report', { kind: 'overview', section })
+        assert.equal(prepared.sample.data.scope, 'server'); assert.equal(typeof prepared.sample.data.fields[field], 'string')
+        const saved = await call('redis_viewer_save_diagnostic_report', { sampleId: prepared.sampleId })
         const text = await readFile(saved.path, 'utf8'), report = JSON.parse(text)
-        assert.equal(report.section, section); assert.equal(report.fields[field], prepared.sample.fields[field])
+        assert.equal(report.data.section, section); assert.equal(report.data.fields[field], prepared.sample.data.fields[field])
         assert(!text.includes(settings.password)); assert(!text.includes('synthetic-secret-value')); assert(!text.includes('127.0.0.1'))
+      }
+      for (const args of [{ kind: 'slowlog' }, { kind: 'clients' }, { kind: 'memory', key: 'fixture:report' }, { kind: 'compare_strings', left: 'fixture:report', right: 'fixture:report-copy' }, { kind: 'stream_groups', key: 'fixture:stream' }]) {
+        const prepared = await call('redis_viewer_prepare_diagnostic_report', args)
+        assert.equal(prepared.sample.kind, args.kind)
+        const saved = await call('redis_viewer_save_diagnostic_report', { sampleId: prepared.sampleId })
+        const text = await readFile(saved.path, 'utf8'), report = JSON.parse(text)
+        assert.equal(report.kind, args.kind); assert(!text.includes(settings.password)); assert(!text.includes('synthetic-secret-value'))
+        assert(!text.includes('fixture:report')); assert(!text.includes('fixture:stream')); assert(!text.includes('synthetic-group'))
+        if (args.kind === 'memory' || args.kind === 'stream_groups') assert.match(report.data.key, /^sha256:[a-f0-9]{64}$/u)
+        if (args.kind === 'compare_strings') assert.equal(report.data.comparison, 'equal')
+        if (args.kind === 'stream_groups') assert.equal(report.data.groups.length, 1)
       }
       assert.equal(await admin.sendCommand(['GET', 'fixture:report']), before)
     } finally { await ctx.fiber.dispose(); samples.dispose(); reader.dispose(); connections.dispose() }
   })
   assert(fixture.stopped)
-  console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['four overview reports', 'secret exclusion', 'unchanged fixture key'] }))
+  console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['four overview sections and five diagnostic reports', 'secret exclusion', 'unchanged fixture key'] }))
 } finally {
   const actual = await realpath(directory)
   if (dirname(actual) !== await realpath(runtime) || !basename(actual).startsWith('report-smoke-')) throw new Error('Refusing cleanup outside the owned report directory')

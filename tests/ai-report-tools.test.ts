@@ -8,12 +8,14 @@ import { expect, it, vi } from 'vitest'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { RedisReportSamples, RedisReports, registerRedisReportTools } from '../src/host/ai-report-tools.ts'
 import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
+import { RedisReplyError } from '../src/host/resp.ts'
 
 it('saves only an explicitly selected same-session overview sample with no credentials or model text', async () => {
   const runtime = resolve(import.meta.dirname, '../.scratch/runtime'), directory = await mkdtemp(join(runtime, 'ai-report-test-'))
+  let denied = false
   const link: RedisLink = {
     close: () => undefined, onFailure: () => () => undefined,
-    async execute(command, _args, signal, guard) { signal.throwIfAborted(); guard(); if (command !== 'INFO') throw new Error('Unexpected Redis command'); return Buffer.from('used_memory:1024\r\nused_memory_rss:2048\r\nmaxmemory:0\r\nmem_fragmentation_ratio:1.5\r\nignored:not-in-report\r\n') },
+    async execute(command, _args, signal, guard) { signal.throwIfAborted(); guard(); if (command !== 'INFO') throw new Error('Unexpected Redis command'); if (denied) throw new RedisReplyError('NOPERM not-in-report'); return Buffer.from('used_memory:1024\r\nused_memory_rss:2048\r\nmaxmemory:0\r\nmem_fragmentation_ratio:1.5\r\nignored:not-in-report\r\n') },
   }
   const connections = new RedisConnections(async () => link), reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const samples = new RedisReportSamples(), reports = new RedisReports(directory), ctx = new Context()
@@ -25,27 +27,33 @@ it('saves only an explicitly selected same-session overview sample with no crede
   const call = (name: string, args: unknown, id = 'a', signal = new AbortController().signal) => ctx.tools.execute({ callId: ('report-' + ++index) as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent: agent(id), signal })
   const content = (value: Awaited<ReturnType<typeof call>>) => value.content.filter(block => block.type === 'text').map(block => block.text).join('')
   try {
-    const prepared = await call('redis_viewer_prepare_overview_report', { section: 'memory' })
+    const prepared = await call('redis_viewer_prepare_diagnostic_report', { kind: 'overview', section: 'memory' })
     expect(prepared.isError).toBeFalsy()
     const sampleId = (JSON.parse(content(prepared)) as { sampleId: string }).sampleId
     expect(content(prepared)).not.toContain('not-in-report')
-    expect(JSON.parse(content(await call('redis_viewer_save_overview_report', { sampleId }, 'b')))).toMatchObject({ outcome: 'missing' })
-    expect((await call('redis_viewer_save_overview_report', { sampleId, path: 'elsewhere', text: 'untrusted' })).isError).toBe(true)
-    const saved = await call('redis_viewer_save_overview_report', { sampleId })
+    expect(JSON.parse(content(await call('redis_viewer_save_diagnostic_report', { sampleId }, 'b')))).toMatchObject({ outcome: 'missing' })
+    expect((await call('redis_viewer_save_diagnostic_report', { sampleId, path: 'elsewhere', text: 'untrusted' })).isError).toBe(true)
+    const saved = await call('redis_viewer_save_diagnostic_report', { sampleId })
     expect(saved.isError).toBeFalsy()
     const path = (JSON.parse(content(saved)) as { path: string }).path
     expect(dirname(path)).toBe(join(directory, 'data', 'dsh-redis', 'reports'))
     const file = await readFile(path, 'utf8')
     expect(file).not.toContain('not-in-report')
-    expect(JSON.parse(file)).toMatchObject({ kind: 'redis-overview-sample', connection: { id: connection.id, generation: connection.generation, db: connection.db }, section: 'memory', fields: { used_memory: '1024' }, scope: 'server', state: 'value' })
+    expect(JSON.parse(file)).toMatchObject({ kind: 'overview', data: { connection: { id: connection.id, generation: connection.generation, db: connection.db }, section: 'memory', fields: { used_memory: '1024' }, scope: 'server', state: 'value' } })
     expect((JSON.parse(file) as { sampledAt: string }).sampledAt).toMatch(/^\d{4}-\d\d-\d\dT/u)
+    expect((await call('redis_viewer_prepare_diagnostic_report', { kind: 'clients', key: 'unexpected' })).isError).toBe(true)
+    denied = true
+    const failed = await call('redis_viewer_prepare_diagnostic_report', { kind: 'overview', section: 'memory' })
+    expect(JSON.parse(content(failed))).toMatchObject({ sample: { data: { state: 'failed', error: 'permission' } } })
+    expect(content(failed)).not.toContain('not-in-report')
+    denied = false
     samples.disposeSession('a')
-    expect(JSON.parse(content(await call('redis_viewer_save_overview_report', { sampleId })))).toMatchObject({ outcome: 'missing' })
+    expect(JSON.parse(content(await call('redis_viewer_save_diagnostic_report', { sampleId })))).toMatchObject({ outcome: 'missing' })
     const aborted = new AbortController(), save = reports.save.bind(reports)
-    const next = await call('redis_viewer_prepare_overview_report', { section: 'memory' })
+    const next = await call('redis_viewer_prepare_diagnostic_report', { kind: 'overview', section: 'memory' })
     const nextId = (JSON.parse(content(next)) as { sampleId: string }).sampleId
     vi.spyOn(reports, 'save').mockImplementation(async (sample, signal) => { const path = await save(sample, signal); aborted.abort(); return path })
-    const interrupted = await call('redis_viewer_save_overview_report', { sampleId: nextId }, 'a', aborted.signal)
+    const interrupted = await call('redis_viewer_save_diagnostic_report', { sampleId: nextId }, 'a', aborted.signal)
     expect(interrupted.isError).toBe(true)
     expect(content(interrupted)).toContain('保存结果未知')
   } finally {
