@@ -1,7 +1,7 @@
 import { MAX_DATABASE_ENTRIES } from './domain.ts'
 import { databasesReadRequestSchema, databasesReadResultSchema } from './typert.shared.ts'
 import { z } from 'zod'
-import { DSH_VERSION, PROTOCOL_VERSION, MAX_PROFILES } from './domain.ts'
+import { DSH_BASELINE, PROTOCOL_VERSION, MAX_PROFILES } from './domain.ts'
 import { createRedisInvocation, TYPERT_PACKAGE, scanKeysRequestSchema, scanKeysResultSchema, stringReadRequestSchema, stringReadResultSchema, scanHashRequestSchema, scanHashResultSchema, listReadRequestSchema, listReadResultSchema, scanSetRequestSchema, scanSetResultSchema } from './typert.shared.ts'
 import { zsetReadRequestSchema, zsetReadResultSchema } from './typert.shared.ts'
 import { streamReadRequestSchema, streamReadResultSchema } from './typert.shared.ts'
@@ -54,7 +54,7 @@ const databasesValue = z.object({ state: z.enum(['value', 'failed']), error: err
 /** Host Zod codecs are required by the rc.2 Typert loader. */
 export const redisHostDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', empty,
-    z.object({ state: z.literal('ready'), readOnly: z.literal(true), hostVersion: z.literal(DSH_VERSION), protocolVersion: z.literal(PROTOCOL_VERSION) }).strict(), z.string().min(1)),
+    z.object({ state: z.literal('ready'), readOnly: z.literal(true), dshBaseline: z.literal(DSH_BASELINE), protocolVersion: z.literal(PROTOCOL_VERSION) }).strict(), z.string().min(1)),
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', credentials, view, z.string().min(1)),
   createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', identity, view, z.string().min(1)),
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', empty, view, z.string().min(1)),

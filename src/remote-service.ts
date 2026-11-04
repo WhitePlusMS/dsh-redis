@@ -30,7 +30,7 @@ import type { ConnectionRequest, ConnectionTarget, ConnectionView } from './doma
 import type { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol'
-import { DSH_VERSION, PROTOCOL_VERSION, MAX_SCAN_JSON_BYTES, type EmptyRequest, type RedisHostStatus } from './domain.ts'
+import { DSH_BASELINE, PROTOCOL_VERSION, MAX_SCAN_JSON_BYTES, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 
 /** Typert supplies the trusted Agent; clients cannot select an arbitrary owner. */
 export class RedisRemoteService extends TypertRemoteService {
@@ -161,6 +161,6 @@ export class RedisRemoteService extends TypertRemoteService {
 
   async status(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<RedisHostStatus> {
     signal.throwIfAborted()
-    return { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+    return { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
   }
 }

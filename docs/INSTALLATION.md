@@ -4,6 +4,8 @@ English | [简体中文](INSTALLATION.zh.md)
 
 This guide covers `v0.1.0` Release packages, the two supported installation interfaces, and local development packages. [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private; downloading its Release assets requires repository access.
 
+The Release instructions and verified environment below are historical and apply to `v0.1.0`. Current source is `0.1.1` and declares DSH `0.2.1-rc.5`; its complete native installation and model acceptance remain pending. Do not assume that installing `v0.1.0` provides current development features.
+
 ## Supported target
 
 | Item | Current baseline |
@@ -124,7 +126,7 @@ To roll back, repeat the same removal and installation steps with the old verifi
 
 `DSH_HOME` defaults to `~/.dsh`. For a default Windows `web` profile, the connection file is `%USERPROFILE%\.dsh\profiles\web\data\dsh-redis\connections.json`. A custom `DSH_HOME` changes that location. Connection profiles are shared only within that DSH profile, and the file can contain private addresses, usernames and CA material.
 
-There is no Redis-specific model API key. Sidebar browsing uses the Redis connection; chat uses the model already configured in DSH. The plugin does not open RDB/AOF snapshot files or export diagnostic snapshots.
+There is no Redis-specific model API key. Sidebar browsing uses the Redis connection; chat uses the model already configured in DSH. The historical Release does not export diagnostic snapshots. Current source can save an explicitly requested server overview report under `data/dsh-redis/reports`; these files and saved MATCH presets remain in the profile after uninstall.
 
 ## Disable, uninstall or remove saved connections
 
@@ -148,14 +150,14 @@ dsh --version
 pnpm install --frozen-lockfile
 pnpm pack --pack-destination .release
 
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.0.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.0-{0}.tgz" -f $sha256)
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
 Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
 $packageForInstall
 ```
 
-`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.0`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
+`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.1`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
 
 A SHA256 value calculated locally identifies the file you have. When an archive comes from someone else, compare it with a checksum received from that same trusted source; calculating a new checksum alone does not verify its origin.
 

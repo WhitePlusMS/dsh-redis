@@ -5,7 +5,7 @@ import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
-import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
+import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
 
 interface BundleRegistration { id: string; factory: (require: (name: string) => unknown) => { apply: (ctx: Context) => void } }
 interface SlotEntry { key: string; inject: (sessionId: string) => RedisWorkspaceInjected }
@@ -18,7 +18,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   let registration: BundleRegistration | undefined
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
-  const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION } }))
+  const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION } }))
   const aiBudgetStatus = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } }))
   const resumeAiBudget = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { accepted: true, status: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } } }))
   const stream = { send: vi.fn(), end: vi.fn(), dispose: vi.fn(), async *[Symbol.asyncIterator]() {} }
@@ -77,7 +77,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   }
   const statusCodec = descriptors?.find(descriptor => descriptor.method === 'status')?.result
   if (statusCodec?.mode !== 'strict' || statusCodec.decode === undefined) throw new Error('Missing status decoder')
-  const validStatus = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+  const validStatus = { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
   expect(statusCodec.decode(validStatus)).toEqual(validStatus)
   expect(() => statusCodec.decode?.({ ...validStatus, readOnly: false })).toThrow()
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')

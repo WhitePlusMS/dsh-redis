@@ -2,19 +2,19 @@
 
 [English README](../README.md) · [中文 README](../README.zh.md) · [安装、更新与卸载](INSTALLATION.zh.md) · [CHANGELOG](../CHANGELOG.md)
 
-本说明对应独立的 `dsh-redis` 项目和当前六类型只读实现，按统一 README 与发布规范整理。官方支持的插件机制与本项目的维护约定分别列出，历史原型和旧票不作为当前能力声明。
+本说明保留 `v0.1.0` 的历史发布流程；当前只读 AI 范围与验收状态以源码和项目任务清单为准。当前开发源码为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`，不把旧发布版的验收归于当前构建。
 
 ## 1. 版本与环境
 
 | 项目 | 声明或实际状态 |
 | --- | --- |
-| 插件包 | `dsh-redis@0.1.0`，私有仓库 Release，tag 为 `v0.1.0` |
-| 宿主、DSH SDK | `0.2.0-rc.2`，实际确认的预发布基线 |
-| 官方参考源码 | `deepseek-ai/deepseek-harness` 的 `dsh-v0.2.0-rc.2`，核对提交前缀 `639ed015` |
+| 插件包 | 当前源码 `dsh-redis@0.1.1`；历史 Release 为 `v0.1.0` |
+| 宿主、DSH SDK | 当前依赖声明 `0.2.1-rc.5`；当前构建的完整原生验收待完成 |
+| 官方参考源码 | 以下旧发布流程引用 `dsh-v0.2.0-rc.2` / `639ed015`，不作为当前 SDK 行为的证明 |
 | Node.js | 声明 `^22.19.0 || >=24.0.0`；实际验证 `22.22.1` |
 | pnpm | `11.22.0`，由 `packageManager` 固定 |
 | React | `18.3.1`，peer/dev 一致 |
-| Cordis | peer `~4.0.4`，dev `4.0.4` |
+| Cordis | peer `~4.0.5`，dev `4.0.5` |
 | 已验收载体 | Windows 上的 DSH Web；Desktop、其他系统待独立验收 |
 
 当前没有把“最新上游”“最新稳定版”当作已验证基线。升级宿主时应另开小目标，核对官方版本、Host/Client/工具接口、全部 peer/dev 依赖和真实运行结果，再同时修改环境说明。
@@ -130,7 +130,7 @@ pnpm build
 
 ```powershell
 pnpm pack --pack-destination .release
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.0.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
 $assetName = Split-Path -Leaf $packagePath
 $checksumLine = "{0}  {1}" -f $sha256, $assetName
@@ -150,7 +150,7 @@ Get-Content -LiteralPath '.release\SHA256SUMS.txt'
 4. 在新的、没有模型凭据的独立 `DSH_HOME` 中测试 CLI 安装、列包、配置组合、卸载和重新安装。测试连接资料保留时只使用空资料文件，不连接 Redis；这种检查不需要启动 Host 服务。
 5. 不改日常 profile。若用户另行要求安装，再按安装指南备份并更新，单独核对安装后的文件与实际界面。
 
-单独开发包同为 `0.1.0` 时，按[安装指南](INSTALLATION.zh.md#准备成品包)生成 SHA 唯一文件名，避免复用旧路径；不要删除 profile 仍引用的本地 tgz。
+单独开发包同为 `0.1.1` 时，按[安装指南](INSTALLATION.zh.md#准备成品包)生成 SHA 唯一文件名，避免复用旧路径；不要删除 profile 仍引用的本地 tgz。
 
 ## 8. 版本化发布与安装入口
 

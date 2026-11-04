@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { redisHostDescriptors } from '../src/typert.host.ts'
 import { aiBudgetResumeSchema, aiBudgetStatusSchema, connectionRequestSchema, connectionViewSchema, emptyRequestSchema, redisDescriptors, statusSchema, saveProfileSchema, profileCollectionSchema } from '../src/typert.shared.ts'
-import { DSH_VERSION, PROTOCOL_VERSION } from '../src/domain.ts'
+import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
 import { setSelectionRequestSchema, selectionAckSchema } from '../src/typert.shared.ts'
 import { uiActionAckSchema, uiChannelInputSchema, uiChannelMessageSchema } from '../src/typert.shared.ts'
 
-const valid = { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+const valid = { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
 
 it('uses a scoped, cancellable stream with strict action and acknowledgement frames', () => {
   const id = '12345678-1234-1234-1234-123456789abc'
@@ -50,7 +50,7 @@ it('decodes selection identities strictly on both Host and browser faces', () =>
   expect(() => selectionAckSchema.parse({ accepted: 'true' })).toThrow()
 })
 
-describe('strict rc.2 sidebar protocol', () => {
+describe('strict sidebar protocol', () => {
   it('rejects extra request fields on both faces, including hidden command text', () => {
     const descriptor = redisHostDescriptors[0]
     const request = descriptor.parameters.find(parameter => parameter.name === 'request')
@@ -67,7 +67,7 @@ describe('strict rc.2 sidebar protocol', () => {
     const host = result.create()
     for (const schema of [host, statusSchema]) {
       expect(schema.parse(valid)).toEqual(valid)
-      expect(() => schema.parse({ ...valid, hostVersion: '0.2.1-alpha.4' })).toThrow()
+      expect(() => schema.parse({ ...valid, dshBaseline: '0.2.0-rc.2' })).toThrow()
       expect(() => schema.parse({ ...valid, readOnly: false })).toThrow()
       expect(() => schema.parse({ ...valid, password: 'must not appear' })).toThrow()
       expect(() => schema.parse({ state: 'ready' })).toThrow()

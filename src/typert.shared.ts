@@ -5,7 +5,7 @@ import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, Selection
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { AiBudgetResume, AiBudgetStatus } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
-import { DSH_VERSION, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
+import { DSH_BASELINE, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
 import { MAX_KEY_BYTES, MAX_SCAN_KEYS, MAX_SCAN_JSON_BYTES, type DatabaseTarget, type RedisKey, type ScanKeysRequest, type ScanKeysResult } from './domain.ts'
 import { MAX_VALUE_BYTES, type StringReadRequest, type StringReadResult, type KeyMetadata } from './domain.ts'
@@ -32,9 +32,9 @@ export const emptyRequestSchema: TypertSchema<EmptyRequest> = { parse(value) {
 } }
 
 export const statusSchema: TypertSchema<RedisHostStatus> = { parse(value) {
-  const object = objectAt(value, ['state', 'readOnly', 'hostVersion', 'protocolVersion'])
-  if (object.state !== 'ready' || object.readOnly !== true || object.hostVersion !== DSH_VERSION || object.protocolVersion !== PROTOCOL_VERSION) throw new TypeError('Redis RPC: invalid Host status')
-  return { state: 'ready', readOnly: true, hostVersion: DSH_VERSION, protocolVersion: PROTOCOL_VERSION }
+  const object = objectAt(value, ['state', 'readOnly', 'dshBaseline', 'protocolVersion'])
+  if (object.state !== 'ready' || object.readOnly !== true || object.dshBaseline !== DSH_BASELINE || object.protocolVersion !== PROTOCOL_VERSION) throw new TypeError('Redis RPC: invalid Host status')
+  return { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
 } }
 
 const sessionIdSchema: TypertSchema<SessionId> = { parse(value) {

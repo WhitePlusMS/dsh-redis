@@ -4,6 +4,8 @@
 
 本文说明 `v0.1.0` Release 成品包、界面/CLI 两种安装入口及本地开发包。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载 Release 附件需要仓库访问权限。
 
+下方 Release 步骤和已验证环境属于 `v0.1.0` 的历史记录。当前源码版本为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`；完整原生安装及模型验收仍待完成。安装 `v0.1.0` 不代表包含当前开发功能。
+
 ## 适用环境
 
 | 项目 | 当前基线 |
@@ -124,7 +126,7 @@ dsh plugin --profile web list dsh-redis
 
 `DSH_HOME` 默认是 `~/.dsh`。Windows 默认 `web` profile 的资料文件为 `%USERPROFILE%\.dsh\profiles\web\data\dsh-redis\connections.json`；自定义 home 时位置随之改变。资料只在同一个 DSH profile 内共用，文件可能含内网地址、用户名及 CA 内容。
 
-插件不另设模型 API Key：侧栏查看使用 Redis 连接，对话使用 DSH 已配置的模型。不直接打开 RDB/AOF 文件，也不提供诊断快照导出。
+插件不另设模型 API Key：侧栏查看使用 Redis 连接，对话使用 DSH 已配置的模型。历史 Release 不提供诊断快照导出。当前源码可按明确请求将服务器概况保存到 `data/dsh-redis/reports`；卸载后报告和已保存的 MATCH 预设仍留在 profile 中。
 
 ## 停用、卸载与清理资料
 
@@ -148,14 +150,14 @@ dsh --version
 pnpm install --frozen-lockfile
 pnpm pack --pack-destination .release
 
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.0.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.0-{0}.tgz" -f $sha256)
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
 Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
 $packageForInstall
 ```
 
-`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.0` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
+`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.1` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
 
 本地计算 SHA256 可以标识手里的文件；接收别人交付的包时，还应与该可信来源提供的校验值核对。自行算出一个新值本身不能证明文件来源。
 

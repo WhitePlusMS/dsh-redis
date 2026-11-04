@@ -1,6 +1,6 @@
-/** Exact runtime baseline selected by the user. */
-export const DSH_VERSION = '0.2.0-rc.2' as const
-export const PROTOCOL_VERSION = 14 as const
+/** Declared SDK baseline, not a runtime version probe. */
+export const DSH_BASELINE = '0.2.1-rc.5' as const
+export const PROTOCOL_VERSION = 15 as const
 export type EmptyRequest = Record<string, never>
 
 /** Current conversation's AI result budget, without Redis contents. */
@@ -11,7 +11,7 @@ export interface AiBudgetResume { readonly accepted: boolean; readonly status: A
 export interface RedisHostStatus {
   readonly state: 'ready'
   readonly readOnly: true
-  readonly hostVersion: typeof DSH_VERSION
+  readonly dshBaseline: typeof DSH_BASELINE
   readonly protocolVersion: typeof PROTOCOL_VERSION
 }
 

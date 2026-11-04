@@ -273,7 +273,7 @@ export const zh = {
   'budget.pending': '读取正在结束，请刷新状态后再试。',
   'budget.resume': '继续读取',
   'budget.error': '无法获取或恢复 AI 读取预算，请刷新后重试。',
-  'baseline': 'DSH 0.2.0-rc.2',
+  'baseline': '目标 DSH 0.2.1-rc.5',
 } as const
 export const en: Record<keyof typeof zh, string> = {
   'ui.cancel': 'Cancel',
@@ -547,7 +547,7 @@ export const en: Record<keyof typeof zh, string> = {
   'budget.pending': 'A read is finishing. Refresh the status before continuing.',
   'budget.resume': 'Continue reading',
   'budget.error': 'Could not read or resume the AI budget. Refresh and retry.',
-  'baseline': 'DSH 0.2.0-rc.2',
+  'baseline': 'Target DSH 0.2.1-rc.5',
 }
 export type RedisText = (key: keyof typeof zh) => string
 
