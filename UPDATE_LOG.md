@@ -2661,6 +2661,13 @@
 - 验证：新增显式字段功能之前，当前工作区 `pnpm check` 通过，69 文件/551 项测试通过；新增的预设工具专项另行通过。构建基线与用户日常 DSH 已安装包不同，原生界面和真实模型必须按后续构建分别验收。此节点只提交本地，不推送；业务 Redis 未操作。
 - 将暂存区精确应用到独立工作区 `.scratch/runtime/baseline-review-20261104-a` 后，类型检查、构建和基础/预设工具 2 文件 38 项测试通过；清理其中依赖目录联接时被自动审批拒绝，临时工作区与联接保留，未删除原始依赖。
 
+### 2026-11-04 直接查询 Set 和 ZSet 成员
+
+- 修改 `src/host/ai-reader.ts`、`src/host/ai-tools.ts`：显式指定 Key 与成员后识别 Set/ZSet 并复用精确只读 reader，返回成员存在性或分数；身份与分页互斥、类型/目标/预算均有校验，不依赖面板。
+- 修改 `tests/ai-tools.test.ts`：覆盖无界面下成员读取、二进制身份、缺失、错误类型、类型变化、ACL 拒绝和非法参数；仅使用合成连接。更新 `docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`：记录成员参数及当前完成边界。
+- 新增 `scripts/smoke-ai-explicit-members.mjs`：在独立 Redis 夹具中核对二进制 Set/ZSet 成员、精确分数、缺失和数据不变，并比较扫描及写入命令计数。
+- 验证：`pnpm typecheck` 和 3 文件/46 项专项通过；独立 Redis 8.2.6 与 DSH ToolRuntime 验收通过，数据不变且未发生集合扫描或写入，夹具已停止。当前构建的真实 DSH/模型验收仍待完成。
+
 ### Redis 适配版推送与重新安装
 
 - 按用户要求仅处理 Redis；在独立工作区基于已提交代码更新双语 README、依赖、锁文件、CHANGELOG、更新日志及 esbuild 构建许可，保留原工作区未提交功能。

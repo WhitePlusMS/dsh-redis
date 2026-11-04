@@ -14,6 +14,7 @@
 - “检索当前DB里符合 `order:*` 的Key，先告诉我本批结果。”
 - “读取 `order:1001`，解释其中的字段。”
 - “读取 `order:1001` 的 `status` 字段。”
+- “检查 `active:users` 中是否包含 `user:123`。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “明确切到DB1，再查询 `order:1001`。”
 
@@ -38,10 +39,10 @@
 |---|---|---|
 | `redis_viewer_status` | 无 | 当前公开连接视图、DB、选择同步状态和已同步选择 |
 | `redis_viewer_keys` | 可选`match`、`cursor` | 当前DB的SCAN批次；`returnedCount`为本次返回的Key数，不是全库总数；续读保持同一MATCH，空页不一定结束 |
-| `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段可附`field`或`fieldBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段需明确 Key，不能混用分页参数 |
+| `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
-Key 文本与 Base64、字段文本与 Base64 分别只能传一个。指定 Hash 字段时的 `selection-missing` 表示采样时该字段不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
+Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
 
 明确要求定位当前 ZSet Key 的成员时，可使用 `redis_viewer_locate_zset_member`，通过 `member` 文本或 `memberBase64` 规范二进制身份指定成员，二者只能提供一个，空成员也有效。工具以 `ZSCORE` 做定点采样；分数保留 Redis 返回的字符串，代表采样时结果。界面为确认定位会再次采样，期间分数可能变化；筛选或排名页外的临时结果不表示其排名，不改变分页游标。只有面板确认后才报告 `applied`，结果未知时应检查当前面板。
 

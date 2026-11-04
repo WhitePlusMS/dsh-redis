@@ -24,6 +24,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   let changingTypeReads = 0
+  let changingMemberReads = 0
   const failures = new Set<(code: ConnectionErrorCode) => void>()
   const failNetwork = () => { for (const listener of failures) listener('network'); throw new ConnectionFailure('network') }
   const types: Readonly<Record<string, string>> = { plain: 'string', changing: 'string', hash: 'hash', list: 'list', set: 'set', zset: 'zset', stream: 'stream', large: 'string', wide: 'set', module: 'ReJSON-RL' }
@@ -33,7 +34,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
       signal.throwIfAborted(); guard(); commands.push(command)
       const key = String(args[0]), bulk = (value: string) => Buffer.from(value)
       switch (command) {
-        case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; return types[key] ?? 'none'
+        case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; return types[key] ?? 'none'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
         case 'PTTL': return -1n
         case 'STRLEN': return key === 'large' ? 9000n : key === 'changing' ? 6n : 5n
@@ -88,6 +89,19 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('reads explicit Set and ZSet members without a synchronized sidebar', async () => {
+    const f = await fixture(undefined, undefined, { confirm: async () => { throw new Error('面板不可用') }, current: () => false })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'set', member: 'member' })))).toMatchObject({ source: 'explicit', value: { state: 'value', metadata: { type: 'set' } } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'zset', memberBase64: Buffer.from([0, 255]).toString('base64') })))).toMatchObject({ member: { base64: 'AP8=' }, value: { state: 'value', metadata: { type: 'zset' }, score: '1.2345678901234567' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'set', member: 'absent' })))).toMatchObject({ errorMessage: '采样时指定的成员不存在。', value: { state: 'selection-missing' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'missing', member: 'x' })))).toMatchObject({ value: { state: 'missing' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'hash', member: 'x' })))).toMatchObject({ value: { state: 'unsupported', type: 'hash' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'changing-member', member: 'x' })))).toMatchObject({ value: { state: 'changed' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'denied', member: 'x' })))).toMatchObject({ value: { state: 'failed', error: 'permission' } })
+    expect(f.commands).toContain('SISMEMBER'); expect(f.commands).toContain('ZSCORE')
+    expect(f.commands).not.toContain('SSCAN'); expect(f.commands).not.toContain('ZSCAN')
+    for (const args of [{ member: 'x' }, { key: 'set', member: 'x', memberBase64: 'eA==' }, { key: 'set', member: 'x', field: 'y' }, { key: 'set', member: 'x', count: 1 }, { key: 'set', memberBase64: '!!!' }, { key: 'set', member: '\ud800' }]) expect((await f.call('redis_viewer_value', args)).isError).toBe(true)
+  })
   it('reads an explicitly named Hash field without a visible or synchronized sidebar', async () => {
     const f = await fixture(undefined, undefined, { confirm: async () => { throw new Error('面板不可用') }, current: () => false })
     const result = await f.call('redis_viewer_value', { key: 'hash', field: 'status' })

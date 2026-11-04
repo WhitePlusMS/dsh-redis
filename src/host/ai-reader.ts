@@ -21,10 +21,16 @@ import { RedisAiStreamPages, isAiStreamCursor } from './ai-stream-pages.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
-import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
+import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, setMemberReadRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
+/** Text identities must round-trip exactly; arbitrary bytes use canonical Base64. */
+function encodeIdentity(value: string): string {
+  const bytes = Buffer.from(value, 'utf8')
+  if (bytes.toString('utf8') !== value) throw new Error('文本包含无法无损编码的字符，请使用规范 Base64 身份。')
+  return bytes.toString('base64')
+}
 /** Missing and changed are read states, not transport errors. */
 const explainValue = (error: ConnectionErrorCode | null, data: unknown): string | null => {
   if (error !== null) return explain(error)
@@ -37,6 +43,8 @@ export interface AiValueRequest {
   readonly keyBase64?: string
   readonly field?: string
   readonly fieldBase64?: string
+  readonly member?: string
+  readonly memberBase64?: string
   readonly cursor?: string
   readonly offset?: string
   readonly count?: number
@@ -207,7 +215,9 @@ export class RedisAiReader {
     return this.project(sessionId, { readOnly: true, connection, errorMessage: explain(connection.error), requestedDb: db, sampledAt: new Date().toISOString() })
   }
   async read(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
+    if ((args.field !== undefined || args.fieldBase64 !== undefined) && (args.member !== undefined || args.memberBase64 !== undefined)) throw new Error('字段和成员身份不能同时指定。')
     if (args.field !== undefined || args.fieldBase64 !== undefined) return this.readExplicitHashField(sessionId, args, signal)
+    if (args.member !== undefined || args.memberBase64 !== undefined) return this.readExplicitMember(sessionId, args, signal)
     if (args.key !== undefined || args.keyBase64 !== undefined) return this.readValue(sessionId, args, signal, stage)
     const selected = this.selection(sessionId)
     if (selected === null) return this.readValue(sessionId, args, signal, stage)
@@ -240,17 +250,36 @@ export class RedisAiReader {
     signal.throwIfAborted()
     if ((args.key === undefined) === (args.keyBase64 === undefined) || (args.field === undefined) === (args.fieldBase64 === undefined)) throw new Error('精确字段读取需要分别指定一个 Key 和一个字段身份。')
     if (args.cursor !== undefined || args.offset !== undefined || args.count !== undefined || args.bytes !== undefined || args.match !== undefined || args.start !== undefined || args.end !== undefined || args.direction !== undefined) throw new Error('精确字段读取不能同时使用分页或范围参数。')
-    const encode = (value: string): string => {
-      const bytes = Buffer.from(value, 'utf8')
-      if (bytes.toString('utf8') !== value) throw new Error('文本包含无法无损编码的字符，请使用规范 Base64 身份。')
-      return bytes.toString('base64')
-    }
     const target = this.target(sessionId)
-    const request = hashFieldReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encode(args.key), fieldBase64: args.field === undefined ? args.fieldBase64 : encode(args.field) })
+    const request = hashFieldReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), fieldBase64: args.field === undefined ? args.fieldBase64 : encodeIdentity(args.field) })
     const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, request.keyBase64, { kind: 'hash', fieldBase64: request.fieldBase64 }, signal)
     signal.throwIfAborted()
     this.connections.assertReadResult(sessionId, target, sample.error)
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), field: byteIdentity(Buffer.from(request.fieldBase64, 'base64')), errorMessage: sample.state === 'selection-missing' ? '采样时指定的 Hash 字段不存在。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
+  }
+  /** Discover Set versus ZSet, then reuse the exact member reader without UI state. */
+  private async readExplicitMember(sessionId: string, args: AiValueRequest, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined) || (args.member === undefined) === (args.memberBase64 === undefined)) throw new Error('精确成员读取需要分别指定一个 Key 和一个成员身份。')
+    if (args.cursor !== undefined || args.offset !== undefined || args.count !== undefined || args.bytes !== undefined || args.match !== undefined || args.start !== undefined || args.end !== undefined || args.direction !== undefined) throw new Error('精确成员读取不能同时使用分页或范围参数。')
+    const target = this.target(sessionId)
+    const request = setMemberReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), memberBase64: args.member === undefined ? args.memberBase64 : encodeIdentity(args.member) })
+    const key = byteIdentity(Buffer.from(request.keyBase64, 'base64')), member = byteIdentity(Buffer.from(request.memberBase64, 'base64'))
+    const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    let type: string
+    try { type = await context.type(Buffer.from(request.keyBase64, 'base64')) }
+    catch (error) {
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key, member, value: { state: 'failed', error: code, sampledAt: new Date().toISOString() }, errorMessage: explain(code) })
+    } finally { context.dispose() }
+    signal.throwIfAborted()
+    this.connections.assertTarget(sessionId, target)
+    if (type !== 'set' && type !== 'zset') return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key, member, value: { state: type === 'none' ? 'missing' : 'unsupported', type, sampledAt: new Date().toISOString() }, errorMessage: type === 'none' ? keyStateMessages.missing.zh : '指定 Key 不是 Set 或 ZSet。' })
+    const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, request.keyBase64, { kind: type, memberBase64: request.memberBase64 }, signal)
+    signal.throwIfAborted()
+    this.connections.assertReadResult(sessionId, target, sample.error)
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key, member, errorMessage: sample.state === 'selection-missing' ? '采样时指定的成员不存在。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
   }
   private async readValue(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void, validateSelection?: (allowFailed?: boolean) => void): Promise<AiJson> {
     signal.throwIfAborted()
