@@ -1,6 +1,6 @@
 # Redis 连接扩展技术方案草稿
 
-状态：只读调研草稿，供审阅；不代表连接扩展已经实现或通过拓扑验收。该专题由实际连接环境需求触发，不作为直接查询、普通诊断或基础交付的统一前置。现行优先级、依赖及状态以[只读实施方案](DSH_AI_READONLY_IMPLEMENTATION_PLAN.md)和[任务清单](DSH_AI_READONLY_TASKS.md)为准。
+状态：按需技术调研参考，不是独立任务清单，也不代表连接扩展已经实现或通过拓扑验收。仅在实际连接环境需要时参考；现行范围、优先级、依赖及状态以[只读方案](DSH_AI_READONLY_IMPLEMENTATION_PLAN.md)和[任务清单](DSH_AI_READONLY_TASKS.md)为准。
 
 ## 目标与选型
 
