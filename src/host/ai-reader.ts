@@ -29,7 +29,7 @@ import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, h
 
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
-const overviewFields = {
+export const overviewFields = {
   server: ['redis_version', 'uptime_in_seconds'],
   memory: ['used_memory', 'used_memory_rss', 'maxmemory', 'mem_fragmentation_ratio'],
   clients: ['connected_clients', 'blocked_clients'],
