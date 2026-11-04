@@ -16,7 +16,7 @@ export function apply(ctx: Context): void {
   registerRedisTools(ctx, service.ai)
   registerRedisProfileTools(ctx, service.ai, snapshots, (agent, signal) => service.listProfiles(agent, {}, signal))
   registerRedisConnectionTools(ctx, service.ai, snapshots, (agent, profile, signal, isCurrent) => service.connectSavedProfile(agent, profile, signal, isCurrent), (agent, target, signal) => service.disconnect(agent, target, signal))
-  registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir))
+  registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir), service.uiActions)
   registerRedisLocateTool(ctx, service.ai, service.uiActions)
   registerRedisUiTools(ctx, service.uiActions)
   registerRedisRefreshTool(ctx, service.ai, service.uiActions)

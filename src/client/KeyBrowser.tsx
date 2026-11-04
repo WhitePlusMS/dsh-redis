@@ -17,13 +17,14 @@ import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
 import { CurrentSelection, type SetCurrentSelection } from './CurrentSelection.tsx'
 import { SelectionEpochContext, useSelectionRevision } from './SelectionEpochContext.ts'
-import type { FormatActionHandler, KeyActionHandler, KeyActionRequest, KeyActionResult, RefreshActionHandler } from './ui-pane-presence.ts'
+import type { FormatActionHandler, KeyActionHandler, KeyActionRequest, KeyActionResult, MatchActionHandler, RefreshActionHandler } from './ui-pane-presence.ts'
 import { FormatActionContext } from './FormatActionContext.ts'
 
 export interface KeyActions extends StringActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions {
   readonly registerKeyHandler: (handler: KeyActionHandler) => () => void
   readonly registerRefreshHandler: (handler: RefreshActionHandler) => () => void
   readonly registerFormatHandler: (handler: FormatActionHandler) => () => void
+  readonly registerMatchHandler: (handler: MatchActionHandler) => () => void
   readonly setSelection: SetCurrentSelection
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
@@ -46,6 +47,8 @@ export function KeyBrowser(props: Props) {
   const [selection, setSelection] = useState<KeySelection>({ key: null, token: null, serial: 0, located: false })
   const [locatedReady, setLocatedReady] = useState<string | null>(null)
   const selectionRef = useRef(selection), pendingKey = useRef<PendingKeyAction | null>(null)
+  const pendingMatch = useRef<{ pattern: string; check: () => void; finish: () => void } | null>(null)
+  const [, renderMatch] = useState(0)
   const rollbackKey = useRef<PendingKeyAction | null>(null)
   const hiddenSignal = useRef(new AbortController().signal).current
   const onLocated = useCallback((token: string) => setLocatedReady(token), [])
@@ -166,6 +169,45 @@ export function KeyBrowser(props: Props) {
     action.resolved = true
     action.resolve({ kind: 'commitKey', accepted: action.accepted, rejected: action.rejected })
   }, [selection, locatedReady, focused, epoch, visibility?.visible, visibility?.signal, connection.id, connection.generation, connection.db])
+  useLayoutEffect(() => {
+    if (epoch === null || visibility?.visible === false || visibility?.signal.aborted || connection.id === null || selectingDb) return
+    const handler: MatchActionHandler = (request, signal) => new Promise(resolve => {
+      const expectedTarget = request.action.target, currentTarget = target()
+      if (pendingMatch.current !== null || signal.aborted || Date.now() >= request.expiresAt || document.visibilityState !== 'visible' || !epoch.current(request.selectionRevision) || expectedTarget.id !== currentTarget.id || expectedTarget.generation !== currentTarget.generation || expectedTarget.db !== currentTarget.db) { resolve('stale'); return }
+      let finished = false, starting = true, revision = request.selectionRevision, rendered = false
+      const finish = (outcome: 'applied' | 'stale') => {
+        if (finished) return
+        finished = true; clearTimeout(timer); unsubscribe(); signal.removeEventListener('abort', cancelled); visibility?.signal.removeEventListener('abort', cancelled); document.removeEventListener('visibilitychange', hidden)
+        if (pendingMatch.current === pending) pendingMatch.current = null
+        resolve(outcome)
+      }
+      const check = () => {
+        if (starting || finished) return
+        if (signal.aborted || Date.now() >= request.expiresAt || document.visibilityState !== 'visible' || epoch.snapshot().revision !== revision) { finish('stale'); return }
+        if (rendered && epoch.current(revision)) finish('applied')
+      }
+      const cancelled = () => finish('stale')
+      const hidden = () => { if (document.visibilityState !== 'visible') cancelled() }
+      const pending = { pattern: request.action.pattern, check: () => { rendered = true; check() }, finish: cancelled }
+      const unsubscribe = epoch.subscribe(check)
+      const timer = setTimeout(cancelled, Math.max(0, request.expiresAt - Date.now()))
+      pendingMatch.current = pending
+      signal.addEventListener('abort', cancelled, { once: true })
+      visibility?.signal.addEventListener('abort', cancelled, { once: true })
+      document.addEventListener('visibilitychange', hidden)
+      if (signal.aborted || visibility?.signal.aborted) { cancelled(); return }
+      // The filter must be visible even when the user previously focused details.
+      focusRef.current = { ...focusRef.current, focused: false }; setFocused(false)
+      applyFilter(request.action.pattern)
+      revision = epoch.snapshot().revision; starting = false
+      renderMatch(value => value + 1)
+      check()
+    })
+    const unregister = props.registerMatchHandler(handler)
+    return () => { unregister(); pendingMatch.current?.finish() }
+  }, [props.registerMatchHandler, epoch, visibility?.visible, visibility?.signal, connection.id, connection.generation, connection.db, selectingDb])
+  // A layout effect runs only after React commits the requested filter to the pane.
+  useLayoutEffect(() => { if (pendingMatch.current?.pattern === pattern && selected === null && !focused) pendingMatch.current.check() })
   useEffect(() => {
     if (visibility?.visible !== false && !visibility?.signal.aborted && document.visibilityState === 'visible') void scan(pattern, false)
     else cancel()
@@ -206,7 +248,7 @@ export function KeyBrowser(props: Props) {
       </div>
       {filters && <div className="redis-catalog-filters">
         <form onSubmit={event => { event.preventDefault(); applyFilter(draft) }}>
-          <label>{t('keys.pattern')}<input name="pattern" maxLength={256} value={draft} spellCheck={false} onChange={event => setDraft(event.target.value)} /></label>
+          <label>{t('keys.pattern')}<input name="pattern" maxLength={256} value={draft} spellCheck={false} onChange={event => { epoch?.userSelect(); setDraft(event.target.value) }} /></label>
           <button type="submit" disabled={selectingDb}>{t('workbench.apply')}</button>
         </form>
         {databases?.databaseCount == null && <form onSubmit={event => { event.preventDefault(); void selectDb(Number(dbDraft)) }}><label>{t('workbench.openDb')}<input name="db" type="number" min={0} max={65535} required value={dbDraft} onChange={event => setDbDraft(event.target.value)} /></label><button type="submit" disabled={selectingDb}>{t('keys.selectDatabase')}</button></form>}

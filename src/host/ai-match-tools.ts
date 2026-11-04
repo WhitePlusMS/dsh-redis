@@ -2,9 +2,12 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { RedisAiReader } from './ai-reader.ts'
 import { MatchPresetError, type RedisMatchPresets } from './match-preset-store.ts'
+import type { UiAction } from '../domain.ts'
+import type { UiActionCoordinator } from './ui-action-coordinator.ts'
+import { scanKeysRequestSchema } from '../typert.shared.ts'
 
 /** The DSH profile owns these immutable names and patterns, not Redis. */
-export function registerRedisMatchTools(ctx: Context, reader: RedisAiReader, presets: RedisMatchPresets): void {
+export function registerRedisMatchTools(ctx: Context, reader: RedisAiReader, presets: RedisMatchPresets, actions: UiActionCoordinator<UiAction>): void {
   ctx.tools.register(defineTool({
     name: 'redis_viewer_match_presets',
     description: '仅在用户明确要求查看已保存的 Redis MATCH 筛选预设时调用。返回名称、ID 和条件，每页最多 10 条；条件按用户保存原样返回，可能包含敏感文本。每页重新读取，分页不是快照；不连接 Redis。',
@@ -25,6 +28,31 @@ export function registerRedisMatchTools(ctx: Context, reader: RedisAiReader, pre
           if (error instanceof MatchPresetError && error.code === 'cancelled') throw error
           throw new Error('无法读取筛选预设，请检查本地资料。')
         }
+      })
+    },
+  }))
+
+  ctx.tools.register(defineTool({
+    name: 'redis_viewer_apply_match_preset',
+    description: '仅在用户明确要求将唯一确定的已保存 MATCH 预设应用到当前 Redis 面板时调用。先列出预设并提供 id；会清除当前 Key 选择并启动该条件的有界扫描。只有界面确认筛选已设置才返回 applied，扫描可能仍在进行或不完整；取消或回执丢失后检查面板，不能假定操作没有发生。',
+    parameters: { id: { type: 'string', required: true } }, output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
+    async execute(args, exec) {
+      exec.signal.throwIfAborted()
+      if (exec.agent === undefined) throw new Error('Redis 工具调用缺少有效的 DSH 对话身份。')
+      if (Object.keys(args).some(key => key !== 'id')) throw new Error('Redis 工具包含不支持的参数。')
+      const session = exec.agent.session.id
+      return reader.withBudget(session, exec.signal, async () => {
+        const target = reader.currentTarget(session), revision = actions.selectionRevision(session)
+        if (revision === null) return { outcome: 'stale', message: '请打开唯一 Redis 面板并等待选择同步。' }
+        let preset: Awaited<ReturnType<RedisMatchPresets['get']>>
+        try { preset = await presets.get(args.id, exec.signal) }
+        catch (error) { if (error instanceof MatchPresetError && error.code === 'cancelled') throw error; throw new Error('无法读取该筛选预设，请检查本地资料。') }
+        if (preset === null) return { outcome: 'missing', message: '该筛选预设不存在。' }
+        const pattern = scanKeysRequestSchema.parse({ target, pattern: preset.pattern, cursor: null }).pattern
+        if (!reader.isCurrentTarget(session, target) || actions.selectionRevision(session) !== revision) return { outcome: 'stale', message: '连接或界面选择已变化，请检查面板。' }
+        const result = await actions.dispatch(session, { kind: 'applyMatch', target, pattern }, null, revision, () => reader.isCurrentTarget(session, target), exec.signal)
+        const outcome = result === 'applied' && actions.selectionRevision(session) !== revision + 1 ? 'stale' : result
+        return { outcome, preset: { id: preset.id, name: preset.name, pattern }, message: outcome === 'applied' ? '已确认设置筛选并启动扫描；扫描进度和结果完整性请查看面板。' : '未能确认筛选设置，请检查当前面板。' }
       })
     },
   }))

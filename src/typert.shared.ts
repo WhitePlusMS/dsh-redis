@@ -190,10 +190,11 @@ export const uiChannelMessageSchema: TypertSchema<UiChannelMessage> = { parse(va
   }
   if (kind !== 'action') throw new TypeError('Redis RPC: invalid UI message')
   const raw = objectAt(value, ['kind', 'request']), request = objectAt(raw.request, ['requestId', 'action', 'target', 'selectionRevision', 'expiresAt'])
-  const action = objectAt(request.action, ['kind', 'target', 'key', 'keyBase64', 'format', 'field', 'index', 'member', 'id', 'fieldIndex', 'fieldBase64'])
-  if (action.kind !== 'show' && action.kind !== 'confirmSelection' && action.kind !== 'refresh' && action.kind !== 'setFormat' && action.kind !== 'selectKey' && action.kind !== 'selectHashField' && action.kind !== 'selectListIndex' && action.kind !== 'selectSetMember' && action.kind !== 'selectZSetMember' && action.kind !== 'selectStreamField') throw new TypeError('Redis RPC: unsupported UI action')
+  const action = objectAt(request.action, ['kind', 'target', 'pattern', 'key', 'keyBase64', 'format', 'field', 'index', 'member', 'id', 'fieldIndex', 'fieldBase64'])
+  if (action.kind !== 'show' && action.kind !== 'confirmSelection' && action.kind !== 'refresh' && action.kind !== 'applyMatch' && action.kind !== 'setFormat' && action.kind !== 'selectKey' && action.kind !== 'selectHashField' && action.kind !== 'selectListIndex' && action.kind !== 'selectSetMember' && action.kind !== 'selectZSetMember' && action.kind !== 'selectStreamField') throw new TypeError('Redis RPC: unsupported UI action')
   let parsedAction: UiAction
   if (action.kind === 'refresh') { const raw = objectAt(request.action, ['kind', 'target', 'keyBase64']); parsedAction = { kind: action.kind, target: databaseTargetSchema.parse(raw.target), keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES) } }
+  else if (action.kind === 'applyMatch') { const raw = objectAt(request.action, ['kind', 'target', 'pattern']); parsedAction = { kind: action.kind, target: databaseTargetSchema.parse(raw.target), pattern: stringAt(raw.pattern, 256) } }
   else if (action.kind === 'setFormat') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'format']); if (raw.format !== 'text' && raw.format !== 'json' && raw.format !== 'hex' && raw.format !== 'base64') throw new TypeError('Redis RPC: invalid preview format'); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), format: raw.format } }
   else if (action.kind === 'selectKey') parsedAction = { kind: action.kind, key: identityAt(objectAt(request.action, ['kind', 'key']).key) }
   else if (action.kind === 'selectHashField') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'field']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), field: identityAt(raw.field) } }
@@ -201,7 +202,7 @@ export const uiChannelMessageSchema: TypertSchema<UiChannelMessage> = { parse(va
   else if (action.kind === 'selectSetMember' || action.kind === 'selectZSetMember') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'member']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), member: identityAt(raw.member) } }
   else if (action.kind === 'selectStreamField') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'id', 'fieldIndex', 'fieldBase64']), id = stringAt(raw.id, 41); if (!isStreamId(id) || id === '0-0') throw new TypeError('Redis RPC: invalid Stream ID'); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), id, fieldIndex: integerAt(raw.fieldIndex, 0, MAX_SCAN_KEYS - 1), fieldBase64: byteStringAt(raw.fieldBase64, MAX_KEY_BYTES) } }
   else { objectAt(request.action, ['kind']); parsedAction = { kind: action.kind } }
-  if ((action.kind === 'show' || action.kind === 'refresh') !== (request.target === null)) throw new TypeError('Redis RPC: invalid UI action target')
+  if ((action.kind === 'show' || action.kind === 'refresh' || action.kind === 'applyMatch') !== (request.target === null)) throw new TypeError('Redis RPC: invalid UI action target')
   return { kind, request: { requestId: uiRequestId(request.requestId), action: parsedAction, target: request.target === null ? null : databaseTargetSchema.parse(request.target), selectionRevision: integerAt(request.selectionRevision, 0, Number.MAX_SAFE_INTEGER), expiresAt: integerAt(request.expiresAt, 1, Number.MAX_SAFE_INTEGER) } }
 } }
 
