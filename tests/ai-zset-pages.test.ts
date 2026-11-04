@@ -111,8 +111,8 @@ describe('AI ZSet scan continuation', () => {
       await expect(f.run({ key: 'zset', cursor: first.cursor, count: 1 })).rejects.toThrow()
       expect(scan).toHaveBeenCalledTimes(1)
       expect(decode(await f.run({ key: 'zset', cursor: first.cursor, match: '*' })).scanComplete).toBe(true)
-      await expect(f.run({ key: 'hash', match: '*', offset: '0', count: 1 })).resolves.toBeDefined()
-      await expect(f.run({ key: 'set', match: '*', offset: '0', count: 1 })).resolves.toBeDefined()
+      await expect(f.run({ key: 'hash', match: '*' })).resolves.toBeDefined()
+      await expect(f.run({ key: 'set', match: '*' })).resolves.toBeDefined()
     } finally { f.reader.dispose(); f.connections.dispose() }
   })
   it('does not let a delayed rank probe invalidate a newer ZSet continuation', async () => {
@@ -161,8 +161,8 @@ describe('AI ZSet scan continuation', () => {
       await expect(f.run({ key: 'zset', match: '*', cursor: first.cursor, count: 1 })).rejects.toThrow()
       const cancelled = new AbortController(); cancelled.abort()
       await expect(f.run({ key: 'zset', match: '*', cursor: first.cursor }, cancelled)).rejects.toThrow()
-      await expect(f.run({ key: 'hash', match: '*', offset: '0', count: 1 })).resolves.toBeDefined()
-      await expect(f.run({ key: 'set', match: '*', offset: '0', count: 1 })).resolves.toBeDefined()
+      await expect(f.run({ key: 'hash', match: '*' })).resolves.toBeDefined()
+      await expect(f.run({ key: 'set', match: '*' })).resolves.toBeDefined()
       release()
       expect(decode(await older).mode).toBe('range')
     } finally { release(); vi.restoreAllMocks(); f.reader.dispose(); f.connections.dispose() }

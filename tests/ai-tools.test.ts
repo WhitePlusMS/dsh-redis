@@ -478,6 +478,25 @@ describe('official Redis model tools', () => {
     expect((await f.call('redis_viewer_value', {})).isError).toBeFalsy()
     expect(f.commands).toContain('HGET')
   })
+  it.each([
+    ['plain', { match: '*' }], ['hash', { offset: '1' }], ['list', { match: '*' }],
+    ['set', { bytes: 1 }], ['zset', { start: '-' }], ['stream', { offset: '0' }],
+  ])('rejects unsupported range arguments for %s before reading values', async (key, args) => {
+    const f = await fixture(), result = await f.call('redis_viewer_value', { key, ...args })
+    expect(result.isError).toBe(true)
+    expect(content(result)).toContain('不支持参数')
+    expect(f.commands).toEqual(['TYPE'])
+  })
+  it('does not consume a collection continuation when its arguments are incompatible', async () => {
+    const f = await fixture()
+    const first = JSON.parse(content(await f.call('redis_viewer_value', { key: 'hash' }))) as { value: { cursor: string } }
+    const before = f.commands.length
+    expect((await f.call('redis_viewer_value', { key: 'hash', cursor: first.value.cursor, offset: '1' })).isError).toBe(true)
+    expect(f.commands).toHaveLength(before)
+    const retried = await f.call('redis_viewer_value', { key: 'hash', cursor: first.value.cursor })
+    expect(retried.isError).toBeFalsy()
+    expect(content(retried)).toContain('"scanComplete":true')
+  })
   it('continues a split Key page through the registered tool without losing identities', async () => {
     const keys = Array.from({ length: 180 }, (_value, index) => Buffer.from(String(index).padStart(4, '0') + 'x'.repeat(500)))
     const f = await fixture(undefined, async () => [Buffer.from('0'), keys])

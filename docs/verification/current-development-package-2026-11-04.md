@@ -2,7 +2,7 @@
 
 ## 对象与范围
 
-- 打包源码提交：`4eafb8d`；包版本 `dsh-redis@0.1.1`，声明目标 DSH `0.2.1-rc.5`。
+- 此记录对应较早的源码提交 `4eafb8d`，不包含后续的读取参数校验修复；当前源码需要重新打包。包版本 `dsh-redis@0.1.1`，声明目标 DSH `0.2.1-rc.5`。
 - 本机归档：`.scratch/readonly-pack-4eafb8d-20261104/dsh-redis-0.1.1.tgz`。
 - SHA-256：`4135363b94a45f49a73f1ebc794fab02352a3d6d5be9e0df43a37eb0ec90418f`。
 - 这是一份本地开发包，并非发布、推送或日常 profile 已安装的证明。

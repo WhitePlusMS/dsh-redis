@@ -35,6 +35,10 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     await ctx.plugin({ name: 'redis-six-types-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     let index = 0
+    const commandCount = async name => Number(new RegExp('^cmdstat_' + name + ':calls=(\\d+)', 'mu').exec(await admin.info('commandstats'))?.[1] ?? 0)
+    const readsBefore = await commandCount('getrange')
+    const invalid = await ctx.tools.execute({ callId: 'invalid-range', name: 'redis_viewer_value', arguments: { key: keys.string, match: '*' }, agent, signal })
+    assert.equal(invalid.isError, true); assert.equal(await commandCount('getrange'), readsBefore)
     const read = async arguments_ => {
       const result = await ctx.tools.execute({ callId: 'fixture-' + ++index, name: 'redis_viewer_value', arguments: arguments_, agent, signal })
       assert.equal(result.isError, false)
@@ -66,4 +70,4 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
 }, { passwordRequired: false })
 assert(fixture.stopped)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['six explicit Key types without sidebar', 'truncation and missing Key', 'duplicate Stream fields', 'unchanged fixture data and expiry'] }))
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['six explicit Key types without sidebar', 'incompatible String scope rejected before GETRANGE', 'truncation and missing Key', 'duplicate Stream fields', 'unchanged fixture data and expiry'] }))

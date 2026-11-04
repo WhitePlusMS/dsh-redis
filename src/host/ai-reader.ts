@@ -64,6 +64,20 @@ export interface AiValueRequest {
   readonly direction?: string
 }
 
+/** Reject conditions a type-specific reader would otherwise silently ignore. */
+function invalidRange(type: string, args: AiValueRequest): string | null {
+  const allowed: Record<string, readonly (keyof AiValueRequest)[]> = {
+    string: ['offset', 'bytes'], hash: ['match', 'cursor'], list: ['offset', 'count'],
+    set: ['match', 'cursor'], zset: ['offset', 'count', 'match', 'cursor'],
+    stream: ['start', 'end', 'direction', 'count', 'cursor'],
+  }
+  const options: readonly (keyof AiValueRequest)[] = ['cursor', 'offset', 'count', 'bytes', 'match', 'start', 'end', 'direction']
+  const supported = allowed[type]
+  if (supported === undefined) return null
+  const rejected = options.filter(name => args[name] !== undefined && !supported.includes(name))
+  return rejected.length === 0 ? null : `${type} 不支持参数 ${rejected.join('、')}，请按类型重新指定读取范围。`
+}
+
 /** A separate reader bank shares the real connection, never the UI's cursors. */
 export class RedisAiReader {
   private readonly budget = new RedisAiBudget()
@@ -487,6 +501,7 @@ export class RedisAiReader {
     // same input validation as a first read before it can consume a token.
     const probeRequest = stringReadRequestSchema.parse({ ...common, offset, count: args.bytes ?? MAX_AI_VALUE_BYTES })
     const readHash = async (): Promise<AiJson> => {
+      const error = invalidRange('hash', args); if (error !== null) throw new Error(error)
       const request = scanHashRequestSchema.parse({ ...common, pattern, cursor: null })
       const page = await this.hashPages.prepare(sessionId, cursor, hashSnapshot, slot => slot.prepare(sessionId, request.target, request.keyBase64, request.pattern, cursor, selected, () => {
         if (selected !== null && this.selections.get(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
@@ -496,6 +511,7 @@ export class RedisAiReader {
       return page.result
     }
     const readSet = async (): Promise<AiJson> => {
+      const error = invalidRange('set', args); if (error !== null) throw new Error(error)
       const request = scanSetRequestSchema.parse({ ...common, pattern, cursor: null })
       const page = await this.setPages.prepare(sessionId, cursor, setSnapshot, slot => slot.prepare(sessionId, request.target, request.keyBase64, request.pattern, cursor, selected, () => {
         if (selected !== null && this.selections.get(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
@@ -505,6 +521,7 @@ export class RedisAiReader {
       return page.result
     }
     const readZSetScan = async (): Promise<AiJson> => {
+      const error = invalidRange('zset', args); if (error !== null) throw new Error(error)
       if (args.offset !== undefined || args.count !== undefined) throw new Error('ZSet 扫描模式不能同时使用 offset 或 count。')
       const request = zsetReadRequestSchema.parse({ ...common, mode: 'scan', pattern, cursor: null })
       if (request.mode !== 'scan') throw new Error('Invalid ZSet scan mode')
@@ -516,6 +533,7 @@ export class RedisAiReader {
       return page.result
     }
     const readStream = async (): Promise<AiJson> => {
+      const error = invalidRange('stream', args); if (error !== null) throw new Error(error)
       const request = streamReadRequestSchema.parse({ ...common, direction: args.direction ?? 'forward', start: args.start ?? '-', end: args.end ?? '+', count, cursor: null })
       const page = await this.streamPages.prepare(sessionId, cursor, streamSnapshot, slot => slot.prepare(sessionId, request, cursor, selected, () => {
         if (selected !== null && this.selections.get(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
@@ -531,7 +549,7 @@ export class RedisAiReader {
     if (isAiStreamCursor(cursor)) return readStream()
     // Reuse the same bounded type discovery used by the sidebar. Readers check
     // the type/target again, so a concurrent change never becomes a false value.
-    const probe = await this.strings.read(sessionId, probeRequest, signal)
+    const probe = await this.strings.read(sessionId, probeRequest, signal, type => invalidRange(type, args))
     let data: unknown = probe, readError = probe.error
     if (probe.state === 'unsupported') {
       switch (probe.metadata?.type) {

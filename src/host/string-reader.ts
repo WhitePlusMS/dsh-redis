@@ -4,12 +4,13 @@ import { RedisFrameError } from './resp.ts'
 import { RedisReadContext } from './read-context.ts'
 
 const MAX_INTEGER = (1n << 63n) - 1n
+class InvalidTypeArguments extends Error {}
 
 /** Only fixed metadata and GETRANGE operations; never fetch a full value then truncate. */
 export class RedisStrings {
   constructor(private readonly connections: RedisConnections) {}
 
-  async read(sessionId: string, request: StringReadRequest, signal: AbortSignal): Promise<StringReadResult> {
+  async read(sessionId: string, request: StringReadRequest, signal: AbortSignal, validateType?: (type: string) => string | null): Promise<StringReadResult> {
     const context = new RedisReadContext(this.connections, sessionId, request.target, signal)
     const result = (state: StringReadResult['state'], error: StringReadResult['error'] = null, metadata: KeyMetadata | null = null): StringReadResult => ({
       state, error, metadata, offset: request.offset, base64: '', byteLength: 0, prefix: '', suffix: '', complete: false, nextOffset: null, sampledAt: new Date().toISOString(),
@@ -18,6 +19,9 @@ export class RedisStrings {
       const key = Buffer.from(request.keyBase64, 'base64')
       const firstType = await context.type(key)
       if (firstType === 'none') return result('missing')
+      // AI callers can reject incompatible ranges before any value is fetched.
+      const argumentError = validateType?.(firstType) ?? null
+      if (argumentError !== null) throw new InvalidTypeArguments(argumentError)
       const firstTtl = await context.ttl(key)
       if (firstTtl === -2n) return result('missing')
       if (firstType !== 'string') return result('unsupported', null, { type: firstType, ttlMs: String(firstTtl), length: null })
@@ -49,6 +53,7 @@ export class RedisStrings {
         nextOffset: bytes.length > 0 && next < secondLength ? String(next) : null,
       }
     } catch (error) {
+      if (error instanceof InvalidTypeArguments) throw error
       const code = context.error(error)
       return code === 'type-changed' ? result('changed') : result('failed', code)
     } finally { context.dispose() }
