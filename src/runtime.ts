@@ -8,7 +8,7 @@ import { RedisProfileSnapshots } from './host/profile-snapshots.ts'
 import { RedisMatchPresets } from './host/match-preset-store.ts'
 import { registerRedisMatchTools } from './host/ai-match-tools.ts'
 import { registerRedisConnectionTools } from './host/ai-connection-tools.ts'
-import { RedisReportSamples, RedisReports, registerRedisReportTools } from './host/ai-report-tools.ts'
+import { RedisReports, registerRedisReportTools } from './host/ai-report-tools.ts'
 
 /** Sidebar and model tools share one Host-owned connection per trusted session. */
 export function apply(ctx: Context): void {
@@ -18,7 +18,7 @@ export function apply(ctx: Context): void {
   registerRedisProfileTools(ctx, service.ai, snapshots, (agent, signal) => service.listProfiles(agent, {}, signal))
   registerRedisConnectionTools(ctx, service.ai, snapshots, (agent, profile, signal, isCurrent) => service.connectSavedProfile(agent, profile, signal, isCurrent), (agent, target, signal) => service.disconnect(agent, target, signal))
   registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir), service.uiActions)
-  registerRedisReportTools(ctx, service.ai, new RedisReportSamples(), new RedisReports(ctx.profileContext.dir))
+  registerRedisReportTools(ctx, service.ai, new RedisReports(ctx.profileContext.dir))
   registerRedisLocateTool(ctx, service.ai, service.uiActions)
   registerRedisUiTools(ctx, service.uiActions)
   registerRedisRefreshTool(ctx, service.ai, service.uiActions)

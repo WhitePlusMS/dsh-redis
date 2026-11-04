@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
-import type { RedisAiReader } from './ai-reader.ts'
+import type { AiJson, RedisAiReader } from './ai-reader.ts'
+import type { ReportKind } from './ai-report-samples.ts'
 
 /** Identity is supplied by DSH execution, never accepted as model arguments. */
 function owner(exec: ToolRunContext): string {
@@ -13,9 +14,15 @@ function strict(args: object, allowed: readonly string[]): void {
 }
 const output = { schema: { type: 'json' as const }, render: (_args: unknown, value: unknown) => [{ type: 'text' as const, text: JSON.stringify(value) }] }
 const connectionViewMeaning = 'connection.generation 是插件连接与 DB 视图的版本，切换 DB 时可能递增；不能仅凭版本变化推断物理连接重建或 Redis 服务器重启。'
+const reportable = ' 返回的 reportSampleId 标识本次采样；用户明确要求保存该结果时，将它传给 redis_viewer_save_diagnostic_report，不必重新查询。标识只在本会话保留最近 16 个；若未返回该字段则本次结果不可保存报告。'
 
 /** Official registry registrations are owned and unwound by this plugin fiber. */
 export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
+  const diagnostic = (session: string, signal: AbortSignal, kind: ReportKind, read: () => Promise<AiJson>) => reader.withBudget(session, signal, async stage => {
+    const result = await read(), prepared = reader.reportSamples.prepare(session, kind, result, signal)
+    stage(prepared)
+    return prepared.result
+  })
   ctx.tools.register(defineTool({
     name: 'redis_viewer_status', description: '查看当前 DSH 对话已连接的 Redis、当前 DB 和侧栏选择同步状态。selectionSync 为 unavailable 时无法确认侧栏选择，currentSelection 为 null 不代表用户没有选择；仅 synchronized 时才返回当前已同步的 Key/字段/行标识。顶层 sampledAt 是本次状态时间，currentSelection.sampledAt 是该选择在 Host 的记录时间。' + connectionViewMeaning + '不会连接其他服务器。查询前先检查状态；解释当前选中值时，不传key调用redis_viewer_value。所有Redis数据操作只读。',
     parameters: {}, output,
@@ -38,34 +45,34 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。使用 MEMORY USAGE 和固定 SAMPLES 5，聚合类型为采样估计而非精确总量；bytes 为十进制字符串。Key 不存在、权限不足和读取失败分别报告，不读取值、不跨库。',
+    name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。使用 MEMORY USAGE 和固定 SAMPLES 5，聚合类型为采样估计而非精确总量；bytes 为十进制字符串。Key 不存在、权限不足和读取失败分别报告，不读取值、不跨库。' + reportable,
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'memory', () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_compare_strings', description: '仅在用户明确给出当前 DB 的两个 String Key 并要求比较时使用。左侧 left/leftBase64 与右侧 right/rightBase64 各选一个，Base64 用于二进制 Key。每侧比较前 4096 字节，底层读取器还可能读取 3 个文本边界字节；不返回原始值。comparison 为 equal、different、undetermined 或 unavailable。长度或前缀不同可判断不同；前缀相同但有截断只能说无法判定。两次采样有各自时间，并非原子快照；不存在、类型不符、权限失败分别在两侧报告。',
+    name: 'redis_viewer_compare_strings', description: '仅在用户明确给出当前 DB 的两个 String Key 并要求比较时使用。左侧 left/leftBase64 与右侧 right/rightBase64 各选一个，Base64 用于二进制 Key。每侧比较前 4096 字节，底层读取器还可能读取 3 个文本边界字节；不返回原始值。comparison 为 equal、different、undetermined 或 unavailable。长度或前缀不同可判断不同；前缀相同但有截断只能说无法判定。两次采样有各自时间，并非原子快照；不存在、类型不符、权限失败分别在两侧报告。' + reportable,
     parameters: { left: { type: 'string' }, leftBase64: { type: 'string' }, right: { type: 'string' }, rightBase64: { type: 'string' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['left', 'leftBase64', 'right', 'rightBase64']); return reader.compareStrings(session, args, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'compare_strings', () => { strict(args, ['left', 'leftBase64', 'right', 'rightBase64']); return reader.compareStrings(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_slowlog', description: '在用户询问慢查询时，只读取得当前连接的 Redis 服务器最近慢日志，count 范围 1 到 10，默认 10。只返回记录 ID、Unix 秒、执行耗时微秒和安全的命令名，不返回命令参数、客户端地址或名称。慢日志是服务器范围而非当前 DB，执行耗时不含网络，空结果不代表历史或当前绝无慢查询；权限不足和读取失败会明确报告。',
+    name: 'redis_viewer_slowlog', description: '在用户询问慢查询时，只读取得当前连接的 Redis 服务器最近慢日志，count 范围 1 到 10，默认 10。只返回记录 ID、Unix 秒、执行耗时微秒和安全的命令名，不返回命令参数、客户端地址或名称。慢日志是服务器范围而非当前 DB，执行耗时不含网络，空结果不代表历史或当前绝无慢查询；权限不足和读取失败会明确报告。' + reportable,
     parameters: { count: { type: 'integer' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['count']); return reader.slowLog(session, args.count ?? 10, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'slowlog', () => { strict(args, ['count']); return reader.slowLog(session, args.count ?? 10, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_overview', description: '按用户问题只读查看当前 Redis 服务器一个概况类别：server（版本和运行时长）、memory（内存）、clients（连接数量）、stats（命令与命中等计数）。section 必须明确为其中一种，数值保留字符串精度；只返回固定白名单字段，不返回 INFO 原文。scope 为服务器范围，缺少字段用 partial 和 missing 表示，不能以单次采样推断变化趋势或故障原因。',
+    name: 'redis_viewer_overview', description: '按用户问题只读查看当前 Redis 服务器一个概况类别：server（版本和运行时长）、memory（内存）、clients（连接数量）、stats（命令与命中等计数）。section 必须明确为其中一种，数值保留字符串精度；只返回固定白名单字段，不返回 INFO 原文。scope 为服务器范围，缺少字段用 partial 和 missing 表示，不能以单次采样推断变化趋势或故障原因。' + reportable,
     parameters: { section: { type: 'string', required: true } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['section']); return reader.overview(session, args.section, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'overview', () => { strict(args, ['section']); return reader.overview(session, args.section, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_clients', description: '仅在用户询问连接明细时只读采样当前 Redis 服务器客户端。最多返回 20 个连接的 ID、连接时长、空闲秒数、DB 和标志，不返回客户端地址、名称、用户名或命令；当前服务器连接信息仍包含在 connection 中。totalCount 是收到的总数，complete 为 false 表示只展示部分。CLIENT LIST 是服务器范围且无服务端分页，会遍历所有连接；超大响应和权限不足明确报错。单次采样不能代表趋势或断言故障原因。',
+    name: 'redis_viewer_clients', description: '仅在用户询问连接明细时只读采样当前 Redis 服务器客户端。最多返回 20 个连接的 ID、连接时长、空闲秒数、DB 和标志，不返回客户端地址、名称、用户名或命令；当前服务器连接信息仍包含在 connection 中。totalCount 是收到的总数，complete 为 false 表示只展示部分。CLIENT LIST 是服务器范围且无服务端分页，会遍历所有连接；超大响应和权限不足明确报错。单次采样不能代表趋势或断言故障原因。' + reportable,
     parameters: {}, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, []); return reader.clients(session, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'clients', () => { strict(args, []); return reader.clients(session, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_stream_groups', description: '用户询问 Stream 消费组或消息积压时，按明确 key 或 keyBase64 只读 XINFO GROUPS。返回每组 pending（已投递未确认）和 lag（未投递，可能未知），以及消费人数和最后投递 ID；不读取消息，不确认或推进消费。最多输出 20 个组，complete 为 false 表示只返回部分；Redis 不能服务端分页，超大响应会明确失败。采样不是一致性快照，不能单凭一次计数推断积压原因或趋势。',
+    name: 'redis_viewer_stream_groups', description: '用户询问 Stream 消费组或消息积压时，按明确 key 或 keyBase64 只读 XINFO GROUPS。返回每组 pending（已投递未确认）和 lag（未投递，可能未知），以及消费人数和最后投递 ID；不读取消息，不确认或推进消费。最多输出 20 个组，complete 为 false 表示只返回部分；Redis 不能服务端分页，超大响应会明确失败。采样不是一致性快照，不能单凭一次计数推断积压原因或趋势。' + reportable,
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64']); return reader.streamGroups(session, args, exec.signal) }) },
+    async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'stream_groups', () => { strict(args, ['key', 'keyBase64']); return reader.streamGroups(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
     name: 'redis_viewer_select_db', description: '仅在用户明确要求切换DB时使用：切换当前对话已连接Redis的数据库，并让侧栏同步。结果的 requestedDb 是请求目标，connection 是实际状态，sampledAt 是本次状态时间。' + connectionViewMeaning + '普通查询必须沿用当前DB，不能为了搜索自行切库；不会连接其他服务器或写入Redis数据。',

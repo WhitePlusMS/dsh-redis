@@ -23,18 +23,13 @@ import { RedisAiZSetPages, isAiZSetCursor } from './ai-zset-pages.ts'
 import { RedisAiStreamPages, isAiStreamCursor } from './ai-stream-pages.ts'
 import { RedisAiHashFilter } from './ai-hash-filter.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
+import { RedisReportSamples, overviewFields } from './ai-report-samples.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
 import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, setMemberReadRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
-export const overviewFields = {
-  server: ['redis_version', 'uptime_in_seconds'],
-  memory: ['used_memory', 'used_memory_rss', 'maxmemory', 'mem_fragmentation_ratio'],
-  clients: ['connected_clients', 'blocked_clients'],
-  stats: ['total_connections_received', 'total_commands_processed', 'instantaneous_ops_per_sec', 'rejected_connections', 'evicted_keys', 'expired_keys', 'keyspace_hits', 'keyspace_misses'],
-} as const
 type OverviewSection = keyof typeof overviewFields
 /** Text identities must round-trip exactly; arbitrary bytes use canonical Base64. */
 function encodeIdentity(value: string): string {
@@ -69,6 +64,7 @@ export interface AiValueRequest {
 /** A separate reader bank shares the real connection, never the UI's cursors. */
 export class RedisAiReader {
   private readonly budget = new RedisAiBudget()
+  readonly reportSamples = new RedisReportSamples()
   private readonly keys: RedisKeys
   private readonly keyPages: RedisAiKeyPages
   private readonly hashFilter: RedisAiHashFilter
@@ -581,9 +577,9 @@ export class RedisAiReader {
     this.streamPages.disposeSession(sessionId)
     this.disposeCursors(sessionId)
   }
-  disposeSession(sessionId: string): void { this.clearTarget(sessionId); this.budget.disposeSession(sessionId) }
+  disposeSession(sessionId: string): void { this.clearTarget(sessionId); this.budget.disposeSession(sessionId); this.reportSamples.disposeSession(sessionId) }
   private disposeCursors(sessionId: string): void {
     this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.zsetRanks.disposeSession(sessionId); this.streams.disposeSession(sessionId)
   }
-  dispose(): void { this.selections.clear(); this.budget.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
+  dispose(): void { this.selections.clear(); this.budget.dispose(); this.reportSamples.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
 }
