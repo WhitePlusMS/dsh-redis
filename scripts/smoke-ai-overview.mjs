@@ -30,10 +30,17 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert.equal(value.scope, 'server'); assert.equal(value.section, section); assert.notEqual(value.state, 'failed')
       assert.equal(typeof value.fields[field], 'string'); assert(!text.includes('synthetic-value'))
     }
+    const clients = await ctx.tools.execute({ callId: 'clients-call', name: 'redis_viewer_clients', arguments: {}, agent, signal })
+    assert.equal(clients.isError, false)
+    const clientText = clients.content.filter(block => block.type === 'text').map(block => block.text).join('')
+    const sample = JSON.parse(clientText)
+    assert.equal(sample.state, 'value'); assert.equal(sample.scope, 'server'); assert(sample.totalCount >= 2)
+    assert(sample.clients.every(client => Object.keys(client).sort().join(',') === 'ageSeconds,db,flags,id,idleSeconds'))
+    assert(!JSON.stringify(sample.clients).includes('127.0.0.1')); assert(!clientText.includes('synthetic-value'))
     assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:key']), before)
   } finally {
     await ctx.fiber.dispose(); reader.dispose(); connections.dispose()
   }
 }, { passwordRequired: false })
 assert(fixture.stopped)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['four fixed INFO sections', 'only allowed metrics', 'unchanged fixture Key'] }))
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['four fixed INFO sections', 'bounded client metadata', 'only allowed fields', 'unchanged fixture Key'] }))

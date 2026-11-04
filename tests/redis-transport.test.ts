@@ -182,7 +182,7 @@ describe('bounded Redis socket transport', () => {
   it('rejects removed diagnostic and module commands before dispatch', async () => {
     await withPeer(async (transport, commands) => {
       // Cast deliberately untrusted input to exercise the runtime boundary too.
-      for (const command of ['CLIENT', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'BF.EXISTS']) {
+      for (const command of ['JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'BF.EXISTS']) {
         await expect(transport.execute(command as RedisReadCommand, [], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
       }
       for (const args of [[], ['all']]) await expect(transport.execute('INFO', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
@@ -243,6 +243,14 @@ describe('bounded Redis socket transport', () => {
       expect(await transport.execute('XINFO', ['GROUPS', Buffer.from([0, 255])], signal(), () => undefined)).toEqual([])
       expect(commands).toEqual(['PING', 'XINFO'])
     }, (socket, args) => { expect(args).toEqual([Buffer.from('XINFO'), Buffer.from('GROUPS'), Buffer.from([0, 255])]); socket.write('*0\r\n') })
+  })
+  it('allows only CLIENT LIST and rejects connection administration', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['KILL', 'ID', '1'], ['PAUSE', '100'], ['LIST', 'ID', '1'], [Buffer.from('LIST')]]) await expect(transport.execute('CLIENT', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('CLIENT', ['LIST'], signal(), () => undefined)).toEqual(Buffer.alloc(0))
+      expect(commands).toEqual(['PING', 'CLIENT'])
+    }, (socket, args) => { expect(args).toEqual([Buffer.from('CLIENT'), Buffer.from('LIST')]); socket.write('$0\r\n\r\n') })
   })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {

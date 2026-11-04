@@ -1,5 +1,12 @@
 # 更新说明
 
+## 2026-11-04 增加 AI 客户端只读诊断
+
+- 修改 `src/host/redis-transport.ts`、`src/host/client-list.ts`、`src/host/ai-reader.ts` 和 `src/host/ai-tools.ts`：增加连接状态采样，只允许 `CLIENT LIST`，屏蔽地址、名称、用户名及命令，最多返回 20 条。该命令无服务端分页，超出响应限制时报错。
+- 修改 `tests/redis-transport.test.ts`、`tests/ai-tools.test.ts`、`scripts/smoke-ai-overview.mjs` 和任务清单：检查管理命令拒绝、字段过滤、权限及截断，并加入隔离 Redis 实测，记录真实模型验收仍待完成。
+- 原因和影响：补齐按需排障能力，结果属于服务器级单次采样，不执行客户端管理或修改业务数据。
+- 验证：基线 `pnpm check -- --silent` 通过类型检查、构建及 71 文件/572 项测试；新增诊断的类型检查及 2 文件/71 项专项通过。隔离 Redis 8.2.6 与 DSH ToolRuntime 实测通过，Key 未变且夹具已停止；首次断言误将既有当前连接地址计入客户端列表，修正检查范围后重跑通过。真实 DSH 和用户模型仍待验收。
+
 ## 2026-11-04 增加 AI 会话断开连接
 
 - 修改 `src/host/ai-connection-tools.ts`、`src/runtime.ts`：按用户明确请求断开当前对话的 Redis，必须携带状态中获取的连接 ID 和代次；旧身份返回 stale，不触及替换后的连接或其他会话。

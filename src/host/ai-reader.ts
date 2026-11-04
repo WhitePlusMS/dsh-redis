@@ -12,6 +12,7 @@ import { RedisSelectedReader } from './selected-reader.ts'
 import { RedisReadContext } from './read-context.ts'
 import { RedisFrameError, RedisReplyError } from './resp.ts'
 import { projectStreamGroups } from './stream-groups.ts'
+import { projectClients } from './client-list.ts'
 import { MAX_AI_RESULT_BYTES, RedisAiBudget } from './ai-budget.ts'
 import { RedisAiKeyPages } from './ai-key-pages.ts'
 import type { PreparedAiPage } from './ai-page-store.ts'
@@ -306,6 +307,21 @@ export class RedisAiReader {
       const code = context.error(error)
       this.connections.assertReadResult(sessionId, target, code)
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', section: selected, state: 'failed', fields: {}, missing: expected, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+    } finally { context.dispose() }
+  }
+  /** CLIENT LIST is server-wide and may exceed the bounded RESP frame. */
+  async clients(sessionId: string, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    const target = this.target(sessionId), context = new RedisReadContext(this.connections, sessionId, target, signal)
+    try {
+      const result = projectClients(await context.command('CLIENT', ['LIST']))
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'value', ...result, sampledAt: new Date().toISOString(), error: null, errorMessage: null })
+    } catch (error) {
+      signal.throwIfAborted()
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'failed', clients: [], totalCount: null, complete: false, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
   /** Sample group counters without fetching messages or advancing consumption. */
