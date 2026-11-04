@@ -205,6 +205,14 @@ describe('bounded Redis socket transport', () => {
       else { expect(text).toEqual(['CONFIG', 'GET', 'databases']); socket.write('*2\r\n$9\r\ndatabases\r\n$2\r\n16\r\n') }
     })
   })
+  it('limits server INFO to approved single sections', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['all'], ['everything'], ['server', 'memory'], [Buffer.from('server')]]) await expect(transport.execute('INFO', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      for (const section of ['server', 'memory', 'clients', 'stats']) expect(await transport.execute('INFO', [section], signal(), () => undefined)).toEqual(Buffer.alloc(0))
+      expect(commands).toEqual(['PING', 'INFO', 'INFO', 'INFO', 'INFO'])
+    }, socket => { socket.write('$0\r\n\r\n') })
+  })
   it('allows only a fixed, bounded MEMORY USAGE request', async () => {
     await withPeer(async (transport, commands) => {
       for (const args of [[], ['PURGE'], ['USAGE', Buffer.from('key')], ['USAGE', 'key', 'SAMPLES', '5'], ['USAGE', Buffer.from('key'), 'SAMPLES', '0'], ['USAGE', Buffer.from('key'), 'SAMPLES', '5', 'extra']]) {

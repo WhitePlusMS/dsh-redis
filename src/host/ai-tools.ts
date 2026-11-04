@@ -48,6 +48,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['count']); return reader.slowLog(session, args.count ?? 10, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_overview', description: '按用户问题只读查看当前 Redis 服务器一个概况类别：server（版本和运行时长）、memory（内存）、clients（连接数量）、stats（命令与命中等计数）。section 必须明确为其中一种，数值保留字符串精度；只返回固定白名单字段，不返回 INFO 原文。scope 为服务器范围，缺少字段用 partial 和 missing 表示，不能以单次采样推断变化趋势或故障原因。',
+    parameters: { section: { type: 'string', required: true } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['section']); return reader.overview(session, args.section, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_select_db', description: '仅在用户明确要求切换DB时使用：切换当前对话已连接Redis的数据库，并让侧栏同步。结果的 requestedDb 是请求目标，connection 是实际状态，sampledAt 是本次状态时间。' + connectionViewMeaning + '普通查询必须沿用当前DB，不能为了搜索自行切库；不会连接其他服务器或写入Redis数据。',
     parameters: { db: { type: 'integer', required: true, description: '用户明确要求的DB编号，0到65535。' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['db']); return reader.selectDatabase(session, args.db, exec.signal) }) },

@@ -1,5 +1,14 @@
 # 更新说明
 
+## 2026-11-04 增加 Redis 服务器概况
+
+- 扩展 `src/host/redis-transport.ts` 的 `INFO` 门禁，仅允许固定的服务器、内存、客户端、统计和原有 keyspace 章节，不允许默认、all 或任意章节。
+- 扩展 `src/host/ai-reader.ts` 和 `src/host/ai-tools.ts`：按明确类别只返回固定白名单指标，丢弃未知字段及不合格式的值；字段缺失标记部分结果，区分服务器范围、权限失败和采样时间。
+- 原因和影响：回答服务器内存、客户端数量和命令统计等常见问题，保留数字精度，不把 INFO 原文或未知信息发送给模型；继续沿用会话目标和预算。
+- 扩展 `tests/ai-tools.test.ts` 与 `tests/redis-transport.test.ts`，检查白名单、缺字段、精度、私有字段过滤、权限和 INFO 门禁。
+- 新增 `scripts/smoke-ai-overview.mjs` 验证四类实际 Redis INFO 回复及合成 Key 不变；`docs/AI_READ_USAGE.md` 列出使用方法和部分结果语义。
+- 验证：`pnpm typecheck`、构建及 2 个测试文件/65 项通过；Redis 8.2.6 隔离实例及实际 DSH ToolRuntime 对四个章节的验证通过，Key 数据不变，夹具已停止。用户模型和当前成品包的真实 DSH 验收仍待进行。
+
 ## 2026-11-04 增加有界慢日志诊断
 
 - 扩展 `src/host/redis-transport.ts`：仅允许 `SLOWLOG GET` 且最多 10 条，拒绝重置、无限条数和其他子命令。

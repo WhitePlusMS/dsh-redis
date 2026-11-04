@@ -18,6 +18,7 @@
 - “检查 `active:users` 中是否包含 `user:123`。”
 - “估计 `order:1001` 占用多少内存。”
 - “看看最近有哪些慢查询。”
+- “看看 Redis 当前内存和连接数。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “明确切到DB1，再查询 `order:1001`。”
 
@@ -46,6 +47,7 @@
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志时间、耗时和命令名，不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
+| `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。

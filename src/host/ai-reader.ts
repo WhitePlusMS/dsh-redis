@@ -27,6 +27,13 @@ import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, h
 
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
+const overviewFields = {
+  server: ['redis_version', 'uptime_in_seconds'],
+  memory: ['used_memory', 'used_memory_rss', 'maxmemory', 'mem_fragmentation_ratio'],
+  clients: ['connected_clients', 'blocked_clients'],
+  stats: ['total_connections_received', 'total_commands_processed', 'instantaneous_ops_per_sec', 'rejected_connections', 'evicted_keys', 'expired_keys', 'keyspace_hits', 'keyspace_misses'],
+} as const
+type OverviewSection = keyof typeof overviewFields
 /** Text identities must round-trip exactly; arbitrary bytes use canonical Base64. */
 function encodeIdentity(value: string): string {
   const bytes = Buffer.from(value, 'utf8')
@@ -266,6 +273,38 @@ export class RedisAiReader {
       const code = context.error(error)
       this.connections.assertReadResult(sessionId, target, code)
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'failed', requestedCount: count, returnedCount: 0, entries: [], sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+    } finally { context.dispose() }
+  }
+  /** Only a short allowlist of server metrics is returned to the model. */
+  async overview(sessionId: string, section: string, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if (!Object.hasOwn(overviewFields, section)) throw new Error('概况类别仅支持 server、memory、clients 或 stats。')
+    const selected = section as OverviewSection, expected: readonly string[] = overviewFields[selected]
+    const target = this.target(sessionId), context = new RedisReadContext(this.connections, sessionId, target, signal)
+    try {
+      const reply = await context.command('INFO', [selected])
+      signal.throwIfAborted()
+      if (!Buffer.isBuffer(reply)) throw new RedisFrameError('protocol')
+      let raw: string
+      try { raw = new TextDecoder('utf-8', { fatal: true }).decode(reply) } catch { throw new RedisFrameError('protocol') }
+      const fields: Record<string, string> = {}
+      for (const line of raw.split(/\r?\n/u)) {
+        const separator = line.indexOf(':')
+        if (separator < 1) continue
+        const name = line.slice(0, separator), value = line.slice(separator + 1)
+        if (!expected.includes(name)) continue
+        if (Object.hasOwn(fields, name)) throw new RedisFrameError('protocol')
+        const valid = name === 'redis_version' ? /^\d{1,3}\.\d{1,3}\.\d{1,3}(?:[-+][A-Za-z0-9.-]{1,32})?$/u.test(value) : name === 'mem_fragmentation_ratio' ? /^\d{1,12}(?:\.\d{1,12})?$/u.test(value) : /^\d{1,20}$/u.test(value)
+        if (valid) fields[name] = value
+      }
+      this.connections.assertTarget(sessionId, target)
+      const missing = expected.filter(name => !Object.hasOwn(fields, name))
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', section: selected, state: missing.length === 0 ? 'value' : 'partial', fields, missing, sampledAt: new Date().toISOString(), error: null, errorMessage: null })
+    } catch (error) {
+      signal.throwIfAborted()
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', section: selected, state: 'failed', fields: {}, missing: expected, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
