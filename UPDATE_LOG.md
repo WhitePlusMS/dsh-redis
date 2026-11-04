@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-04 AI 切库与会话隔离验证
+
+- 新增 `scripts/smoke-ai-database.mjs`，通过真实 DSH ToolRuntime 检查切库、会话隔离、无效数据库及 SELECT 权限拒绝，并核对合成数据及 TTL；确认失败时保留原数据库。
+- `pnpm typecheck` 和独立 Redis 8.2.6 切库专项通过，测试实例已停止；同步 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/current-development-package-2026-11-04.md`。当前构建的日常 DSH、实际侧栏和模型验收仍待完成。
+
 ## 2026-11-04 Redis 权限拒绝验证
 
 - 新增 `scripts/smoke-ai-permissions.mjs`，使用独立 Redis 的临时受限账号经过 DSH ToolRuntime 检查允许读取、字段读取及 Key 搜索被拒绝时的结果和错误脱敏，并核对合成数据及 TTL；避免将权限不足误判为空结果。
