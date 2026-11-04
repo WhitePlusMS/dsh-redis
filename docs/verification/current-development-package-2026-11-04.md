@@ -16,6 +16,7 @@
 - 空 profile 的 pnpm 报告 DSH/React peer 缺失；从本机 CLI 的解析入口核对到 12 个 Host 相关依赖与声明一致（Cordis `4.0.5`、其余 `0.2.1-rc.5`）。`dsh-client-ui-slots` 在源码中仅作类型引用；React 由浏览器运行时提供，实际运行身份尚待日常 DSH 验证。依赖可解析和组合配置存在不等于插件已加载运行。
 - 在本任务独立的 Redis `8.2.6` WSL 镜像上，通过真实 ToolRuntime 采样并回读服务器概况、慢日志、客户端、Key 内存、String 比较和 Stream 消费组报告；报告排除测试凭据及合成值，测试 Key 未变化，独立 Redis 已停止。专项还验证两次采样后保存第一次结果不会重新读取 Redis，取消不会留下可保存的采样。
 - 同样使用独立 Redis `8.2.6` 验证缺少 MATCH 时不发送 SCAN、明确前缀可查询，非法 Key/MATCH 文本不触发 TYPE，而合法替换字符和二进制 Key 可准确读取；测试数据及到期时间未变化，独立实例已停止。
+- 使用当前代码的真实 ToolRuntime 和独立 Redis `8.2.6`，在没有侧栏选择的情况下直接读取六种基础类型，并验证 String 截断、缺失 Key、Stream 重复字段、数据与 TTL 不变及写命令计数不增长；独立实例已停止。脚本为 `scripts/smoke-ai-six-types.mjs`，不等同真实模型对话。
 
 ## 仍待完成
 
