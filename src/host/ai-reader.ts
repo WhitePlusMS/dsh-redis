@@ -10,7 +10,8 @@ import { RedisZSets } from './zset-reader.ts'
 import { RedisStreams } from './stream-reader.ts'
 import { RedisSelectedReader } from './selected-reader.ts'
 import { RedisReadContext } from './read-context.ts'
-import { RedisFrameError } from './resp.ts'
+import { RedisFrameError, RedisReplyError } from './resp.ts'
+import { projectStreamGroups } from './stream-groups.ts'
 import { MAX_AI_RESULT_BYTES, RedisAiBudget } from './ai-budget.ts'
 import { RedisAiKeyPages } from './ai-key-pages.ts'
 import type { PreparedAiPage } from './ai-page-store.ts'
@@ -305,6 +306,37 @@ export class RedisAiReader {
       const code = context.error(error)
       this.connections.assertReadResult(sessionId, target, code)
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', section: selected, state: 'failed', fields: {}, missing: expected, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+    } finally { context.dispose() }
+  }
+  /** Sample group counters without fetching messages or advancing consumption. */
+  async streamGroups(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Stream Key 或规范 Base64 Key。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const keyBytes = Buffer.from(request.keyBase64, 'base64'), key = byteIdentity(keyBytes)
+    const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    try {
+      const firstType = await context.type(keyBytes)
+      if (firstType === 'none' || firstType !== 'stream') {
+        this.connections.assertTarget(sessionId, target)
+        return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: firstType === 'none' ? 'missing' : 'unsupported', type: firstType, groups: [], totalCount: null, complete: false, sampledAt: new Date().toISOString(), error: null, errorMessage: firstType === 'none' ? keyStateMessages.missing.zh : '指定 Key 不是 Stream。' })
+      }
+      const result = projectStreamGroups(await context.command('XINFO', ['GROUPS', keyBytes]))
+      const lastType = await context.type(keyBytes)
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      if (lastType !== 'stream') return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: lastType === 'none' ? 'missing' : 'changed', type: lastType, groups: [], totalCount: null, complete: false, sampledAt: new Date().toISOString(), error: null, errorMessage: lastType === 'none' ? keyStateMessages.missing.zh : keyStateMessages.changed.zh })
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'value', type: 'stream', ...result, sampledAt: new Date().toISOString(), error: null, errorMessage: null })
+    } catch (error) {
+      signal.throwIfAborted()
+      // Redis can remove the Stream between TYPE and XINFO; do not report it as a network failure.
+      if (error instanceof RedisReplyError && error.message === 'ERR no such key') {
+        this.connections.assertTarget(sessionId, target)
+        return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'missing', type: 'none', groups: [], totalCount: null, complete: false, sampledAt: new Date().toISOString(), error: null, errorMessage: keyStateMessages.missing.zh })
+      }
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: code === 'type-changed' ? 'changed' : 'failed', type: null, groups: [], totalCount: null, complete: false, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {

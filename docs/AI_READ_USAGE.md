@@ -19,6 +19,7 @@
 - “估计 `order:1001` 占用多少内存。”
 - “看看最近有哪些慢查询。”
 - “看看 Redis 当前内存和连接数。”
+- “查看 `events:orders` 的消费组积压情况。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “明确切到DB1，再查询 `order:1001`。”
 
@@ -48,6 +49,7 @@
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志时间、耗时和命令名，不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
+| `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
@@ -65,6 +67,8 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 ## 只读及运行边界
 
 工具不接收sessionId或自由命令，不自动建立连接，不返回密码；内存估计按明确 Key 单独调用，慢日志仅提供有界、去除参数的服务器记录。DB切换只影响所属连接的逻辑DB，不修改Redis业务数据。连接断开、代次变化、会话或插件释放会清理AI选择及游标。
+
+消费组查询不读取或确认消息。`pending` 是已投递但尚未确认的数量，`lag` 是尚未投递的数量，后者可能不可计算；一次采样不能证明积压原因或变化趋势。Redis `XINFO GROUPS` 没有服务端分页，实际响应仍需完整接收并受 RESP 限额约束，超限会明确失败。
 
 实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[实施记录](AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
 

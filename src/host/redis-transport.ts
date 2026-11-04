@@ -4,8 +4,8 @@ import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 
-export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE'
-const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE'])
+export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE'
+const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE'])
 const CONNECT_TIMEOUT = 8000
 const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16
@@ -106,7 +106,7 @@ export class RedisTransport {
     return () => { this.failures.delete(listener) }
   }
   execute(command: RedisReadCommand, arguments_: readonly RedisArgument[], signal: AbortSignal, beforeDispatch: () => void, deadline = Date.now() + READ_TIMEOUT): Promise<RedisReply> {
-    if (!READ_COMMANDS.has(command) || (command === 'DBSIZE' && arguments_.length !== 0) || (command === 'CONFIG' && (arguments_.length !== 2 || arguments_[0] !== 'GET' || arguments_[1] !== 'databases')) || (command === 'INFO' && !(arguments_.length === 1 && typeof arguments_[0] === 'string' && ['keyspace', 'server', 'memory', 'clients', 'stats'].includes(arguments_[0]))) || (command === 'MEMORY' && !(arguments_.length === 4 && arguments_[0] === 'USAGE' && Buffer.isBuffer(arguments_[1]) && arguments_[2] === 'SAMPLES' && arguments_[3] === '5')) || (command === 'SLOWLOG' && !(arguments_.length === 2 && arguments_[0] === 'GET' && typeof arguments_[1] === 'string' && /^(?:[1-9]|10)$/u.test(arguments_[1])))) return Promise.reject(new RedisFrameError('protocol'))
+    if (!READ_COMMANDS.has(command) || (command === 'DBSIZE' && arguments_.length !== 0) || (command === 'CONFIG' && (arguments_.length !== 2 || arguments_[0] !== 'GET' || arguments_[1] !== 'databases')) || (command === 'INFO' && !(arguments_.length === 1 && typeof arguments_[0] === 'string' && ['keyspace', 'server', 'memory', 'clients', 'stats'].includes(arguments_[0]))) || (command === 'MEMORY' && !(arguments_.length === 4 && arguments_[0] === 'USAGE' && Buffer.isBuffer(arguments_[1]) && arguments_[2] === 'SAMPLES' && arguments_[3] === '5')) || (command === 'SLOWLOG' && !(arguments_.length === 2 && arguments_[0] === 'GET' && typeof arguments_[1] === 'string' && /^(?:[1-9]|10)$/u.test(arguments_[1]))) || (command === 'XINFO' && !(arguments_.length === 2 && arguments_[0] === 'GROUPS' && Buffer.isBuffer(arguments_[1])))) return Promise.reject(new RedisFrameError('protocol'))
     return this.request([command, ...arguments_], signal, Math.min(deadline, Date.now() + READ_TIMEOUT), beforeDispatch)
   }
 

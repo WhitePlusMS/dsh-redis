@@ -236,6 +236,14 @@ describe('bounded Redis socket transport', () => {
       expect(args).toEqual([Buffer.from('SLOWLOG'), Buffer.from('GET'), Buffer.from('10')]); socket.write('*0\r\n')
     })
   })
+  it('allows only XINFO GROUPS for one binary Stream Key', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['STREAM', Buffer.from('key')], ['GROUPS', 'key'], ['GROUPS', Buffer.from('key'), 'extra']]) await expect(transport.execute('XINFO', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('XINFO', ['GROUPS', Buffer.from([0, 255])], signal(), () => undefined)).toEqual([])
+      expect(commands).toEqual(['PING', 'XINFO'])
+    }, (socket, args) => { expect(args).toEqual([Buffer.from('XINFO'), Buffer.from('GROUPS'), Buffer.from([0, 255])]); socket.write('*0\r\n') })
+  })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {
     await withPeer(async (transport, commands) => {
       const controller = new AbortController(); controller.abort()

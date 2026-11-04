@@ -1,5 +1,15 @@
 # 更新说明
 
+## 2026-11-04 增加 Stream 消费组只读诊断
+
+- 新增 `src/host/stream-groups.ts`：解析受限的 `XINFO GROUPS` 响应，保留组名原始字节、待确认数与未投递数，区分 lag 未知及服务器未报告，限制模型输出数量和字节。
+- 修改 `src/host/redis-transport.ts`、`src/host/ai-reader.ts`、`src/host/ai-tools.ts`：只允许明确 Stream Key 的 `XINFO GROUPS`，使用会话连接、类型校验、只读预算和固定错误；不读取消息、不 ACK、不推进消费组。
+- 原因和影响：让用户针对指定 Stream 排查消息积压；服务器命令不支持分页，回复过大时明确失败，部分投影和采样边界需如实展示。
+- 扩展 `tests/ai-tools.test.ts` 和 `tests/redis-transport.test.ts`：检查二进制组名、组数截断、未知 lag、缺失 Key、权限、错误格式、连接替换和子命令门禁。
+- 新增 `scripts/smoke-ai-stream-groups.mjs`，只在隔离 Redis 构造消息和消费状态并回读比较；`docs/AI_READ_USAGE.md` 解释 pending、lag 与无服务端分页的边界。
+- 处理 TYPE 与 XINFO 之间 Stream 消失的明确 Redis 回复，报告采样时 Key 缺失而非网络故障；增加对应竞态测试。
+- 验证：`pnpm typecheck`、构建及 2 个测试文件/69 项通过；隔离 Redis 8.2.6 和 DSH ToolRuntime 验证二进制 Stream Key、pending/lag 及前后组状态和数据不变，夹具已停止。真实 DSH 和用户模型仍待新构建验收。
+
 ## 2026-11-04 增加 Redis 服务器概况
 
 - 扩展 `src/host/redis-transport.ts` 的 `INFO` 门禁，仅允许固定的服务器、内存、客户端、统计和原有 keyspace 章节，不允许默认、all 或任意章节。
