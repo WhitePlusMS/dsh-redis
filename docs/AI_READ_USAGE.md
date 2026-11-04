@@ -1,6 +1,6 @@
 # 在DSH对话中读取Redis
 
-接入方式为 DSH 原生插件工具，不是 Redis MCP Server；当前开放读取和明确切 DB，未开放业务数据写入。实现路径、Typert RPC 与 MCP 的区别见[AI 读取架构说明](AI_READ_ARCHITECTURE.md)。
+接入方式为 DSH 原生插件工具，不是 Redis MCP Server；当前开放读取和明确切 DB，未开放业务数据写入。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
 
 ## 使用顺序
 
@@ -86,6 +86,6 @@ AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵�
 
 客户端列表同样没有服务端分页，Redis 需遍历连接并返回完整响应，受 RESP 大小限制；`complete: false` 表示只展示前 20 条，权限不足和超限不是空列表。
 
-实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[实施记录](AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
+实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[源码仓库中的实施记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
 
-2026-10-19已完成[真实模型与真实数据联调](verification/ai-read-real-data-2026-10-19.md)：真实Hash检索/读取、当前选中字段、明确切库与侧栏同步、跨会话隔离通过。实际库只有Hash，其他五类不标为真实数据验证通过。
+2026-10-19曾完成[真实模型与真实数据联调](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/ai-read-real-data-2026-10-19.md)：真实 Hash 检索/读取、当前选中字段、明确切库与侧栏同步、跨会话隔离通过。该记录只适用于当时构建；实际库只有 Hash，其他五类不标为真实数据验证通过。

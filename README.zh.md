@@ -135,7 +135,7 @@ Desktop、macOS、Linux 尚未验收。Node.js 声明范围也不等于范围内
 | `redis_viewer_value` | 读取指定 Key；不传 Key 时读取侧栏当前选择 |
 | `redis_viewer_select_db` | 用户明确要求时切换本对话的 DB，并同步侧栏 |
 
-开发版还注册了有界 Hash 筛选、Key 内存估计、慢日志、服务器概况、客户端和 Stream 消费组诊断，以及连接资料和界面工具。参数与限制见[源码仓库中的 AI 使用说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
+开发版还注册了有界 Hash 筛选、Key 内存估计、慢日志、服务器概况、客户端和 Stream 消费组诊断，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。参数与限制见随包的 [AI 使用说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
 
 这是通过 DSH 原生 Tool API 注册的自定义工具，**不是 MCP 服务**。Client 通过 Typert RPC 同步选择标识，工具实际调用时才从 Redis 读取值。界面和 AI 的分页状态分开，复用同一会话所属的网络连接。
 
@@ -153,7 +153,7 @@ Key 列表最多缓存 5,000 个 Key 或 2 MiB 编码结果。每轮自动扫描
 
 ## 验证与已知问题
 
-2026-11-04 基线通过类型检查、构建及 **71 个测试文件 / 572 项测试**；此后新增客户端诊断另通过专项测试和隔离 Redis 8.2.6 实测。此前部分开发构建使用合成数据通过了真实 DSH/模型提问；当前构建的原生界面通道及完整真实模型验收仍待完成，详见[源码仓库中的验收记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md)。历史测试不能代表当前构建已验收。
+2026-11-04 的 MATCH 预设实现通过类型检查、构建及 **76 个测试文件 / 600 项测试**；此后的诊断报告和协议调整已通过专项检查，当前成品包的完整检查另行记录。此前部分开发构建使用合成数据通过了真实 DSH/模型提问；当前构建的原生界面通道及完整真实模型验收仍待完成，详见[源码仓库中的验收记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md)。历史测试不能代表当前构建已验收。
 
 原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
 

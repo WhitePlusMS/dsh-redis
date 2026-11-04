@@ -135,7 +135,7 @@ Desktop, macOS and Linux operation have not been verified. The declared Node.js 
 | `redis_viewer_value` | Read a named Key or, with no Key argument, the current sidebar selection |
 | `redis_viewer_select_db` | Switch this conversation's DB when explicitly requested and synchronize the sidebar |
 
-The development build also registers bounded Hash filtering, Key memory estimates, slow-log metadata, server overview, client metadata and Stream consumer-group diagnostics, plus saved-profile and UI tools. See [AI usage in the source repository](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_USAGE.md) for parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
+The development build also registers bounded Hash filtering, Key memory estimates, slow-log metadata, server overview, client metadata and Stream consumer-group diagnostics, plus saved-profile and UI tools. On explicit request it can save a sanitized diagnostic sample locally. See the packaged [AI usage guide](docs/AI_READ_USAGE.md) for parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
 
 These are custom tools registered through DSH's native Tool API, **not an MCP server**. The Client uses Typert RPC to synchronize selection identifiers; values are read from Redis when a tool is called. UI and AI paging state are separate, while both use the same session-owned network connection.
 
@@ -153,7 +153,7 @@ Not included: Redis writes, a free-form command console, direct RDB/AOF loading,
 
 ## Verification and known issue
 
-The 2026-11-04 baseline passed typecheck, build and **71 test files / 572 tests** before the latest client diagnostic; that diagnostic additionally passed its targeted tests and isolated Redis 8.2.6 check. Earlier development builds passed some real DSH/model questions using synthetic data. The current build's native UI channel and complete real-model acceptance remain pending; see the [verification record in the source repository](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md). Historical tests do not prove acceptance of the current build.
+The 2026-11-04 MATCH-preset implementation passed typecheck, build and **76 test files / 600 tests**. Later diagnostic reports and the updated protocol passed targeted checks; a complete check of the current package is recorded separately. Earlier development builds passed some real DSH/model questions using synthetic data. Current native UI channel and complete real-model acceptance remain pending; see the [verification record in the source repository](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md). Historical tests do not prove acceptance of the current build.
 
 A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
 

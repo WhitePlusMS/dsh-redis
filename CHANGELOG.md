@@ -4,7 +4,11 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 ## [Unreleased]
 
-Future changes will be recorded here. / 后续改动记录在此。
+- Development build: ask about named Keys and explicit fields/members without first selecting a sidebar row; search names and filter Hash fields within bounded ranges.
+- Development build: bounded memory, slow-log, server, client, String comparison and Stream consumer-group diagnostics; explicitly requested local diagnostic reports exclude Redis values and raw Key/group names.
+- Development build: explicit saved-profile connection, disconnect, one-shot refresh, preview-format and saved MATCH-preset actions. UI actions require confirmation; full native DSH and model acceptance remains pending.
+- 开发版支持直接查询指定 Key、字段与成员，并按范围查找名称和筛选 Hash；提供有界诊断及用户明确要求的本地诊断报告，报告不含 Redis 值和原始 Key/消费组名。
+- 开发版支持明确要求时连接已保存资料、断开、单次刷新、切换预览格式及应用 MATCH 预设。界面动作须确认，完整原生 DSH 与模型验收仍待完成。
 
 ## [0.1.0] — 2026-10-20
 
