@@ -3,14 +3,18 @@ import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import { AutoRefreshClock, AUTO_REFRESH_INTERVALS, type RefreshSample, type RefreshSnapshot, type RefreshStopReason } from './auto-refresh.ts'
 import { Icon } from './Icon.tsx'
 import { NS } from './locales.ts'
+import type { DatabaseTarget } from '../domain.ts'
+import type { RefreshActionHandler } from './ui-pane-presence.ts'
+import { SelectionEpochContext } from './SelectionEpochContext.ts'
 
 /** DSH owns Session/tab visibility and record lifetime; the plugin never infers it from DOM shape. */
 export const RefreshVisibility = createContext<{ readonly visible: boolean; readonly signal: AbortSignal } | null>(null)
 const RefreshClock = createContext<{ readonly clock: AutoRefreshClock; readonly detailsOpen: boolean; readonly toggleDetails: () => void } | null>(null)
 
 /** Raw Key identity owns this boundary; the browser above owns connection/DB generation. */
-export function KeyAutoRefresh({ children }: { readonly children: ReactNode }) {
+export function KeyAutoRefresh({ children, action }: { readonly children: ReactNode; readonly action?: { readonly register: (handler: RefreshActionHandler) => () => void; readonly target: DatabaseTarget; readonly keyBase64: string } }) {
   const tab = useContext(RefreshVisibility), currentTab = useRef(tab)
+  const epoch = useContext(SelectionEpochContext)
   const [detailsOpen, setDetailsOpen] = useState(false)
   currentTab.current = tab
   const [clock] = useState(() => new AutoRefreshClock((run, milliseconds) => {
@@ -18,6 +22,32 @@ export function KeyAutoRefresh({ children }: { readonly children: ReactNode }) {
     return () => window.clearTimeout(timer)
   }, () => currentTab.current !== null && currentTab.current.visible && !currentTab.current.signal.aborted && document.visibilityState === 'visible'))
   useLayoutEffect(() => { clock.visibilityChanged() }, [clock, tab?.visible])
+  useLayoutEffect(() => {
+    if (action === undefined || epoch === null || tab?.visible === false || tab?.signal.aborted) return
+    return action.register(async (request, signal) => {
+      const target = request.action.target, controller = new AbortController()
+      const combined = AbortSignal.any([signal, controller.signal, AbortSignal.timeout(Math.max(1, request.expiresAt - Date.now())), ...(tab === null ? [] : [tab.signal])])
+      const validTarget = () => !combined.aborted && document.visibilityState === 'visible' && tab?.visible !== false && target.id === action.target.id && target.generation === action.target.generation && target.db === action.target.db && request.action.keyBase64 === action.keyBase64
+      if (!validTarget() || !epoch.current(request.selectionRevision)) return 'stale'
+      let starting = true, revision = request.selectionRevision
+      const unsubscribe = epoch.subscribe(snapshot => { if (!starting && snapshot.revision !== revision) controller.abort() })
+      try {
+        const pending = clock.refreshOnce(combined)
+        revision = epoch.snapshot().revision; starting = false
+        const outcome = await pending
+        if (outcome !== 'applied' || !validTarget()) return outcome === 'failed' ? 'failed' : 'stale'
+        // A collection read invalidates its old selection before dispatch; wait
+        // for that exact revision to be published after the new result renders.
+        if (!epoch.current(revision)) await new Promise<void>(resolve => {
+          const done = () => { stop(); combined.removeEventListener('abort', done); resolve() }
+          const stop = epoch.subscribe(snapshot => { if (snapshot.revision !== revision || snapshot.synchronized) done() })
+          combined.addEventListener('abort', done, { once: true })
+          if (combined.aborted || epoch.current(revision)) done()
+        })
+        return validTarget() && epoch.current(revision) ? 'applied' : 'stale'
+      } finally { unsubscribe(); controller.abort() }
+    })
+  }, [action?.register, action?.target.id, action?.target.generation, action?.target.db, action?.keyBase64, clock, epoch, tab?.visible, tab?.signal])
   useLayoutEffect(() => {
     const changed = () => clock.visibilityChanged()
     document.addEventListener('visibilitychange', changed)
@@ -62,6 +92,7 @@ interface ReaderOptions {
   readonly result: RefreshSample | null
   readonly failed: boolean
   readonly refresh: () => void
+  readonly refreshOnce: (signal: AbortSignal) => Promise<'applied' | 'failed' | 'stale'>
   readonly cancel: () => void
 }
 /** Readers keep committed queries and cancellation. Only the active view owns the source. */
@@ -71,7 +102,7 @@ export function useAutoRefreshReader(options: ReaderOptions): { readonly begin: 
   const active = options.active !== false
   useLayoutEffect(() => {
     if (clock === null || !active) return
-    return clock.attach(owner, { refresh: () => latest.current.refresh(), cancel: () => latest.current.cancel() })
+    return clock.attach(owner, { refresh: () => latest.current.refresh(), cancel: () => latest.current.cancel(), refreshOnce: signal => latest.current.refreshOnce(signal) })
   }, [clock, owner, active])
   useLayoutEffect(() => { if (active) clock?.report(owner, options.busy, options.result, options.failed) })
   return {

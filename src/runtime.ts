@@ -1,7 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { RedisRemoteService } from './remote-service.ts'
 import { registerRedisTools } from './host/ai-tools.ts'
-import { registerRedisUiTools } from './host/ai-ui-tools.ts'
+import { registerRedisRefreshTool, registerRedisUiTools } from './host/ai-ui-tools.ts'
 import { registerRedisProfileTools } from './host/ai-profile-tools.ts'
 import { registerRedisLocateTool } from './host/ai-locate-tool.ts'
 import { RedisProfileSnapshots } from './host/profile-snapshots.ts'
@@ -19,5 +19,6 @@ export function apply(ctx: Context): void {
   registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir))
   registerRedisLocateTool(ctx, service.ai, service.uiActions)
   registerRedisUiTools(ctx, service.uiActions)
+  registerRedisRefreshTool(ctx, service.ai, service.uiActions)
   console.info('[dsh-redis] Read-only Host registered')
 }

@@ -38,7 +38,7 @@ it.skipIf(browserPath === undefined)('keeps unscanned targets separate and never
     const props = {
       t: key => key,
       connection: { ...target, state: 'connected', target: { host: 'fixture', port: 6379 } },
-      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: handler => panes.registerKeyHandler('a', handler), registerHashHandler: handler => panes.registerHashHandler('a', handler), readActionPoint: async () => ({ ok: false }),
+      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: handler => panes.registerKeyHandler('a', handler), registerRefreshHandler: handler => panes.registerRefreshHandler('a', handler), registerHashHandler: handler => panes.registerHashHandler('a', handler), readActionPoint: async () => ({ ok: false }),
       setSelection: async request => { publications.push(request); return { ok: true, value: { accepted: true } } },
       readDatabases: async () => ({ ok: false }),
       scanKeys: async () => ({ ok: true, value: { state: 'page', error: null, keys: [old, nested, sibling], cursor: null, sampledAt: '1970-01-01T00:00:00.000Z' } }),

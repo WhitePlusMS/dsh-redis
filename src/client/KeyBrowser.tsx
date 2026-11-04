@@ -17,10 +17,11 @@ import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
 import { CurrentSelection, type SetCurrentSelection } from './CurrentSelection.tsx'
 import { SelectionEpochContext, useSelectionRevision } from './SelectionEpochContext.ts'
-import type { KeyActionHandler, KeyActionRequest, KeyActionResult } from './ui-pane-presence.ts'
+import type { KeyActionHandler, KeyActionRequest, KeyActionResult, RefreshActionHandler } from './ui-pane-presence.ts'
 
 export interface KeyActions extends StringActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions {
   readonly registerKeyHandler: (handler: KeyActionHandler) => () => void
+  readonly registerRefreshHandler: (handler: RefreshActionHandler) => () => void
   readonly setSelection: SetCurrentSelection
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
@@ -232,7 +233,7 @@ export function KeyBrowser(props: Props) {
         const key = view.key
         if (key === null) return null
         const visible = view.serial === selection.serial
-        return <div key={key.base64 + ':' + view.serial} className="redis-key-view" hidden={!visible}><RefreshVisibility.Provider value={visible ? visibility : { visible: false, signal: visibility?.signal ?? hiddenSignal }}><CurrentSelection target={target()} keyBase64={key.base64} publish={props.setSelection} revision={epochRevision} suspended={!visible || view.token !== null}><KeyPresentation><KeyAutoRefresh>
+        return <div key={key.base64 + ':' + view.serial} className="redis-key-view" hidden={!visible}><RefreshVisibility.Provider value={visible ? visibility : { visible: false, signal: visibility?.signal ?? hiddenSignal }}><CurrentSelection target={target()} keyBase64={key.base64} publish={props.setSelection} revision={epochRevision} suspended={!visible || view.token !== null}><KeyPresentation><KeyAutoRefresh action={{ register: props.registerRefreshHandler, target: target(), keyBase64: key.base64 }}>
         {view.token !== null && <p role="status" data-locating-key>{t('keys.locating')}</p>}
         <div className="redis-key-view" data-pending-key-content={view.token !== null} ref={element => { if (element !== null) element.inert = view.token !== null }}>
         <div className="redis-inspector-heading"><Icon name="key" />{focused && <span className="redis-chip">db{connection.db}</span>}<strong title={displayLabel(key.label)}>{displayLabel(key.label)}</strong><KeyMetadataSummary t={t} inspect={() => userDetailTab('metadata')} /><button type="button" className="redis-icon-button redis-focus-button" aria-label={t(focused ? 'content.restore' : 'content.focus')} title={t(focused ? 'content.restore' : 'content.focus')} onClick={toggleFocus}><Icon name={focused ? 'restore' : 'focus'} /></button></div>

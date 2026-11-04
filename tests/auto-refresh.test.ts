@@ -9,11 +9,33 @@ function fixture() {
   const refresh = vi.fn(), cancel = vi.fn(), owner = Symbol('selected reader')
   const delay: RefreshDelay = (run, milliseconds) => { const timer = setTimeout(run, milliseconds); return () => clearTimeout(timer) }
   const clock = new AutoRefreshClock(delay, () => visible)
-  const detach = clock.attach(owner, { refresh, cancel })
+  const detach = clock.attach(owner, { refresh, cancel, refreshOnce: async () => 'stale' })
   return { clock, owner, refresh, cancel, detach, hide: () => { visible = false }, show: () => { visible = true } }
 }
 
 describe('current Key auto refresh lifecycle', () => {
+  it('waits for the owning reader confirmation without enabling periodic refresh', async () => {
+    const f = fixture(), owner = Symbol('one-shot reader')
+    let resolve!: (outcome: 'applied') => void
+    const pending = new Promise<'applied'>(done => { resolve = done })
+    f.clock.attach(owner, { refresh: vi.fn(), cancel: vi.fn(), refreshOnce: () => pending })
+    f.clock.report(owner, false, sample(), false)
+    const result = f.clock.refreshOnce(new AbortController().signal)
+    await expect(f.clock.refreshOnce(new AbortController().signal)).resolves.toBe('stale')
+    resolve('applied'); await expect(result).resolves.toBe('applied')
+    expect(f.clock.getSnapshot().enabled).toBe(false)
+    vi.advanceTimersByTime(30000); expect(f.refresh).not.toHaveBeenCalled()
+  })
+  it('does not report a one-shot result for a replaced reader', async () => {
+    const f = fixture(), owner = Symbol('one-shot reader')
+    let resolve!: (outcome: 'applied') => void
+    const pending = new Promise<'applied'>(done => { resolve = done })
+    f.clock.attach(owner, { refresh: vi.fn(), cancel: vi.fn(), refreshOnce: () => pending })
+    f.clock.report(owner, false, sample(), false)
+    const result = f.clock.refreshOnce(new AbortController().signal)
+    f.clock.attach(Symbol('replacement'), { refresh: vi.fn(), cancel: vi.fn(), refreshOnce: async () => 'stale' })
+    resolve('applied'); await expect(result).resolves.toBe('stale')
+  })
   it('requires a successful read and explicit enable; rejects subsecond and unsupported intervals', () => {
     const { clock, owner, refresh } = fixture()
     clock.enable(); vi.advanceTimersByTime(30000); expect(refresh).not.toHaveBeenCalled()
@@ -71,7 +93,7 @@ describe('current Key auto refresh lifecycle', () => {
     const f = fixture(); f.clock.report(f.owner, false, sample(), false); f.clock.enable(); f.clock.reset(f.owner, 'cancelled')
     expect(f.clock.getSnapshot()).toMatchObject({ enabled: false, reason: 'cancelled' })
     const next = Symbol('new reader'), nextRefresh = vi.fn()
-    f.clock.attach(next, { refresh: nextRefresh, cancel: vi.fn() }); f.clock.report(next, false, sample('page'), false); f.clock.enable()
+    f.clock.attach(next, { refresh: nextRefresh, cancel: vi.fn(), refreshOnce: async () => 'stale' }); f.clock.report(next, false, sample('page'), false); f.clock.enable()
     f.clock.report(f.owner, false, sample('failed'), true); f.clock.reset(f.owner); f.detach()
     expect(f.clock.begin(f.owner)).toBe(false); vi.advanceTimersByTime(5000)
     expect(nextRefresh).toHaveBeenCalledOnce(); expect(f.refresh).not.toHaveBeenCalled()

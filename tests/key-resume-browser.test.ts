@@ -19,7 +19,7 @@ it.skipIf(browserPath === undefined)('continues a paused Key scan once after a d
     const props = {
       t: key => key,
       connection: { id: 'fixture', generation: 1, db: 0, state: 'connected', target: { host: 'fixture', port: 6379 } },
-      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: () => () => {},
+      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: () => () => {}, registerRefreshHandler: () => () => {},
       readDatabases: async () => ({ ok: false }),
       scanKeys: async request => {
         window.scanCalls.push(request)
@@ -63,7 +63,7 @@ it.skipIf(browserPath === undefined)('shows the scan-specific stale message and 
     const props = {
       t: key => words[key] ?? key,
       connection: { id: 'fixture', generation: 1, db: 0, state: 'connected', target: { host: 'fixture', port: 6379 } },
-      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: () => () => {},
+      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: () => () => {}, registerRefreshHandler: () => () => {},
       readDatabases: async () => ({ ok: false }),
       scanKeys: async request => {
         window.scanCalls.push(request)

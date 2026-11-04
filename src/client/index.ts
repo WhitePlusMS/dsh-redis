@@ -74,6 +74,7 @@ export function apply(ctx: Context): void {
       resumeAiBudget: async signal => (await remote()).resumeAiBudget(sessionId, {}, signal),
       registerVisiblePane: () => panePresence.attach(sessionId),
       registerKeyHandler: handler => panePresence.registerKeyHandler(sessionId, handler),
+      registerRefreshHandler: handler => panePresence.registerRefreshHandler(sessionId, handler),
       registerHashHandler: handler => panePresence.registerHashHandler(sessionId, handler),
       registerListHandler: handler => panePresence.registerListHandler(sessionId, handler),
       registerSetHandler: handler => panePresence.registerSetHandler(sessionId, handler),
@@ -120,6 +121,7 @@ export function apply(ctx: Context): void {
             return Promise.resolve(signal.aborted || document.visibilityState !== 'visible' || ctx.sidebarRight.mounted.getSnapshot() !== session || count === 0 ? 'stale' : count === 1 ? 'applied' : 'ambiguous')
           }
           if (document.visibilityState !== 'visible') return Promise.resolve('stale')
+          if (request.action.kind === 'refresh') return panePresence.refresh(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectKey') return panePresence.selectKey(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectHashField') return panePresence.selectHashField(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectListIndex') return panePresence.selectListIndex(session, { ...request, action: request.action }, signal)

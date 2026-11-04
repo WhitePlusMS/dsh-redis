@@ -10,7 +10,7 @@ export interface RefreshSnapshot {
   readonly sampledAt: string | null
   readonly reason: RefreshStopReason
 }
-interface Reader { readonly refresh: () => void; readonly cancel: () => void }
+interface Reader { readonly refresh: () => void; readonly cancel: () => void; readonly refreshOnce: (signal: AbortSignal) => Promise<'applied' | 'failed' | 'stale'> }
 export type RefreshDelay = (run: () => void, milliseconds: number) => () => void
 
 export class AutoRefreshClock {
@@ -22,6 +22,7 @@ export class AutoRefreshClock {
   // A React state update may render the old result before the read effect starts.
   // Keep that old report from rearming a timer between a tick and begin().
   private pendingOwner: symbol | null = null
+  private onceInFlight = false
   private lastResult: RefreshSample | null = null
   private lastFailed = false
   constructor(private readonly delay: RefreshDelay, private readonly visible: () => boolean) {}
@@ -38,7 +39,7 @@ export class AutoRefreshClock {
   }
   private clearTimer(): void { this.cancelTimer?.(); this.cancelTimer = null }
   private schedule(): void {
-    if (this.cancelTimer !== null || !this.snapshot.enabled || this.snapshot.busy || !this.snapshot.ready || this.reader === null) return
+    if (this.cancelTimer !== null || this.onceInFlight || !this.snapshot.enabled || this.snapshot.busy || !this.snapshot.ready || this.reader === null) return
     this.cancelTimer = this.delay(() => {
       this.cancelTimer = null
       if (!this.visible()) { this.stop('hidden'); return }
@@ -91,9 +92,19 @@ export class AutoRefreshClock {
     if (this.reader === null || this.snapshot.busy || !this.snapshot.ready || !this.visible()) return
     this.change({ enabled: true, reason: 'off' }); this.schedule()
   }
+  /** A reader returns success only for its own rendered request identity. */
+  async refreshOnce(signal: AbortSignal): Promise<'applied' | 'failed' | 'stale'> {
+    const reader = this.reader, owner = this.owner
+    if (signal.aborted || !this.visible() || reader === null || owner === null || this.onceInFlight || this.snapshot.busy || !this.snapshot.ready) return 'stale'
+    this.onceInFlight = true; this.clearTimer()
+    try {
+      const outcome = await reader.refreshOnce(signal)
+      return signal.aborted || !this.visible() || this.owner !== owner || this.reader !== reader ? 'stale' : outcome
+    } finally { this.onceInFlight = false; this.schedule() }
+  }
   stop(reason: RefreshStopReason = 'off'): void {
     this.clearTimer()
-    const cancel = this.snapshot.busy
+    const cancel = this.snapshot.busy || this.onceInFlight
     this.change({ enabled: false, ...(cancel ? { busy: false, ready: false } : {}), reason })
     if (cancel) this.reader?.cancel()
   }
@@ -101,5 +112,5 @@ export class AutoRefreshClock {
     if (!AUTO_REFRESH_INTERVALS.some(value => value === milliseconds)) return
     this.clearTimer(); this.change({ intervalMs: milliseconds }); this.schedule()
   }
-  visibilityChanged(): void { if (this.snapshot.enabled && !this.visible()) this.stop('hidden') }
+  visibilityChanged(): void { if ((this.snapshot.enabled || this.onceInFlight) && !this.visible()) this.stop('hidden') }
 }

@@ -21,7 +21,7 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     const epoch = new SelectionEpoch(), panes = new UiPanePresence(), controller = new AbortController()
     const props = {
       t: key => key, sessionKey: 'fixture', selectionEpoch: epoch, retrySelection: () => {},
-      registerVisiblePane: () => panes.attach('fixture'), registerKeyHandler: handler => panes.registerKeyHandler('fixture', handler),
+      registerVisiblePane: () => panes.attach('fixture'), registerKeyHandler: handler => panes.registerKeyHandler('fixture', handler), registerRefreshHandler: handler => panes.registerRefreshHandler('fixture', handler),
       useTabInfo: () => ({ tab: { visible: true, signal: controller.signal } }),
       status: async () => ({ ok: true, value: {} }),
       connectionStatus: async () => ({ ok: true, value: { id: null, generation: 0, db: 0, state: 'disconnected', error: null, target: null } }),

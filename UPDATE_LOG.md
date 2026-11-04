@@ -1,5 +1,20 @@
 # 更新说明
 
+## 2026-11-04 按读取身份实现 AI 单次刷新
+
+- 新增 `src/client/read-confirmation.ts` 和 `tests/read-confirmation.test.ts`：以独立身份关联异步读取和实际提交的结果对象；旧渲染、未完成读取、取消和旧请求不能得到成功回执。
+- 修改 `src/client/use-collection-scan.ts` 并新增 `tests/collection-read-confirmation-browser.test.ts`：集合的一次性读取绑定该身份，并等待对应结果或错误进入渲染状态；取消、目标变化和较新读取使旧身份失效，未能启动时立即拒绝。
+- 修改 `src/client/auto-refresh.ts`、`src/client/AutoRefresh.tsx` 及其测试：刷新控制器统一等待具体读取器的确认，保持周期刷新默认关闭并隔离被替换的读取器；AI 动作通道尚未接入。
+- 修改 `src/client/KeyDetails.tsx`：String 的一次性读取使用同一身份机制；取消、范围变化或新的手动读取使旧身份失效，错误保持现有预览并明确报告。
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/client/ui-pane-presence.ts`、`src/client/index.ts`、`src/client/KeyBrowser.tsx`、`src/client/AutoRefresh.tsx`、`src/host/ai-reader.ts`、`src/host/ai-ui-tools.ts` 和 `src/runtime.ts`：按连接、Key 与选择绑定一次性刷新，等待同一读取渲染和选择重新同步；真实宿主流验证尚未完成。
+- 更新 Key 浏览器和工作区浏览器夹具，明确提供刷新动作注册接口，避免测试遗漏真实依赖。
+- 扩展 `tests/ui-action-confirmation-browser.test.ts`：通过真实工具注册、宿主动作流和合成 List 读取复现延迟、用户切换与隐藏场景；不能替代日常 DSH 和模型验收。
+- 指针证据显示用户按下目标行时，取消提示插入导致表格位移，松开落在另一行。AI 动作中断改为保留原表格、静默取消，用户选择及指针位置复验通过。
+- 新增 `tests/string-refresh-action-browser.test.ts`：验证 String 的延迟回执及被取消后用户手动读取优先；List 的正常、延迟、用户切换和隐藏场景已通过真实宿主动作流与合成数据测试。
+- 扩展 `tests/ai-tools.test.ts`：验证刷新工具使用可信会话和已确认选择，不接受模型提供其他会话身份；正在执行相关回归。
+- 原因和影响：AI 明确请求时发起一次只读刷新，只有该次结果渲染且同一选择重新同步才确认；不自动开启周期刷新，超时或回执丢失不能推断操作未发生。
+- 验证：`pnpm check` 通过 74 文件/587 项测试；之后扩展的真实工具入口与同文件既有定位共 10 项测试再次通过。String 浏览器和 List 工具/宿主动作流覆盖延迟、用户新选择、隐藏及迟到结果，数据为合成夹具；其他集合及当前构建的日常 DSH/用户模型验收仍待完成。
+
 ## 2026-11-04 明确界面刷新验收契约
 
 - 修改 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md` 与 `docs/DSH_AI_READONLY_TASKS.md`：将读取身份、渲染确认和选择重新同步直接并入现有界面动作方案及验收，纠正当前源码与历史打包基线的时间关系。
