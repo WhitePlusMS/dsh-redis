@@ -17,7 +17,7 @@ async function setup(execute: RedisLink['execute']) {
   const transport: RedisLink = { execute, close: () => undefined, onFailure: () => () => undefined }
   const connections = new RedisConnections(async () => transport), reader = new RedisAiReader(connections, () => undefined, async (_session, _target, expected) => expected ?? 0, () => true)
   await connections.connect('a', { host: 'localhost', port: 6379, username: '', password: '', tls: null }, new AbortController().signal)
-  const run = (args: { match?: string; cursor?: string }, controller = new AbortController()) => reader.withBudget('a', controller.signal, stage => reader.scan('a', args, controller.signal, stage))
+  const run = (args: { match: string; cursor?: string }, controller = new AbortController()) => reader.withBudget('a', controller.signal, stage => reader.scan('a', args, controller.signal, stage))
   return { connections, reader, run }
 }
 const page = (cursor: string, keys: readonly Buffer[]): RedisReply => [Buffer.from(cursor), [...keys]]
@@ -59,14 +59,14 @@ describe('AI Key page continuation', () => {
     const execute = vi.fn<RedisLink['execute']>().mockResolvedValueOnce(page('7', [])).mockResolvedValueOnce(page('0', [Buffer.from('after-empty')]))
     const f = await setup(execute), signal = new AbortController().signal
     try {
-      const first = decode(await f.run({}))
+      const first = decode(await f.run({ match: '*' }))
       expect(first.keys).toEqual([]); expect(first.returnedCount).toBe(0); expect(first.scanComplete).toBe(false)
       if (first.cursor === null) throw new Error('Missing cursor for empty page')
       for (let i = 1; i < 32; i++) await f.reader.withBudget('a', signal, () => ({ ok: true }))
-      await expect(f.run({ cursor: first.cursor })).rejects.toThrow('预算已用完')
+      await expect(f.run({ match: '*', cursor: first.cursor })).rejects.toThrow('预算已用完')
       expect(execute).toHaveBeenCalledTimes(1)
       expect(f.reader.resumeBudget('a').accepted).toBe(true)
-      const next = decode(await f.run({ cursor: first.cursor }))
+      const next = decode(await f.run({ match: '*', cursor: first.cursor }))
       expect(next).toMatchObject({ keys: [Buffer.from('after-empty').toString('base64')], cursor: null, scanComplete: true })
     } finally { f.reader.dispose(); f.connections.dispose() }
   })
@@ -76,12 +76,12 @@ describe('AI Key page continuation', () => {
     const f = await setup(execute), controller = new AbortController()
     try {
       await expect(f.reader.withBudget('a', controller.signal, async stage => {
-        const result = await f.reader.scan('a', {}, controller.signal, stage)
+        const result = await f.reader.scan('a', { match: '*' }, controller.signal, stage)
         controller.abort()
         return result
       })).rejects.toThrow()
-      let result = await f.run({}), chunk = decode(result), found = [...chunk.keys]
-      while (chunk.cursor !== null) { result = await f.run({ cursor: chunk.cursor }); chunk = decode(result); found.push(...chunk.keys) }
+      let result = await f.run({ match: '*' }), chunk = decode(result), found = [...chunk.keys]
+      while (chunk.cursor !== null) { result = await f.run({ match: '*', cursor: chunk.cursor }); chunk = decode(result); found.push(...chunk.keys) }
       expect(found).toEqual(keys.map(key => key.toString('base64')))
       expect(execute).toHaveBeenCalledTimes(1)
     } finally { f.reader.dispose(); f.connections.dispose() }
@@ -91,14 +91,14 @@ describe('AI Key page continuation', () => {
     const execute = vi.fn<RedisLink['execute']>().mockResolvedValue(page('0', keys))
     const f = await setup(execute), controller = new AbortController()
     try {
-      const first = decode(await f.run({}))
+      const first = decode(await f.run({ match: '*' }))
       if (first.cursor === null) throw new Error('Missing cursor')
       await expect(f.reader.withBudget('a', controller.signal, async stage => {
-        const result = await f.reader.scan('a', { cursor: first.cursor! }, controller.signal, stage)
+        const result = await f.reader.scan('a', { match: '*', cursor: first.cursor! }, controller.signal, stage)
         controller.abort(); return result
       })).rejects.toThrow()
-      let result = await f.run({ cursor: first.cursor }), chunk = decode(result), found = [...first.keys, ...chunk.keys]
-      while (chunk.cursor !== null) { result = await f.run({ cursor: chunk.cursor }); chunk = decode(result); found.push(...chunk.keys) }
+      let result = await f.run({ match: '*', cursor: first.cursor }), chunk = decode(result), found = [...first.keys, ...chunk.keys]
+      while (chunk.cursor !== null) { result = await f.run({ match: '*', cursor: chunk.cursor }); chunk = decode(result); found.push(...chunk.keys) }
       expect(found).toEqual(keys.map(key => key.toString('base64')))
       expect(execute).toHaveBeenCalledTimes(1)
     } finally { f.reader.dispose(); f.connections.dispose() }
@@ -109,13 +109,13 @@ describe('AI Key page continuation', () => {
       const before = f.connections.status('a')
       if (before.id === null) throw new Error('Missing connection')
       await expect(f.reader.withBudget('a', new AbortController().signal, async stage => {
-        const result = await f.reader.scan('a', {}, new AbortController().signal, stage)
+        const result = await f.reader.scan('a', { match: '*' }, new AbortController().signal, stage)
         await f.connections.selectDatabase('a', { id: before.id!, generation: before.generation, db: 1 }, new AbortController().signal, () => f.reader.clearTarget('a'))
         return result
       })).rejects.toMatchObject({ code: 'stale' })
       expect(f.connections.status('a').db).toBe(1)
       expect(f.reader.budgetStatus('a')).toMatchObject({ callsUsed: 1, bytesUsed: 0, inFlight: 0 })
-      expect(decode(await f.run({})).keys).toEqual([Buffer.from('old').toString('base64')])
+      expect(decode(await f.run({ match: '*' })).keys).toEqual([Buffer.from('old').toString('base64')])
     } finally { f.reader.dispose(); f.connections.dispose() }
   })
   it('rejects an older staged result without destroying a newer scan', async () => {
@@ -124,7 +124,7 @@ describe('AI Key page continuation', () => {
     const execute = vi.fn<RedisLink['execute']>().mockResolvedValueOnce(page('7', [Buffer.from('old')])).mockResolvedValueOnce(page('8', [Buffer.from('new')])).mockResolvedValueOnce(page('0', []))
     const f = await setup(execute), signal = new AbortController().signal
     try {
-      const old = f.reader.withBudget('a', signal, async stage => { const value = await f.reader.scan('a', {}, signal, stage); staged(); await hold; return value })
+      const old = f.reader.withBudget('a', signal, async stage => { const value = await f.reader.scan('a', { match: '*' }, signal, stage); staged(); await hold; return value })
       const rejected = expect(old).rejects.toMatchObject({ code: 'stale' })
       await waiting
       const fresh = decode(await f.run({ match: 'new*' }))
@@ -146,12 +146,12 @@ describe('AI Key page continuation', () => {
       .mockResolvedValueOnce(page('0', [Buffer.from('second')]))
     const f = await setup(execute), controller = new AbortController()
     try {
-      const first = decode(await f.run({}))
+      const first = decode(await f.run({ match: '*' }))
       if (first.cursor === null) throw new Error('Missing cursor')
-      const pending = f.run({ cursor: first.cursor }, controller)
+      const pending = f.run({ match: '*', cursor: first.cursor }, controller)
       const cancelled = expect(pending).rejects.toThrow()
       await waiting; controller.abort(); await cancelled
-      const retried = decode(await f.run({ cursor: first.cursor }))
+      const retried = decode(await f.run({ match: '*', cursor: first.cursor }))
       expect(retried).toMatchObject({ keys: [Buffer.from('second').toString('base64')], cursor: null, scanComplete: true })
       expect(execute.mock.calls[2]?.[1]).toEqual(['7', 'MATCH', '*', 'COUNT', '100'])
     } finally { f.reader.dispose(); f.connections.dispose() }
@@ -160,7 +160,7 @@ describe('AI Key page continuation', () => {
     const execute = vi.fn<RedisLink['execute']>().mockResolvedValueOnce(page('7', [Buffer.from('first')])).mockResolvedValueOnce(page('0', [Buffer.from('second')]))
     const f = await setup(execute), controller = new AbortController()
     try {
-      const first = decode(await f.run({}))
+      const first = decode(await f.run({ match: '*' }))
       if (first.cursor === null) throw new Error('Missing cursor')
       const keyReader = Reflect.get(f.reader, 'keys') as RedisKeys
       const original = keyReader.scan.bind(keyReader)
@@ -169,14 +169,14 @@ describe('AI Key page continuation', () => {
         controller.abort()
         return fetched
       })
-      await expect(f.run({ cursor: first.cursor }, controller)).rejects.toThrow()
-      expect(decode(await f.run({ cursor: first.cursor }))).toMatchObject({ keys: [Buffer.from('second').toString('base64')], cursor: null, scanComplete: true })
+      await expect(f.run({ match: '*', cursor: first.cursor }, controller)).rejects.toThrow()
+      expect(decode(await f.run({ match: '*', cursor: first.cursor }))).toMatchObject({ keys: [Buffer.from('second').toString('base64')], cursor: null, scanComplete: true })
       expect(execute).toHaveBeenCalledTimes(2)
     } finally { vi.restoreAllMocks(); f.reader.dispose(); f.connections.dispose() }
   })
   it('rejects an individual key that cannot fit intact in the result', async () => {
     const f = await setup(async () => page('0', [Buffer.alloc(65536, 255)]))
-    try { await expect(f.run({})).rejects.toThrow('单个 Key') }
+    try { await expect(f.run({ match: '*' })).rejects.toThrow('单个 Key') }
     finally { f.reader.dispose(); f.connections.dispose() }
   })
 })

@@ -241,10 +241,10 @@ describe('AI Hash page continuation', () => {
   it('refuses an oversized indivisible field without affecting a Key scan', async () => {
     const f = await setup(async () => page('0', [Buffer.alloc(65536, 255), Buffer.from('x')]), 1n)
     try {
-      const keys = await f.reader.scan('a', {}, new AbortController().signal)
+      const keys = await f.reader.scan('a', { match: '*' }, new AbortController().signal)
       if (keys === null || typeof keys !== 'object' || Array.isArray(keys) || typeof keys.cursor !== 'string') throw new Error('Missing Key cursor')
       await expect(f.run({ key: 'hash' })).rejects.toThrow('单个 Hash 字段')
-      const continuation = await f.reader.scan('a', { cursor: keys.cursor }, new AbortController().signal)
+      const continuation = await f.reader.scan('a', { match: '*', cursor: keys.cursor }, new AbortController().signal)
       expect(continuation).toMatchObject({ state: 'page', scanComplete: true })
     }
     finally { f.reader.dispose(); f.connections.dispose() }

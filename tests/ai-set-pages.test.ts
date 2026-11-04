@@ -216,12 +216,12 @@ describe('AI Set page continuation', () => {
   it('refuses a single oversized member while preserving Key and Hash cursors', async () => {
     const f = await setup(async () => page('0', [Buffer.alloc(65536, 255)]), 1n)
     try {
-      const keys = await f.reader.scan('a', {}, new AbortController().signal)
+      const keys = await f.reader.scan('a', { match: '*' }, new AbortController().signal)
       if (keys === null || typeof keys !== 'object' || Array.isArray(keys) || typeof keys.cursor !== 'string') throw new Error('Missing Key cursor')
       const hash = await f.run({ key: 'hash' })
       if (hash === null || typeof hash !== 'object' || Array.isArray(hash) || hash.value === null || typeof hash.value !== 'object' || Array.isArray(hash.value) || typeof hash.value.cursor !== 'string') throw new Error('Missing Hash cursor')
       await expect(f.run({ key: 'set' })).rejects.toThrow('单个 Set 成员')
-      expect(await f.reader.scan('a', { cursor: keys.cursor }, new AbortController().signal)).toMatchObject({ state: 'page', scanComplete: true })
+      expect(await f.reader.scan('a', { match: '*', cursor: keys.cursor }, new AbortController().signal)).toMatchObject({ state: 'page', scanComplete: true })
       expect(await f.run({ key: 'hash', cursor: hash.value.cursor })).toMatchObject({ value: { state: 'page', scanComplete: true } })
     } finally { f.reader.dispose(); f.connections.dispose() }
   })

@@ -33,6 +33,21 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
     await ctx.plugin({ name: 'redis-hash-filter-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
+    const scanCount = async () => Number(/^cmdstat_scan:calls=(\d+)/mu.exec(await admin.info('commandstats'))?.[1] ?? 0)
+    const scansBefore = await scanCount()
+    const missingScope = await ctx.tools.execute({ callId: 'missing-scope', name: 'redis_viewer_keys', arguments: {}, agent, signal })
+    assert.equal(missingScope.isError, true); assert.equal(await scanCount(), scansBefore)
+    const names = new Set(); let namesCursor, nameCalls = 0
+    do {
+      const result = await ctx.tools.execute({ callId: 'names-' + nameCalls, name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*', ...(namesCursor === undefined ? {} : { cursor: namesCursor }) }, agent, signal })
+      assert.equal(result.isError, false)
+      const text = result.content.filter(block => block.type === 'text').map(block => block.text).join(''), page = JSON.parse(text)
+      assert.equal(page.pattern, 'fixture:order:*'); assert(!text.includes('synthetic-private-value'))
+      for (const key of page.keys) names.add(Buffer.from(key.base64, 'base64').toString('utf8'))
+      namesCursor = page.cursor ?? undefined
+      assert(++nameCalls < 20)
+    } while (namesCursor !== undefined)
+    assert.equal(names.size, 28); assert(await scanCount() > scansBefore)
     const found = new Set(); let cursor, calls = 0, checked = 0, missingField = 0, typeChanged = 0
     do {
       const result = await ctx.tools.execute({ callId: 'fixture-' + calls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:order:*', field: 'status', equals: 'synthetic-failed', ...(cursor === undefined ? {} : { cursor }) }, agent, signal })
@@ -53,4 +68,4 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
 }, { passwordRequired: false })
 assert(fixture.stopped)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['bounded multi-page filter', 'matches and missing fields', 'wrong types', 'no unrelated values or writes'] }))
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['explicit MATCH required', 'bounded Key search and filter', 'matches and missing fields', 'wrong types', 'no unrelated values or writes'] }))

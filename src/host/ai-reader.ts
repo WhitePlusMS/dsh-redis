@@ -217,10 +217,12 @@ export class RedisAiReader {
     }
     return { accepted: true }
   }
-  async scan(sessionId: string, args: { readonly match?: string; readonly cursor?: string }, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
+  async scan(sessionId: string, args: { readonly match: string; readonly cursor?: string }, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
     signal.throwIfAborted()
+    if (typeof args.match !== 'string') throw new Error('请明确提供 Redis MATCH 查询范围；只有用户要求查看整个当前数据库时才使用 *。')
+    encodeIdentity(args.match)
     const target = this.target(sessionId)
-    const request = scanKeysRequestSchema.parse({ target, pattern: args.match ?? '*', cursor: args.cursor ?? null })
+    const request = scanKeysRequestSchema.parse({ target, pattern: args.match, cursor: args.cursor ?? null })
     const page = await this.keyPages.prepare(sessionId, target, request.pattern, request.cursor, signal)
     if (stage === undefined) { try { page.commit() } catch (error) { page.rollback(); throw error } }
     else stage(page)

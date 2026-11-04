@@ -29,8 +29,8 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, []); return reader.status(session) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_keys', description: '使用 SCAN 在当前对话连接的当前 DB 按 MATCH 检索 Key，结果 pattern 是实际使用的条件。cursor 是不透明续读令牌，续读保持相同 match；一个 Redis 批次可分为多个结果，空页带 cursor 不等于没有匹配项。只返回本批，不冒充全库。',
-    parameters: { match: { type: 'string' }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
+    name: 'redis_viewer_keys', description: '使用 SCAN 在当前对话连接的当前 DB 按明确 MATCH 检索 Key。每次调用都必须提供 match，包括续读；根据用户给出的名称线索确定范围，线索不足时请用户补充，只有用户明确要求浏览整个当前 DB 才使用 *。结果 pattern 是实际使用的条件。cursor 是不透明续读令牌，续读保持相同 match；一个 Redis 批次可分为多个结果，空页带 cursor 不等于没有匹配项。只返回本批，不冒充全库。',
+    parameters: { match: { type: 'string', required: true }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'cursor']); return reader.scan(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({

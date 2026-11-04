@@ -429,7 +429,7 @@ describe('official Redis model tools', () => {
   it('does not expose sensitive text in an injected permission denial', async () => {
     const marker = 'ro04-fake-denial-secret'
     const f = await fixture(undefined, async () => { throw new RedisReplyError('NOPERM ' + marker) })
-    const result = await f.call('redis_viewer_keys', {})
+    const result = await f.call('redis_viewer_keys', { match: '*' })
     expect(content(result)).toContain(connectionErrorMessages.permission.zh)
     expect(JSON.stringify(result)).not.toContain(marker)
   })
@@ -441,13 +441,26 @@ describe('official Redis model tools', () => {
       expect(schema?.description).toContain('不能仅凭版本变化推断物理连接重建或 Redis 服务器重启')
     }
   })
+  it('requires an explicit lossless Key search scope and retains it for continuation', async () => {
+    const f = await fixture()
+    expect((await f.call('redis_viewer_keys', {})).isError).toBe(true)
+    expect((await f.call('redis_viewer_keys', { match: '\ud800' })).isError).toBe(true)
+    expect(f.commands).not.toContain('SCAN')
+    const first = JSON.parse(content(await f.call('redis_viewer_keys', { match: 'order:*' }))) as { cursor: string; pattern: string }
+    expect(first.pattern).toBe('order:*')
+    expect((await f.call('redis_viewer_keys', { cursor: first.cursor })).isError).toBe(true)
+    expect((await f.call('redis_viewer_keys', { match: 'other:*', cursor: first.cursor })).isError).toBe(true)
+    expect(f.commands.filter(command => command === 'SCAN')).toHaveLength(1)
+    expect((await f.call('redis_viewer_keys', { match: 'order:*', cursor: first.cursor })).isError).toBeFalsy()
+    expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBeFalsy()
+  })
   it('continues a split Key page through the registered tool without losing identities', async () => {
     const keys = Array.from({ length: 180 }, (_value, index) => Buffer.from(String(index).padStart(4, '0') + 'x'.repeat(500)))
     const f = await fixture(undefined, async () => [Buffer.from('0'), keys])
     const found: string[] = []
     let cursor: string | undefined
     do {
-      const result = await f.call('redis_viewer_keys', cursor === undefined ? {} : { cursor })
+      const result = await f.call('redis_viewer_keys', cursor === undefined ? { match: '*' } : { match: '*', cursor })
       expect(result.isError).toBeFalsy()
       const text = content(result)
       expect(Buffer.byteLength(text)).toBeLessThanOrEqual(64 * 1024)
@@ -478,7 +491,7 @@ describe('official Redis model tools', () => {
     expect(f.reader.budgetStatus('a')).toMatchObject({ callsUsed: 4 })
     for (let i = 4; i < 32; i++) expect((await f.call('redis_viewer_status', {})).isError).toBeFalsy()
     const before = f.commands.length
-    const stopped = content(await f.call('redis_viewer_keys', {}))
+    const stopped = content(await f.call('redis_viewer_keys', { match: '*' }))
     expect(stopped).toContain('预算已用完')
     expect(stopped).toContain('AI 读取预算')
     expect(stopped).toContain('刷新状态')
@@ -488,7 +501,7 @@ describe('official Redis model tools', () => {
     expect(await remote.resumeAiBudget(otherAgent, {}, signal)).toMatchObject({ accepted: false })
     expect(await remote.aiBudgetStatus(f.agent, {}, signal)).toMatchObject({ callsUsed: 32, stopped: true })
     expect(await remote.resumeAiBudget(f.agent, {}, signal)).toMatchObject({ accepted: true, status: { callsUsed: 0, stopped: false } })
-    expect((await f.call('redis_viewer_keys', {})).isError).toBeFalsy()
+    expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBeFalsy()
   })
   it('counts failed admitted operations, rejects model reset arguments and prevents in-flight reset', async () => {
     const f = await fixture(), signal = new AbortController().signal
@@ -672,17 +685,17 @@ describe('official Redis model tools', () => {
     cleanups.push(() => { uiKeys.dispose(); uiHashes.dispose() })
     const keyFirst = await uiKeys.scan('a', { target: f.target, pattern: '*', cursor: null }, signal)
     const hashFirst = await uiHashes.scan('a', { target: f.target, keyBase64: Buffer.from('hash').toString('base64'), pattern: '*', cursor: null }, signal)
-    await f.call('redis_viewer_keys', {})
+    await f.call('redis_viewer_keys', { match: '*' })
     await f.call('redis_viewer_value', { key: 'hash' })
     expect(await uiKeys.scan('a', { target: f.target, pattern: '*', cursor: keyFirst.cursor }, signal)).toMatchObject({ state: 'page', cursor: null })
     expect(await uiHashes.scan('a', { target: f.target, keyBase64: Buffer.from('hash').toString('base64'), pattern: '*', cursor: hashFirst.cursor }, signal)).toMatchObject({ state: 'page', cursor: null })
   })
   it('keeps an AI Key continuation when an unrelated value result is too large', async () => {
     const f = await fixture(), signal = new AbortController().signal
-    const first = await f.reader.scan('a', {}, signal)
+    const first = await f.reader.scan('a', { match: '*' }, signal)
     if (first === null || typeof first !== 'object' || Array.isArray(first) || typeof first.cursor !== 'string') throw new Error('Missing Key continuation')
     expect((await f.call('redis_viewer_value', { key: 'wide' })).isError).toBe(true)
-    const continued = await f.call('redis_viewer_keys', { cursor: first.cursor })
+    const continued = await f.call('redis_viewer_keys', { match: '*', cursor: first.cursor })
     expect(continued.isError).toBeFalsy()
     expect(content(continued)).toContain('"scanComplete":true')
   })

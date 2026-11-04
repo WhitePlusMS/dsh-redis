@@ -49,7 +49,7 @@
 | 工具 | 主要参数 | 返回与限制 |
 |---|---|---|
 | `redis_viewer_status` | 无 | 当前公开连接视图、DB、选择同步状态和已同步选择 |
-| `redis_viewer_keys` | 可选`match`、`cursor` | 当前DB的SCAN批次；`returnedCount`为本次返回的Key数，不是全库总数；续读保持同一MATCH，空页不一定结束 |
+| `redis_viewer_keys` | 必填 `match`；可选 `cursor` | 当前 DB 的 SCAN 批次；根据用户线索明确范围，只有用户要求浏览整个当前 DB 才使用 `*`。`returnedCount` 为本次返回的 Key 数，不是全库总数；续读必须携带相同 MATCH，空页不一定结束 |
 | `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |

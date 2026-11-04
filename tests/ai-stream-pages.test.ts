@@ -174,12 +174,12 @@ describe('AI Stream message continuation', () => {
     const range = vi.fn().mockResolvedValue([message('1-0', [Buffer.alloc(50000, 255), Buffer.from('a')])])
     const f = await setup(range, 1n), signal = new AbortController().signal
     try {
-      const keys = await f.reader.scan('a', {}, signal)
+      const keys = await f.reader.scan('a', { match: '*' }, signal)
       if (keys === null || typeof keys !== 'object' || Array.isArray(keys) || typeof keys.cursor !== 'string') throw new Error('Missing Key cursor')
       const hash = await f.run({ key: 'hash' })
       if (hash === null || typeof hash !== 'object' || Array.isArray(hash) || hash.value === null || typeof hash.value !== 'object' || Array.isArray(hash.value) || typeof hash.value.cursor !== 'string') throw new Error('Missing Hash cursor')
       await expect(f.run({ key: 'stream' })).rejects.toThrow('单条 Stream 消息')
-      expect(await f.reader.scan('a', { cursor: keys.cursor }, signal)).toMatchObject({ state: 'page', scanComplete: true })
+      expect(await f.reader.scan('a', { match: '*', cursor: keys.cursor }, signal)).toMatchObject({ state: 'page', scanComplete: true })
       expect(await f.run({ key: 'hash', cursor: hash.value.cursor })).toMatchObject({ value: { state: 'page', scanComplete: true } })
     } finally { f.reader.dispose(); f.connections.dispose() }
   })

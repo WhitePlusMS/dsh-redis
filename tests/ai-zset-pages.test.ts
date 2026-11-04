@@ -360,14 +360,14 @@ describe('AI ZSet scan continuation', () => {
   it('keeps other type cursors when one indivisible ZSet member is too large', async () => {
     const f = await setup(async () => page('0', [Buffer.alloc(65536, 255), Buffer.from('0')]), 1n), signal = new AbortController().signal
     try {
-      const keys = await f.reader.scan('a', {}, signal)
+      const keys = await f.reader.scan('a', { match: '*' }, signal)
       if (keys === null || typeof keys !== 'object' || Array.isArray(keys) || typeof keys.cursor !== 'string') throw new Error('Missing Key cursor')
       const hash = await f.run({ key: 'hash' }), set = await f.run({ key: 'set' })
       const hashPage = hash !== null && typeof hash === 'object' && !Array.isArray(hash) ? hash.value : null
       const setPage = set !== null && typeof set === 'object' && !Array.isArray(set) ? set.value : null
       if (hashPage === null || typeof hashPage !== 'object' || Array.isArray(hashPage) || typeof hashPage.cursor !== 'string' || setPage === null || typeof setPage !== 'object' || Array.isArray(setPage) || typeof setPage.cursor !== 'string') throw new Error('Missing Hash/Set cursor')
       await expect(f.run({ key: 'zset', match: '*' })).rejects.toThrow('单个 ZSet 成员')
-      expect(await f.reader.scan('a', { cursor: keys.cursor }, signal)).toMatchObject({ state: 'page', scanComplete: true })
+      expect(await f.reader.scan('a', { match: '*', cursor: keys.cursor }, signal)).toMatchObject({ state: 'page', scanComplete: true })
       expect(await f.run({ key: 'hash', cursor: hashPage.cursor })).toMatchObject({ value: { state: 'page', scanComplete: true } })
       expect(await f.run({ key: 'set', cursor: setPage.cursor })).toMatchObject({ value: { state: 'page', scanComplete: true } })
     } finally { f.reader.dispose(); f.connections.dispose() }
