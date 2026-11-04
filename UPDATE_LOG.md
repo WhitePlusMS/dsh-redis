@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-04 当前构建诊断与筛选复验
+
+- 在独立 Redis 8.2.6 和真实 ToolRuntime 上，重新验证当前构建的四类服务器概况及五种诊断报告、指定 MATCH 的多批 Hash 筛选、显式 Hash 字段和二进制身份；检查脚本使用合成数据，测试实例均已停止。
+- 同步 `docs/verification/current-development-package-2026-11-04.md` 和 `docs/DSH_AI_READONLY_TASKS.md`，区分当前构建的隔离实测与尚未完成的真实 DSH/模型验收。
+
 ## 2026-11-04 完整检查复验
 
 - 对源码 `90acc2c` 重新执行 `pnpm check`，类型检查、构建及 79 个测试文件的 617 项测试全部通过；测试包含浏览器和宿主流，不能替代日常 DSH 与用户模型验收。
