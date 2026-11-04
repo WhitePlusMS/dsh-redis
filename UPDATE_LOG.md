@@ -2639,6 +2639,16 @@
 - 构建 `.scratch/dsh-redis-0.1.1.tgz`，安装至本机 DSH `web` profile；`dsh web --dump-config` 已包含 Redis 和 Git Graph，不再显示两者版本拦截。配置加载不等于真实页面、真实 Redis 或模型验收；打包包含工作区原有未提交修改。
 - OPC UA 旧包仍因版本不兼容而被跳过；安装器还提示 input-plus 和 web-search 依赖不兼容。未运行前后端开发服务。
 
+### 2026-11-04 明确 Key 和 Hash 字段的直接读取
+
+- 修改 `src/host/ai-tools.ts` 和 `src/host/ai-reader.ts`：`redis_viewer_value` 接受明确的 Key 与 Hash 字段文本或规范 Base64 身份，复用既有只读字段 reader 和会话预算，不依赖面板选中；拒绝身份冲突、无损编码失败以及混用分页参数。
+- 修改 `tests/ai-tools.test.ts`：覆盖面板不可用时直接读取、二进制字段、字段或 Key 缺失、类型不符与非法参数；复用现有合成链路，不访问用户 Redis。
+- 增加读取期间连接替换的回归，确保旧目标不会向新连接派发字段读取。同步 `docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录现用 DSH 0.2.1-rc.5、已通过的旧错误修复和历史检查边界，避免计划错误地继续要求修复已经修好的错误。
+- 新增 `scripts/smoke-ai-explicit-hash.mjs`：使用已有独立 Redis 夹具和真实 DSH ToolRuntime 验证显式字段、二进制字段、缺失状态、TTL 及数据/到期时间前后不变；夹具准备阶段的写入限定在自身实例。
+- 修改 `src/host/ai-reader.ts` 和 `tests/ai-tools.test.ts`：明确解释指定 Hash 字段不存在的状态；修改 `docs/AI_READ_USAGE.md`：将明确 Key/字段的直接提问作为使用路径，并区分当前选择和旧版宿主契约。原因是让工具结果和使用说明符合新的用户任务流程；该修改后 `pnpm typecheck` 与 AI 工具 39 项专项通过。
+- 原因与影响：支持用户直接询问指定对象的字段，避免必须先在界面选中；读取只使用固定只读命令，真实 DSH/模型验收待完成。
+- 修改前 `pnpm check` 通过：69 个测试文件、551 项通过；直接字段读取修改后 `pnpm typecheck` 和 3 文件/60 项专项通过。独立 WSL 镜像 Redis 8.2.6 和真实 DSH ToolRuntime 专项通过，合成 Key 的 DUMP 和绝对过期时间不变，测试 Redis 已停止；这不是原生 DSH 界面与真实模型验收。
+
 ### 2026-11-04 筛选预设工具基线验证
 
 - 新增 `tests/ai-match-tools.test.ts`：通过 DSH ToolRuntime 和独立本地资料目录验证预设列表、保存、同名冲突、无效参数以及保存后中断的未知结果和回读；测试仅使用合成条件，不连接 Redis。

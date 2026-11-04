@@ -88,6 +88,39 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('reads an explicitly named Hash field without a visible or synchronized sidebar', async () => {
+    const f = await fixture(undefined, undefined, { confirm: async () => { throw new Error('面板不可用') }, current: () => false })
+    const result = await f.call('redis_viewer_value', { key: 'hash', field: 'status' })
+    expect(result.isError).toBeFalsy()
+    expect(JSON.parse(content(result))).toMatchObject({ source: 'explicit', value: { state: 'value', cell: { text: '精确字段值', complete: true } } })
+    expect(f.commands).toContain('HGET')
+    expect(f.commands).not.toContain('HSCAN')
+    const binary = await f.call('redis_viewer_value', { keyBase64: Buffer.from('hash').toString('base64'), fieldBase64: Buffer.from([0, 255]).toString('base64') })
+    expect(binary.isError).toBeFalsy()
+    expect(JSON.parse(content(binary))).toMatchObject({ field: { base64: 'AP8=' }, value: { state: 'value' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'hash', field: 'absent' })))).toMatchObject({ errorMessage: '采样时指定的 Hash 字段不存在。', value: { state: 'selection-missing', cell: null } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'missing', field: 'status' })))).toMatchObject({ value: { state: 'missing' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', field: 'status' })))).toMatchObject({ value: { state: 'changed' } })
+    for (const args of [{ field: 'status' }, { key: 'hash', field: 'status', fieldBase64: 'eA==' }, { key: 'hash', field: 'status', match: '*' }, { key: 'hash', fieldBase64: '!!!' }, { key: 'hash', field: '\ud800' }]) expect((await f.call('redis_viewer_value', args)).isError).toBe(true)
+  })
+  it('rejects a named field read when its connection changes before dispatch', async () => {
+    const f = await fixture(), original = f.connections.read.bind(f.connections)
+    let release!: () => void, started!: () => void
+    const blocked = new Promise<void>(resolve => { release = resolve })
+    const observed = new Promise<void>(resolve => { started = resolve })
+    vi.spyOn(f.connections, 'read').mockImplementation(async (...args) => {
+      if (args[2] === 'HGET') { started(); await blocked }
+      return original(...args)
+    })
+    const pending = f.call('redis_viewer_value', { key: 'hash', field: 'status' })
+    await observed
+    await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: 'reader', password: 'never-in-output', tls: null }, new AbortController().signal)
+    release()
+    const result = await pending
+    expect(result.isError).toBe(true)
+    expect(content(result)).not.toContain('精确字段值')
+    expect(f.commands).not.toContain('HGET')
+  })
   it('does not read an old selection when the interface cannot confirm its version', async () => {
     const f = await fixture(undefined, undefined, { confirm: async () => { throw new Error('选择未同步') }, current: () => false })
     f.reader.setSelection('a', { target: f.target, selection: { keyBase64: Buffer.from('hash').toString('base64'), item: { kind: 'hash', fieldBase64: Buffer.from('first').toString('base64') } } })

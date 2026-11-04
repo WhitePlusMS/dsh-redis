@@ -36,8 +36,8 @@
 - 当前实现已有 DSH 原生工具查询连接状态、按 MATCH 搜索 Key、读取指定 Key 和按明确请求切 DB；不传 Key 的读取使用当前界面选择。显式读取工具存在，不等于所有自然语言问题已完成端到端验收。[工具实现](../src/host/ai-tools.ts)
 - 会话身份、连接及代次校验、有界读取、独立的 AI/UI 游标、六种基础类型 reader 均有既有实现，可在核验后复用；界面动作和已有连接管理只有部分实现。[AI 读取服务](../src/host/ai-reader.ts)
 - 历史验证记录只对应当时的构建和环境；不能证明后续工作区或全部场景通过。[历史真实模型记录](verification/readonly-ro06-real-model-2026-10-28.md)
-- 暂停前未完成的筛选预设工具接入存在两处 TypeScript 错误，当前工作区不能视为可交付构建。恢复代码工作时先修复并核验，再依据新任务清单推进；不因已有投入继续优先建设低价值功能。
-- 宿主/SDK 使用项目固定的 DSH `0.2.0-rc.2` 契约，正式 Redis 连接为项目现有 TCP/TLS、RESP2 传输；依赖中存在 `redis` 包不代表已支持 Sentinel 或 Cluster。实施时核对相应固定版本的官方文档，不能套用未经验证的新接口。
+- 暂停前筛选预设工具的两处 TypeScript 错误已在后续工作中修复；2026-11-04 修改直接字段读取之前，当前工作区通过类型、构建及 69 个文件/551 项测试。新改动和真实 DSH/模型场景需分别验证，历史结果不代表当前构建完整验收。
+- 当前工作区与本机 CLI 使用 DSH `0.2.1-rc.5`；此前 `0.2.0-rc.2` 验收保留为历史证据。正式 Redis 连接为项目现有 TCP/TLS、RESP2 传输；依赖中存在 `redis` 包不代表已支持 Sentinel 或 Cluster。实施时核对相应固定版本的官方文档，不能套用未经验证的新接口。
 
 ## 架构和正确性
 
@@ -77,5 +77,5 @@ Key、值、慢日志参数和客户端信息进入工具结果后，可能进�
 ## 依据
 
 - [当前任务清单](DSH_AI_READONLY_TASKS.md)与[开发说明](DEVELOPMENT.md)。
-- [固定版 DSH 工具服务](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/core/tools/README.zh.md)。
+- [DSH rc.2 历史工具服务](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/core/tools/README.zh.md)；当前 rc.5 接口须以对应已安装版本及固定版资料核对。
 - [Redis SCAN](https://redis.io/docs/latest/commands/scan/)、[Redis SELECT](https://redis.io/docs/latest/commands/select/) 和 [Redis SLOWLOG GET](https://redis.io/docs/latest/commands/slowlog-get/)。浮动文档仅作入口，实施时应核验与目标 Redis/模块版本一致的契约。

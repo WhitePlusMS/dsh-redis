@@ -21,7 +21,7 @@ import { RedisAiStreamPages, isAiStreamCursor } from './ai-stream-pages.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
-import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
+import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
@@ -35,6 +35,8 @@ export type AiJson = z.infer<typeof json>
 export interface AiValueRequest {
   readonly key?: string
   readonly keyBase64?: string
+  readonly field?: string
+  readonly fieldBase64?: string
   readonly cursor?: string
   readonly offset?: string
   readonly count?: number
@@ -205,6 +207,7 @@ export class RedisAiReader {
     return this.project(sessionId, { readOnly: true, connection, errorMessage: explain(connection.error), requestedDb: db, sampledAt: new Date().toISOString() })
   }
   async read(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
+    if (args.field !== undefined || args.fieldBase64 !== undefined) return this.readExplicitHashField(sessionId, args, signal)
     if (args.key !== undefined || args.keyBase64 !== undefined) return this.readValue(sessionId, args, signal, stage)
     const selected = this.selection(sessionId)
     if (selected === null) return this.readValue(sessionId, args, signal, stage)
@@ -231,6 +234,23 @@ export class RedisAiReader {
       }
       return result
     } catch (error) { prepared?.rollback(); throw error }
+  }
+  /** A named Hash field is read directly; it must never depend on a sidebar selection. */
+  private async readExplicitHashField(sessionId: string, args: AiValueRequest, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined) || (args.field === undefined) === (args.fieldBase64 === undefined)) throw new Error('精确字段读取需要分别指定一个 Key 和一个字段身份。')
+    if (args.cursor !== undefined || args.offset !== undefined || args.count !== undefined || args.bytes !== undefined || args.match !== undefined || args.start !== undefined || args.end !== undefined || args.direction !== undefined) throw new Error('精确字段读取不能同时使用分页或范围参数。')
+    const encode = (value: string): string => {
+      const bytes = Buffer.from(value, 'utf8')
+      if (bytes.toString('utf8') !== value) throw new Error('文本包含无法无损编码的字符，请使用规范 Base64 身份。')
+      return bytes.toString('base64')
+    }
+    const target = this.target(sessionId)
+    const request = hashFieldReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encode(args.key), fieldBase64: args.field === undefined ? args.fieldBase64 : encode(args.field) })
+    const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, request.keyBase64, { kind: 'hash', fieldBase64: request.fieldBase64 }, signal)
+    signal.throwIfAborted()
+    this.connections.assertReadResult(sessionId, target, sample.error)
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), field: byteIdentity(Buffer.from(request.fieldBase64, 'base64')), errorMessage: sample.state === 'selection-missing' ? '采样时指定的 Hash 字段不存在。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
   }
   private async readValue(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void, validateSelection?: (allowFailed?: boolean) => void): Promise<AiJson> {
     signal.throwIfAborted()
