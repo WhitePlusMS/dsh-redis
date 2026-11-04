@@ -190,10 +190,11 @@ export const uiChannelMessageSchema: TypertSchema<UiChannelMessage> = { parse(va
   }
   if (kind !== 'action') throw new TypeError('Redis RPC: invalid UI message')
   const raw = objectAt(value, ['kind', 'request']), request = objectAt(raw.request, ['requestId', 'action', 'target', 'selectionRevision', 'expiresAt'])
-  const action = objectAt(request.action, ['kind', 'target', 'key', 'keyBase64', 'field', 'index', 'member', 'id', 'fieldIndex', 'fieldBase64'])
-  if (action.kind !== 'show' && action.kind !== 'confirmSelection' && action.kind !== 'refresh' && action.kind !== 'selectKey' && action.kind !== 'selectHashField' && action.kind !== 'selectListIndex' && action.kind !== 'selectSetMember' && action.kind !== 'selectZSetMember' && action.kind !== 'selectStreamField') throw new TypeError('Redis RPC: unsupported UI action')
+  const action = objectAt(request.action, ['kind', 'target', 'key', 'keyBase64', 'format', 'field', 'index', 'member', 'id', 'fieldIndex', 'fieldBase64'])
+  if (action.kind !== 'show' && action.kind !== 'confirmSelection' && action.kind !== 'refresh' && action.kind !== 'setFormat' && action.kind !== 'selectKey' && action.kind !== 'selectHashField' && action.kind !== 'selectListIndex' && action.kind !== 'selectSetMember' && action.kind !== 'selectZSetMember' && action.kind !== 'selectStreamField') throw new TypeError('Redis RPC: unsupported UI action')
   let parsedAction: UiAction
   if (action.kind === 'refresh') { const raw = objectAt(request.action, ['kind', 'target', 'keyBase64']); parsedAction = { kind: action.kind, target: databaseTargetSchema.parse(raw.target), keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES) } }
+  else if (action.kind === 'setFormat') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'format']); if (raw.format !== 'text' && raw.format !== 'json' && raw.format !== 'hex' && raw.format !== 'base64') throw new TypeError('Redis RPC: invalid preview format'); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), format: raw.format } }
   else if (action.kind === 'selectKey') parsedAction = { kind: action.kind, key: identityAt(objectAt(request.action, ['kind', 'key']).key) }
   else if (action.kind === 'selectHashField') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'field']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), field: identityAt(raw.field) } }
   else if (action.kind === 'selectListIndex') { const raw = objectAt(request.action, ['kind', 'keyBase64', 'index']); parsedAction = { kind: action.kind, keyBase64: byteStringAt(raw.keyBase64, MAX_KEY_BYTES), index: unsignedIntegerAt(raw.index) } }

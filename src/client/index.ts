@@ -75,6 +75,7 @@ export function apply(ctx: Context): void {
       registerVisiblePane: () => panePresence.attach(sessionId),
       registerKeyHandler: handler => panePresence.registerKeyHandler(sessionId, handler),
       registerRefreshHandler: handler => panePresence.registerRefreshHandler(sessionId, handler),
+      registerFormatHandler: handler => panePresence.registerFormatHandler(sessionId, handler),
       registerHashHandler: handler => panePresence.registerHashHandler(sessionId, handler),
       registerListHandler: handler => panePresence.registerListHandler(sessionId, handler),
       registerSetHandler: handler => panePresence.registerSetHandler(sessionId, handler),
@@ -122,6 +123,7 @@ export function apply(ctx: Context): void {
           }
           if (document.visibilityState !== 'visible') return Promise.resolve('stale')
           if (request.action.kind === 'refresh') return panePresence.refresh(session, { ...request, action: request.action }, signal)
+          if (request.action.kind === 'setFormat') return panePresence.setFormat(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectKey') return panePresence.selectKey(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectHashField') return panePresence.selectHashField(session, { ...request, action: request.action }, signal)
           if (request.action.kind === 'selectListIndex') return panePresence.selectListIndex(session, { ...request, action: request.action }, signal)

@@ -1,5 +1,21 @@
 # 更新说明
 
+## 2026-11-04 接入 AI 值预览格式
+
+- 修改 `src/domain.ts`、`src/typert.shared.ts`、`src/client/ui-pane-presence.ts`、`src/client/index.ts`、`src/host/ai-reader.ts`、`src/host/ai-ui-tools.ts` 和 `src/runtime.ts`：定义受限格式动作，绑定可信会话、连接与选择。
+- 新增 `src/client/FormatActionContext.ts` 并修改 `src/client/KeyBrowser.tsx`：补齐工作区注册类型与当前 Key 上下文，修复首次类型检查发现的缺失接口。
+- 修改 `src/client/PreviewFormats.tsx` 和 `src/client/BytePreview.tsx`：格式更新在提交时重查动作有效性；只有可见值预览完成渲染且格式无错误才确认，用户手动切换优先。
+- 修改六种基础类型的值预览入口及相关浏览器夹具：只将当前值预览注册为动作目标，Hash/Stream 字段名预览不随值格式动作改变。
+- 格式状态按视图维护版本；动作失效时仅在没有较新手动格式选择的情况下回退，避免迟到动作影响新 Key 或覆盖用户操作。
+- 手动更改预览格式会使旧选择版本失效；处理格式更新同步完成或取消交错，避免旧动作在用户之后提交。
+- 修复格式回退函数的 TypeScript 类型，并完成 Set、ZSet、Stream 的版本化格式接线。
+- 新增 `tests/format-action-browser.test.ts`：覆盖 JSON 成功、无效或截断、隐藏预览、动作回退顺序，以及手动格式选择和目标变化阻止迟到动作，8 项通过。
+- 扩展 `tests/ai-tools.test.ts`：检查格式白名单、可信会话和当前选择绑定；工具专项通过。
+- 扩展 `tests/ui-action-confirmation-browser.test.ts`：经真实工具入口、宿主流和 List 预览验证 Hex、无效 JSON 与用户选择变化；仍使用合成数据，实际 DSH/模型验收待执行。
+- 原因和影响：支持用户按需让 AI 切换当前值的显示格式；不修改 Redis，格式错误或不可见时不得报告成功。
+- 修改 `docs/AI_READ_USAGE.md` 和任务清单：说明可用格式、无效 JSON 处理和当前验收边界。
+- 验证：`pnpm check` 通过类型检查、构建及 75 文件/599 项测试；包括 8 项格式浏览器测试与 3 项真实工具/宿主流格式测试。数据为合成夹具，当前构建的真实 DSH 和用户模型验收待完成。
+
 ## 2026-11-04 按读取身份实现 AI 单次刷新
 
 - 新增 `src/client/read-confirmation.ts` 和 `tests/read-confirmation.test.ts`：以独立身份关联异步读取和实际提交的结果对象；旧渲染、未完成读取、取消和旧请求不能得到成功回执。

@@ -31,7 +31,7 @@ export function SetView(props: Props) {
   const { t } = props
   const epoch = useContext(SelectionEpochContext)
   const visibility = useContext(RefreshVisibility), publication = useSelectionAction()
-  const [pattern, setPattern] = useState('*'), [selected, setSelected] = useState<string | null>(null), [format, setFormat] = useBrowsingFormat('set')
+  const [pattern, setPattern] = useState('*'), [selected, setSelected] = useState<string | null>(null), [format, setFormat, setActionFormat] = useBrowsingFormat('set')
   const [draft, setDraft] = useState('*')
   const [optionsOpen, setOptionsOpen] = useState(false)
   const [point, setPoint] = useState<LocatedMember | null>(null), [candidate, setCandidate] = useState<PendingMember | null>(null)
@@ -130,7 +130,7 @@ export function SetView(props: Props) {
       <CollectionTable rows={rows} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'set.empty')} selection={{ id: shown?.base64 ?? null, disabled: value => candidate?.row.base64 === value.base64, onSelect: value => { setPoint(current => current?.base64 === value.base64 ? current : null); setSelected(value.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.base64, remember: top => { candidate.previousTop ??= top }, ready: () => { if (pending.current !== candidate || candidate.resolved) return; if (candidate.signal.aborted || Date.now() >= candidate.request.expiresAt || !epoch?.current(candidate.request.selectionRevision) || document.visibilityState !== 'visible') { candidate.abort(); return } candidate.resolved = true; candidate.resolve({ kind: 'commitSetMember', accepted: candidate.accepted, rejected: candidate.rejected }) } }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={() => { const action = pending.current ?? deferredReject.current?.action; if (action !== undefined && action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       {pagingGuard && cursor !== null && !cache.limited && error === null && <button type="button" disabled={busy || candidate !== null} onClick={() => { epoch?.userSelect(); setPagingPaused(false); setPagingGuard(false); void scanState.scan(true) }}>{t('keys.more')}</button>}
       <section className="redis-collection-preview" aria-label={t('set.member')}>
-        {shown !== undefined && window !== null ? <BytePreview key={shown.base64} heading={{ label: t('set.member'), description: `${shown.byteLength} ${t('keys.bytes')}` }} value={window} t={t} format={format} onFormatChange={setFormat} /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}
+        {shown !== undefined && window !== null ? <BytePreview key={shown.base64} heading={{ label: t('set.member'), description: `${shown.byteLength} ${t('keys.bytes')}` }} value={window} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
     </div>
   </section>

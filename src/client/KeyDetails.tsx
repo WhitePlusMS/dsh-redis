@@ -28,7 +28,7 @@ export function KeyDetails(props: Props) {
   const [offset, setOffset] = useState('0'), [count, setCount] = useState(MAX_VALUE_BYTES)
   const [request, setRequest] = useState<{ offset: string; count: number; attempt: number; identity: symbol | null }>({ offset: '0', count: MAX_VALUE_BYTES, attempt: 0, identity: null })
   // The formatter survives the loading state between byte windows.
-  const [format, setFormat] = useBrowsingFormat('string')
+  const [format, setFormat, setActionFormat] = useBrowsingFormat('string')
   const [result, setResult] = useState<StringReadResult | null>(null)
   const [confirmation] = useState(() => new ReadConfirmation<StringReadResult>())
   const [completion, setCompletion] = useState<{ readonly id: symbol; readonly result: StringReadResult | null; readonly failed: boolean } | null>(null)
@@ -115,7 +115,7 @@ export function KeyDetails(props: Props) {
       {result.state === 'failed' && result.error !== null ? <p role="alert" className="redis-error">{t(`connection.error.${result.error}`)}</p> : result.state !== 'value' && <p role="status">{t(`value.state.${result.state}`)}</p>}
       {result.state === 'value' && <>
         <div className="redis-collection-state" data-value-coverage title={`${t(result.complete ? 'value.complete' : 'value.partial')} · ${t('value.offset')} ${result.offset} · ${result.byteLength} ${t('keys.bytes')}`}><span className={result.complete ? '' : 'redis-warning'}><Icon name={result.complete ? 'check' : 'warning'} />{!result.complete && t('read.partial')}</span><span>#{result.offset} · {result.byteLength}{result.metadata?.length === null || result.metadata?.length === undefined ? '' : ` / ${result.metadata.length}`} {t('keys.bytes')}</span></div>
-        <BytePreview value={result} t={t} format={format} onFormatChange={setFormat} />
+        <BytePreview value={result} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget />
       </>}
     </>}
   </section>

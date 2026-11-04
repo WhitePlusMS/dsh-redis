@@ -4,6 +4,7 @@ import type { UiAction } from '../domain.ts'
 import type { UiActionCoordinator } from './ui-action-coordinator.ts'
 import type { RedisAiReader } from './ai-reader.ts'
 import { ConnectionFailure } from './connection-service.ts'
+import { PREVIEW_FORMATS, type PreviewFormat } from '../domain.ts'
 
 /** The session comes from DSH, never from model arguments. */
 export function registerRedisUiTools(ctx: Context, actions: UiActionCoordinator<UiAction>): void {
@@ -34,10 +35,30 @@ export function registerRedisRefreshTool(ctx: Context, reader: RedisAiReader, ac
       if (Object.keys(args).length !== 0) throw new Error('Redis 工具包含不支持的参数。')
       const session = exec.agent.session.id
       return reader.withBudget(session, exec.signal, async () => {
-        const prepared = await reader.prepareRefresh(session, exec.signal).catch((error: unknown) => { if (error instanceof ConnectionFailure && error.code === 'stale') return null; throw error })
+        const prepared = await reader.prepareUiSelection(session, exec.signal).catch((error: unknown) => { if (error instanceof ConnectionFailure && error.code === 'stale') return null; throw error })
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请检查面板。' }
         const outcome = await actions.dispatch(session, { kind: 'refresh', target: prepared.target, keyBase64: prepared.keyBase64 }, null, prepared.revision, prepared.current, exec.signal)
         return { outcome, message: outcome === 'applied' ? '已确认当前面板完成一次只读刷新。' : '未能确认刷新结果，请检查当前面板。' }
+      })
+    },
+  }))
+}
+
+/** A format action changes only the currently visible value preview. */
+export function registerRedisFormatTool(ctx: Context, reader: RedisAiReader, actions: UiActionCoordinator<UiAction>): void {
+  ctx.tools.register(defineTool({
+    name: 'redis_viewer_format', description: '仅在用户明确要求改变当前 Redis 面板已选中值的预览格式时调用。format 为 text、json、hex 或 base64；只改变界面，不修改 Redis 数据。只有目标预览已显示对应格式且格式化成功才返回 applied；当前没有可见值、JSON 无效或被截断、界面/选择变化时不能声称成功。',
+    parameters: { format: { type: 'string', required: true } }, output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
+    async execute(args, exec) {
+      exec.signal.throwIfAborted()
+      if (exec.agent === undefined) throw new Error('Redis 工具调用缺少有效的 DSH 对话身份。')
+      if (Object.keys(args).some(key => key !== 'format') || !PREVIEW_FORMATS.some(value => value === args.format)) throw new Error('预览格式仅支持 text、json、hex 或 base64。')
+      const session = exec.agent.session.id, format = args.format as PreviewFormat
+      return reader.withBudget(session, exec.signal, async () => {
+        const prepared = await reader.prepareUiSelection(session, exec.signal).catch((error: unknown) => { if (error instanceof ConnectionFailure && error.code === 'stale') return null; throw error })
+        if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请检查面板。' }
+        const outcome = await actions.dispatch(session, { kind: 'setFormat', keyBase64: prepared.keyBase64, format }, prepared.target, prepared.revision, prepared.sameRevision, exec.signal)
+        return { outcome, format, message: outcome === 'applied' ? '已确认当前值按指定格式显示。' : '未能确认指定格式显示，请检查当前面板和值。' }
       })
     },
   }))

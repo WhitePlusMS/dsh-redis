@@ -8,6 +8,8 @@ export type ZSetActionRequest = UiActionRequest<Extract<UiAction, { kind: 'selec
 export type StreamActionRequest = UiActionRequest<Extract<UiAction, { kind: 'selectStreamField' }>>
 export type RefreshActionRequest = UiActionRequest<Extract<UiAction, { kind: 'refresh' }>>
 export type RefreshActionHandler = (request: RefreshActionRequest, signal: AbortSignal) => Promise<UiActionAck['outcome']>
+export type FormatActionRequest = UiActionRequest<Extract<UiAction, { kind: 'setFormat' }>>
+export type FormatActionHandler = (request: FormatActionRequest, signal: AbortSignal) => Promise<UiActionAck['outcome']>
 export type KeyActionResult = UiActionAck['outcome'] | { readonly kind: 'commitKey' | 'commitHashField' | 'commitListIndex' | 'commitSetMember' | 'commitZSetMember' | 'commitStreamField'; readonly accepted: () => void; readonly rejected: () => void }
 export type KeyActionHandler = (request: KeyActionRequest, signal: AbortSignal) => Promise<KeyActionResult>
 export type HashActionHandler = (request: HashActionRequest, signal: AbortSignal) => Promise<KeyActionResult>
@@ -26,6 +28,7 @@ export class UiPanePresence {
   private readonly zsetHandlers = new Map<string, Set<ZSetActionHandler>>()
   private readonly streamHandlers = new Map<string, Set<StreamActionHandler>>()
   private readonly refreshHandlers = new Map<string, Set<RefreshActionHandler>>()
+  private readonly formatHandlers = new Map<string, Set<FormatActionHandler>>()
   private readonly listeners = new Set<() => void>()
 
   attach(sessionId: string): () => void {
@@ -42,6 +45,19 @@ export class UiPanePresence {
   }
 
   count(sessionId: string): number { return this.panes.get(sessionId)?.size ?? 0 }
+  registerFormatHandler(sessionId: string, handler: FormatActionHandler): () => void {
+    let handlers = this.formatHandlers.get(sessionId)
+    if (handlers === undefined) { handlers = new Set(); this.formatHandlers.set(sessionId, handlers) }
+    const owner = handlers; owner.add(handler)
+    return () => { owner.delete(handler); if (owner.size === 0 && this.formatHandlers.get(sessionId) === owner) this.formatHandlers.delete(sessionId) }
+  }
+  setFormat(sessionId: string, request: FormatActionRequest, signal: AbortSignal): Promise<UiActionAck['outcome']> {
+    const count = this.count(sessionId), handlers = this.formatHandlers.get(sessionId)
+    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
+    const handler = handlers?.values().next().value
+    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
+    return handler(request, signal)
+  }
   registerRefreshHandler(sessionId: string, handler: RefreshActionHandler): () => void {
     let handlers = this.refreshHandlers.get(sessionId)
     if (handlers === undefined) { handlers = new Set(); this.refreshHandlers.set(sessionId, handlers) }

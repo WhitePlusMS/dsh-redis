@@ -126,15 +126,16 @@ export class RedisAiReader {
   isCurrentTarget(sessionId: string, target: DatabaseTarget): boolean {
     try { this.connections.assertTarget(sessionId, target); return true } catch { return false }
   }
-  /** Bind a UI-only refresh to one confirmed selection without reading its value. */
-  async prepareRefresh(sessionId: string, signal: AbortSignal) {
+  /** Bind a UI action to one confirmed selection without reading its value. */
+  async prepareUiSelection(sessionId: string, signal: AbortSignal) {
     const selected = this.selection(sessionId)
     if (selected === null) throw new Error('请先在当前 Redis 面板选择 Key。')
     const revision = await this.confirmSelection(sessionId, selected.target, null, signal)
     const current = () => this.selections.get(sessionId) === selected && this.isSelectionCurrent(sessionId, null) && this.isCurrentTarget(sessionId, selected.target)
     signal.throwIfAborted()
     if (!current()) throw new ConnectionFailure('stale')
-    return { target: selected.target, keyBase64: selected.selection.keyBase64, revision, current }
+    const sameRevision = () => current() && this.isSelectionCurrent(sessionId, revision)
+    return { target: selected.target, keyBase64: selected.selection.keyBase64, revision, current, sameRevision }
   }
   /** Capture the confirmed current Key, and guard every command against intervening selection. */
   async prepareHashField(sessionId: string, fieldBase64: string, signal: AbortSignal) {

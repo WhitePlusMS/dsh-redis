@@ -8,7 +8,7 @@ import type { ConnectionErrorCode, DatabaseTarget, UiAction } from '../src/domai
 import type { PreparedAiPage } from '../src/host/ai-page-store.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { registerRedisTools } from '../src/host/ai-tools.ts'
-import { registerRedisRefreshTool } from '../src/host/ai-ui-tools.ts'
+import { registerRedisFormatTool, registerRedisRefreshTool } from '../src/host/ai-ui-tools.ts'
 import { RedisKeys } from '../src/host/key-reader.ts'
 import { RedisHashes } from '../src/host/hash-reader.ts'
 import { RedisReplyError, type RedisReply } from '../src/host/resp.ts'
@@ -107,6 +107,18 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('validates the format tool and binds it to the confirmed session selection', async () => {
+    const f = await fixture()
+    await f.ctx.plugin({ name: 'format-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisFormatTool(scope, f.reader, f.actions) })
+    expect(f.reader.setSelection('a', { target: f.target, selection: { keyBase64: Buffer.from('plain').toString('base64'), item: null } }).accepted).toBe(true)
+    let received: UiAction | null = null
+    const unregister = f.actions.register('a', async request => { received = request.action; return { requestId: request.requestId, target: request.target, selectionRevision: request.selectionRevision, outcome: 'applied' } })
+    const result = await f.call('redis_viewer_format', { format: 'json' })
+    expect(content(result)).toContain('"outcome":"applied"')
+    expect(received).toEqual({ kind: 'setFormat', keyBase64: Buffer.from('plain').toString('base64'), format: 'json' })
+    for (const args of [{ format: 'yaml' }, { format: 'json', sessionId: 'b' }, {}]) expect((await f.call('redis_viewer_format', args)).isError).toBe(true)
+    unregister()
+  })
   it('binds a one-shot refresh tool to the trusted session and confirmed current selection', async () => {
     const f = await fixture()
     await f.ctx.plugin({ name: 'refresh-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisRefreshTool(scope, f.reader, f.actions) })

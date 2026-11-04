@@ -48,7 +48,7 @@ export function HashView(props: Props) {
   latest.current = { ...latest.current, visibility, publication, pagingPaused }
   const scanSignal = useRef<{ readonly signal: AbortSignal; readonly replace: boolean } | null>(null)
   const [fieldFormat, setFieldFormat] = useState<PreviewFormat>('text')
-  const [format, setFormat] = useBrowsingFormat('hash')
+  const [format, setFormat, setActionFormat] = useBrowsingFormat('hash')
   const scanState = useCollectionScan<HashCache, ScanHashResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: pattern, empty: emptyHashCache,
     append: (previous, page) => appendHashEntries(previous, page.entries),
     load: (cursor, signal) => {
@@ -160,7 +160,7 @@ export function HashView(props: Props) {
         {windows !== null && shown !== undefined ? <BytePreview key={shown.field.base64} heading={{ label: t('hash.field'), description: `${shown.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <><strong>{t('hash.field')}</strong><p>{t(selectedField === null ? 'hash.selectRow' : 'collection.selectionAbsent')}</p></>}
       </section>
       <section className="redis-hash-preview redis-hash-value" aria-label={t('hash.value')}>
-        {windows !== null && shown !== undefined ? <BytePreview key={shown.field.base64} heading={{ label: t('hash.value'), description: windows.value.complete ? `${shown.value.fullByteLength} ${t('keys.bytes')}` : `${shown.value.byteLength}/${shown.value.fullByteLength} ${t('keys.bytes')} · ${t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} /> : <strong>{t('hash.value')}</strong>}
+        {windows !== null && shown !== undefined ? <BytePreview key={shown.field.base64} heading={{ label: t('hash.value'), description: windows.value.complete ? `${shown.value.fullByteLength} ${t('keys.bytes')}` : `${shown.value.byteLength}/${shown.value.fullByteLength} ${t('keys.bytes')} · ${t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget /> : <strong>{t('hash.value')}</strong>}
       </section>
     </div>
   </section>

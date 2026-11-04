@@ -1,17 +1,52 @@
-import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { Fragment, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { StringReadResult } from '../domain.ts'
 import { previewValue, type PreviewFormat } from './value-preview.ts'
 import { NS } from './locales.ts'
 import { Icon } from './Icon.tsx'
 import { findLoadedText, indexJsonFolds, projectLoadedText, type TextRange } from './loaded-content.ts'
+import { FormatActionContext } from './FormatActionContext.ts'
+import { SelectionEpochContext } from './SelectionEpochContext.ts'
+import { RefreshVisibility } from './AutoRefresh.tsx'
+import type { FormatActionHandler } from './ui-pane-presence.ts'
 
 type Window = Pick<StringReadResult, 'base64' | 'prefix' | 'suffix' | 'offset' | 'complete'>
 const formats: readonly PreviewFormat[] = ['text', 'json', 'hex', 'base64']
 
 /** The same byte formatter serves String windows and collection cells. */
-export function BytePreview({ value, t, format, onFormatChange, heading }: { readonly value: Window; readonly t: TranslateNS<typeof NS>; readonly format: PreviewFormat; readonly onFormatChange: (format: PreviewFormat) => void; readonly heading?: { readonly label: string; readonly description: string } }) {
+export function BytePreview({ value, t, format, onFormatChange, onActionFormatChange, heading, actionTarget = false }: { readonly value: Window; readonly t: TranslateNS<typeof NS>; readonly format: PreviewFormat; readonly onFormatChange: (format: PreviewFormat) => void; readonly onActionFormatChange?: (format: PreviewFormat, current: () => boolean) => () => void; readonly heading?: { readonly label: string; readonly description: string }; readonly actionTarget?: boolean }) {
   const preview = useMemo(() => previewValue(value, format), [value, format])
+  const action = useContext(FormatActionContext), epoch = useContext(SelectionEpochContext), visibility = useContext(RefreshVisibility)
+  const root = useRef<HTMLElement>(null)
+  const latest = useRef({ format, preview, onActionFormatChange }); latest.current = { format, preview, onActionFormatChange }
+  const pending = useRef<{ readonly format: PreviewFormat; readonly current: () => boolean; readonly finish: (outcome: 'applied' | 'failed' | 'stale') => void } | null>(null)
+  useLayoutEffect(() => {
+    if (!actionTarget || action === null || epoch === null || visibility?.visible === false || visibility?.signal.aborted) return
+    const handler: FormatActionHandler = (request, signal) => new Promise(resolve => {
+      const target = request.target
+      const current = () => !signal.aborted && Date.now() < request.expiresAt && document.visibilityState === 'visible' && visibility?.visible !== false && !visibility?.signal.aborted && epoch.current(request.selectionRevision) && target !== null && target.id === action.target.id && target.generation === action.target.generation && target.db === action.target.db && request.action.keyBase64 === action.keyBase64 && (root.current?.getClientRects().length ?? 0) > 0
+      if (!current() || pending.current !== null) { resolve('stale'); return }
+      if (latest.current.format === request.action.format) { resolve(latest.current.preview.error === null ? 'applied' : 'failed'); return }
+      const change = latest.current.onActionFormatChange
+      if (change === undefined) { resolve('failed'); return }
+      let rollback: () => void = () => undefined, stale = false
+      const finish = (outcome: 'applied' | 'failed' | 'stale') => { if (pending.current?.finish !== finish) return; pending.current = null; signal.removeEventListener('abort', cancelled); if (outcome === 'stale') { stale = true; rollback() } resolve(outcome) }
+      const cancelled = () => finish('stale')
+      pending.current = { format: request.action.format, current, finish }
+      signal.addEventListener('abort', cancelled, { once: true })
+      if (signal.aborted) { cancelled(); return }
+      try { rollback = change(request.action.format, () => pending.current?.finish === finish && current()); if (stale) rollback() }
+      catch { finish('failed') }
+    })
+    const unregister = action.register(handler)
+    return () => { unregister(); pending.current?.finish('stale') }
+  }, [actionTarget, action?.register, action?.target.id, action?.target.generation, action?.target.db, action?.keyBase64, epoch, visibility?.visible, visibility?.signal])
+  useLayoutEffect(() => {
+    const request = pending.current
+    if (request === null) return
+    if (!request.current()) request.finish('stale')
+    else if (format === request.format) request.finish(preview.error === null ? 'applied' : 'failed')
+  })
   const [copyState, setCopyState] = useState<'copied' | 'failed' | null>(null)
   const copySequence = useRef(0)
   const copyTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -58,14 +93,14 @@ export function BytePreview({ value, t, format, onFormatChange, heading }: { rea
     if (cursor < range.end) nodes.push(preview.text.slice(cursor, range.end))
     return nodes
   }
-  return <section className="redis-byte-preview" aria-label={heading?.label ?? t('content.preview')} onKeyDown={event => {
+  return <section ref={root} className="redis-byte-preview" aria-label={heading?.label ?? t('content.preview')} onKeyDown={event => {
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'f') { event.preventDefault(); setSearchOpen(true); searchInput.current?.focus() }
     else if (event.key === 'Escape' && searchOpen) { event.preventDefault(); setSearchOpen(false); content.current?.focus({ preventScroll: true }) }
     else if (event.key === 'F3' || event.key === 'Enter' && event.target === searchInput.current) { event.preventDefault(); nextMatch(event.shiftKey ? -1 : 1) }
   }}>
     <div className="redis-format-toolbar" role="group" aria-label={t('value.format')}>
       {heading !== undefined && <div className="redis-preview-caption"><strong>{heading.label}</strong><small className="redis-preview-size">{heading.description}</small></div>}
-      <select name="valueFormat" aria-label={heading === undefined ? t('value.format') : `${heading.label} · ${t('value.format')}`} value={format} onChange={event => { const choice = formats.find(value => value === event.target.value); if (choice !== undefined) onFormatChange(choice) }}>
+      <select name="valueFormat" aria-label={heading === undefined ? t('value.format') : `${heading.label} · ${t('value.format')}`} value={format} onChange={event => { const choice = formats.find(value => value === event.target.value); if (choice !== undefined) { pending.current?.finish('stale'); epoch?.userSelect(); onFormatChange(choice) } }}>
         {formats.map(choice => <option key={choice} value={choice}>{choice === 'base64' ? 'Base64' : t(`value.format.${choice}`)}</option>)}
       </select>
       <button type="button" className="redis-icon-button" title={t('content.find')} aria-label={t('content.find')} disabled={preview.error !== null} onClick={() => { setSearchOpen(true); searchInput.current?.focus() }}><Icon name="search" /></button>

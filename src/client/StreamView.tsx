@@ -35,7 +35,7 @@ export function StreamView(props: Props) {
   const [range, setRange] = useState({ start: '-', end: '+', count: MAX_STREAM_MESSAGES, attempt: 0 }), [rangeError, setRangeError] = useState(false)
   const [selected, setSelected] = useState<string | null>(null), [pairIndex, setPairIndex] = useState(0)
   const [optionsOpen, setOptionsOpen] = useState(false), [fieldFormat, setFieldFormat] = useState<PreviewFormat>('text')
-  const [format, setFormat] = useBrowsingFormat('stream')
+  const [format, setFormat, setActionFormat] = useBrowsingFormat('stream')
   const [point, setPoint] = useState<LocatedMessage | null>(null), [candidate, setCandidate] = useState<PendingField | null>(null)
   const [pagingPaused, setPagingPaused] = useState(false), [pagingGuard, setPagingGuard] = useState(false)
   const [restoreMessageScroll, setRestoreMessageScroll] = useState<{ readonly top: number } | undefined>(), [restoreFieldScroll, setRestoreFieldScroll] = useState<{ readonly top: number } | undefined>()
@@ -162,7 +162,7 @@ export function StreamView(props: Props) {
         {shownPair !== undefined && shown !== undefined && windows !== null ? <BytePreview key={`${shown.id}:${shownIndex}`} heading={{ label: t('hash.field'), description: `#${shownIndex} · ${shownPair.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <strong>{t('hash.field')}</strong>}
       </section>
       <section className="redis-collection-preview redis-stream-value" aria-label={t('hash.value')}>
-        {shownPair !== undefined && shown !== undefined && windows !== null ? <BytePreview key={`${shown.id}:${shownIndex}`} heading={{ label: t('hash.value'), description: `${shownPair.value.byteLength}/${shownPair.value.fullByteLength} ${t('keys.bytes')}${windows.value.complete ? '' : ' · ' + t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} /> : <strong>{t('hash.value')}</strong>}
+        {shownPair !== undefined && shown !== undefined && windows !== null ? <BytePreview key={`${shown.id}:${shownIndex}`} heading={{ label: t('hash.value'), description: `${shownPair.value.byteLength}/${shownPair.value.fullByteLength} ${t('keys.bytes')}${windows.value.complete ? '' : ' · ' + t('value.partial')}` }} value={windows.value} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget /> : <strong>{t('hash.value')}</strong>}
       </section>
     </div>
   </section>

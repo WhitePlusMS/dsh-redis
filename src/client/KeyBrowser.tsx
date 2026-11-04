@@ -17,11 +17,13 @@ import type { ZSetActions } from './ZSetView.tsx'
 import type { StreamActions } from './StreamView.tsx'
 import { CurrentSelection, type SetCurrentSelection } from './CurrentSelection.tsx'
 import { SelectionEpochContext, useSelectionRevision } from './SelectionEpochContext.ts'
-import type { KeyActionHandler, KeyActionRequest, KeyActionResult, RefreshActionHandler } from './ui-pane-presence.ts'
+import type { FormatActionHandler, KeyActionHandler, KeyActionRequest, KeyActionResult, RefreshActionHandler } from './ui-pane-presence.ts'
+import { FormatActionContext } from './FormatActionContext.ts'
 
 export interface KeyActions extends StringActions, HashActions, ListActions, SetActions, ZSetActions, StreamActions {
   readonly registerKeyHandler: (handler: KeyActionHandler) => () => void
   readonly registerRefreshHandler: (handler: RefreshActionHandler) => () => void
+  readonly registerFormatHandler: (handler: FormatActionHandler) => () => void
   readonly setSelection: SetCurrentSelection
   readonly selectDatabase: (request: DatabaseTarget, signal: AbortSignal) => Promise<RemoteResult<ConnectionView>>
   readonly scanKeys: (request: ScanKeysRequest, signal: AbortSignal) => Promise<RemoteResult<ScanKeysResult>>
@@ -244,7 +246,7 @@ export function KeyBrowser(props: Props) {
         <RefreshReadInfo t={t} />
         <div className="redis-inspector" data-view={detailTab} role="tabpanel" aria-label={t(detailTab === 'data' ? 'ui.data' : 'ui.metadata')}>
           <label className="redis-key-identity" hidden={detailTab !== 'metadata'}>{t('keys.selected')}<textarea readOnly rows={3} value={key.base64} spellCheck={false} /></label>
-          <KeyDetails {...props} target={target()} selected={key} />
+          <FormatActionContext.Provider value={{ register: props.registerFormatHandler, target: target(), keyBase64: key.base64 }}><KeyDetails {...props} target={target()} selected={key} /></FormatActionContext.Provider>
         </div>
         </div></KeyAutoRefresh></KeyPresentation></CurrentSelection></RefreshVisibility.Provider></div>
       }) : <div className="redis-welcome"><Icon name="database" /><strong>Redis</strong><p>{t('layout.selectKey')}</p></div>}

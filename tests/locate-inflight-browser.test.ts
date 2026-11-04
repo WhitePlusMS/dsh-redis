@@ -60,7 +60,7 @@ it.skipIf(browserPath === undefined).each(['field', 'focus', 'folder', 'locate',
     const props = {
       t: key => key,
       connection: { ...window.fixtureTarget, state: 'connected', error: null, target: { host: 'fixture', port: 6379, username: '', tls: false } },
-      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: handler => panes.registerKeyHandler('a', handler), registerRefreshHandler: handler => panes.registerRefreshHandler('a', handler), registerHashHandler: handler => panes.registerHashHandler('a', handler), readActionPoint: async () => ({ ok: false }),
+      configure: () => {}, acceptConnection: () => {}, registerKeyHandler: handler => panes.registerKeyHandler('a', handler), registerRefreshHandler: handler => panes.registerRefreshHandler('a', handler), registerFormatHandler: handler => panes.registerFormatHandler('a', handler), registerHashHandler: handler => panes.registerHashHandler('a', handler), readActionPoint: async () => ({ ok: false }),
       setSelection: (request, signal) => epoch.publish(request, epoch.snapshot().revision, signal),
       readDatabases: async () => ({ ok: false }),
       scanKeys: async () => ({ ok: true, value: { state: 'page', error: null, keys: [{ base64: 'aGFzaA==', byteLength: 4, label: '"hash"' }, { base64: 'Zm9sZGVyOm9uZQ==', byteLength: 10, label: '"folder:one"' }, { base64: 'Zm9sZGVyOnR3bw==', byteLength: 10, label: '"folder:two"' }, ...extraKeys], cursor: null, sampledAt: '1970-01-01T00:00:00.000Z' } }),
