@@ -20,7 +20,7 @@ const cleanups: (() => Promise<void> | void)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 /** Synthetic transport with two-page cursors exposes cross-consumer races. */
-async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute']) {
+async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute']) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   let changingTypeReads = 0
@@ -39,6 +39,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
           if (String(args[1]) === 'denied') throw new RedisReplyError('NOPERM synthetic-secret')
           return String(args[1]) === 'missing' ? null : 123n
         }
+        case 'SLOWLOG': return slowlog === undefined ? [] : slowlog(command, args, signal, guard)
         case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; if (/^order:\d+$/u.test(key)) return 'hash'; return types[key] ?? 'none'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
         case 'PTTL': return -1n
@@ -102,6 +103,29 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('returns only bounded server-wide slow-log metadata without arguments or client details', async () => {
+    const requests: Array<readonly unknown[]> = []
+    const f = await fixture(undefined, undefined, undefined, undefined, async (_command, args) => {
+      requests.push(args)
+      return [[7n, 1700000000n, 1500n, [Buffer.from('set'), Buffer.from('private-key'), Buffer.from('synthetic-secret')], Buffer.from('private-client'), Buffer.from('private-name')], [8n, 1700000001n, 2n, [Buffer.from([0xff])], Buffer.from('private-client'), Buffer.from('')]]
+    })
+    const text = content(await f.call('redis_viewer_slowlog', { count: 3 }))
+    const result = JSON.parse(text)
+    expect(result).toMatchObject({ scope: 'server', state: 'value', requestedCount: 3, returnedCount: 2, entries: [{ id: '7', timestampSeconds: '1700000000', durationMicroseconds: '1500', command: 'SET' }, { command: null }] })
+    expect(text).not.toContain('private-key'); expect(text).not.toContain('synthetic-secret'); expect(text).not.toContain('private-client'); expect(text).not.toContain('private-name')
+    expect(requests).toEqual([['GET', '3']])
+    for (const args of [{ count: 0 }, { count: 11 }, { count: -1 }, { count: 1.5 }, { count: 2, command: 'RESET' }]) expect((await f.call('redis_viewer_slowlog', args)).isError).toBe(true)
+    expect(requests).toHaveLength(1)
+  })
+  it('distinguishes denied and malformed slow logs from an empty log', async () => {
+    const denied = await fixture(undefined, undefined, undefined, undefined, async () => { throw new RedisReplyError('NOPERM synthetic-secret') })
+    const text = content(await denied.call('redis_viewer_slowlog', {}))
+    expect(text).toContain('"state":"failed"'); expect(text).toContain('"error":"permission"'); expect(text).not.toContain('synthetic-secret')
+    const malformed = await fixture(undefined, undefined, undefined, undefined, async () => [[1n, 2n, 'bad', [Buffer.from('GET')]]])
+    expect(content(await malformed.call('redis_viewer_slowlog', {}))).toContain('"error":"protocol"')
+    const empty = await fixture()
+    expect(JSON.parse(content(await empty.call('redis_viewer_slowlog', {})))).toMatchObject({ state: 'value', returnedCount: 0, requestedCount: 10 })
+  })
   it('uses one bounded memory estimate for an explicit Key and preserves error meaning', async () => {
     const requests: Array<readonly unknown[]> = []
     const f = await fixture(undefined, undefined, undefined, async (_command, args) => {
@@ -490,7 +514,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_select_db', 'redis_viewer_status', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })

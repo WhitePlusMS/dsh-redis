@@ -182,7 +182,7 @@ describe('bounded Redis socket transport', () => {
   it('rejects removed diagnostic and module commands before dispatch', async () => {
     await withPeer(async (transport, commands) => {
       // Cast deliberately untrusted input to exercise the runtime boundary too.
-      for (const command of ['CLIENT', 'SLOWLOG', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'BF.EXISTS']) {
+      for (const command of ['CLIENT', 'JSON.GET', 'GEOPOS', 'PFCOUNT', 'TS.INFO', 'BF.EXISTS']) {
         await expect(transport.execute(command as RedisReadCommand, [], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
       }
       for (const args of [[], ['all']]) await expect(transport.execute('INFO', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
@@ -216,6 +216,16 @@ describe('bounded Redis socket transport', () => {
     }, (socket, args) => {
       expect(args).toEqual([Buffer.from('MEMORY'), Buffer.from('USAGE'), Buffer.from([0, 255]), Buffer.from('SAMPLES'), Buffer.from('5')])
       socket.write(':128\r\n')
+    })
+  })
+  it('allows only bounded SLOWLOG GET and rejects reset or all entries', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['RESET'], ['GET'], ['GET', '-1'], ['GET', '0'], ['GET', '11'], ['GET', '1', 'extra']]) await expect(transport.execute('SLOWLOG', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('SLOWLOG', ['GET', '10'], signal(), () => undefined)).toEqual([])
+      expect(commands).toEqual(['PING', 'SLOWLOG'])
+    }, (socket, args) => {
+      expect(args).toEqual([Buffer.from('SLOWLOG'), Buffer.from('GET'), Buffer.from('10')]); socket.write('*0\r\n')
     })
   })
   it('refuses cancelled and non-allowlisted commands before writing them', async () => {

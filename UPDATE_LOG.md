@@ -1,5 +1,14 @@
 # 更新说明
 
+## 2026-11-04 增加有界慢日志诊断
+
+- 扩展 `src/host/redis-transport.ts`：仅允许 `SLOWLOG GET` 且最多 10 条，拒绝重置、无限条数和其他子命令。
+- 扩展 `src/host/ai-reader.ts`、`src/host/ai-tools.ts`：通过当前会话只读最近慢日志，仅投影命令名、ID、时间和执行耗时，不向模型返回命令参数、客户端地址或名称；明确日志是服务器范围，不能推断整个历史没有慢查询。
+- 原因和影响：让用户直接询问近期慢查询；调用遵循原连接权限、预算、取消和上限，错误不能伪装为空结果。
+- 扩展 `tests/ai-tools.test.ts`、`tests/redis-transport.test.ts`：覆盖条数和子命令门禁、字段脱敏、缺权限、畸形回复与空日志区别。
+- 新增 `scripts/smoke-ai-slowlog.mjs`，仅在隔离 Redis 设置慢日志阈值并构造合成记录；更新 `docs/AI_READ_USAGE.md` 说明调用范围与脱敏。
+- 验证：`pnpm typecheck`、构建以及 2 个测试文件/62 项通过；Redis 8.2.6 与真实 ToolRuntime 的慢日志验证确认参数未返回，日志及合成 Key 未变化，夹具已停止。真实 DSH 与用户模型仍待使用新包验收。
+
 ## 2026-11-04 增加明确 Key 的内存只读诊断
 
 - 修改 `src/host/redis-transport.ts`：只允许固定形状的 `MEMORY USAGE <二进制 Key> SAMPLES 5`，拒绝其他 MEMORY 子命令、全量采样和额外参数。

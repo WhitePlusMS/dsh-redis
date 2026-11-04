@@ -243,6 +243,31 @@ export class RedisAiReader {
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, samples: 5, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
+  /** Slow log is server-wide: return only bounded metadata, never argument bytes. */
+  async slowLog(sessionId: string, count: number, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if (!Number.isInteger(count) || count < 1 || count > 10) throw new Error('慢日志条数必须在 1 到 10 之间。')
+    const target = this.target(sessionId)
+    const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    try {
+      const reply = await context.command('SLOWLOG', ['GET', String(count)])
+      signal.throwIfAborted()
+      if (!Array.isArray(reply) || reply.length > count) throw new RedisFrameError('protocol')
+      const entries = reply.map(row => {
+        if (!Array.isArray(row) || row.length < 4 || typeof row[0] !== 'bigint' || row[0] < 0n || typeof row[1] !== 'bigint' || row[1] < 0n || typeof row[2] !== 'bigint' || row[2] < 0n || !Array.isArray(row[3]) || !Buffer.isBuffer(row[3][0])) throw new RedisFrameError('protocol')
+        const rawName = row[3][0].toString('ascii').toUpperCase()
+        const command = /^[A-Z][A-Z0-9._-]{0,63}$/u.test(rawName) && Buffer.from(rawName.toLowerCase(), 'ascii').equals(row[3][0].map(byte => byte >= 65 && byte <= 90 ? byte + 32 : byte)) ? rawName : null
+        return { id: row[0].toString(), timestampSeconds: row[1].toString(), durationMicroseconds: row[2].toString(), command }
+      })
+      this.connections.assertTarget(sessionId, target)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'value', requestedCount: count, returnedCount: entries.length, entries, sampledAt: new Date().toISOString(), error: null, errorMessage: null })
+    } catch (error) {
+      signal.throwIfAborted()
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'failed', requestedCount: count, returnedCount: 0, entries: [], sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+    } finally { context.dispose() }
+  }
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
     const previous = this.target(sessionId), target = databaseTargetSchema.parse({ ...previous, db })
