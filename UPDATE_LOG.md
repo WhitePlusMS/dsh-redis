@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-04 Redis 权限拒绝验证
+
+- 新增 `scripts/smoke-ai-permissions.mjs`，使用独立 Redis 的临时受限账号经过 DSH ToolRuntime 检查允许读取、字段读取及 Key 搜索被拒绝时的结果和错误脱敏，并核对合成数据及 TTL；避免将权限不足误判为空结果。
+- `pnpm typecheck` 和独立 Redis 8.2.6 ACL 专项通过，测试实例已停止；同步 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/current-development-package-2026-11-04.md`，当前构建的日常 DSH 和模型验收仍待完成。
+
 ## 2026-11-04 六类型直接查询验证
 
 - 新增独立 Redis 验证脚本，通过真实 DSH ToolRuntime 直接查询 String、Hash、List、Set、ZSet 和 Stream，覆盖截断、缺失 Key 与 Stream 重复字段，并核对测试数据、TTL 和写命令计数不变；测试使用合成数据且不启动日常 DSH。

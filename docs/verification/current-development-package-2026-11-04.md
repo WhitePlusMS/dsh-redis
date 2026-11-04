@@ -17,6 +17,7 @@
 - 在本任务独立的 Redis `8.2.6` WSL 镜像上，通过真实 ToolRuntime 采样并回读服务器概况、慢日志、客户端、Key 内存、String 比较和 Stream 消费组报告；报告排除测试凭据及合成值，测试 Key 未变化，独立 Redis 已停止。专项还验证两次采样后保存第一次结果不会重新读取 Redis，取消不会留下可保存的采样。
 - 同样使用独立 Redis `8.2.6` 验证缺少 MATCH 时不发送 SCAN、明确前缀可查询，非法 Key/MATCH 文本不触发 TYPE，而合法替换字符和二进制 Key 可准确读取；测试数据及到期时间未变化，独立实例已停止。
 - 使用当前代码的真实 ToolRuntime 和独立 Redis `8.2.6`，在没有侧栏选择的情况下直接读取六种基础类型，并验证 String 截断、缺失 Key、Stream 重复字段、数据与 TTL 不变及写命令计数不增长；独立实例已停止。脚本为 `scripts/smoke-ai-six-types.mjs`，不等同真实模型对话。
+- 使用独立 Redis `8.2.6` 的临时 ACL 账号及真实 ToolRuntime，核验允许的 String 读取和被拒绝的 HGET、SCAN；权限拒绝未伪装成空结果，结果未包含原始拒绝信息或临时密码，测试数据与 TTL 未变化，独立实例已停止。脚本为 `scripts/smoke-ai-permissions.mjs`，不等同真实模型对话。
 
 ## 仍待完成
 
