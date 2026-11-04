@@ -34,7 +34,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
       signal.throwIfAborted(); guard(); commands.push(command)
       const key = String(args[0]), bulk = (value: string) => Buffer.from(value)
       switch (command) {
-        case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; return types[key] ?? 'none'
+        case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; if (/^order:\d+$/u.test(key)) return 'hash'; return types[key] ?? 'none'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
         case 'PTTL': return -1n
         case 'STRLEN': return key === 'large' ? 9000n : key === 'changing' ? 6n : 5n
@@ -42,7 +42,15 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
         case 'SCAN': if (scan !== undefined) return scan(command, args, signal, guard); if (args[2] === 'network*') failNetwork(); if (args[2] === 'denied*') throw new RedisReplyError('NOPERM fixture denied'); return [bulk(args[0] === '0' ? '7' : '0'), [bulk(args[0] === '0' ? 'plain' : 'hash')]]
         case 'HLEN': return 2n
         case 'HSCAN': return [bulk(args[1] === '0' ? '7' : '0'), [bulk(args[1] === '0' ? 'first' : 'second'), bulk('字段值')]]
-        case 'HGET': return String(args[1]) === 'absent' ? null : bulk('精确字段值')
+        case 'HGET': {
+          if (/^order:\d+$/u.test(key)) {
+            const index = Number(key.slice(6))
+            if (index === 8) throw new RedisReplyError('NOPERM synthetic-secret')
+            if (index === 9) return null
+            return bulk(index % 3 === 0 ? 'failed' : 'synthetic-secret')
+          }
+          return String(args[1]) === 'absent' ? null : bulk('精确字段值')
+        }
         case 'LLEN': return 2n
         case 'LRANGE': return [bulk('one'), bulk('two')].slice(Number(args[1]), Number(args[2]) + 1)
         case 'SCARD': return 1n
@@ -89,6 +97,47 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('filters bounded batches without exposing other values or consuming the normal Key cursor', async () => {
+    const f = await fixture(undefined, async (_command, args) => {
+      if (args[2] === 'normal:*') return [Buffer.from(args[0] === '0' ? '7' : '0'), [Buffer.from('plain')]]
+      return [Buffer.from('0'), Array.from({ length: 21 }, (_value, index) => Buffer.from('order:' + index))]
+    })
+    const normal = JSON.parse(content(await f.call('redis_viewer_keys', { match: 'normal:*' }))) as { cursor: string }
+    const first = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' }))) as { counts: Record<string, number>; cursor: string; scanComplete: boolean; errors: string[] }
+    expect(first).toMatchObject({ counts: { checked: 10, matched: 3, different: 5, missingField: 1, failed: 1 }, errors: ['permission'], scanComplete: false })
+    expect(first.cursor).toMatch(/^f:/u)
+    expect(JSON.stringify(first)).not.toContain('synthetic-secret')
+    expect((await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'other', cursor: first.cursor })).isError).toBe(true)
+    const second = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed', cursor: first.cursor }))) as { counts: Record<string, number>; cursor: string; scanComplete: boolean }
+    expect(second).toMatchObject({ counts: { checked: 10, matched: 3 }, scanComplete: false })
+    const last = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed', cursor: second.cursor })))
+    expect(last).toMatchObject({ counts: { checked: 1, matched: 0 }, cursor: null, scanComplete: true })
+    expect((await f.call('redis_viewer_keys', { match: 'normal:*', cursor: normal.cursor })).isError).toBeFalsy()
+    expect(f.commands.filter(command => command === 'SCAN')).toHaveLength(3)
+    expect(f.commands.filter(command => command === 'HGET')).toHaveLength(21)
+    expect(f.commands.every(command => !['SET', 'HSET', 'DEL', 'KEYS'].includes(command))).toBe(true)
+    for (const args of [{ field: 'status', equals: 'failed' }, { match: '\ud800', field: 'status', equals: 'failed' }, { match: '*', field: '\ud800', equals: 'failed' }, { match: '*', field: 'a'.repeat(1025), equals: 'failed' }, { match: '*', field: 'status', equals: 'x'.repeat(4097) }]) expect((await f.call('redis_viewer_filter_hash', args)).isError).toBe(true)
+  })
+  it('continues a filter after an empty SCAN page without claiming it finished', async () => {
+    const f = await fixture(undefined, async (_command, args) => args[0] === '0' ? [Buffer.from('7'), []] : [Buffer.from('0'), [Buffer.from('order:0')]])
+    const first = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' }))) as { cursor: string }
+    expect(first).toMatchObject({ counts: { checked: 0, matched: 0 }, scanComplete: false })
+    const last = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed', cursor: first.cursor })))
+    expect(last).toMatchObject({ counts: { checked: 1, matched: 1 }, scanComplete: true })
+  })
+  it('retains the filter batch when cancellation happens before a field read completes', async () => {
+    const f = await fixture(undefined, async () => [Buffer.from('0'), [Buffer.from('order:0')]])
+    const original = f.connections.read.bind(f.connections), cancelled = new AbortController()
+    let release!: () => void, started!: () => void
+    const waiting = new Promise<void>(resolve => { release = resolve }), observed = new Promise<void>(resolve => { started = resolve })
+    const spy = vi.spyOn(f.connections, 'read').mockImplementation(async (...args) => { if (args[2] === 'HGET') { started(); await waiting }; return original(...args) })
+    const pending = f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' }, { signal: cancelled.signal })
+    await observed; cancelled.abort(); release()
+    expect((await pending).isError).toBe(true)
+    spy.mockRestore()
+    expect(JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' })))).toMatchObject({ counts: { checked: 1, matched: 1 }, scanComplete: true })
+    expect(f.commands.filter(command => command === 'SCAN')).toHaveLength(1)
+  })
   it('reads explicit Set and ZSet members without a synchronized sidebar', async () => {
     const f = await fixture(undefined, undefined, { confirm: async () => { throw new Error('面板不可用') }, current: () => false })
     expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'set', member: 'member' })))).toMatchObject({ source: 'explicit', value: { state: 'value', metadata: { type: 'set' } } })
@@ -406,7 +455,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_keys', 'redis_viewer_select_db', 'redis_viewer_status', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_select_db', 'redis_viewer_status', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })

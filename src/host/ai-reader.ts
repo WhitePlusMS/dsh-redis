@@ -18,6 +18,7 @@ import { RedisAiHashPages, isAiHashCursor } from './ai-hash-pages.ts'
 import { RedisAiSetPages, isAiSetCursor } from './ai-set-pages.ts'
 import { RedisAiZSetPages, isAiZSetCursor } from './ai-zset-pages.ts'
 import { RedisAiStreamPages, isAiStreamCursor } from './ai-stream-pages.ts'
+import { RedisAiHashFilter } from './ai-hash-filter.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
@@ -60,6 +61,7 @@ export class RedisAiReader {
   private readonly budget = new RedisAiBudget()
   private readonly keys: RedisKeys
   private readonly keyPages: RedisAiKeyPages
+  private readonly hashFilter: RedisAiHashFilter
   private readonly strings: RedisStrings
   private readonly hashes: RedisHashes
   private readonly hashPages: AiPageCoordinator<RedisAiHashPages>
@@ -75,6 +77,7 @@ export class RedisAiReader {
   constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean) {
     this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections)
     this.keyPages = new RedisAiKeyPages(connections, this.keys)
+    this.hashFilter = new RedisAiHashFilter(connections)
     this.hashes = new RedisHashes(connections, true); this.hashPages = new AiPageCoordinator([new RedisAiHashPages(connections, this.hashes), new RedisAiHashPages(connections, new RedisHashes(connections, true))]); this.lists = new RedisLists(connections)
     this.sets = new RedisSets(connections, true); this.setPages = new AiPageCoordinator([new RedisAiSetPages(connections, this.sets), new RedisAiSetPages(connections, new RedisSets(connections, true))])
     this.zsets = new RedisZSets(connections, true); this.zsetRanks = new RedisZSets(connections); this.zsetPages = new AiPageCoordinator([new RedisAiZSetPages(connections, this.zsets), new RedisAiZSetPages(connections, new RedisZSets(connections, true))])
@@ -205,6 +208,18 @@ export class RedisAiReader {
     if (stage === undefined) { try { page.commit() } catch (error) { page.rollback(); throw error } }
     else stage(page)
     return page.result
+  }
+  /** Filter one bounded batch without returning unrelated Hash values to the model. */
+  async filterHash(sessionId: string, args: { readonly match: string; readonly field: string; readonly equals: string; readonly cursor?: string }, signal: AbortSignal, stage: (page: PreparedAiPage) => void): Promise<AiJson> {
+    signal.throwIfAborted()
+    const target = this.target(sessionId)
+    encodeIdentity(args.match)
+    const request = scanKeysRequestSchema.parse({ target, pattern: args.match, cursor: null })
+    const fieldBase64 = encodeIdentity(args.field), expectedBase64 = encodeIdentity(args.equals)
+    if (Buffer.byteLength(args.field, 'utf8') > 1024 || Buffer.byteLength(args.equals, 'utf8') > MAX_AI_VALUE_BYTES) throw new Error('筛选字段或目标值超过允许的字节数。')
+    hashFieldReadRequestSchema.parse({ target, keyBase64: '', fieldBase64 })
+    const page = await this.hashFilter.prepare(sessionId, target, request.pattern, fieldBase64, expectedBase64, args.cursor ?? null, signal)
+    try { stage(page); return page.result } catch (error) { page.rollback(); throw error }
   }
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
@@ -398,6 +413,7 @@ export class RedisAiReader {
     this.invalidateUiActions(sessionId)
     this.selections.delete(sessionId)
     this.keyPages.disposeSession(sessionId)
+    this.hashFilter.disposeSession(sessionId)
     this.hashPages.disposeSession(sessionId)
     this.setPages.disposeSession(sessionId)
     this.zsetPages.disposeSession(sessionId)
@@ -408,5 +424,5 @@ export class RedisAiReader {
   private disposeCursors(sessionId: string): void {
     this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.zsetRanks.disposeSession(sessionId); this.streams.disposeSession(sessionId)
   }
-  dispose(): void { this.selections.clear(); this.budget.dispose(); this.keyPages.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
+  dispose(): void { this.selections.clear(); this.budget.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
 }

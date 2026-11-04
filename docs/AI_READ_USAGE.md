@@ -12,6 +12,7 @@
 
 - “当前Redis连接到了哪里，当前DB是多少？”
 - “检索当前DB里符合 `order:*` 的Key，先告诉我本批结果。”
+- “在 `order:*` 中查找 `status` 等于 `failed` 的 Hash，先检查一批。”
 - “读取 `order:1001`，解释其中的字段。”
 - “读取 `order:1001` 的 `status` 字段。”
 - “检查 `active:users` 中是否包含 `user:123`。”
@@ -40,6 +41,7 @@
 | `redis_viewer_status` | 无 | 当前公开连接视图、DB、选择同步状态和已同步选择 |
 | `redis_viewer_keys` | 可选`match`、`cursor` | 当前DB的SCAN批次；`returnedCount`为本次返回的Key数，不是全库总数；续读保持同一MATCH，空页不一定结束 |
 | `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
+| `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；参数仍由各类型严格校验。
@@ -49,6 +51,8 @@ Key、字段和成员的文本与 Base64 身份各自只能传一个。指定 Ha
 明确要求定位当前 Stream Key 的消息字段时，可使用 `redis_viewer_locate_stream_field`，提供完整消息 `id` 和从 0 开始的 `fieldIndex`。该位置指消息中所有字段对的顺序，不是同名字段的出现次数；工具保留原始字段字节并使用 `XRANGE` 按消息 ID 只读采样，不推进消费组。界面单独再次采样并核对位置与字段身份，页外消息作为临时样本显示，不改变分页游标。两次读取不是事务快照，消息可能变化；只有两张表确认显示后才报告 `applied`。
 
 AI与UI独立持有游标，复用所属会话的同一连接；AI内部也遵循每类型一次扫描的现有所有权约束。对话单结果上限64KiB，集合值默认前4096字节，String默认4096字节。字段/成员身份不截断；超预算明确失败，不能跳过本批尾部后继续游标。`scanComplete`说明扫描结束，`complete`说明本次结果是否完整，二者不同。
+
+范围筛选的字段和目标值按 UTF-8 原始字节精确比较，字段最多 1,024 字节、目标值最多 4,096 字节。每次调用最多检查 10 个候选，并受同一会话的连续调用预算限制；每个 Redis RESP 响应受 1 MiB 解析上限约束，但一次筛选会依次发出扫描、类型、字段和 TTL 等多个命令，因此不能把 64 KiB 模型输出上限误认为 Redis 总接收量。结果的 `counts` 仅描述本批，`sampledAt` 是扫描时间，`readStartedAt` 和 `readFinishedAt` 是本批读取时间范围。跨批可能遇到重复 Key，扫描结束也不是一致性快照；缺失、类型变化和读取失败均单独计数，不能把部分结果当作完整统计。
 
 二进制值保留Base64和字节长度，不能当作损坏文本；UTF-8前缀不完整时文本可能为空。未读取字节、其他分页及过滤掉的字段都不应被模型当作已知。
 

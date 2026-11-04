@@ -2668,6 +2668,17 @@
 - 新增 `scripts/smoke-ai-explicit-members.mjs`：在独立 Redis 夹具中核对二进制 Set/ZSet 成员、精确分数、缺失和数据不变，并比较扫描及写入命令计数。
 - 验证：`pnpm typecheck` 和 3 文件/46 项专项通过；独立 Redis 8.2.6 与 DSH ToolRuntime 验收通过，数据不变且未发生集合扫描或写入，夹具已停止。当前构建的真实 DSH/模型验收仍待完成。
 
+### 2026-11-04 指定范围内筛选 Hash 字段（进行中）
+
+- 新增 `src/host/ai-hash-filter.ts`，修改 `src/host/ai-reader.ts` 和 `src/host/ai-tools.ts`：为明确 MATCH、字段和目标值的查询提供独立游标的有界筛选，每次最多检查 10 个候选，只返回匹配 Key 及状态计数；分页与预算提交复用现有机制。
+- 修改 `tests/ai-tools.test.ts` 的工具注册预期。原因与影响：支持按用户指定范围查询字段值，避免把全量业务值发送模型；代码正在实现，类型和边界验证待执行，不代表真实模型验收。
+- 修正 `src/host/ai-hash-filter.ts` 对续读令牌的校验：AI 自身带前缀的令牌与底层 UUID 游标分开处理，避免有效续读被共享 RPC schema 拒绝；不改变 Redis 命令范围。
+- 扩充 `tests/ai-tools.test.ts`：通过合成 Redis 链路验证每批 10 个候选、跨批续读、条件绑定、独立普通扫描游标、权限失败及中途取消后的批次恢复，并检查未匹配值不会进入结果。
+- 筛选结果增加字段读取的起止时间；拒绝无法无损编码的 MATCH 文本，增加空扫描页续读测试。结果仅代表分批采样，不是事务快照。
+- 新增 `scripts/smoke-ai-hash-filter.mjs`：独立 Redis 夹具准备多条合成订单，校验多页匹配、缺失字段、错误类型、未匹配值不外发以及数据/写命令计数不变。更新 `docs/AI_READ_USAGE.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 说明参数、预算与真实验收状态。
+- 验证：`pnpm typecheck` 和 3 文件/62 项筛选及预算专项通过；独立 Redis 8.2.6 与 DSH ToolRuntime 的多页筛选通过，数据和写命令计数不变，夹具已停止。当前构建的真实 DSH/模型验收仍待完成。
+- 使用说明明确单个 Redis RESP 响应上限与整次多命令查询的接收量不同，避免把模型输出预算误认为服务器读取总量。
+
 ### Redis 适配版推送与重新安装
 
 - 按用户要求仅处理 Redis；在独立工作区基于已提交代码更新双语 README、依赖、锁文件、CHANGELOG、更新日志及 esbuild 构建许可，保留原工作区未提交功能。
