@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { RESP_TYPES } from 'redis'
 import { withRedisFixture } from './redis-fixture.mjs'
 
+const disableMemory = process.argv.includes('--disable-memory')
+
 const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   for (let index = 0; index < 16; index++) {
     await admin.hSet('fixture:order:' + index, { status: index % 4 === 0 ? 'synthetic-failed' : 'synthetic-ready', note: 'synthetic-only' })
@@ -57,7 +59,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert(unknownGroup); assert.equal(unknownGroup.lag, null); assert.equal(unknownGroup['entries-read'], null)
     }
   }
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo }))
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo, disableMemory }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)
@@ -74,6 +76,6 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.deepEqual(await commandCounts(), beforeCommands)
   }
   console.log(JSON.stringify({ fixtureDataUnchanged: true, ...(withGroup ? { groupStateUnchanged: true, noConsumptionCommands: true } : {}) }))
-}, { passwordRequired: false })
+}, { passwordRequired: false, disableMemory })
 assert(fixture.stopped)
 console.log(JSON.stringify({ fixtureStopped: true }))

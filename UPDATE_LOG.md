@@ -1,3 +1,9 @@
+## 2026-11-05：隔离验收夹具支持禁用 MEMORY
+
+- 文件：`scripts/hold-ai-acceptance.mjs`、`UPDATE_LOG.md`。
+- 原因：真实 DSH 和模型需要验证 Redis 不提供 `MEMORY` 命令时的结果；用户日常 Redis 不应为测试修改配置。
+- 修改与影响：复用现有隔离 Redis 的禁用命令参数，增加 `--disable-memory` 开关，并在就绪信息中标识；默认行为不变，只影响人工验收夹具，不修改日常 Redis。类型检查通过；隔离 Redis 8.2.6 实测 `MEMORY` 不可用且 PING 正常，22 个合成 Key 的内容、绝对过期时间和数量未变，夹具已停止。
+
 # 更新说明
 
 
