@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 日常连接恢复与依赖告警
+
+- 新构建加载后，已在 DSH 原验收会话中只读重连本机 `127.0.0.1:6379`，界面显示 DB0 的真实 Key；未修改 Redis 数据。
+- 日常 profile 执行 `dsh plugin --profile web peers check` 返回非零，显示 DSH 宿主包和 React 等 peer 缺失，且涉及多个插件。`docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md` 记录该告警及真实加载通过的边界；成品交付前需进一步核查宿主依赖提供方式。
+
 ## 2026-11-05 限定 AI String 读取范围
 
 - `src/host/string-reader.ts` 将界面 UTF-8 边界上下文设为读取器配置；`src/host/ai-reader.ts` 的 AI 读取和比较禁用边界字节，Redis GETRANGE 按请求范围执行，工具结果不再包含界面专用的 prefix/suffix。界面预览继续保留原有跨字符处理。
