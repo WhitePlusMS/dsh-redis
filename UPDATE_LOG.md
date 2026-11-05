@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 缺失连接资料真实验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前安装构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的只读验证：资料列表为空时未尝试连接；原会话仍连接，后续元数据读取成功且 TTL 限制解释正确。该场景不覆盖候选认证失败、资料同名及资源释放；不记录真实 Key 或值。
+
 ## 2026-11-05 专业数据验收版本澄清
 
 - 独立审查发现 `docs/DSH_AI_READONLY_TASKS.md` 的“前一构建”存在歧义，改为实际完成 JSON、TimeSeries 及 GEO 对照的 `8f57a61`；不改变功能或验收结论。
