@@ -54,7 +54,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.equal(compacted.samples.length, 1); assert(compacted.coverage.includes('未闭合桶'))
     assert.equal((await admin.sendCommand(['TS.RANGE', 'fixture:compacted', '0', '3000', 'LATEST'])).length, 2)
     const endAtZero = await read({ key: 'fixture:compacted', from: '0', to: '0' })
-    assert.deepEqual(endAtZero.samples, [{ timestampMs: '0', value: '3' }]); assert(endAtZero.coverage.includes('结束时间之后'))
+    assert.deepEqual(endAtZero.samples, [{ timestampMs: '0', timestampUtc: '1970-01-01T00:00:00.000Z', value: '3' }]); assert(endAtZero.coverage.includes('结束时间之后'))
     assert.deepEqual(await Promise.all(keys.map(name => buffers.sendCommand(['DUMP', name]))), before)
     assert.deepEqual(await Promise.all(keys.map(name => admin.sendCommand(['PEXPIRETIME', name]))), expiry)
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }

@@ -118,7 +118,7 @@ describe('official Redis model tools', () => {
       return args[1] === '0' ? [[1000n, '1.25'], [2000n, '-3.5'], [3000n, '9']] : [[3000n, '9']]
     })
     const first = JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2 })))
-    expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', value: '1.25' }, { timestampMs: '2000', value: '-3.5' }], complete: false, snapshot: false })
+    expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', timestampUtc: '1970-01-01T00:00:01.000Z', value: '1.25' }, { timestampMs: '2000', timestampUtc: '1970-01-01T00:00:02.000Z', value: '-3.5' }], complete: false, snapshot: false })
     expect(first.cursor).toMatch(/^ts:/u); expect(first.coverage).toContain('未闭合桶')
     expect(calls[0]).toEqual([Buffer.from('series'), '0', '3000', 'COUNT', '3'])
     for (const changed of [{ key: 'plain', from: '0', to: '3000', count: 2 }, { key: 'series', from: '1', to: '3000', count: 2 }, { key: 'series', from: '0', to: '3001', count: 2 }, { key: 'series', from: '0', to: '3000', count: 1 }]) expect((await f.call('redis_viewer_timeseries', { ...changed, cursor: first.cursor })).isError).toBe(true)
@@ -127,6 +127,11 @@ describe('official Redis model tools', () => {
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '3000' })))).toMatchObject({ state: 'missing', complete: false, cursor: null })
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'plain', from: '0', to: '3000' })))).toMatchObject({ state: 'unsupported', type: 'string', cursor: null })
     for (const args of [{ key: 'series', from: '-', to: '+' }, { key: 'series', from: '01', to: '2' }, { key: 'series', from: '3', to: '2' }, { key: 'series', from: '0', to: '9223372036854775808' }, { key: 'series', from: '0', to: '1', count: 101 }, { key: 'series', from: '0', to: '1', aggregation: 'sum' }]) expect((await f.call('redis_viewer_timeseries', args)).isError).toBe(true)
+  })
+  it('preserves TimeSeries milliseconds when UTC conversion is outside Date range', async () => {
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => [[0n, '1'], [8640000000000000n, '2'], [8640000000000001n, '3']])
+    const result = JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '8640000000000001', count: 3 })))
+    expect(result.samples).toEqual([{ timestampMs: '0', timestampUtc: '1970-01-01T00:00:00.000Z', value: '1' }, { timestampMs: '8640000000000000', timestampUtc: '+275760-09-13T00:00:00.000Z', value: '2' }, { timestampMs: '8640000000000001', timestampUtc: null, value: '3' }])
   })
   it('rejects TimeSeries continuation across sessions, database switches and reconnects', async () => {
     const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => [[1n, '1'], [2n, '2']])

@@ -31,7 +31,7 @@ import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, h
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
 type OverviewSection = keyof typeof overviewFields
-type TimeSeriesSample = { timestampMs: string; value: string }
+type TimeSeriesSample = { timestampMs: string; timestampUtc: string | null; value: string }
 type TimeSeriesPage = { state: string; error: ConnectionErrorCode | null; cursor: string | null; payload: Record<string, unknown>; samples: TimeSeriesSample[] }
 /** Text identities must round-trip exactly; arbitrary bytes use canonical Base64. */
 function encodeIdentity(value: string): string {
@@ -360,7 +360,9 @@ export class RedisAiReader {
           previous = row[0]
           const value = Buffer.isBuffer(row[1]) ? row[1].toString('ascii') : row[1]
           if (typeof value !== 'string' || value.length > 64 || (Buffer.isBuffer(row[1]) && !Buffer.from(value, 'ascii').equals(row[1])) || !/^-?(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|inf|nan)$/iu.test(value)) throw new RedisFrameError('protocol')
-          return { timestampMs: row[0].toString(), value }
+          // Conversion is deterministic only within JavaScript Date's representable range.
+          const timestampUtc = row[0] <= 8640000000000000n ? new Date(Number(row[0])).toISOString() : null
+          return { timestampMs: row[0].toString(), timestampUtc, value }
         })
         const complete = samples.length <= count, page = samples.slice(0, count), last = page.at(-1)
         data = result('value', lastType, page, complete, complete || last === undefined ? null : (BigInt(last.timestampMs) + 1n).toString(), null, sampledAt)

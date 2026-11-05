@@ -50,7 +50,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。只使用 TS.RANGE，不聚合、不跨 Key。返回时间与值的原始字符串；仅 state 为 value 且 cursor 非空时可续读，并保持 Key、from、to 和 count 不变。续读返回非 value 状态时旧游标失效，须从原范围重新查询；取消或未收到结果时游标状态不确定。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',
+    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。只使用 TS.RANGE，不聚合、不跨 Key。返回时间与值的原始字符串，以及可表示范围内由毫秒时间戳换算的 timestampUtc；超出日期范围时该字段为 null。仅 state 为 value 且 cursor 非空时可续读，并保持 Key、from、to 和 count 不变。续读返回非 value 状态时旧游标失效，须从原范围重新查询；取消或未收到结果时游标状态不确定。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, from: { type: 'string', required: true }, to: { type: 'string', required: true }, count: { type: 'integer' }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, async stage => { strict(args, ['key', 'keyBase64', 'from', 'to', 'count', 'cursor']); const page = await reader.prepareTimeSeries(session, args, exec.signal); stage(page); return page.result }) },
   }))
