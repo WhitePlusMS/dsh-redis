@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 隔离权限验收准备
+
+- `scripts/hold-ai-acceptance.mjs` 增加可选 `--restricted` 模式，仅在独立临时 Redis 中创建测试用受限用户，拒绝 `HGET` 和 `SCAN`，用于日常 DSH 和真实模型的权限不足验收；不更改用户 Redis 或保存真实凭据。
+- 通过日常 DSH、用户模型及独立 Redis 8.2.6 验证允许 String 读取、拒绝 HGET 与 SCAN：模型正确区分权限不足和不存在；UI 也显示权限不足。先断开后输入错误测试密码，界面及模型状态工具均报告认证失败；没有验证旧连接仍活动时的候选交换。
+- `ACL DRYRUN` 核对测试账号的允许和拒绝规则；22 个合成 Key 的 DUMP、绝对过期时间和数量未变，实例已停止。对话可见内容和核对的工具结果未暴露测试密码。同步 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md`；不将本次限定场景当成全部 ACL 和认证验收。
+
 ## 2026-11-05 当前构建真实模型查询复验
 
 - 日常 DSH 和用户模型在独立 Redis 8.2.6 中复验 `729e707` 的 Hash、List、Set、ZSet 和 Stream，核对五次显式目标工具返回、值与完整状态；Stream 同名字段顺序正确。模型表格中的部分 `<br>` 在对话里作为文本显示，范围仅为合成正常数据。
