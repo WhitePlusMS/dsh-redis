@@ -3017,3 +3017,4 @@
 - 验证：类型检查通过；采样时间、Hash/Set/ZSet/List 定位、List 读取和 AI 工具共 7 个专项文件、99 项通过。测试使用合成连接；完整打包和真实 DSH、本机 Redis 验证仍待执行。
 - 完整打包验证：`pnpm pack` 自动执行类型检查、构建和全部测试，80 个测试文件、624 项通过；开发包已生成，真实 DSH 与本机 Redis 复验仍待执行。
 - 更新 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md`：记录源码 `fd3fb91` 开发包安装日常 DSH、135 个文件与包一致，以及真实模型对本机 Hash 字段读取时值、状态和 UTC 时间与工具返回一致。原因是明确实际验收与受控延迟测试边界；没有在用户 Redis 人为制造延迟或修改数据，其他类型与模型准确性不据此标为通过。
+- 更新 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实 DSH、用户模型与本机 Redis 的 12 批完整筛选，逐批核对检查和匹配数、扫描完成与非快照说明；模型的命令说明遗漏类型和 TTL 检查。原因是保存可核验结果并保留回答准确性缺口；未修改业务数据，异常和并发未覆盖。
