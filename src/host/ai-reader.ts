@@ -23,7 +23,7 @@ import { RedisAiZSetPages, isAiZSetCursor } from './ai-zset-pages.ts'
 import { RedisAiStreamPages, isAiStreamCursor } from './ai-stream-pages.ts'
 import { RedisAiHashFilter } from './ai-hash-filter.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
-import { RedisReportSamples, overviewFields } from './ai-report-samples.ts'
+import { RedisReportSamples, memorySamplingNote, memoryScopeNote, overviewFields } from './ai-report-samples.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
 import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, setMemberReadRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
@@ -535,7 +535,7 @@ export class RedisAiReader {
     const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
     const key = byteIdentity(Buffer.from(request.keyBase64, 'base64'))
     const context = new RedisReadContext(this.connections, sessionId, target, signal)
-    const sampling = { requestedSamples: 5, actualSamples: null, samplingNote: 'SAMPLES 5 是请求参数，用于嵌套值估算；Redis 未返回实际采样数量或误差。', scopeNote: '命令结果包含该 Key 和值的分配及管理开销，可能包含内部碎片；不代表整个服务器的内存。' }
+    const sampling = { requestedSamples: 5, actualSamples: null, samplingNote: memorySamplingNote, scopeNote: memoryScopeNote }
     try {
       const reply = await context.command('MEMORY', ['USAGE', Buffer.from(request.keyBase64, 'base64'), 'SAMPLES', '5'])
       signal.throwIfAborted()

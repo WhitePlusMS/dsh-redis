@@ -3133,3 +3133,4 @@
 - `src/host/ai-reader.ts`、`src/host/ai-tools.ts`、`src/host/ai-report-samples.ts`：将含糊的 `samples` 改为 `requestedSamples`、`actualSamples: null`，明确 Redis 未提供实际数量或误差，且 Key 分配开销可能包含内部碎片；诊断报告同步保存结构化参数。依据 Redis 官方 MEMORY USAGE 文档，目的是避免把命令参数当作实际样本证据；不改变 Redis 查询。
 - `tests/ai-tools.test.ts`、`scripts/smoke-ai-memory.mjs`、`docs/AI_READ_USAGE.md` 同步验证及说明，并检查诊断报告保留新的结构化参数；类型检查、84 项专项及隔离 Redis 真命令对照通过，隔离数据和 TTL 未变；真实模型复验待执行。
 - `docs/verification/user-questions-real-model-2026-11-05.md` 记录当前已安装构建的两项真实诊断：工具原值复述一致，但单位标记、实际采样数和碎片解释不准确。原因是保留模型推断错误和工具采样证据的区别，不将本机业务身份或指标写入仓库。
+- 提交 `81cf8de` 后需求审查建议让保存的报告脱离对话也可理解。`src/host/ai-report-samples.ts` 用固定字面量白名单保留两条采样及范围说明，`src/host/ai-reader.ts` 复用同一说明，`tests/ai-tools.test.ts` 回读确认并拒绝替换为自由文本；类型检查及首轮 84 项测试通过，新增拒绝测试后需复测。
