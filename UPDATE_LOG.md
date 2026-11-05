@@ -2981,3 +2981,4 @@
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录两个真实 DSH 会话连接同一本机 Redis 后的 DB 切换隔离，以及当前源码 `4175196` 的完整检查结果；不扩大到断开或其他拓扑。
 - 验证：`pnpm check` 通过，79 个测试文件、619 项测试通过；业务 Redis 未写入，模型回答准确性和选区竞争仍未通过。
 - 修改 `src/connection-errors.ts` 和 `src/host/ai-locate-tool.ts`：统一中英文缺失 Key 提示为采样时不存在，定位工具复用同一提示，避免从单次缺失推断历史或过期原因；只修改结果说明，不改变 Redis 命令。类型检查、3 个文件的 79 项相关测试通过，新构建及真实 DSH 复验待进行。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `8981f5e` 开发包安装到日常 profile、135 文件与包一致，以及重启后真实模型对未写入测试名称的缺失 Key 提示复验通过；明确其他真实模型问题未解决。
