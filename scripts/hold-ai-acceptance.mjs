@@ -14,11 +14,14 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.rPush('fixture:list', ['synthetic-first', 'synthetic-second'])
   await admin.sendCommand(['XADD', 'fixture:stream', '1-0', 'field', 'synthetic-first', 'field', 'synthetic-second'])
   // Build delivery state only inside the owned fixture; no consumer runs during verification.
-  const withGroup = process.argv.includes('--stream-group')
+  const withUnknownLag = process.argv.includes('--unknown-lag')
+  const withGroup = process.argv.includes('--stream-group') || withUnknownLag
   if (withGroup) {
     await admin.sendCommand(['XADD', 'fixture:stream', '2-0', 'field', 'synthetic-undelivered'])
     await admin.sendCommand(['XGROUP', 'CREATE', 'fixture:stream', 'fixture-group', '0-0'])
     await admin.sendCommand(['XREADGROUP', 'GROUP', 'fixture-group', 'fixture-consumer', 'COUNT', '1', 'STREAMS', 'fixture:stream', '>'])
+    // An arbitrary starting ID makes Redis report an unknown lag for this group.
+    if (withUnknownLag) await admin.sendCommand(['XGROUP', 'CREATE', 'fixture:stream', 'fixture-unknown', '1-1'])
   }
   // Optional credentials exist only on this owned fixture and are not reused elsewhere.
   if (process.argv.includes('--restricted')) {
@@ -42,10 +45,15 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const beforeCommands = withGroup ? await commandCounts() : null
   if (withGroup) {
     assert(Array.isArray(pendingBefore)); assert.equal(Number(pendingBefore[0]), 1)
-    assert(Array.isArray(groupBefore) && groupBefore[0] && typeof groupBefore[0] === 'object')
-    assert.equal(Number(groupBefore[0].pending), 1); assert.equal(Number(groupBefore[0].lag), 1)
+    assert(Array.isArray(groupBefore))
+    const knownGroup = groupBefore.find(group => String(group.name) === 'fixture-group')
+    assert(knownGroup); assert.equal(Number(knownGroup.pending), 1); assert.equal(Number(knownGroup.lag), 1)
+    if (withUnknownLag) {
+      const unknownGroup = groupBefore.find(group => String(group.name) === 'fixture-unknown')
+      assert(unknownGroup); assert.equal(unknownGroup.lag, null); assert.equal(unknownGroup['entries-read'], null)
+    }
   }
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup }))
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)

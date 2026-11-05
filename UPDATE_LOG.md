@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 Stream 未知积压量验收准备
+
+- `scripts/hold-ai-acceptance.mjs` 新增可选 `--unknown-lag`：只在独立测试 Redis 创建从中间 ID 开始的消费组，并校验 Redis 返回的 lag 与 entries-read 均为未知；继续对比 Key、过期时间、消费组及消费类命令计数。用户 Redis 不做消费组写入。
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH 与用户模型验收：依据 [Redis XINFO GROUPS 文档](https://redis.io/docs/latest/commands/xinfo-groups/)，工具及模型区分了未知与零，但模型无依据地把消费者称为活跃消费者，整体诊断回答未通过。
+- 独立实例的 22 个 Key、过期时间、组状态及消费类命令计数未变；测试连接已断开并停止夹具，原会话仍连接本机 Redis。
+
 ## 2026-11-05 Stream 消费组真实验收准备
 
 - `scripts/hold-ai-acceptance.mjs` 增加可选 `--stream-group` 夹具，在独立 Redis 中设置 1 条待确认和 1 条待投递消息，并在测试前后核对组状态、待确认列表、消费类命令计数及 Key 和过期时间；构造时的消息投递仅发生在隔离实例。
