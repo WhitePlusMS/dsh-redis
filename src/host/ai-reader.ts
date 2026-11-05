@@ -403,7 +403,7 @@ export class RedisAiReader {
         return { state: value.state === 'value' ? 'page' : value.state, error: value.error, cursor: nextFrom, payload, samples }
       },
       rows: page => page.samples,
-      output: (page, samples, cursor) => ({ ...page.payload, from: args.from, state: page.state === 'page' ? 'value' : page.state, samples, cursor, complete: page.state === 'page' && cursor === null, coverage: '仅包含 TS.RANGE 返回的样本；压缩序列不含最新未闭合桶，已关闭桶可能包含结束时间之后的原始样本。' }),
+      output: (page, samples, cursor) => ({ ...page.payload, from: args.from, state: page.state === 'page' ? 'value' : page.state, samples, cursor, complete: page.state === 'page' && cursor === null, retryAdvice: args.cursor !== undefined && page.state !== 'page' ? '本次续读失败，游标已失效；请从原时间范围重新查询。' : null, coverage: '仅包含 TS.RANGE 返回的样本；压缩序列不含最新未闭合桶，已关闭桶可能包含结束时间之后的原始样本。' }),
       validate: error => this.connections.assertReadResult(sessionId, target, error), discard: () => undefined,
       oversize: '时间序列结果超过单次预算，请缩小读取范围。',
     })

@@ -124,8 +124,8 @@ describe('official Redis model tools', () => {
     for (const changed of [{ key: 'plain', from: '0', to: '3000', count: 2 }, { key: 'series', from: '1', to: '3000', count: 2 }, { key: 'series', from: '0', to: '3001', count: 2 }, { key: 'series', from: '0', to: '3000', count: 1 }]) expect((await f.call('redis_viewer_timeseries', { ...changed, cursor: first.cursor })).isError).toBe(true)
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2, cursor: first.cursor })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '3000', value: '9' }], complete: true, cursor: null })
     expect(calls[1]).toEqual([Buffer.from('series'), '2001', '3000', 'COUNT', '3'])
-    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '3000' })))).toMatchObject({ state: 'missing', complete: false })
-    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'plain', from: '0', to: '3000' })))).toMatchObject({ state: 'unsupported', type: 'string' })
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '3000' })))).toMatchObject({ state: 'missing', complete: false, cursor: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'plain', from: '0', to: '3000' })))).toMatchObject({ state: 'unsupported', type: 'string', cursor: null })
     for (const args of [{ key: 'series', from: '-', to: '+' }, { key: 'series', from: '01', to: '2' }, { key: 'series', from: '3', to: '2' }, { key: 'series', from: '0', to: '9223372036854775808' }, { key: 'series', from: '0', to: '1', count: 101 }, { key: 'series', from: '0', to: '1', aggregation: 'sum' }]) expect((await f.call('redis_viewer_timeseries', args)).isError).toBe(true)
   })
   it('rejects TimeSeries continuation across sessions, database switches and reconnects', async () => {
@@ -140,6 +140,19 @@ describe('official Redis model tools', () => {
     const second = JSON.parse(content(await f.call('redis_viewer_timeseries', args)))
     await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: 'reader', password: '', tls: null }, new AbortController().signal)
     expect((await f.call('redis_viewer_timeseries', { ...args, cursor: second.cursor })).isError).toBe(true)
+  })
+  it('explains that a failed TimeSeries continuation requires a fresh query', async () => {
+    let calls = 0
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => {
+      if (++calls === 1) return [[1n, '1'], [2n, '2']]
+      throw new RedisReplyError('NOPERM synthetic-secret')
+    })
+    const args = { key: 'series', from: '0', to: '2', count: 1 }
+    const first = JSON.parse(content(await f.call('redis_viewer_timeseries', args)))
+    const failed = JSON.parse(content(await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor })))
+    expect(failed).toMatchObject({ state: 'failed', error: 'permission', complete: false, cursor: null })
+    expect(failed.retryAdvice).toContain('重新查询')
+    expect((await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor })).isError).toBe(true)
   })
   it('distinguishes unavailable, denied and malformed TimeSeries reads', async () => {
     const make = (execute: RedisLink['execute']) => fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, execute)
