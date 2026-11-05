@@ -127,7 +127,7 @@ describe('official Redis model tools', () => {
   })
   it('distinguishes unavailable JSON, denied access, bad paths and oversized results', async () => {
     const make = (execute: RedisLink['execute']) => fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, execute)
-    const disabled = await make(async () => { throw new RedisReplyError("ERR unknown command 'JSON.GET' synthetic-secret") })
+    const disabled = await make(async () => { throw new RedisReplyError("ERR unknown command 'JSON.GET', with args beginning with: 'author' '$' synthetic-secret") })
     const unavailable = content(await disabled.call('redis_viewer_json_path', { key: 'missing', path: '$' }))
     expect(JSON.parse(unavailable)).toMatchObject({ state: 'unavailable', connection: { state: 'connected' } }); expect(unavailable).not.toContain('synthetic-secret')
     const denied = await make(async () => { throw new RedisReplyError('NOPERM synthetic-secret') })
@@ -135,7 +135,7 @@ describe('official Redis model tools', () => {
     const expiredAuth = await make(async () => { throw new RedisReplyError('NOAUTH synthetic-secret') })
     const authResult = content(await expiredAuth.call('redis_viewer_json_path', { key: 'module', path: '$' }))
     expect(JSON.parse(authResult)).toMatchObject({ state: 'failed', error: 'auth' }); expect(authResult).not.toContain('synthetic-secret')
-    const bad = await make(async () => { throw new RedisReplyError('ERR invalid path synthetic-secret') })
+    const bad = await make(async () => { throw new RedisReplyError('ERR invalid path author synthetic-secret') })
     const failure = content(await bad.call('redis_viewer_json_path', { key: 'module', path: '$[' }))
     expect(JSON.parse(failure)).toMatchObject({ state: 'query-failed', error: null }); expect(failure).not.toContain('synthetic-secret')
     const oversized = await make(async () => Buffer.from('["' + 'a'.repeat(65536) + '"]'))

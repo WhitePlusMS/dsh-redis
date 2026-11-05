@@ -360,7 +360,8 @@ export class RedisAiReader {
       }
     } catch (error) {
       signal.throwIfAborted()
-      if (readingJson && error instanceof RedisReplyError && ['auth', 'permission', 'timeout', 'cancelled'].includes(context.error(error))) {
+      // Redis may echo Key names in errors: inspect the error-code prefix, not arbitrary text.
+      if (readingJson && error instanceof RedisReplyError && /^(?:NOAUTH|WRONGPASS|NOPERM|DENIED)(?: |$)/u.test(error.message)) {
         const code = context.error(error)
         this.connections.assertReadResult(sessionId, target, code)
         data = result('failed', null, null, null, code)
