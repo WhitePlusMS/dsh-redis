@@ -5,7 +5,7 @@ import { connectionErrorMessages } from '../connection-errors.ts'
 import { MAX_AI_RESULT_BYTES } from './ai-budget.ts'
 import { AiPageStore, type PreparedAiPage } from './ai-page-store.ts'
 import type { RedisConnections } from './connection-service.ts'
-import { RedisKeys } from './key-reader.ts'
+import { KEY_SCAN_SCOPE, RedisKeys } from './key-reader.ts'
 import { RedisSelectedReader } from './selected-reader.ts'
 
 /** The per-call limit applies to actual candidate reads, not Redis SCAN's COUNT hint. */
@@ -59,7 +59,7 @@ export class RedisAiHashFilter {
       }
       signal.throwIfAborted()
       this.connections.assertReadResult(sessionId, target, data.error)
-      const result = z.json().parse({ readOnly: true, connection: this.connections.status(sessionId), pattern, state: data.state, error: data.error,
+      const result = z.json().parse({ readOnly: true, connection: this.connections.status(sessionId), pattern, scanScope: KEY_SCAN_SCOPE, state: data.state, error: data.error,
         errorMessage: data.error === null ? null : connectionErrorMessages[data.error].zh, matches, counts, errors: [...errors], cursor,
         scanComplete: data.state === 'page' && cursor === null, sampledAt: data.sampledAt, readStartedAt, readFinishedAt: new Date().toISOString(),
         coverage: '本批候选；跨批可能重复，SCAN 与逐项读取不是同一时刻的快照。' })

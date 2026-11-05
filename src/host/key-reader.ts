@@ -4,6 +4,9 @@ import { RedisFrameError } from './resp.ts'
 import { RedisScanCursors, scanReply, type ScanState } from './scan-cursors.ts'
 import { byteIdentity } from './byte-identity.ts'
 
+/** MATCH filters returned names; COUNT is a Redis work hint, not a hard limit. */
+export const KEY_SCAN_SCOPE = Object.freeze({ command: 'SCAN', traversal: 'current_db_keyspace', match: 'key_names', countHint: 100, countIsLimit: false, fullIterationMayTraverseEntireKeyspace: true } as const)
+
 /** Exactly one SCAN per explicit action; cursor tokens cannot be replayed or moved. */
 export class RedisKeys {
   private readonly scans = new RedisScanCursors()
@@ -19,7 +22,7 @@ export class RedisKeys {
       scan = this.scans.begin(sessionId, JSON.stringify([request.target.id, request.target.generation, request.target.db, request.pattern]), request.cursor)
       const current = scan
       const guard = () => { this.scans.validate(sessionId, current) }
-      const reply = await this.connections.read(sessionId, request.target, 'SCAN', [current.cursor, 'MATCH', request.pattern, 'COUNT', '100'], signal, guard)
+      const reply = await this.connections.read(sessionId, request.target, 'SCAN', [current.cursor, 'MATCH', request.pattern, 'COUNT', String(KEY_SCAN_SCOPE.countHint)], signal, guard)
       const { cursor, values } = scanReply(reply)
       if (values.length > MAX_SCAN_KEYS) throw new RedisFrameError('oversize')
       const unique = new Map<string, RedisKey>()

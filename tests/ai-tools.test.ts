@@ -305,14 +305,14 @@ describe('official Redis model tools', () => {
     })
     const normal = JSON.parse(content(await f.call('redis_viewer_keys', { match: 'normal:*' }))) as { cursor: string }
     const first = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' }))) as { counts: Record<string, number>; cursor: string; scanComplete: boolean; errors: string[] }
-    expect(first).toMatchObject({ counts: { checked: 10, matched: 3, different: 5, missingField: 1, failed: 1 }, errors: ['permission'], scanComplete: false })
+    expect(first).toMatchObject({ scanScope: { command: 'SCAN', traversal: 'current_db_keyspace', match: 'key_names', countHint: 100, countIsLimit: false, fullIterationMayTraverseEntireKeyspace: true }, counts: { checked: 10, matched: 3, different: 5, missingField: 1, failed: 1 }, errors: ['permission'], scanComplete: false })
     expect(first.cursor).toMatch(/^f:/u)
     expect(JSON.stringify(first)).not.toContain('synthetic-secret')
     expect((await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'other', cursor: first.cursor })).isError).toBe(true)
     const second = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed', cursor: first.cursor }))) as { counts: Record<string, number>; cursor: string; scanComplete: boolean }
     expect(second).toMatchObject({ counts: { checked: 10, matched: 3 }, scanComplete: false })
     const last = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed', cursor: second.cursor })))
-    expect(last).toMatchObject({ counts: { checked: 1, matched: 0 }, cursor: null, scanComplete: true })
+    expect(last).toMatchObject({ scanScope: { fullIterationMayTraverseEntireKeyspace: true }, counts: { checked: 1, matched: 0 }, cursor: null, scanComplete: true })
     expect((await f.call('redis_viewer_keys', { match: 'normal:*', cursor: normal.cursor })).isError).toBeFalsy()
     expect(f.commands.filter(command => command === 'SCAN')).toHaveLength(3)
     expect(f.commands.filter(command => command === 'HGET')).toHaveLength(21)
@@ -467,7 +467,7 @@ describe('official Redis model tools', () => {
     expect((await f.call('redis_viewer_keys', { match: '\ud800' })).isError).toBe(true)
     expect(f.commands).not.toContain('SCAN')
     const first = JSON.parse(content(await f.call('redis_viewer_keys', { match: 'order:*' }))) as { cursor: string; pattern: string }
-    expect(first.pattern).toBe('order:*')
+    expect(first).toMatchObject({ pattern: 'order:*', scanScope: { command: 'SCAN', traversal: 'current_db_keyspace', match: 'key_names', countHint: 100, countIsLimit: false, fullIterationMayTraverseEntireKeyspace: true } })
     expect((await f.call('redis_viewer_keys', { cursor: first.cursor })).isError).toBe(true)
     expect((await f.call('redis_viewer_keys', { match: 'other:*', cursor: first.cursor })).isError).toBe(true)
     expect(f.commands.filter(command => command === 'SCAN')).toHaveLength(1)

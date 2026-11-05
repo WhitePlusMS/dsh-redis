@@ -2994,3 +2994,9 @@
 - 修改 `tests/workspace-visibility-browser.test.ts`：在真实浏览器夹具中验证常驻区域消失、正常状态无恢复按钮，以及额度耗尽后从插件信息恢复。
 - 原因与影响：按用户要求简化侧栏，同时避免达到读取上限后无法继续。关闭或重挂插件信息时取消并释放未完成的状态请求。
 - 验证：类型检查通过；三个测试文件共 79 项通过，包含真实 Chromium 夹具中常态隐藏和耗尽后恢复的交互。源码提交 `dddc8b0` 已构建并安装日常 `web` profile，安装的 Client 与构建哈希一致；重启日常 DSH 后在真实页面确认常驻区域消失、插件信息可打开，并重新连接本机 Redis。未耗尽真实会话额度，真实耗尽恢复未在此次重测。
+
+### 2026-11-05 明确 SCAN 的实际扫描范围
+
+- 修改 `src/host/key-reader.ts`、`src/host/ai-key-pages.ts`、`src/host/ai-hash-filter.ts`：名称搜索和 Hash 筛选结果附带 SCAN 的实际键空间、MATCH 过滤对象、COUNT 提示及完整遍历可能覆盖整个当前 DB 的结构化说明；命令仍使用原有只读 SCAN，候选数量限制不变。
+- 修改 `src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`、`tests/ai-tools.test.ts`：依据 Redis 官方 SCAN 文档说明 MATCH 和 COUNT 的语义，并验证搜索及筛选的结果证据。原因是实际模型此前误称 MATCH 可避免全库遍历；新增证据不保证模型一定遵循，仍需真实模型复验。
+- 验证：`pnpm typecheck` 通过；名称搜索、Hash 筛选和分页存储的 3 个测试文件共 82 项通过，覆盖空页续读及大批次边界；尚待实际 DSH 和用户模型复验，不修改用户 Redis 数据。
