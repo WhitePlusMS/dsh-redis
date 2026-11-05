@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 同名连接资料真实验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录 `7315b69` 在日常 DSH 与 `bzkj-LLM` 的同名资料消歧：模型列出两个分组并提问，测试选择取消后没有发起连接；语义判断仍依赖模型遵循工具说明。两条无凭据临时资料已删除，原 Redis 界面保持连接。
+
 ## 2026-11-05 候选连接认证失败真实验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH 和 `bzkj-LLM` 对独立受限 Redis 的连接尝试：资料唯一，候选返回认证失败，原连接标识、代次、DB 与界面状态保留；模型提示在本地表单处理凭据。未核对候选套接字释放，不扩大验收范围。
