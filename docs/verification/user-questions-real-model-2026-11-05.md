@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `7315b69` 的客户端概况**：日常 DSH、`bzkj-LLM` 和本机 Redis 中，自然语言询问连接数、阻塞客户端及采样范围；实际调用 `redis_viewer_overview` 的 `clients` 节，模型复述的两个数值、服务器范围和 UTC 采样时间与工具一致，也说明仅代表单次采样。模型却称统计覆盖所有客户端，而 [Redis INFO 文档](https://redis.io/docs/latest/commands/info/)说明 `connected_clients` 不计副本连接，因此整体范围解释未通过；本次没有验证存在副本的环境，不记录服务器指标。
+
 - **当前构建 `7315b69` 的单 Key 内存报告回读**：日常 DSH、`bzkj-LLM` 与本机 Redis 中明确要求采样并保存本地报告，实际调用 `redis_viewer_memory` 和 `redis_viewer_save_diagnostic_report`，后者返回 `saved`。回读报告确认类别、采样 UTC 时间、请求采样数、未知实际采样数和固定的采样/内存范围说明与工具结果一致；Key 保存为 SHA-256 摘要。模型本次复述采样与保存状态一致；只验证一个正常报告，不代表取消、权限等异常或此前对采样与碎片的错误推断已消除。报告位于日常 profile 的固定报告目录，未将业务 Key、值或指标写入仓库。
 
 - **当前构建 `7315b69` 的六种基础类型复验**：日常 DSH、`bzkj-LLM` 和独立 Redis 8.2.6 中，在没有预选 Key 的情况下明确给出六个合成 Key；模型实际调用六次 `redis_viewer_value`，String、Hash、List、Set、ZSet、Stream 的内容、类型、完整状态与工具及夹具一致，Stream 的两个同名字段按顺序保留，回答也说明多次读取不是原子快照。模型将 String 的 22 字节标为 `fullByteLength`，但该 String 工具结果提供的是 `metadata.length` 与 `byteLength`，未提供这个字段名；Stream 表格内 `<br>` 在界面以文本显示。故正常内容复述通过，完整回答准确性和显示体验未完全通过；不代表分页、取消和异常覆盖。隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，测试连接断开、实例停止，原会话已重连本机 Redis。

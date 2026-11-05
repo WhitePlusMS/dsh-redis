@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 客户端概况真实模型验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的日常 DSH、本机 Redis 客户端概况查询：数值及采样时间与工具一致，模型却将统计说成覆盖所有客户端；依据 [Redis INFO 文档](https://redis.io/docs/latest/commands/info/)，`connected_clients` 不包含副本连接，故范围解释未通过。未记录业务指标或修改 Redis。
+
 ## 2026-11-05 单 Key 内存报告真实回读
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 及本机 Redis 的单 Key 内存报告保存；回读采样 UTC、请求参数、未知实际数量、固定说明及 Key 摘要，与工具证据一致。该正常路径不代表异常路径或此前模型错误推断已消除。
