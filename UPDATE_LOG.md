@@ -1,3 +1,9 @@
+## 2026-11-05：原生视图日常安装与局部验收
+
+- 文件：`docs/verification/native-evidence-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：补齐暂停前已完成的包安装和真实 Web 证据，消除任务清单仍称未安装的过期状态。
+- 修改与影响：记录源码、包哈希、135 文件一致性、651 项检查、一次真实模型状态调用、历史时序回放和会话切换；保留其他工具、异常及模型准确性未完成的边界。重启日常 DSH 清空活动 Redis 连接，本次未重连用户 Redis，未修改业务数据；仅更新文档。
+
 ## 2026-11-05：原生工具读取记录
 
 - 文件：`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence.ts`、`src/client/tool-evidence-locales.ts`、`src/client/index.ts`、`package.json`、`pnpm-lock.yaml`、`tests/client-bundle.test.ts`、`tests/tool-evidence.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
