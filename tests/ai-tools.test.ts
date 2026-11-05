@@ -253,6 +253,21 @@ describe('official Redis model tools', () => {
     const empty = await fixture()
     expect(JSON.parse(content(await empty.call('redis_viewer_slowlog', {})))).toMatchObject({ state: 'value', returnedCount: 0, requestedCount: 10 })
   })
+  it('reads explicit Key metadata without reading the value', async () => {
+    const f = await fixture()
+    const result = JSON.parse(content(await f.call('redis_viewer_key_metadata', { key: 'hash' })))
+    expect(result).toMatchObject({ state: 'value', type: 'hash', ttlMs: '-1', snapshot: false, error: null })
+    expect(result.ttlMeaning).toContain('不能推断历史或未来状态')
+    expect(result.sampledAt).toMatch(/Z$/u)
+    expect(f.commands).toEqual(['TYPE', 'PTTL', 'TYPE'])
+    expect(JSON.parse(content(await f.call('redis_viewer_key_metadata', { key: 'missing' })))).toMatchObject({ state: 'missing', type: null, ttlMs: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_key_metadata', { key: 'changing-type' })))).toMatchObject({ state: 'changed', type: null, ttlMs: null })
+    const denied = content(await f.call('redis_viewer_key_metadata', { key: 'denied' }))
+    expect(denied).toContain('"error":"permission"'); expect(denied).not.toContain('fixture denied')
+    const before = f.commands.length
+    for (const args of [{}, { key: 'x', keyBase64: 'eA==' }, { keyBase64: 'invalid' }, { key: '\ud800' }, { key: 'x', command: 'GET' }]) expect((await f.call('redis_viewer_key_metadata', args)).isError).toBe(true)
+    expect(f.commands).toHaveLength(before)
+  })
   it('uses one bounded memory estimate for an explicit Key and preserves error meaning', async () => {
     const requests: Array<readonly unknown[]> = []
     const f = await fixture(undefined, undefined, undefined, async (_command, args) => {
@@ -702,7 +717,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })

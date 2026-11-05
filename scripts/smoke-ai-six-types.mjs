@@ -36,6 +36,16 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     let index = 0
     const commandCount = async name => Number(new RegExp('^cmdstat_' + name + ':calls=(\\d+)', 'mu').exec(await admin.info('commandstats'))?.[1] ?? 0)
+    const valueCommands = ['getrange', 'hget', 'hscan'], beforeMetadata = await Promise.all(valueCommands.map(commandCount))
+    for (const [key, type] of [[keys.string, 'string'], [keys.hash, 'hash']]) {
+      const reply = await ctx.tools.execute({ callId: 'metadata-' + type, name: 'redis_viewer_key_metadata', arguments: { key }, agent, signal })
+      assert.equal(reply.isError, false)
+      const text = reply.content.filter(block => block.type === 'text').map(block => block.text).join(''), metadata = JSON.parse(text)
+      assert.equal(metadata.state, 'value'); assert.equal(metadata.type, type); assert(!text.includes('synthetic-string')); assert(!text.includes('synthetic-ready'))
+      if (type === 'hash') assert.equal(metadata.ttlMs, '-1')
+      else assert(BigInt(metadata.ttlMs) > 0n)
+    }
+    assert.deepEqual(await Promise.all(valueCommands.map(commandCount)), beforeMetadata)
     const readsBefore = await commandCount('getrange')
     const invalid = await ctx.tools.execute({ callId: 'invalid-range', name: 'redis_viewer_value', arguments: { key: keys.string, match: '*' }, agent, signal })
     assert.equal(invalid.isError, true); assert.equal(await commandCount('getrange'), readsBefore)
@@ -70,4 +80,4 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
 }, { passwordRequired: false })
 assert(fixture.stopped)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['six explicit Key types without sidebar', 'incompatible String scope rejected before GETRANGE', 'truncation and missing Key', 'duplicate Stream fields', 'unchanged fixture data and expiry'] }))
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['metadata without value reads', 'six explicit Key types without sidebar', 'incompatible String scope rejected before GETRANGE', 'truncation and missing Key', 'duplicate Stream fields', 'unchanged fixture data and expiry'] }))

@@ -34,6 +34,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'cursor']); return reader.scan(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_key_metadata', description: '用户只问明确 Key 是否存在、类型或过期时间时优先使用本工具，不读取字段或值。提供 key 或 keyBase64 中恰好一个，无需侧栏选择。ttlMs 为 -1 表示采样时没有设置过期时间，不代表过去从未设置或将来不会过期；非负数为采样时剩余毫秒。sampledAt 是 UTC 的 ISO 8601 时间（Z 表示 UTC），不是本地时间。多命令采样不是原子快照，不能推断业务含义或提出未经用户请求的写入操作。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64']); return reader.keyMetadata(session, args, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_value', description: '只读查看当前 DB 中一个 Key，自动识别 String/Hash/List/Set/ZSet/Stream。明确查询 Hash 字段时同时提供 key/keyBase64 和 field/fieldBase64；检查 Set 或 ZSet 成员时同时提供 key/keyBase64 和 member/memberBase64，工具自动识别类型并返回存在性或分数。这些精确查询无需面板选择，不能混用字段、成员、分页或范围参数。不传key/keyBase64时读取侧栏当前Key或选中字段/行；选中具体字段或行时不能传分页或范围参数，需要读取范围请明确指定 Key。需要当前对话中唯一的 Redis 面板可见且选择已同步，界面不可用或选择变化会明确报错。source 区分显式目标和侧栏选择。文本身份与各自的 Base64 身份每组只能传一个。String用offset/bytes，List/ZSet排名用offset/count；Hash/Set/ZSet扫描用match/cursor，续读保留条件；ZSet扫描不能同时传offset/count；Stream用start/end/direction/count/cursor，续读保留方向和范围，按完整消息分批。整数位置和ID用字符串。metadata.ttlMs 为 -1 表示采样时没有设置过期时间，不能据此推断过去从未设置或将来不会过期；非负数是采样时剩余毫秒。值可能只是前缀，检查complete/byteLength/fullByteLength与续读信息，不将部分数据当作完整快照。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, field: { type: 'string' }, fieldBase64: { type: 'string' }, member: { type: 'string' }, memberBase64: { type: 'string' }, cursor: { type: 'string' }, offset: { type: 'string' }, count: { type: 'integer' }, bytes: { type: 'integer' }, match: { type: 'string' }, start: { type: 'string' }, end: { type: 'string' }, direction: { type: 'string' } },
     output, timeoutMs: 15000,

@@ -257,6 +257,35 @@ export class RedisAiReader {
     const page = await this.hashFilter.prepare(sessionId, target, request.pattern, fieldBase64, expectedBase64, args.cursor ?? null, signal)
     try { stage(page); return page.result } catch (error) { page.rollback(); throw error }
   }
+  /** Read only type and expiry for one explicit identity; never fetch its value. */
+  async keyMetadata(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const keyBytes = Buffer.from(request.keyBase64, 'base64'), key = byteIdentity(keyBytes)
+    const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    const result = (state: 'value' | 'missing' | 'changed' | 'failed', type: string | null, ttlMs: string | null, error: ConnectionErrorCode | null) => this.project(sessionId, {
+      readOnly: true, connection: this.connections.status(sessionId), key, state, type, ttlMs,
+      ttlMeaning: ttlMs === '-1' ? '采样时没有设置过期时间；不能推断历史或未来状态。' : ttlMs === null ? null : '采样时的剩余毫秒数。',
+      sampledAt: new Date().toISOString(), snapshot: false, error, errorMessage: error === null ? state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : null : explain(error),
+    })
+    try {
+      const firstType = await context.type(keyBytes)
+      if (firstType === 'none') { this.connections.assertTarget(sessionId, target); return result('missing', null, null, null) }
+      const ttl = await context.ttl(keyBytes)
+      if (ttl === -2n) { this.connections.assertTarget(sessionId, target); return result('missing', null, null, null) }
+      const lastType = await context.type(keyBytes)
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      if (lastType !== firstType) return result('changed', null, null, null)
+      return result('value', firstType, String(ttl), null)
+    } catch (error) {
+      signal.throwIfAborted()
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return result('failed', null, null, code)
+    } finally { context.dispose() }
+  }
   /** MEMORY USAGE is a bounded estimate for one explicit Key, not a value read. */
   async memoryUsage(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
