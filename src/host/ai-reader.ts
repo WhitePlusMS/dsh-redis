@@ -334,7 +334,7 @@ export class RedisAiReader {
     const keyBytes = Buffer.from(request.keyBase64, 'base64'), context = new RedisReadContext(this.connections, sessionId, target, signal)
     const result = (state: string, type: string | null, matchesJson: string | null, matchCount: number | null, error: ConnectionErrorCode | null, sampledAt = new Date().toISOString()) => ({
       readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(keyBytes), path: args.path, state, type, matchesJson, matchCount, snapshot: false, sampledAt, error,
-      errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 RedisJSON 类型。' : state === 'unavailable' ? '服务器不支持或已禁用 JSON.GET。' : state === 'query-failed' ? 'Redis 拒绝了 JSON 路径查询，请检查路径和模块。' : null,
+      errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 RedisJSON 类型。' : state === 'unavailable' ? '服务器不支持或已禁用 JSON.GET。' : state === 'query-failed' ? '服务器拒绝了 JSON 查询，请检查服务与路径。' : null,
     })
     let firstType: string | null = null, readingJson = false
     let data: ReturnType<typeof result>
@@ -360,7 +360,11 @@ export class RedisAiReader {
       }
     } catch (error) {
       signal.throwIfAborted()
-      if (readingJson && error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
+      if (readingJson && error instanceof RedisReplyError && ['auth', 'permission', 'timeout', 'cancelled'].includes(context.error(error))) {
+        const code = context.error(error)
+        this.connections.assertReadResult(sessionId, target, code)
+        data = result('failed', null, null, null, code)
+      } else if (readingJson && error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
         this.connections.assertTarget(sessionId, target); data = result('unavailable', firstType, null, null, null)
       } else if (readingJson && error instanceof RedisReplyError && (/^WRONGTYPE(?: |$)/u.test(error.message) || error.message === 'Existing key has wrong Redis type')) {
         try {

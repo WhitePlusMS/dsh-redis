@@ -3105,3 +3105,4 @@
 - `scripts/smoke-ai-json-path.mjs`：新增只在独立 RedisJSON 实例写入合成样本的集成检查，比较注册工具与真实命令的结果及 ACL，并核对数据和过期时间未被读取操作改变。首轮发现真实 RedisJSON 对非 JSON 类型返回 `Existing key has wrong Redis type`，已按实测修正分类及测试；独立实例复验通过，真实 DSH 模型验收仍待完成。
 - `docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`：说明 JSONPath 的数组语义、无服务端分页与大小限制，并记录当前验收状态。独立 Redis 8.2.6 RedisJSON 集成检查复验通过，数据和 TTL 不变；本机 Redis 8.10.0 未提供 JSON.GET，工具实测返回不可用且连接保持正常。日常 DSH 的 HZ-bzkj-LLM 普通消息重试五次仍返回上游 HTTP 500，因此真实模型验收待完成。
 - 完整检查：`pnpm check` 通过，80 个测试文件、634 项测试；`git diff --check` 无空白错误。本次仅完成代码和已列范围的验证，真实 DSH 模型及未覆盖场景仍待验收。
+- 提交 `9c351a9` 后按 `code-review` 规范和需求双轴独立只读审查，两者均发现 `NOAUTH` 会被错误报告成路径查询失败。修正 `src/host/ai-reader.ts` 优先复用认证、权限和中断错误分类，调整其他服务端拒绝的通用说明；`tests/ai-tools.test.ts` 新增认证失效及敏感错误文本不泄露验证。原因是准确区分连接认证与路径问题，不改变查询或 Redis 数据。
