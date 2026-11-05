@@ -2986,3 +2986,11 @@
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录收起侧栏后同一真实字段仍可通过显式参数读取及回答；不推及未测试的数据类型。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录线索不足时模型未擅自搜索，但错误声称 MATCH 可避免全库遍历；回答准确性仍未通过。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `8981f5e` 的完整 `pnpm check` 通过，共 79 个测试文件、619 项；自动测试通过不等于真实模型准确性通过。
+
+### 2026-11-05 移除侧栏常驻 AI 读取预算
+
+- 修改 `src/client/RedisWorkspace.tsx` 和 `src/client/locales.ts`：移除侧栏常驻的预算标题、调用次数和结果字节；在现有插件信息中仅当预算耗尽或状态查询失败时显示恢复操作。
+- 修改 `src/host/ai-reader.ts` 与 `tests/ai-tools.test.ts`：预算耗尽时引导用户打开插件信息恢复读取，避免提示不存在的界面入口。保留原有会话预算和用户手动恢复机制，不改变 Redis 数据操作。
+- 修改 `tests/workspace-visibility-browser.test.ts`：在真实浏览器夹具中验证常驻区域消失、正常状态无恢复按钮，以及额度耗尽后从插件信息恢复。
+- 原因与影响：按用户要求简化侧栏，同时避免达到读取上限后无法继续。关闭或重挂插件信息时取消并释放未完成的状态请求。
+- 验证：类型检查通过；三个测试文件共 79 项通过，包含真实 Chromium 夹具中常态隐藏和耗尽后恢复的交互。日常 DSH 安装及页面复验待进行。

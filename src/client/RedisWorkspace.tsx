@@ -58,9 +58,8 @@ export function RedisWorkspace(props: Props) {
   }, [props.registerVisiblePane, props.selectionEpoch, phase, tab.visible, tab.signal])
   return <section className="dsh-redis" aria-label={t('view.title')}>
     <header className="redis-workspace-heading"><h2>{t('view.title')}</h2><span className="redis-readonly" title={t('badge.readOnly')} role="img" aria-label={t('badge.readOnly')}><Icon name="lock" /></span><button type="button" className="redis-icon-button redis-plugin-info-toggle" title={t('ui.pluginInfo')} aria-label={t('ui.pluginInfo')} aria-expanded={infoOpen} onClick={() => setInfoOpen(value => !value)}><Icon name="info" /></button></header>
-    {infoOpen && <div className="redis-plugin-info"><span>{t('baseline')}</span><span>{t(phase === 'ready' ? 'status.ready' : phase === 'loading' ? 'status.loading' : 'status.error')}</span></div>}
+    {infoOpen && <div className="redis-plugin-info"><span>{t('baseline')}</span><span>{t(phase === 'ready' ? 'status.ready' : phase === 'loading' ? 'status.loading' : 'status.error')}</span>{phase === 'ready' && <AiBudgetRecovery key={props.sessionKey} {...props} />}</div>}
     {phase === 'ready' && selectionFailed && <div className="redis-plugin-info" role="status"><span>{t('selection.syncFailed')}</span><button type="button" onClick={props.retrySelection}>{t('selection.retry')}</button></div>}
-    {phase === 'ready' && <AiBudget key={props.sessionKey} {...props} />}
     {phase === 'ready' ? <SelectionEpochContext.Provider value={props.selectionEpoch}><RefreshVisibility.Provider value={tab}><PreviewFormats key={props.sessionKey}><ConnectionForm {...props} /></PreviewFormats></RefreshVisibility.Provider></SelectionEpochContext.Provider> : <div className="redis-empty">
       <h2>{t('empty.title')}</h2><p>{t('empty.description')}</p>
       {phase === 'error' && <button type="button" onClick={() => setAttempt(value => value + 1)}>{t('action.retry')}</button>}
@@ -69,12 +68,12 @@ export function RedisWorkspace(props: Props) {
   </section>
 }
 
-/** Fetch on explicit inspection; only a user click may restore an exhausted budget. */
-function AiBudget(props: Props) {
-  const [open, setOpen] = useState(false), [pending, setPending] = useState(false), [error, setError] = useState(false)
+/** Only inspect on opening plugin info; resuming remains an explicit user action. */
+function AiBudgetRecovery(props: Props) {
+  const [pending, setPending] = useState(false), [error, setError] = useState(false)
   const [status, setStatus] = useState<AiBudgetStatus | null>(null)
   const active = useRef<AbortController | null>(null), t = props.t
-  useEffect(() => () => { active.current?.abort() }, [])
+  useEffect(() => { void run(false); return () => { active.current?.abort(); active.current = null } }, [])
   async function run(resume: boolean): Promise<void> {
     if (active.current !== null) return
     const controller = new AbortController(); active.current = controller; setPending(true); setError(false)
@@ -89,12 +88,10 @@ function AiBudget(props: Props) {
     } catch { if (!controller.signal.aborted) setError(true) }
     finally { if (active.current === controller) { active.current = null; if (!controller.signal.aborted) setPending(false) } }
   }
-  return <div className="redis-plugin-info">
-    <button type="button" aria-expanded={open} onClick={() => { const next = !open; setOpen(next); if (next) void run(false) }}>{t('budget.title')}</button>
-    {open && <div aria-live="polite">
-      {status !== null && <><span>{t('budget.calls')}: {status.callsUsed}/{status.maxCalls} · {t('budget.bytes')}: {status.bytesUsed}/{status.maxBytes}</span>{status.stopped && <p>{t(status.inFlight > 0 ? 'budget.pending' : 'budget.stopped')}</p>}{status.stopped && <button type="button" disabled={pending || status.inFlight > 0} onClick={() => { void run(true) }}>{t('budget.resume')}</button>}</>}
-      <button type="button" disabled={pending} onClick={() => { void run(false) }}>{t('connection.refresh')}</button>
-      {error && <p role="alert">{t('budget.error')}</p>}
-    </div>}
+  if (!error && !status?.stopped) return null
+  return <div aria-live="polite">
+    {status?.stopped && <><p>{t(status.inFlight > 0 ? 'budget.pending' : 'budget.stopped')}</p><button type="button" disabled={pending || status.inFlight > 0} onClick={() => { void run(true) }}>{t('budget.resume')}</button></>}
+    {(error || (status?.stopped && status.inFlight > 0)) && <button type="button" disabled={pending} onClick={() => { void run(false) }}>{t('connection.refresh')}</button>}
+    {error && <p role="alert">{t('budget.error')}</p>}
   </div>
 }

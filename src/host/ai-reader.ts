@@ -109,7 +109,7 @@ export class RedisAiReader {
   /** All registered tools share a budget tied to the trusted DSH session. */
   async withBudget(sessionId: string, signal: AbortSignal, operation: (stage: (page: PreparedAiPage) => void) => AiJson | Promise<AiJson>): Promise<AiJson> {
     const admission = this.budget.begin(sessionId)
-    if (!admission.ok) throw new Error(admission.reason === 'busy' ? '当前对话有读取正在执行，请等待后重试。' : '当前对话的 AI 读取预算已用完。请在 Redis 侧栏展开“AI 读取预算”，点击“刷新状态”，等待读取结束后点击“继续读取”。')
+    if (!admission.ok) throw new Error(admission.reason === 'busy' ? '当前对话有读取正在执行，请等待后重试。' : '当前对话的 AI 读取预算已用完。请打开 Redis 侧栏右上角的“插件信息”；如读取正在结束，请刷新状态，然后点击“继续读取”。')
     let finished = false, committed = false
     const staged: { page?: PreparedAiPage } = {}
     try {

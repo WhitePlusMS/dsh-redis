@@ -556,7 +556,7 @@ describe('official Redis model tools', () => {
     const before = f.commands.length
     const stopped = content(await f.call('redis_viewer_keys', { match: '*' }))
     expect(stopped).toContain('预算已用完')
-    expect(stopped).toContain('AI 读取预算')
+    expect(stopped).toContain('插件信息')
     expect(stopped).toContain('刷新状态')
     expect(stopped).toContain('继续读取')
     expect(f.commands).toHaveLength(before)

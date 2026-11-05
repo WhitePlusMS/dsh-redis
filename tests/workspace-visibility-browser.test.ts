@@ -19,14 +19,18 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     import { UiPanePresence } from './src/client/ui-pane-presence.ts'
     import { installRedisStyles } from './src/client/styles.ts'
     const epoch = new SelectionEpoch(), panes = new UiPanePresence(), controller = new AbortController()
+    const budget = { stopped: false }
+    const budgetStatus = () => ({ callsUsed: budget.stopped ? 32 : 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: budget.stopped })
     const props = {
       t: key => key, sessionKey: 'fixture', selectionEpoch: epoch, retrySelection: () => {},
       registerVisiblePane: () => panes.attach('fixture'), registerKeyHandler: handler => panes.registerKeyHandler('fixture', handler), registerRefreshHandler: handler => panes.registerRefreshHandler('fixture', handler), registerFormatHandler: handler => panes.registerFormatHandler('fixture', handler), registerMatchHandler: handler => panes.registerMatchHandler('fixture', handler),
       useTabInfo: () => ({ tab: { visible: true, signal: controller.signal } }),
       status: async () => ({ ok: true, value: {} }),
+      aiBudgetStatus: async () => ({ ok: true, value: budgetStatus() }),
+      resumeAiBudget: async () => { budget.stopped = false; return { ok: true, value: { accepted: true, status: budgetStatus() } } },
       connectionStatus: async () => ({ ok: true, value: { id: null, generation: 0, db: 0, state: 'disconnected', error: null, target: null } }),
     }
-    installRedisStyles(); window.fixture = { epoch, panes }
+    installRedisStyles(); window.fixture = { epoch, panes, budget }
     createRoot(document.getElementById('root')).render(<RedisWorkspace {...props} />)
   `
   const built = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: 'jsx', sourcefile: 'workspace-visibility-harness.jsx' }, bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', write: false })
@@ -36,6 +40,15 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     await page.setContent('<!doctype html><html><body><div id="root"></div></body></html>')
     await page.addScriptTag({ content: built.outputFiles[0]!.text })
     await page.waitForFunction(() => Reflect.get(window, 'fixture').panes.count('fixture') === 1, undefined, { timeout: 5000 })
+    expect(await page.getByText('budget.title').count()).toBe(0)
+    expect(await page.getByText('budget.calls').count()).toBe(0)
+    await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
+    expect(await page.getByRole('button', { name: 'budget.resume' }).count()).toBe(0)
+    await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
+    await page.evaluate(() => { Reflect.get(window, 'fixture').budget.stopped = true })
+    await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
+    await page.getByRole('button', { name: 'budget.resume' }).click()
+    await expect.poll(() => page.getByRole('button', { name: 'budget.resume' }).count()).toBe(0)
     const revision = await page.evaluate(() => { const epoch = Reflect.get(window, 'fixture').epoch; const current = epoch.snapshot().revision; epoch.synchronize(current); return current })
     // Headless Chromium keeps both tabs visible; exercise the real DOM listener explicitly.
     await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable: true, value: 'hidden' }); document.dispatchEvent(new Event('visibilitychange')) })
