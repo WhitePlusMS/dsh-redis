@@ -337,7 +337,9 @@ export class RedisAiReader {
         if (!Array.isArray(row) || row.length < 4 || typeof row[0] !== 'bigint' || row[0] < 0n || typeof row[1] !== 'bigint' || row[1] < 0n || typeof row[2] !== 'bigint' || row[2] < 0n || !Array.isArray(row[3]) || !Buffer.isBuffer(row[3][0])) throw new RedisFrameError('protocol')
         const rawName = row[3][0].toString('ascii').toUpperCase()
         const command = /^[A-Z][A-Z0-9._-]{0,63}$/u.test(rawName) && Buffer.from(rawName.toLowerCase(), 'ascii').equals(row[3][0].map(byte => byte >= 65 && byte <= 90 ? byte + 32 : byte)) ? rawName : null
-        return { id: row[0].toString(), timestampSeconds: row[1].toString(), durationMicroseconds: row[2].toString(), command }
+        // TimeClip accepts at most 8.64e15 milliseconds; preserve larger raw seconds.
+        const timestampUtc = row[1] <= 8640000000000n ? new Date(Number(row[1]) * 1000).toISOString() : null
+        return { id: row[0].toString(), timestampSeconds: row[1].toString(), timestampUtc, durationMicroseconds: row[2].toString(), command }
       })
       this.connections.assertTarget(sessionId, target)
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), scope: 'server', state: 'value', requestedCount: count, returnedCount: entries.length, entries, sampledAt: new Date().toISOString(), error: null, errorMessage: null })

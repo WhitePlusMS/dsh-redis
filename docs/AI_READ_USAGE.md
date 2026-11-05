@@ -55,7 +55,7 @@
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
 | `redis_viewer_compare_strings` | 左侧 `left` / `leftBase64` 和右侧 `right` / `rightBase64` 各选一个 | 比较当前 DB 两个 String 的前 4096 字节，底层可能额外读取 3 个边界字节；不返回值。只有两侧完整且相同才返回 `equal`，相同截断前缀返回 `undetermined`，两次采样不是原子快照 |
-| `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志时间、耗时和命令名，不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
+| `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志原始 Unix 秒、事件 UTC 时间、耗时和命令名；超出日期范围时 UTC 时间为 `null`，原始秒数仍保留。不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
 | `redis_viewer_clients` | 无 | 只读服务器客户端列表，最多展示 20 条 ID、连接及空闲秒数、DB 和标志；不返回客户端地址、名称、用户名或命令。当前连接视图仍包含目标服务器地址 |
 | `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |

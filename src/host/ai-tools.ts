@@ -60,7 +60,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'compare_strings', () => { strict(args, ['left', 'leftBase64', 'right', 'rightBase64']); return reader.compareStrings(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_slowlog', description: '在用户询问慢查询时，只读取得当前连接的 Redis 服务器最近慢日志，count 范围 1 到 10，默认 10。只返回记录 ID、Unix 秒、执行耗时微秒和安全的命令名，不返回命令参数、客户端地址或名称。慢日志是服务器范围而非当前 DB，执行耗时不含网络，空结果不代表历史或当前绝无慢查询；权限不足和读取失败会明确报告。' + reportable,
+    name: 'redis_viewer_slowlog', description: '在用户询问慢查询时，只读取得当前连接的 Redis 服务器最近慢日志，count 范围 1 到 10，默认 10。返回记录 ID、Unix 秒、由插件计算的事件 UTC 时间 timestampUtc、执行耗时微秒和安全的命令名；timestampUtc 为 null 表示原始秒数超出日期可表示范围，sampledAt 是查询时间而非事件时间。不返回命令参数、客户端地址或名称。慢日志是服务器范围而非当前 DB，执行耗时不含网络，空结果不代表历史或当前绝无慢查询；权限不足和读取失败会明确报告。' + reportable,
     parameters: { count: { type: 'integer' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'slowlog', () => { strict(args, ['count']); return reader.slowLog(session, args.count ?? 10, exec.signal) }) },
   }))

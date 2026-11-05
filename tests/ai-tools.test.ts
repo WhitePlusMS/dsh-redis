@@ -244,6 +244,17 @@ describe('official Redis model tools', () => {
     for (const args of [{ count: 0 }, { count: 11 }, { count: -1 }, { count: 1.5 }, { count: 2, command: 'RESET' }]) expect((await f.call('redis_viewer_slowlog', args)).isError).toBe(true)
     expect(requests).toHaveLength(1)
   })
+  it('provides exact UTC slow-log event times and preserves out-of-range seconds', async () => {
+    const seconds = [0n, 1700000000n, 1793838318n, 8640000000000n, 8640000000001n, 9223372036854775807n]
+    const f = await fixture(undefined, undefined, undefined, undefined, async () => seconds.map((time, id) => [BigInt(id), time, 1n, [Buffer.from('INFO')]]))
+    const result = JSON.parse(content(await f.call('redis_viewer_slowlog', { count: 6 }))) as { entries: Array<{ timestampSeconds: string; timestampUtc: string | null }>; reportSampleId: string }
+    expect(result.entries.map(entry => entry.timestampUtc)).toEqual([
+      '1970-01-01T00:00:00.000Z', '2023-11-14T22:13:20.000Z', '2026-11-05T00:25:18.000Z',
+      '+275760-09-13T00:00:00.000Z', null, null,
+    ])
+    expect(result.entries.map(entry => entry.timestampSeconds)).toEqual(seconds.map(String))
+    expect(f.reader.reportSamples.get('a', result.reportSampleId)?.data).toMatchObject({ entries: result.entries.map(entry => ({ timestampSeconds: entry.timestampSeconds, timestampUtc: entry.timestampUtc })) })
+  })
   it('distinguishes denied and malformed slow logs from an empty log', async () => {
     const denied = await fixture(undefined, undefined, undefined, undefined, async () => { throw new RedisReplyError('NOPERM synthetic-secret') })
     const text = content(await denied.call('redis_viewer_slowlog', {}))
