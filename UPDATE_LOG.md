@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 候选认证失败连接数对照
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的第二次真实模型认证失败复验：独立 Redis 的客户端数请求前后均为 2，含夹具管理连接及检查连接；只支持本次失败后未观察到额外客户端，不能覆盖其他失败路径。
+- 隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，测试资料已删除且实例已停止；用户 Redis 和日常 DSH 继续运行。
+
 ## 2026-11-05 同名连接资料真实验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录 `7315b69` 在日常 DSH 与 `bzkj-LLM` 的同名资料消歧：模型列出两个分组并提问，测试选择取消后没有发起连接；语义判断仍依赖模型遵循工具说明。两条无凭据临时资料已删除，原 Redis 界面保持连接。
