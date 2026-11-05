@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 用户 Redis 会话切库复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH 和 `bzkj-LLM` 对用户 Redis 的 DB0→DB1→DB0：两次切换和状态回执一致，最终界面已返回 DB0。模型称未读取任何 Key，但侧栏自动加载了 Key 名称，范围表述不准确；仅覆盖单会话正常路径。
+- 本次未要求读取 Key 值或修改数据，未将业务名称写入仓库。
+
+
 ## 2026-11-05 本机定位与刷新复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 和用户 Redis 的正常界面联动：定位及单次刷新回执均为 `applied`，侧栏实际显示 Hash，自动刷新关闭。
