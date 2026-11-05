@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 本机定位与刷新复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 和用户 Redis 的正常界面联动：定位及单次刷新回执均为 `applied`，侧栏实际显示 Hash，自动刷新关闭。
+- 本次不覆盖隐藏、多接收端、取消或回执丢失等场景，未写入用户 Redis 或将业务 Key 和内容写入仓库。
+
+
 ## 2026-11-05 基础类型与截断真实模型复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的六类型合成读取：原始值、类型及重复 Stream 字段顺序一致，模型仍误标 String 长度字段且表格显示原样 `<br>`。

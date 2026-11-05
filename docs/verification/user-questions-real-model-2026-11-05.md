@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `1375e2f` 的本机定位与单次刷新**：日常 DSH、`bzkj-LLM` 和用户 Redis DB0 中要求打开一个明确 Hash 并刷新一次；模型依次调用 `redis_viewer_locate_key` 和 `redis_viewer_refresh`，两项原始回执均为 `applied`，侧栏实际选中该 Key 并显示其字段，自动刷新保持关闭。仅覆盖一次正常路径，不能替代隐藏页面、多接收端、用户选择变化、取消和回执丢失等验收；业务 Key 与内容不写入仓库，未修改用户数据。
+
 - **当前构建 `1375e2f` 的六种基础类型和部分 String 读取**：日常 DSH、`bzkj-LLM`、独立 Redis 8.2.6，未预选 Key，模型对六个明确合成 Key 调用六次 `redis_viewer_value`；String、Hash、List、Set、ZSet 和 Stream 的内容、类型、完整状态与工具及夹具一致，Stream 同名字段按原序保留。模型仍把 String 的长度标为工具未提供的 `fullByteLength`，Hash、List 和 Stream 表格中的 `<br>` 以文本显示，故完整回答和展示未通过。随后请求只读取同一 String 的前 5 字节：工具只返回 `synth`、`byteLength: 5`、`metadata.length: 22`、`complete: false`、`nextOffset: 5`；模型正确标记为部分读取，却从同一对话前一轮补述完整合成值，超出本次要求和本轮工具证据，截断场景回答未通过。不能据此推断插件额外读取或在独立新会话必然出现同样情况。夹具 22 个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重连用户 Redis DB0。
 
 - **当前构建 `1375e2f` 的受限账号复验**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6 的临时受限账号中，明确读取一个合成 Hash 字段时，`redis_viewer_value` 返回 `failed/permission`、无值；模型正确说明无法取得当前值，但主动引用旧对话采样并将曾成功读取该字段的连接归于端口 `13115 / 3295` 等，其中 `13115` 的夹具不含该 Hash，故历史证据描述不准确。接着按前缀查找时，`redis_viewer_keys` 返回 `failed/permission`、`scanComplete: false`；模型说明未取得候选不等于不存在，界面也显示权限不足。两个操作只覆盖该账号的 HGET 与 SCAN 被拒绝，不覆盖所有 ACL 配置或独立新对话。隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重新连接用户 Redis DB0。
