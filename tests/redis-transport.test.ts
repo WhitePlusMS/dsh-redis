@@ -244,6 +244,15 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'XINFO'])
     }, (socket, args) => { expect(args).toEqual([Buffer.from('XINFO'), Buffer.from('GROUPS'), Buffer.from([0, 255])]); socket.write('*0\r\n') })
   })
+  it('allows only one bounded raw TimeSeries window', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['key', '0', '1', 'COUNT', '1'], [Buffer.from('key'), '-', '+', 'COUNT', '1'], [Buffer.from('key'), '2', '1', 'COUNT', '1'], [Buffer.from('key'), '0', '1', 'COUNT', '102'], [Buffer.from('key'), '0', '1', 'COUNT', '1', 'AGGREGATION', 'sum', '1']]) await expect(transport.execute('TS.RANGE', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      await expect(transport.execute('TS.ADD' as RedisReadCommand, [Buffer.from('key'), '1', '1'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('TS.RANGE', [Buffer.from([0, 255]), '0', '1000', 'COUNT', '101'], signal(), () => undefined)).toEqual([[1000n, '1.25']])
+      expect(commands).toEqual(['PING', 'TS.RANGE'])
+    }, (socket, args) => { expect(args).toEqual([Buffer.from('TS.RANGE'), Buffer.from([0, 255]), Buffer.from('0'), Buffer.from('1000'), Buffer.from('COUNT'), Buffer.from('101')]); socket.write('*1\r\n*2\r\n:1000\r\n+1.25\r\n') })
+  })
   it('allows one explicit JSONPath and no write or formatting commands', async () => {
     await withPeer(async (transport, commands) => {
       for (const args of [[], ['key', '$'], [Buffer.from('key')], [Buffer.from('key'), 'x'], [Buffer.from('key'), '$', '$.other'], [Buffer.from('key'), '$' + 'x'.repeat(1024)], [Buffer.from('key'), '$\ud800']]) await expect(transport.execute('JSON.GET', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })

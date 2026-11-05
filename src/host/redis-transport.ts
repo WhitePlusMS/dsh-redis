@@ -4,8 +4,8 @@ import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 
-export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'GEOPOS' | 'GEODIST' | 'JSON.GET'
-const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE', 'GEOPOS', 'GEODIST', 'JSON.GET'])
+export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'GEOPOS' | 'GEODIST' | 'JSON.GET' | 'TS.RANGE'
+const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE', 'GEOPOS', 'GEODIST', 'JSON.GET', 'TS.RANGE'])
 const CONNECT_TIMEOUT = 8000
 const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16
@@ -106,6 +106,8 @@ export class RedisTransport {
     return () => { this.failures.delete(listener) }
   }
   execute(command: RedisReadCommand, arguments_: readonly RedisArgument[], signal: AbortSignal, beforeDispatch: () => void, deadline = Date.now() + READ_TIMEOUT): Promise<RedisReply> {
+    // Only an explicit finite time window and bounded raw sample count are allowed.
+    if (command === 'TS.RANGE' && !(arguments_.length === 5 && Buffer.isBuffer(arguments_[0]) && typeof arguments_[1] === 'string' && typeof arguments_[2] === 'string' && /^(?:0|[1-9]\d{0,18})$/u.test(arguments_[1]) && /^(?:0|[1-9]\d{0,18})$/u.test(arguments_[2]) && BigInt(arguments_[1]) <= BigInt(arguments_[2]) && BigInt(arguments_[2]) <= 9223372036854775807n && arguments_[3] === 'COUNT' && typeof arguments_[4] === 'string' && /^(?:[1-9]\d?|10[01])$/u.test(arguments_[4]))) return Promise.reject(new RedisFrameError('protocol'))
     // One explicit JSONPath only; reject formatting options and additional paths.
     if (command === 'JSON.GET' && !(arguments_.length === 2 && Buffer.isBuffer(arguments_[0]) && typeof arguments_[1] === 'string' && arguments_[1].startsWith('$') && Buffer.byteLength(arguments_[1]) <= 1024 && Buffer.from(arguments_[1], 'utf8').toString('utf8') === arguments_[1])) return Promise.reject(new RedisFrameError('protocol'))
     // CLIENT contains administrative subcommands: permit only its read-only LIST form.

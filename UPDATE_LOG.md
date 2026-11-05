@@ -3107,3 +3107,12 @@
 - 完整检查：`pnpm check` 通过，80 个测试文件、634 项测试；`git diff --check` 无空白错误。本次仅完成代码和已列范围的验证，真实 DSH 模型及未覆盖场景仍待验收。
 - 提交 `9c351a9` 后按 `code-review` 规范和需求双轴独立只读审查，两者均发现 `NOAUTH` 会被错误报告成路径查询失败。修正 `src/host/ai-reader.ts` 优先复用认证、权限和中断错误分类，调整其他服务端拒绝的通用说明；`tests/ai-tools.test.ts` 新增认证失效及敏感错误文本不泄露验证。原因是准确区分连接认证与路径问题，不改变查询或 Redis 数据。
 - 提交 `b05d8f6` 后的规范复审发现通用认证匹配可能命中错误正文中的 `author` 等 Key 或路径。`src/host/ai-reader.ts` 改为仅识别 Redis 错误码前缀；`tests/ai-tools.test.ts` 增加未知命令和路径错误含 `author` 的回归。原因是让认证与功能不可用保持正确区分，且不暴露原始错误。
+
+### 2026-11-05 TimeSeries 有界范围查询（进行中）
+
+- `src/host/redis-transport.ts`、`src/host/ai-reader.ts`、`src/host/ai-tools.ts`：增加只读 `TS.RANGE`，要求明确 Key 与有限的毫秒起止时间，每批最多返回 100 个原始样本，多取一条判断是否还有后续；保留数值文本、续读起点和非快照说明。固定命令形态，不开放聚合或写入；模块缺失、类型、权限和错误分开报告。
+- 依据 Redis 官方文档及隔离 Redis 8.2.6 模块实测的 `TSDB-TYPE`、RESP 样本格式和缺失/类型错误实施；编译、测试及真实 DSH 模型验收均待执行。
+- `tests/ai-tools.test.ts`、`tests/redis-transport.test.ts`：新增分页边界、精确样本、无模块、权限和错误响应专项，并验证拒绝超范围参数、聚合选项及写命令；类型检查和相关 100 项测试通过。
+- `scripts/smoke-ai-timeseries.mjs`：新增独立 RedisTimeSeries 样本、续读、空范围、类型和 ACL 对照，真实 Redis 8.2.6 模块专项通过，采样前后序列及 TTL 一致。本机 Redis 8.10.0 实测无 TS.RANGE，工具返回不可用且连接仍正常。
+- `docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`：说明时间戳范围、每批上限、非快照和压缩序列限制，并将真实模块对照、用户 Redis 缺少模块及日常模型上游 HTTP 500 的验收边界写入清单。
+- 完整检查：`pnpm check` 通过，80 个测试文件、637 项测试；当前真实模型验收仍未完成，测试通过不等同于模型回答准确。

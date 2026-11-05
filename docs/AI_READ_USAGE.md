@@ -24,6 +24,7 @@
 - “查看 `events:orders` 的消费组积压情况。”
 - “查看 `flags:today` 从第 6 位开始的 8 个 Bitmap 位。”
 - “读取 RedisJSON Key `order:1001` 的 `$.status` 路径。”
+- “查看时间序列 `sensor:temperature` 在指定起止毫秒时间戳之间的样本。”
 - “查看地理索引 `places` 中 `station-a` 的坐标。”
 - “查询地理索引 `places` 中 `station-a` 到 `station-b` 的距离，单位千米。”
 - “解释一下我在侧栏选中的当前这个值。”
@@ -65,6 +66,7 @@
 | `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |
 | `redis_viewer_bitmap` | 必填 `key` 或 `keyBase64`、从零开始的位 `offset` 和位数 `count` | 最多读取 1024 位，只返回请求的位；超出 String 长度的位为零，缺失 Key 与读取失败单独报告 |
 | `redis_viewer_json_path` | 必填 `key` 或 `keyBase64`、以 `$` 开头的 `path` | 一个明确的 RedisJSON 路径；`matchesJson` 保留 Redis 返回的 JSON 数组原文，`[]` 是无匹配，`[null]` 是匹配到 null。模块缺失、类型不符、权限和路径错误分别报告 |
+| `redis_viewer_timeseries` | 必填 `key` 或 `keyBase64`、十进制 Unix 毫秒 `from` / `to`；可选 `count`（1–100） | 单个 TimeSeries Key 的有界原始样本；时间范围包含两端，值保留 Redis 文本。`complete: false` 时使用 `nextFrom` 作为下一次 `from`，保持 Key、结束时间不变；批次之间不是快照 |
 | `redis_viewer_geo` | 必填 `key` / `keyBase64` 和 `member` / `memberBase64`；距离查询另给 `other` / `otherBase64`，可选 `unit` | 精确读取一个成员的坐标，或两个成员的距离；距离单位为 `m`、`km`、`ft`、`mi`，默认米。ZSet 类型不能证明它是地理索引，坐标和距离存在 Redis 的编码及球形地球近似误差 |
 | `redis_viewer_profiles` / `redis_viewer_connect_profile` | 先列出资料，再提供同一会话返回的 `id` 与 `snapshotToken` | 用户明确选择已有资料时尝试连接；资料或令牌变化会拒绝，失败保留原连接，密码须在本地表单填写 |
 | `redis_viewer_disconnect` | `id` 和 `generation` 均来自当前状态 | 用户明确要求时断开当前会话；连接身份已变化则拒绝，取消或回执丢失后须查询状态 |
@@ -99,6 +101,8 @@ AI 的 String 查询严格读取请求的字节范围，不返回界面预览使
 客户端列表同样没有服务端分页，Redis 需遍历连接并返回完整响应，受 RESP 大小限制；`complete: false` 表示只展示前 20 条，权限不足和超限不是空列表。
 
 RedisJSON 的 `JSON.GET` 没有服务端分页，复杂路径或根路径可能遍历并返回整个子树；必须由用户明确指定范围。工具不截断 JSON：响应受 1 MiB RESP 上限和 64 KiB 单次 AI 结果上限约束，超限会失败；应缩小路径重试。返回的数组是单次采样，不是事务快照。参见 [Redis JSON.GET 文档](https://redis.io/docs/latest/commands/json.get/)。
+
+TimeSeries 按明确的闭区间读取最多 100 条，并额外读取一条判断是否还有数据；时间戳和数值均作为字符串保留。多批之间可能发生并发变化，`complete` 仅指本次采样时该区间没有更多已读到的样本，不代表历史快照。目标 Key 也可能本身是压缩序列，结果不能自动等同原始测量。参见 [Redis TS.RANGE 文档](https://redis.io/docs/latest/commands/ts.range/)。
 
 实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[源码仓库中的实施记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
 

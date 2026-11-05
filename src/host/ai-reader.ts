@@ -324,6 +324,68 @@ export class RedisAiReader {
     }
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), state: value.state, error: value.error, errorMessage: explainValue(value.error, value), offset: args.offset, count: args.count, bits, metadata: value.metadata, sampledAt: value.sampledAt })
   }
+  /** Read one bounded forward window of raw time-series samples. */
+  async timeSeries(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly from: string; readonly to: string; readonly count?: number }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    const validTimestamp = (value: string) => typeof value === 'string' && /^(?:0|[1-9]\d{0,18})$/u.test(value) && BigInt(value) <= 9223372036854775807n
+    if (!validTimestamp(args.from) || !validTimestamp(args.to) || BigInt(args.from) > BigInt(args.to)) throw new Error('请指定有效的起止 Unix 毫秒时间戳，开始时间不能大于结束时间。')
+    const count = args.count ?? 100
+    if (!Number.isInteger(count) || count < 1 || count > 100) throw new Error('每批时间序列样本数须为 1 到 100。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const keyBytes = Buffer.from(request.keyBase64, 'base64'), context = new RedisReadContext(this.connections, sessionId, target, signal)
+    type Sample = { timestampMs: string; value: string }
+    const result = (state: string, type: string | null, samples: Sample[], complete: boolean, nextFrom: string | null, error: ConnectionErrorCode | null, sampledAt = new Date().toISOString()) => ({
+      readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(keyBytes), from: args.from, to: args.to, count, state, type, samples, complete, nextFrom, snapshot: false, sampledAt, error,
+      errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 TimeSeries 类型。' : state === 'unavailable' ? '服务器不支持或已禁用 TS.RANGE。' : state === 'query-failed' ? '服务器拒绝了时间序列查询，请检查服务与范围。' : null,
+    })
+    let firstType: string | null = null, readingSeries = false
+    let data: ReturnType<typeof result>
+    try {
+      firstType = await context.type(keyBytes)
+      readingSeries = true
+      const reply = await context.command('TS.RANGE', [keyBytes, args.from, args.to, 'COUNT', String(count + 1)])
+      readingSeries = false
+      const sampledAt = new Date().toISOString(), lastType = await context.type(keyBytes)
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      if (firstType !== lastType) data = result(lastType === 'none' ? 'missing' : 'changed', lastType, [], false, null, null, sampledAt)
+      else {
+        if (lastType !== 'TSDB-TYPE' || !Array.isArray(reply) || reply.length > count + 1) throw new RedisFrameError('protocol')
+        let previous = -1n
+        const samples = reply.map(row => {
+          if (!Array.isArray(row) || row.length !== 2 || typeof row[0] !== 'bigint' || row[0] < BigInt(args.from) || row[0] > BigInt(args.to) || row[0] <= previous) throw new RedisFrameError('protocol')
+          previous = row[0]
+          const value = Buffer.isBuffer(row[1]) ? row[1].toString('ascii') : row[1]
+          if (typeof value !== 'string' || value.length > 64 || (Buffer.isBuffer(row[1]) && !Buffer.from(value, 'ascii').equals(row[1])) || !/^-?(?:\d+(?:\.\d+)?(?:[eE][+-]?\d+)?|inf|nan)$/iu.test(value)) throw new RedisFrameError('protocol')
+          return { timestampMs: row[0].toString(), value }
+        })
+        const complete = samples.length <= count, page = samples.slice(0, count), last = page.at(-1)
+        data = result('value', lastType, page, complete, complete || last === undefined ? null : (BigInt(last.timestampMs) + 1n).toString(), null, sampledAt)
+      }
+    } catch (error) {
+      signal.throwIfAborted()
+      if (readingSeries && error instanceof RedisReplyError && /^(?:NOAUTH|WRONGPASS|NOPERM|DENIED)(?: |$)/u.test(error.message)) {
+        const code = context.error(error); this.connections.assertReadResult(sessionId, target, code); data = result('failed', null, [], false, null, code)
+      } else if (readingSeries && error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
+        this.connections.assertTarget(sessionId, target); data = result('unavailable', firstType, [], false, null, null)
+      } else if (readingSeries && error instanceof RedisReplyError && /^(?:ERR TSDB: the key does not exist|(?:ERR )?WRONGTYPE(?: |$))/u.test(error.message)) {
+        try {
+          const lastType = await context.type(keyBytes)
+          signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+          data = result(lastType === 'none' ? 'missing' : firstType === lastType && lastType !== 'TSDB-TYPE' ? 'unsupported' : 'changed', lastType, [], false, null, null)
+        } catch (checkError) {
+          signal.throwIfAborted()
+          const code = context.error(checkError); this.connections.assertReadResult(sessionId, target, code); data = result('failed', null, [], false, null, code)
+        }
+      } else if (readingSeries && error instanceof RedisReplyError) {
+        this.connections.assertTarget(sessionId, target); data = result('query-failed', firstType, [], false, null, null)
+      } else {
+        const code = context.error(error); this.connections.assertReadResult(sessionId, target, code); data = result(code === 'type-changed' ? 'changed' : 'failed', null, [], false, null, code)
+      }
+    } finally { context.dispose() }
+    return this.project(sessionId, data)
+  }
   /** One explicit JSONPath; preserve the Redis JSON text instead of rounding numbers. */
   async jsonPath(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly path: string }, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()

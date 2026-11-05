@@ -21,14 +21,14 @@ const cleanups: (() => Promise<void> | void)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 /** Synthetic transport with two-page cursors exposes cross-consumer races. */
-async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute'], compareRead?: RedisLink['execute'], geo?: RedisLink['execute'], jsonPath?: RedisLink['execute']) {
+async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute'], compareRead?: RedisLink['execute'], geo?: RedisLink['execute'], moduleRead?: RedisLink['execute']) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   let changingTypeReads = 0
   let changingMemberReads = 0
   const failures = new Set<(code: ConnectionErrorCode) => void>()
   const failNetwork = () => { for (const listener of failures) listener('network'); throw new ConnectionFailure('network') }
-  const types: Readonly<Record<string, string>> = { plain: 'string', changing: 'string', hash: 'hash', list: 'list', set: 'set', zset: 'zset', stream: 'stream', large: 'string', wide: 'set', module: 'ReJSON-RL' }
+  const types: Readonly<Record<string, string>> = { plain: 'string', changing: 'string', hash: 'hash', list: 'list', set: 'set', zset: 'zset', stream: 'stream', large: 'string', wide: 'set', module: 'ReJSON-RL', series: 'TSDB-TYPE' }
   const link: RedisLink = {
     close: vi.fn(), onFailure: listener => { failures.add(listener); return () => { failures.delete(listener) } },
     async execute(command, args, signal, guard): Promise<RedisReply> {
@@ -44,7 +44,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
         case 'INFO': return overview === undefined ? Buffer.alloc(0) : overview(command, args, signal, guard)
         case 'XINFO': return groups === undefined ? [] : groups(command, args, signal, guard)
         case 'GEOPOS': case 'GEODIST': if (geo === undefined) throw new Error('Unexpected GEO request'); return geo(command, args, signal, guard)
-        case 'JSON.GET': if (jsonPath === undefined) throw new Error('Unexpected JSON request'); return jsonPath(command, args, signal, guard)
+        case 'JSON.GET': case 'TS.RANGE': if (moduleRead === undefined) throw new Error('Unexpected module request'); return moduleRead(command, args, signal, guard)
         case 'CLIENT': return clients === undefined ? Buffer.alloc(0) : clients(command, args, signal, guard)
         case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; if (/^order:\d+$/u.test(key)) return 'hash'; return types[key] ?? 'none'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
@@ -109,6 +109,31 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('reads bounded explicit TimeSeries windows with truthful continuation', async () => {
+    const calls: Array<readonly unknown[]> = []
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, args) => {
+      calls.push(args)
+      if (String(args[0]) === 'missing') throw new RedisReplyError('ERR TSDB: the key does not exist')
+      if (String(args[0]) === 'plain') throw new RedisReplyError('ERR WRONGTYPE Operation against a key holding the wrong kind of value')
+      return args[1] === '0' ? [[1000n, '1.25'], [2000n, '-3.5'], [3000n, '9']] : [[3000n, '9']]
+    })
+    const first = JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2 })))
+    expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', value: '1.25' }, { timestampMs: '2000', value: '-3.5' }], complete: false, nextFrom: '2001', snapshot: false })
+    expect(calls[0]).toEqual([Buffer.from('series'), '0', '3000', 'COUNT', '3'])
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: first.nextFrom, to: '3000', count: 2 })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '3000', value: '9' }], complete: true, nextFrom: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '3000' })))).toMatchObject({ state: 'missing', complete: false })
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'plain', from: '0', to: '3000' })))).toMatchObject({ state: 'unsupported', type: 'string' })
+    for (const args of [{ key: 'series', from: '-', to: '+' }, { key: 'series', from: '01', to: '2' }, { key: 'series', from: '3', to: '2' }, { key: 'series', from: '0', to: '9223372036854775808' }, { key: 'series', from: '0', to: '1', count: 101 }, { key: 'series', from: '0', to: '1', aggregation: 'sum' }]) expect((await f.call('redis_viewer_timeseries', args)).isError).toBe(true)
+  })
+  it('distinguishes unavailable, denied and malformed TimeSeries reads', async () => {
+    const make = (execute: RedisLink['execute']) => fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, execute)
+    const absent = await make(async () => { throw new RedisReplyError("ERR unknown command 'TS.RANGE', with args beginning with: 'author'") })
+    expect(JSON.parse(content(await absent.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '1' })))).toMatchObject({ state: 'unavailable', connection: { state: 'connected' } })
+    const denied = await make(async () => { throw new RedisReplyError('NOPERM synthetic-secret') })
+    expect(JSON.parse(content(await denied.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '1' })))).toMatchObject({ state: 'failed', error: 'permission' })
+    const malformed = await make(async () => [[1n, '1'], [1n, '2']])
+    expect(JSON.parse(content(await malformed.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '2' })))).toMatchObject({ state: 'failed', error: 'protocol' })
+  })
   it('reads one explicit JSONPath and preserves raw JSON precision and null semantics', async () => {
     const calls: Array<readonly unknown[]> = []
     const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, args) => {
@@ -827,7 +852,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_bitmap', 'redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_geo', 'redis_viewer_json_path', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_bitmap', 'redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_geo', 'redis_viewer_json_path', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_timeseries', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })
