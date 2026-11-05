@@ -23,8 +23,8 @@ export async function until(check, description, timeout = 3000) {
 }
 
 /** No host data mount, fixed trusted image, random loopback port and ownership-checked cleanup. */
-export async function withRedisFixture(run, { passwordRequired = true, tls = false, wrongHostname = false, disableGeoPos = false, disableHllCount = false } = {}) {
-  if (process.env.REDIS_TEST_BACKEND === 'wsl-image') return withWslRedisFixture(run, { passwordRequired, tls, wrongHostname, disableGeoPos, disableHllCount, image: IMAGE })
+export async function withRedisFixture(run, { passwordRequired = true, tls = false, wrongHostname = false, disableGeoPos = false, disableHllCount = false, disableMemory = false } = {}) {
+  if (process.env.REDIS_TEST_BACKEND === 'wsl-image') return withWslRedisFixture(run, { passwordRequired, tls, wrongHostname, disableGeoPos, disableHllCount, disableMemory, image: IMAGE })
   const owner = randomUUID()
   const name = 'dsh-redis-test-' + owner
   const password = passwordRequired ? randomUUID() : ''
@@ -46,7 +46,7 @@ export async function withRedisFixture(run, { passwordRequired = true, tls = fal
       ...(tls ? ['--mount', 'type=bind,source=' + certDirectory + ',target=/tls,readonly'] : []), IMAGE,
       'redis-server', '--save', '', '--appendonly', 'no', '--loglevel', 'warning',
       ...(tls ? ['--port', '0', '--tls-port', '6379', '--tls-cert-file', '/tls/server.pem', '--tls-key-file', '/tls/server.key', '--tls-ca-cert-file', '/tls/ca.pem', '--tls-auth-clients', 'no'] : []),
-      ...(passwordRequired ? ['--requirepass', password] : []), ...(disableGeoPos ? ['--rename-command', 'GEOPOS', ''] : []), ...(disableHllCount ? ['--rename-command', 'PFCOUNT', ''] : []))
+      ...(passwordRequired ? ['--requirepass', password] : []), ...(disableGeoPos ? ['--rename-command', 'GEOPOS', ''] : []), ...(disableHllCount ? ['--rename-command', 'PFCOUNT', ''] : []), ...(disableMemory ? ['--rename-command', 'MEMORY', ''] : []))
     assert(/^[a-f0-9]{64}$/.test(container))
     metadata.container = container
     await docker('start', container)

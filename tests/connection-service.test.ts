@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConnectionFailure, RedisConnections, connectionErrorCode, type RedisLink, type RedisOpener } from '../src/host/connection-service.ts'
 import type { ConnectionRequest, ConnectionView, ConnectionErrorCode } from '../src/domain.ts'
 import { renderLogs } from './log-output.ts'
+import { RedisReplyError } from '../src/host/resp.ts'
 
 const settings: ConnectionRequest = { host: '127.0.0.1', port: 6379, username: 'reader', password: 'never-return-this-secret', tls: null }
 const signal = () => new AbortController().signal
@@ -35,6 +36,10 @@ describe('connection ownership and lifecycle', () => {
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'UNABLE_TO_VERIFY_LEAF_SIGNATURE' }))).toBe('tls-certificate')
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'CERT_HAS_EXPIRED' }))).toBe('tls-certificate')
     expect(connectionErrorCode(Object.assign(new Error('private details'), { code: 'ECONNRESET' }))).toBe('network')
+  })
+  it('classifies Redis authentication by error prefix, not echoed arguments', () => {
+    for (const message of ['NOAUTH Authentication required.', 'WRONGPASS invalid username-password pair', 'ERR AUTH called without any password configured']) expect(connectionErrorCode(new RedisReplyError(message))).toBe('auth')
+    for (const message of ["ERR unknown command 'MEMORY', with args beginning with: 'USAGE' 'author'", 'ERR invalid password field', 'ERR synthetic-auth-data']) expect(connectionErrorCode(new RedisReplyError(message))).not.toBe('auth')
   })
   it('reduces authentication failures to a fixed code without returning credentials', async () => {
     const service = new RedisConnections(async () => { throw new Error('WRONGPASS ' + settings.password) })

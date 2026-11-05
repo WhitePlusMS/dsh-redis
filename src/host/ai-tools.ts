@@ -70,7 +70,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'offset', 'count']); return reader.bitmap(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。MEMORY USAGE 的 SAMPLES 5 是请求参数而非实际采样数量，嵌套值可能使用采样估计，实际数量和误差未知；结果包含该 Key 与值的分配及管理开销，可能包含内部分配碎片，不代表服务器总内存。bytes 为十进制字符串；不推断未读取的 Key 类型。Key 不存在、权限不足和读取失败分别报告，不读取值、不跨库。' + reportable,
+    name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。MEMORY USAGE 的 SAMPLES 5 是请求参数而非实际采样数量，嵌套值可能使用采样估计，实际数量和误差未知；结果包含该 Key 与值的分配及管理开销，可能包含内部分配碎片，不代表服务器总内存。bytes 为十进制字符串；不推断未读取的 Key 类型。Key 不存在、命令不可用、权限不足和读取失败分别报告，不读取值、不跨库。' + reportable,
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'memory', () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },
   }))

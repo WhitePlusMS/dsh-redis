@@ -29,7 +29,7 @@ export function connectionErrorCode(error: unknown): ConnectionErrorCode {
   const code = error instanceof Error && 'code' in error && typeof error.code === 'string' ? error.code : ''
   if (code === 'ERR_TLS_CERT_ALTNAME_INVALID') return 'tls-hostname'
   if (/^(ERR_TLS_|ERR_SSL_|ERR_OSSL_)|CERT_|SELF_SIGNED|UNABLE_TO_(GET_ISSUER|VERIFY_LEAF)/u.test(code)) return 'tls-certificate'
-  if (error instanceof Error && /WRONGPASS|NOAUTH|AUTH|invalid username-password|invalid password/i.test(error.message)) return 'auth'
+  if (error instanceof Error && /^(?:(?:WRONGPASS|NOAUTH)(?: |$)|ERR AUTH(?: |$))/u.test(error.message)) return 'auth'
   return 'network'
 }
 

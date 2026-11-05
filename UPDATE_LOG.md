@@ -1,6 +1,14 @@
 # 更新说明
 
 
+## 2026-11-05 修正认证与内存命令错误分类
+
+- `src/host/connection-service.ts`：按 Redis 错误前缀识别认证失败，覆盖 `NOAUTH`、`WRONGPASS` 和 `ERR AUTH`，避免错误正文回显的 Key 被误认成认证错误；依据 [Redis WRONGPASS 文档](https://redis.io/docs/latest/develop/reference/errors/common/wrongpass/) 和 [NOAUTH 文档](https://redis.io/docs/latest/develop/reference/errors/common/noauth/)。
+- `src/host/ai-reader.ts`、`src/host/ai-report-samples.ts`、`src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`：`MEMORY` 命令不存在或被禁用时返回不可用及固定说明，报告结构保留该状态，不暴露服务端原始错误。
+- `tests/connection-service.test.ts`、`tests/ai-tools.test.ts` 和隔离夹具脚本：覆盖认证前缀、回显含 `author` 的 Key、报告采样以及真实禁用命令；类型检查、构建及 4 个专项文件的 128 项测试通过；独立 Redis 8.2.6 中禁用 `MEMORY` 后验证不可用状态及连接仍正常，正常内存估算和数据、过期时间对照通过，两个测试实例均已停止。真实 DSH 模型复验待执行；仅修改测试实例配置，不修改用户 Redis。
+
+
+
 ## 2026-11-05 区分筛选中的非 Hash 与类型变化
 
 - `src/host/selected-reader.ts`、`src/host/ai-hash-filter.ts`：对指定字段的筛选，将首次检查就不是 Hash 的候选记入 `notHash`，只有读取期间观察到类型变化才计入 `typeChanged`；侧栏选择仍按已有选区类型检查。原因是稳定的 String 等候选此前被误报为发生类型变化。

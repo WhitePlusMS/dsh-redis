@@ -41,4 +41,23 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   }
 }, { passwordRequired: false })
 assert(fixture.stopped)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['binary Key and fixed sampling', 'missing Key', 'unchanged serialized data and expiry'] }))
+// The disabled-command case is isolated from the normal Redis fixture.
+const { fixture: unavailableFixture } = await withRedisFixture(async ({ settings, admin }) => {
+  await admin.set('author', 'synthetic-only')
+  const before = await admin.get('author'), connections = new RedisConnections()
+  const reader = new RedisAiReader(connections, () => undefined, async () => { throw new Error('Unexpected UI dependency') }, () => false)
+  const ctx = new Context()
+  try {
+    assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
+    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await ctx.plugin({ name: 'redis-memory-unavailable-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
+    const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
+    const result = await ctx.tools.execute({ callId: 'memory-unavailable', name: 'redis_viewer_memory', arguments: { key: 'author' }, agent, signal })
+    assert.equal(result.isError, false)
+    const page = JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
+    assert.equal(page.state, 'unavailable'); assert.equal(page.error, null); assert.equal(page.connection.state, 'connected')
+    assert.equal(await admin.get('author'), before)
+  } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
+}, { passwordRequired: false, disableMemory: true })
+assert(unavailableFixture.stopped)
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, backend: fixture.backend ?? 'docker', fixtureStopped: fixture.stopped, checks: ['binary Key and fixed sampling', 'missing Key', 'disabled MEMORY', 'unchanged serialized data and expiry'] }))

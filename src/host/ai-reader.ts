@@ -544,6 +544,10 @@ export class RedisAiReader {
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: reply === null ? 'missing' : 'value', bytes: reply === null ? null : reply.toString(), ...sampling, sampledAt: new Date().toISOString(), error: null, errorMessage: reply === null ? keyStateMessages.missing.zh : null })
     } catch (error) {
       signal.throwIfAborted()
+      if (error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
+        this.connections.assertTarget(sessionId, target)
+        return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'unavailable', bytes: null, ...sampling, sampledAt: new Date().toISOString(), error: null, errorMessage: '服务器不支持或已禁用 MEMORY 命令。' })
+      }
       const code = context.error(error)
       this.connections.assertReadResult(sessionId, target, code)
       return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, ...sampling, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })

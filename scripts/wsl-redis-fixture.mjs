@@ -30,7 +30,7 @@ async function removeOwned(directory, expectedName) {
   await rm(actual, { recursive: true })
 }
 
-export async function withWslRedisFixture(run, { passwordRequired, tls, wrongHostname, disableGeoPos, disableHllCount, image }) {
+export async function withWslRedisFixture(run, { passwordRequired, tls, wrongHostname, disableGeoPos, disableHllCount, disableMemory, image }) {
   const receipt = JSON.parse(await readFile(resolve(imageBase, 'verified-image.json'), 'utf8'))
   assert.equal(receipt.imageIndex, image.split('@')[1]); assert.equal(receipt.manifest, 'sha256:f4a7260ec5f053de31eccb19ba2c997f7c3ea4ace799c9479d411b84bd6f158e')
   const owner = randomUUID(), password = passwordRequired ? randomUUID() : ''
@@ -57,6 +57,7 @@ export async function withWslRedisFixture(run, { passwordRequired, tls, wrongHos
       // Built-in GEOPOS exists during config parsing; confined refusal fixture.
       ...(disableGeoPos ? ['rename-command GEOPOS ""'] : []),
       ...(disableHllCount ? ['rename-command PFCOUNT ""'] : []),
+      ...(disableMemory ? ['rename-command MEMORY \"\"'] : []),
     ].join('\n') + '\n'
     await writeFile(resolve(directory, 'redis.conf'), config, { mode: 0o600 })
     const args = ['-d', 'Ubuntu', '--exec', wslPath(resolve(imageRoot, 'lib/ld-musl-x86_64.so.1')), '--library-path', [resolve(imageRoot, 'lib'), resolve(imageRoot, 'usr/lib')].map(wslPath).join(':'), wslPath(resolve(imageRoot, 'usr/local/bin/redis-server')), wslPath(resolve(directory, 'redis.conf'))]

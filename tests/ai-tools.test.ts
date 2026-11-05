@@ -476,6 +476,17 @@ describe('official Redis model tools', () => {
     for (const args of [{}, { key: 'x', keyBase64: 'eA==' }, { keyBase64: 'not-base64' }, { key: '\ud800' }, { key: 'x', samples: 0 }]) expect((await f.call('redis_viewer_memory', args)).isError).toBe(true)
     expect(requests).toHaveLength(before)
   })
+  it('reports unavailable MEMORY without confusing echoed Key names with authentication', async () => {
+    const f = await fixture(undefined, undefined, undefined, async (_command, args) => { throw new RedisReplyError("ERR unknown command 'MEMORY', with args beginning with: 'USAGE' '" + String(args[1]) + "' synthetic-secret") })
+    for (const key of ['author', 'ordinary']) {
+      const text = content(await f.call('redis_viewer_memory', { key }))
+      const result = JSON.parse(text)
+      expect(result).toMatchObject({ state: 'unavailable', error: null, bytes: null, connection: { state: 'connected' } })
+      expect(text).not.toContain('synthetic-secret')
+      expect(f.reader.reportSamples.get('a', result.reportSampleId)?.data).toMatchObject({ state: 'unavailable', error: null })
+    }
+    expect((await f.call('redis_viewer_status', {})).isError).toBe(false)
+  })
   it('does not publish a memory result from a replaced connection', async () => {
     let release!: (value: RedisReply) => void, observed!: () => void
     const pending = new Promise<RedisReply>(resolve => { release = resolve })
