@@ -32,7 +32,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
     }
     const result = await read({ keyBase64: key.toString('base64') })
-    assert.equal(result.state, 'value'); assert.equal(result.bytes, String(expected)); assert.equal(result.samples, 5)
+    assert.equal(result.state, 'value'); assert.equal(result.bytes, String(expected)); assert.equal(result.requestedSamples, 5); assert.equal(result.actualSamples, null)
     assert.equal((await read({ key: 'fixture:missing' })).state, 'missing')
     assert.deepEqual(await buffers.sendCommand(['DUMP', key]), before)
     assert.equal(await admin.sendCommand(['PEXPIRETIME', key]), expiry)

@@ -58,7 +58,7 @@
 | `redis_viewer_key_metadata` | 必填 `key` 或 `keyBase64` 中一个 | 只读明确 Key 的类型及 TTL，不读取值；采样时间为 UTC，`ttlMs = -1` 只表示采样时无过期时间 |
 | `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
-| `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
+| `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 请求 `SAMPLES 5`；实际采样数和误差未知，返回单 Key 字节数与时间。估算包含该 Key 及值的分配和管理开销，可能包含内部碎片；区分不存在、无权限与失败 |
 | `redis_viewer_compare_strings` | 左侧 `left` / `leftBase64` 和右侧 `right` / `rightBase64` 各选一个 | 比较当前 DB 两个 String 的前 4096 字节，不返回值。只有两侧完整且相同才返回 `equal`，相同截断前缀返回 `undetermined`，两次采样不是原子快照 |
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志原始 Unix 秒、事件 UTC 时间、耗时和命令名；超出日期范围时 UTC 时间为 `null`，原始秒数仍保留。不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |

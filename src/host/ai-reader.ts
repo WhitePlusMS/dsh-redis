@@ -535,17 +535,18 @@ export class RedisAiReader {
     const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
     const key = byteIdentity(Buffer.from(request.keyBase64, 'base64'))
     const context = new RedisReadContext(this.connections, sessionId, target, signal)
+    const sampling = { requestedSamples: 5, actualSamples: null, samplingNote: 'SAMPLES 5 是请求参数，用于嵌套值估算；Redis 未返回实际采样数量或误差。', scopeNote: '命令结果包含该 Key 和值的分配及管理开销，可能包含内部碎片；不代表整个服务器的内存。' }
     try {
       const reply = await context.command('MEMORY', ['USAGE', Buffer.from(request.keyBase64, 'base64'), 'SAMPLES', '5'])
       signal.throwIfAborted()
       if (reply !== null && (typeof reply !== 'bigint' || reply < 0n)) throw new RedisFrameError('protocol')
       this.connections.assertTarget(sessionId, target)
-      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: reply === null ? 'missing' : 'value', bytes: reply === null ? null : reply.toString(), samples: 5, sampledAt: new Date().toISOString(), error: null, errorMessage: reply === null ? keyStateMessages.missing.zh : null })
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: reply === null ? 'missing' : 'value', bytes: reply === null ? null : reply.toString(), ...sampling, sampledAt: new Date().toISOString(), error: null, errorMessage: reply === null ? keyStateMessages.missing.zh : null })
     } catch (error) {
       signal.throwIfAborted()
       const code = context.error(error)
       this.connections.assertReadResult(sessionId, target, code)
-      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, samples: 5, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
+      return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key, state: 'failed', bytes: null, ...sampling, sampledAt: new Date().toISOString(), error: code, errorMessage: explain(code) })
     } finally { context.dispose() }
   }
   /** Compare at most the first 4096 bytes per String; values never enter the tool result. */

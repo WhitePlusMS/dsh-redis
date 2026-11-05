@@ -459,7 +459,9 @@ describe('official Redis model tools', () => {
       return String(args[1]) === 'missing' ? null : 123n
     })
     const result = JSON.parse(content(await f.call('redis_viewer_memory', { key: 'hash' })))
-    expect(result).toMatchObject({ state: 'value', bytes: '123', samples: 5, key: { base64: 'aGFzaA==' }, error: null })
+    expect(result).toMatchObject({ state: 'value', bytes: '123', requestedSamples: 5, actualSamples: null, key: { base64: 'aGFzaA==' }, error: null })
+    expect(result.samplingNote).toContain('未返回实际采样数量'); expect(result.scopeNote).toContain('可能包含内部碎片')
+    expect(f.reader.reportSamples.get('a', result.reportSampleId)?.data).toMatchObject({ bytes: '123', requestedSamples: 5, actualSamples: null })
     expect(requests[0]).toEqual(['USAGE', Buffer.from('hash'), 'SAMPLES', '5'])
     expect(JSON.parse(content(await f.call('redis_viewer_memory', { keyBase64: 'AP8=' })))).toMatchObject({ state: 'value', key: { base64: 'AP8=' } })
     expect(requests[1]?.[1]).toEqual(Buffer.from([0, 255]))
