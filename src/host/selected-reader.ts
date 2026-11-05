@@ -24,7 +24,7 @@ export class RedisSelectedReader {
     const result = (state: SelectedResult['state'], metadata: KeyMetadata | null = null, cell: BytePrefix | null = null, score: string | null = null, error: ConnectionErrorCode | null = null, sampledAt = new Date().toISOString()): SelectedResult => ({ state, error, metadata, cell, score, sampledAt })
     if (item.kind === 'list') {
       const page = await new RedisLists(this.connections).read(sessionId, { target, keyBase64, offset: item.index, count: 1 }, signal, validate)
-      return result(page.state === 'page' ? page.entries.length === 0 ? 'selection-missing' : 'value' : page.state === 'unsupported' ? 'changed' : page.state, page.metadata, page.entries[0]?.value ?? null, null, page.error)
+      return result(page.state === 'page' ? page.entries.length === 0 ? 'selection-missing' : 'value' : page.state === 'unsupported' ? 'changed' : page.state, page.metadata, page.entries[0]?.value ?? null, null, page.error, page.sampledAt)
     }
     if (item.kind === 'stream') {
       return (await this.readStream(sessionId, target, keyBase64, item.id, item.fieldIndex, item.fieldBase64, signal, validate)).selected
@@ -45,11 +45,11 @@ export class RedisSelectedReader {
       const metadata = { type: lastType, ttlMs: String(ttl), length: null }
       if (item.kind === 'set') {
         if (raw !== 0n && raw !== 1n) throw new RedisFrameError('protocol')
-        return result(raw === 0n ? 'selection-missing' : 'value', metadata, raw === 0n ? null : valuePrefix(Buffer.from(item.memberBase64, 'base64')))
+        return result(raw === 0n ? 'selection-missing' : 'value', metadata, raw === 0n ? null : valuePrefix(Buffer.from(item.memberBase64, 'base64')), null, null, sampledAt)
       }
-      if (raw === null) return result('selection-missing', metadata)
+      if (raw === null) return result('selection-missing', metadata, null, null, null, sampledAt)
       if (!Buffer.isBuffer(raw)) throw new RedisFrameError('protocol')
-      if (item.kind === 'hash') return result('value', metadata, valuePrefix(raw))
+      if (item.kind === 'hash') return result('value', metadata, valuePrefix(raw), null, null, sampledAt)
       const score = raw.toString('utf8')
       if (!isRedisScore(score)) throw new RedisFrameError('protocol')
       return result('value', metadata, valuePrefix(Buffer.from(item.memberBase64, 'base64')), score, null, sampledAt)

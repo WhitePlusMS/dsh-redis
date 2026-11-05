@@ -69,6 +69,8 @@
 
 Key、字段和成员的文本与 Base64 身份各自只能传一个；无法无损编码的文本必须改用规范 Base64 身份，MATCH 条件则须修正为有效文本。侧栏选中具体字段或行时不能传分页、范围参数；要按范围读取请明确指定 Key。指定 Hash 字段或集合成员时的 `selection-missing` 表示采样时该项不存在；Key 不存在则是 `missing`，类型不匹配或中途变化会分别给出状态。Set 返回成员存在性，ZSet 同时返回采样时的分数字符串。位置及 Stream ID 使用字符串以保持整数精度。值工具支持 String 的 `offset/bytes`、List 及 ZSet 排名的 `offset/count`、Hash/Set/ZSet 扫描的 `match/cursor`、Stream 的 `start/end/direction/count/cursor`；不适用于实际类型的参数会明确拒绝，续读也遵循相同规则。
 
+Hash 字段、Set/ZSet 成员和 List 页或选中行的 `sampledAt` 对应相应值或成员读取的响应时间；同一结果中的类型、长度和 TTL 可能在其他时刻检查，不是同一时刻的事务快照。
+
 明确要求定位当前 ZSet Key 的成员时，可使用 `redis_viewer_locate_zset_member`，通过 `member` 文本或 `memberBase64` 规范二进制身份指定成员，二者只能提供一个，空成员也有效。工具以 `ZSCORE` 做定点采样；分数保留 Redis 返回的字符串，代表采样时结果。界面为确认定位会再次采样，期间分数可能变化；筛选或排名页外的临时结果不表示其排名，不改变分页游标。只有面板确认后才报告 `applied`，结果未知时应检查当前面板。
 
 明确要求定位当前 Stream Key 的消息字段时，可使用 `redis_viewer_locate_stream_field`，提供完整消息 `id` 和从 0 开始的 `fieldIndex`。该位置指消息中所有字段对的顺序，不是同名字段的出现次数；工具保留原始字段字节并使用 `XRANGE` 按消息 ID 只读采样，不推进消费组。界面单独再次采样并核对位置与字段身份，页外消息作为临时样本显示，不改变分页游标。两次读取不是事务快照，消息可能变化；只有两张表确认显示后才报告 `applied`。

@@ -21,6 +21,8 @@ export class RedisLists {
       const length = await context.integer('LLEN', [key]), offset = BigInt(request.offset)
       const wantedEnd = offset + BigInt(request.count) - 1n, end = wantedEnd > MAX_INTEGER ? MAX_INTEGER : wantedEnd
       const reply = await context.command('LRANGE', [key, String(offset), String(end)])
+      // Later length, type and TTL checks do not change when this page was read.
+      const sampledAt = new Date().toISOString()
       if (!Array.isArray(reply) || reply.length > request.count) throw new RedisFrameError('protocol')
       const entries = reply.map((raw, index) => {
         if (!Buffer.isBuffer(raw)) throw new RedisFrameError('protocol')
@@ -34,7 +36,7 @@ export class RedisLists {
       const available = length > offset ? length - offset : 0n, expected = available < BigInt(request.count) ? available : BigInt(request.count)
       if (length !== secondLength || BigInt(entries.length) !== expected) return result('changed')
       const next = offset + BigInt(entries.length)
-      const page: ListReadResult = { ...result('page', null, { type: 'list', ttlMs: String(ttl), length: String(secondLength) }), entries, nextOffset: entries.length > 0 && next < secondLength ? String(next) : null }
+      const page: ListReadResult = { ...result('page', null, { type: 'list', ttlMs: String(ttl), length: String(secondLength) }), entries, nextOffset: entries.length > 0 && next < secondLength ? String(next) : null, sampledAt }
       if (Buffer.byteLength(JSON.stringify(page)) > MAX_SCAN_JSON_BYTES) throw new RedisFrameError('oversize')
       return page
     } catch (error) {
