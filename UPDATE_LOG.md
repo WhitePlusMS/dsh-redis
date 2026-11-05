@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 内存验收版本引用修正
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 按提交后独立规范审查，将内存复验引用明确为 `7315b69`，避免误认为已在当前安装构建复验。
+
+
 ## 2026-11-05 专业命令说明真实模型复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md` 更新安装基线和验收：`1375e2f` 完整检查 80 文件、642 项通过，打包钩子成功，日常 profile 的 110 个构建文件与 SHA-256 为 `243ae2851fb983c3488fe718add2963a6dcbbeda2401c72c8c760ea9d0e63cc8` 的包一致。
