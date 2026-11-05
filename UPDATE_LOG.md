@@ -1,6 +1,13 @@
 # 更新说明
 
 
+## 2026-11-05 扫描案例真实对话
+
+- 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录美团扫描案例启发下的日常 DSH、用户模型和本机 Redis 单批名称搜索。模型按明确模式仅扫描一批，正确区分空页、未完成和非快照；COUNT 的槽位数量表述比工具工作量提示更具体，不能当作实际工作量保证。
+- 此次未续读、未读取值或修改用户数据，也未复现历史版本缺陷；不能将单批结果扩展为完整案例通过。
+
+
+
 ## 2026-11-05 认证故障案例真实对话
 
 - 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录 GitHub 认证故障启发的当前构建隔离复验。模型报告认证失败和原连接状态，随后通过明确请求成功只读原连接一个 Key 的元数据；首次回答只有状态证据，不覆盖候选连接释放及其他异常。
