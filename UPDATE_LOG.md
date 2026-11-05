@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 已保存资料成功切换真实验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 切换至独立 Redis 的真实结果：工具返回连接成功和旧连接关闭，代次增加，模型读取并正确复述一个完整的合成 String。仅覆盖单次无密码路径，未在用户服务器端单独计数旧套接字。
+- 临时资料已删除，测试连接断开后已重连用户本机 Redis；隔离实例 22 个 Key 的 DUMP 和绝对过期时间前后一致，实例已停止。
+
 ## 2026-11-05 候选认证失败连接数对照
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的第二次真实模型认证失败复验：独立 Redis 的客户端数请求前后均为 2，含夹具管理连接及检查连接；只支持本次失败后未观察到额外客户端，不能覆盖其他失败路径。
