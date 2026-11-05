@@ -1,3 +1,9 @@
+## 2026-11-05：当前包错误凭据复验
+
+- 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：验证当前安装包对实际 Redis 认证失败的界面状态及真实模型说明。
+- 结果与影响：独立 Redis 8.2.6 的错误测试凭据在界面和模型状态工具均显示认证失败；仅验证断开原连接后的单次失败，模型的服务器可达表述不证明持续可达。隔离数据及过期时间未变，实例停止；日常 DSH 已恢复用户 Redis 连接，未修改用户数据或保存测试凭据。
+
 ## 2026-11-05：本机 Redis 内存诊断复验
 
 - 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
