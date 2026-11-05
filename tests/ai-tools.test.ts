@@ -441,6 +441,11 @@ describe('official Redis model tools', () => {
       expect(schema?.description).toContain('不能仅凭版本变化推断物理连接重建或 Redis 服务器重启')
     }
   })
+  it('tells the model the limits of TTL and completed Key scans', async () => {
+    const f = await fixture(), schemas = f.ctx.tools.schemas()
+    expect(schemas.find(item => item.name === 'redis_viewer_value')?.description).toContain('不能据此推断过去从未设置或将来不会过期')
+    expect(schemas.find(item => item.name === 'redis_viewer_keys')?.description).toContain('SCAN 也不是一致性快照')
+  })
   it('requires an explicit lossless Key search scope and retains it for continuation', async () => {
     const f = await fixture()
     expect((await f.call('redis_viewer_keys', {})).isError).toBe(true)
