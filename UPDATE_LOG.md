@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 核实日常 profile 依赖来源
+
+- 使用已安装 DSH 0.2.1-rc.5 提供的只读运行时解析 API 和日常 profile 核对本插件 peer：12 个宿主包来自 installation 且版本匹配；界面 slots 仅作类型引用，React 由 Web 前端模块表提供，产物版本标识为 18.3.1。依据和局限写入 `docs/verification/user-questions-real-model-2026-11-05.md`，`peers check` 的非零结果保留，不向 profile 引入重复宿主包。
+- 修正 `docs/DSH_AI_READONLY_TASKS.md` 的验收归属：六类型正常读取对应前一构建 `7b23e68`，当前 `729e707` 只复验了 String 范围，其他五类不能称当前构建已通过。未修改插件代码、Redis 或 DSH 配置。
+
 ## 2026-11-05 日常连接恢复与依赖告警
 
 - 新构建加载后，已在 DSH 原验收会话中只读重连本机 `127.0.0.1:6379`，界面显示 DB0 的真实 Key；未修改 Redis 数据。
