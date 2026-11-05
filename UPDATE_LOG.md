@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 合成订单筛选模型复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与独立 Redis 的两页正常筛选：16 个候选、4 个匹配、续读条件和非快照及遍历说明均与原始证据一致；权限、类型变化、取消和并发等异常未以此通过。
+- 隔离实例 22 个 Key 的内容、绝对过期时间和数量未变，实例已停止，日常 DSH 已重连用户 Redis DB0。
+
+
 ## 2026-11-05 本机缺失 Key 和客户端概况复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与用户 Redis 上的只读检查：缺失 Key 的采样和未知历史原因解释正确；客户端数值一致，但模型仍笼统称覆盖所有客户端，未说明副本连接不计入，范围解释未通过。

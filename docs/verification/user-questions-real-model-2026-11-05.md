@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `1375e2f` 的合成订单筛选**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6，未预选 Key，模型对指定模式及 Hash 字段执行两次 `redis_viewer_filter_hash`，续读令牌和查询条件保持一致。两批分别检查 10、6 个候选并匹配 3、1 个；模型列出的四个合成订单和每批计数与原始结果及夹具一致，最终 `scanComplete: true`，并解释 MATCH 过滤名称、全键空间遍历、跨批重复和非快照限制。本次只覆盖正常两页与明确条件，不能证明权限、类型变化、取消或并发修改场景通过。夹具 22 个 Key 的 DUMP、绝对过期时间及数量未变，实例已停止；日常 DSH 已重连用户 Redis DB0。
+
 - **当前构建 `1375e2f` 的本机缺失 Key 与客户端概况**：日常 DSH、`bzkj-LLM` 和用户 Redis DB0 中对随机测试名称做只读查询；模型调用一次 `redis_viewer_key_metadata`，原始状态为 `missing`、错误为 null，模型正确说明仅代表采样时不存在，未跨库或扫描，不能区分历史删除、过期或从未创建。随后自然语言查询客户端与阻塞连接，模型调用 `redis_viewer_overview` 的 `clients`，数值、服务器范围和 UTC 采样时间与工具一致，但称覆盖所有客户端；[Redis INFO 文档](https://redis.io/docs/latest/commands/info/)说明 `connected_clients` 不包含副本连接，因此范围解释仍未通过。本次未构造副本，不记录业务指标，也未创建测试 Key 或修改用户数据。
 
 - **当前构建 `1375e2f` 的消费组命令说明复验**：源码通过完整 `pnpm check`，80 个测试文件、642 项；`pnpm pack` 的完整检查和打包成功，开发包 SHA-256 `243ae2851fb983c3488fe718add2963a6dcbbeda2401c72c8c760ea9d0e63cc8`，日常 `web` profile 安装的 110 个构建文件与包逐字节一致。按原 `dsh web --no-open --port 3080` 启动，Host 显示已注册；原会话先恢复用户 Redis，再切换到独立 Redis 8.2.6 的合成 Stream。`bzkj-LLM` 调用一次 `redis_viewer_stream_groups`，准确复述 `pending: 1` 和 `lag: 1` 并区分已投递未确认与未投递，但继续称仅使用 `XINFO GROUPS`、遗漏前后 `TYPE`，还引用工具未返回的 `snapshot: false` 字段；自然语言准确性未通过。该次是在有前一轮同类对话历史的会话中复验，不代表独立会话或其他模型。隔离实例一个 Key 的 DUMP、绝对过期时间、消费组及待确认项的 ID、消费者、投递次数和 Key 数量前后一致，实例已停止；日常 DSH 已重新连接用户 Redis DB0。
