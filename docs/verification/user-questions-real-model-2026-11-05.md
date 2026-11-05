@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `7315b69` 的缺失 Key 诊断**：日常 DSH、`bzkj-LLM` 和本机 Redis 中自然语言询问随机测试名称为何查不到；模型只调用一次 `redis_viewer_key_metadata`，工具返回 `missing`、采样时不存在、DB0 和 UTC 时间。模型与原始结果一致，明确无法判断是否过期、删除或从未创建，也未跨库或扫描；仅验证单次无权限错误的缺失路径，不代表其他异常均通过。没有创建测试 Key 或修改用户数据。
+
 - **当前构建 `7315b69` 的客户端概况**：日常 DSH、`bzkj-LLM` 和本机 Redis 中，自然语言询问连接数、阻塞客户端及采样范围；实际调用 `redis_viewer_overview` 的 `clients` 节，模型复述的两个数值、服务器范围和 UTC 采样时间与工具一致，也说明仅代表单次采样。模型却称统计覆盖所有客户端，而 [Redis INFO 文档](https://redis.io/docs/latest/commands/info/)说明 `connected_clients` 不计副本连接，因此整体范围解释未通过；本次没有验证存在副本的环境，不记录服务器指标。
 
 - **当前构建 `7315b69` 的单 Key 内存报告回读**：日常 DSH、`bzkj-LLM` 与本机 Redis 中明确要求采样并保存本地报告，实际调用 `redis_viewer_memory` 和 `redis_viewer_save_diagnostic_report`，后者返回 `saved`。回读报告确认类别、采样 UTC 时间、请求采样数、未知实际采样数和固定的采样/内存范围说明与工具结果一致；Key 保存为 SHA-256 摘要。模型本次复述采样与保存状态一致；只验证一个正常报告，不代表取消、权限等异常或此前对采样与碎片的错误推断已消除。报告位于日常 profile 的固定报告目录，未将业务 Key、值或指标写入仓库。

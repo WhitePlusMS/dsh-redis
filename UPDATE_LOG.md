@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 缺失 Key 真实模型诊断
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的一次随机名称缺失查询：模型准确区分采样时不存在与未知历史原因，未擅自跨库或扫描；未创建 Key，未修改用户 Redis。
+
 ## 2026-11-05 客户端概况真实模型验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的日常 DSH、本机 Redis 客户端概况查询：数值及采样时间与工具一致，模型却将统计说成覆盖所有客户端；依据 [Redis INFO 文档](https://redis.io/docs/latest/commands/info/)，`connected_clients` 不包含副本连接，故范围解释未通过。未记录业务指标或修改 Redis。
