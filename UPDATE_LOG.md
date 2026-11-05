@@ -1,6 +1,13 @@
 # 更新说明
 
 
+## 2026-11-05 修正认证阶段错误分类回归
+
+- `src/host/redis-transport.ts`：在实际执行 `AUTH` 时识别 Redis 5 返回的 `ERR invalid password` 和未配置密码两种固定错误；其他命令的相同文字仍不视为认证错误。原因是提交 `915c669` 的需求审查发现这些服务器返回会被误报为网络故障；依据 [Redis 5 认证源码](https://github.com/redis/redis/blob/5.0/src/server.c#L2751-L2759)，不恢复对任意错误正文的宽泛匹配。
+- `tests/redis-transport.test.ts`：使用受控 RESP 服务分别验证认证阶段和普通读取阶段的相同错误；类型检查及 3 个专项文件共 64 项测试通过；使用受控 RESP 对端模拟 Redis 5 错误，未连接真实 Redis 5。上一源码 `915c669` 的完整检查已通过，80 个文件、645 项；新修改尚未完成完整检查及真实 DSH 验收。
+
+
+
 ## 2026-11-05 修正认证与内存命令错误分类
 
 - `src/host/connection-service.ts`：按 Redis 错误前缀识别认证失败，覆盖 `NOAUTH`、`WRONGPASS` 和 `ERR AUTH`，避免错误正文回显的 Key 被误认成认证错误；依据 [Redis WRONGPASS 文档](https://redis.io/docs/latest/develop/reference/errors/common/wrongpass/) 和 [NOAUTH 文档](https://redis.io/docs/latest/develop/reference/errors/common/noauth/)。

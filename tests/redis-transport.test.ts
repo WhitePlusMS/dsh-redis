@@ -64,6 +64,16 @@ describe('bounded Redis socket transport', () => {
       else throw new Error('Unexpected command reached the peer')
     }, 'synthetic-fixture-password')
   })
+  it.each(['ERR invalid password', 'ERR Client sent AUTH, but no password is set'])('classifies %s only in the AUTH exchange', async message => {
+    const commands: string[] = []
+    await expect(withPeer(async () => { throw new Error('Authentication must not succeed') }, (socket, args) => {
+      commands.push(String(args[0])); socket.write('-' + message + '\r\n')
+    }, 'synthetic-fixture-password')).rejects.toMatchObject({ code: 'auth' })
+    expect(commands).toEqual(['AUTH'])
+    await withPeer(async transport => {
+      await expect(transport.execute('SCAN', ['0'], signal(), () => undefined)).rejects.toBeInstanceOf(RedisReplyError)
+    }, socket => { socket.write('-' + message + '\r\n') })
+  })
   it('rejects huge declared arrays/bulks and announces connection failure', async () => {
     for (const header of ['$536870912\r\n', '*1000000000\r\n']) {
       await withPeer(async transport => {

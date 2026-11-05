@@ -11,7 +11,7 @@ const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16
 
 export class RedisTransportError extends Error {
-  constructor(readonly code: 'network' | 'timeout' | 'cancelled' | 'busy') { super(code) }
+  constructor(readonly code: 'network' | 'timeout' | 'cancelled' | 'busy' | 'auth') { super(code) }
 }
 interface PendingFrame {
   readonly decoder: RespDecoder
@@ -59,7 +59,14 @@ export class RedisTransport {
       await transport.ready(deadline, signal)
       if (settings.username !== '' || settings.password !== '') {
         const auth = settings.username === '' ? ['AUTH', settings.password] : ['AUTH', settings.username, settings.password]
-        const reply = await transport.request(auth, signal, deadline, () => undefined)
+        let reply: RedisReply
+        try { reply = await transport.request(auth, signal, deadline, () => undefined) }
+        catch (error) {
+          // Redis 5 reports these generic ERR strings specifically for AUTH.
+          // Interpret them only here, never in errors that may echo Key names.
+          if (error instanceof RedisReplyError && /^(?:ERR invalid password|ERR Client sent AUTH, but no password is set)\.?$/u.test(error.message)) throw new RedisTransportError('auth')
+          throw error
+        }
         if (reply !== 'OK') throw new RedisFrameError('protocol')
       }
       if (await transport.request(['PING'], signal, deadline, () => undefined) !== 'PONG') throw new RedisFrameError('protocol')
