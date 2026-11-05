@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 六类型真实模型验收准备
+
+- 扩展 `scripts/hold-ai-acceptance.mjs`：在独立 Redis 夹具中补充 String、List、含重复字段的 Stream，并对全部合成 Key 的内容和绝对过期时间做结束前回读核验；原有 Hash、Set、ZSet 数据保留。目的是补足用户 Redis 当前抽样未发现的类型，不改变用户 Redis。
+- 日常 DSH 和用户模型在独立 Redis 8.2.6 的 22 个合成 Key 上完成六种基础类型正常读取，核对真实工具结果及 Stream 重复字段顺序；并行读取五项不代表逐次串行调用。结束前全部 Key 的 DUMP 和绝对过期时间不变，独立实例已停止。
+- String 前 4 字节请求的工具结果额外暴露文本边界字节，模型展示边界内容并复用了前一轮完整值，因此截断范围未通过。已更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`，修正与新构建复验待完成。
+
 ## 2026-11-05 大厂公开案例验收准备
 
 - 在 `docs/DSH_AI_READONLY_TASKS.md` 将美团广告缓存、SCAN 并发变化、高负载排障及 GitHub Redis 认证故障的一手案例纳入现有交付验收，记录来源、自然语言验收方向和只读边界；现有功能完成之后使用真实 DSH 与用户模型执行。
