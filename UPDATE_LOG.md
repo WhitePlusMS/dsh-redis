@@ -3000,3 +3000,4 @@
 - 修改 `src/host/key-reader.ts`、`src/host/ai-key-pages.ts`、`src/host/ai-hash-filter.ts`：名称搜索和 Hash 筛选结果附带 SCAN 的实际键空间、MATCH 过滤对象、COUNT 提示及完整遍历可能覆盖整个当前 DB 的结构化说明；命令仍使用原有只读 SCAN，候选数量限制不变。
 - 修改 `src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`、`tests/ai-tools.test.ts`：依据 Redis 官方 SCAN 文档说明 MATCH 和 COUNT 的语义，并验证搜索及筛选的结果证据。原因是实际模型此前误称 MATCH 可避免全库遍历；新增证据不保证模型一定遵循，仍需真实模型复验。
 - 验证：`pnpm typecheck` 通过；名称搜索、Hash 筛选和分页存储的 3 个测试文件共 82 项通过，覆盖空页续读及大批次边界；尚待实际 DSH 和用户模型复验，不修改用户 Redis 数据。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录 `a86a8fc` 开发包安装、135 文件核对及真实 Redis 上名称搜索和 Hash 筛选的首批模型结果。模型正确说明 MATCH 不保证避开当前 DB 键空间，但仍对负载和完整迭代保证作错误断言，准确性未通过。
