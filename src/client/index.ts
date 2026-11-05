@@ -108,7 +108,7 @@ export function apply(ctx: Context): void {
     let retry: ReturnType<typeof setTimeout> | undefined
     let attempts = 0
     const update = () => {
-      const session = ctx.sidebarRight.mounted.getSnapshot()
+      const session = document.visibilityState === 'visible' ? ctx.sidebarRight.mounted.getSnapshot() : undefined
       const generation = connection.generation.getSnapshot()
       if (session === current?.session && generation?.id === current?.generation) return
       if (retry !== undefined) { clearTimeout(retry); retry = undefined }
@@ -145,6 +145,9 @@ export function apply(ctx: Context): void {
     }
     const unsubscribe = ctx.sidebarRight.mounted.subscribe(update)
     const unsubscribeGeneration = connection.generation.subscribe(update)
+    // A background page cannot confirm a visible selection and must not make
+    // another browser's active session ambiguous.
+    document.addEventListener('visibilitychange', update)
     retryChannel = sessionId => {
       if (ctx.sidebarRight.mounted.getSnapshot() !== sessionId) return
       if (retry !== undefined) { clearTimeout(retry); retry = undefined }
@@ -152,7 +155,7 @@ export function apply(ctx: Context): void {
       update()
     }
     update()
-    return () => { retryChannel = () => undefined; unsubscribe(); unsubscribeGeneration(); if (retry !== undefined) clearTimeout(retry); current?.controller.abort() }
+    return () => { retryChannel = () => undefined; unsubscribe(); unsubscribeGeneration(); document.removeEventListener('visibilitychange', update); if (retry !== undefined) clearTimeout(retry); current?.controller.abort() }
   }, 'redis session UI action channel')
   console.info('[dsh-redis] Native sidebar registered')
 }

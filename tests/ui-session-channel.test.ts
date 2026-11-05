@@ -3,7 +3,62 @@ import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { UiChannelInput, UiChannelMessage } from '../src/domain.ts'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
 import { apply } from '../src/client/index.ts'
+import { UiActionCoordinator } from '../src/host/ui-action-coordinator.ts'
+import type { UiAction } from '../src/domain.ts'
 import { expect, it, vi } from 'vitest'
+
+function visibleDocument() {
+  return Object.assign(new EventTarget(), { visibilityState: 'visible', createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }), head: { append: () => undefined } })
+}
+
+it('releases a hidden browser session channel and restores it when visible', async () => {
+  const session = 'visibility-fixture' as SessionId
+  const coordinator = new UiActionCoordinator<UiAction>()
+  const foreground = vi.fn(async () => { throw new Error('Not dispatched') })
+  const unregisterForeground = coordinator.register(session, foreground)
+  const cleanups: Array<() => void> = []
+  const fakeDocument = Object.assign(new EventTarget(), {
+    visibilityState: 'hidden',
+    createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }),
+    head: { append: () => undefined },
+  })
+  vi.stubGlobal('document', fakeDocument)
+  const openUiChannel = vi.fn(() => {
+    let ended = false, wake: (() => void) | undefined
+    const receiver = async () => { throw new Error('Not dispatched') }
+    const unregister = coordinator.register(session, receiver)
+    return {
+      send: () => undefined, end: () => undefined,
+      dispose: () => { if (!ended) { ended = true; unregister(); wake?.() } },
+      async *[Symbol.asyncIterator]() { if (!ended) await new Promise<void>(resolve => { wake = resolve; if (ended) resolve() }) },
+    }
+  })
+  const ctx = {
+    effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
+    locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
+    sidebarRight: { mounted: { getSnapshot: () => session, subscribe: () => () => undefined } },
+    slots: { inject: (_name: string, enter: () => unknown) => enter(), register: () => () => undefined },
+    remote: { $mount: async () => () => undefined },
+    get: (key: string) => key === 'connection' ? { generation: { getSnapshot: () => ({ id: 1 }), subscribe: () => () => undefined } } : ({ openUiChannel }),
+  } as unknown as Context
+  try {
+    apply(ctx)
+    await new Promise<void>(resolve => setImmediate(resolve))
+    expect(openUiChannel).not.toHaveBeenCalled()
+    expect(coordinator.isUniqueReceiver(session, foreground)).toBe(true)
+    fakeDocument.visibilityState = 'visible'; fakeDocument.dispatchEvent(new Event('visibilitychange'))
+    await vi.waitFor(() => expect(openUiChannel).toHaveBeenCalledTimes(1))
+    expect(coordinator.isUniqueReceiver(session, foreground)).toBe(false)
+    fakeDocument.visibilityState = 'hidden'; fakeDocument.dispatchEvent(new Event('visibilitychange'))
+    expect(coordinator.isUniqueReceiver(session, foreground)).toBe(true)
+    fakeDocument.visibilityState = 'visible'; fakeDocument.dispatchEvent(new Event('visibilitychange'))
+    await vi.waitFor(() => expect(openUiChannel).toHaveBeenCalledTimes(2))
+    expect(coordinator.isUniqueReceiver(session, foreground)).toBe(false)
+  } finally {
+    for (const cleanup of cleanups.reverse()) cleanup()
+    unregisterForeground(); coordinator.dispose(); vi.unstubAllGlobals()
+  }
+})
 
 it('opens the active session pane and waits for a visible body before acknowledging', async () => {
   let session: SessionId | undefined, changed: (() => void) | undefined
@@ -24,7 +79,7 @@ it('opens the active session pane and waits for a visible body before acknowledg
     },
   }
   const openUiChannel = vi.fn(() => stream), openTab = vi.fn()
-  vi.stubGlobal('document', { visibilityState: 'visible', createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }), head: { append: () => undefined } })
+  vi.stubGlobal('document', visibleDocument())
   const ctx = {
     effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key },
@@ -66,7 +121,7 @@ it('disposes the old stream on carrier loss and opens one stream for the new gen
     }
     streams.push(stream); return stream
   })
-  vi.stubGlobal('document', { visibilityState: 'visible', createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }), head: { append: () => undefined } })
+  vi.stubGlobal('document', visibleDocument())
   const ctx = {
     effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
@@ -96,7 +151,7 @@ it('disposes the old stream on carrier loss and opens one stream for the new gen
 
 it('retries a failed or ended stream with a bounded delay and cancels on unload', async () => {
   vi.useFakeTimers()
-  vi.stubGlobal('document', { visibilityState: 'visible', createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }), head: { append: () => undefined } })
+  vi.stubGlobal('document', visibleDocument())
   const cleanups: Array<() => void> = []
   const dispose = vi.fn()
   const openUiChannel = vi.fn()
@@ -134,7 +189,7 @@ it('retries a failed or ended stream with a bounded delay and cancels on unload'
 
 it('keeps manual recovery available after repeated opening failures', async () => {
   vi.useFakeTimers()
-  vi.stubGlobal('document', { visibilityState: 'visible', createElement: () => ({ dataset: {}, textContent: '', remove: () => undefined }), head: { append: () => undefined } })
+  vi.stubGlobal('document', visibleDocument())
   let slot: { inject: (id: SessionId) => RedisWorkspaceInjected } | undefined
   const cleanups: Array<() => void> = []
   const openUiChannel = vi.fn().mockRejectedValue(new Error('not ready'))

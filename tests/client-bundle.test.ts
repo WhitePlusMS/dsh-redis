@@ -30,7 +30,8 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
     return () => { contributions.delete(id) }
   }
   const style = { dataset: {}, textContent: '', remove: () => { contributions.delete('style') } }
-  const document = { createElement: () => style, head: { append: () => { register('style') } } }
+  const document = Object.assign(new EventTarget(), { visibilityState: 'visible', createElement: () => style, head: { append: () => { register('style') } } })
+  const addListener = vi.spyOn(document, 'addEventListener'), removeListener = vi.spyOn(document, 'removeEventListener')
   runInNewContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: { __ModuleLoader__: { load: (value: BundleRegistration) => { registration = value } } }, document,
     console: { info: vi.fn() },
@@ -92,6 +93,8 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(importNames.every(name => !name.startsWith('node:'))).toBe(true)
   for (const cleanup of cleanups.splice(0).reverse()) await cleanup()
   expect(unmount).toHaveBeenCalledTimes(1)
+  expect(addListener).toHaveBeenCalledWith('visibilitychange', expect.any(Function))
+  expect(removeListener).toHaveBeenCalledWith('visibilitychange', addListener.mock.calls[0]?.[1])
   expect(contributions.size).toBe(0)
   // The same native identities can register again after unloading.
   client.apply(context)
