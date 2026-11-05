@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 专业命令说明真实模型复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md` 更新安装基线和验收：`1375e2f` 完整检查 80 文件、642 项通过，打包钩子成功，日常 profile 的 110 个构建文件与 SHA-256 为 `243ae2851fb983c3488fe718add2963a6dcbbeda2401c72c8c760ea9d0e63cc8` 的包一致。
+- 日常 DSH 和 `bzkj-LLM` 对隔离 Stream 的计数复验正确，但仍漏报 TYPE 并引用不存在的 `snapshot: false`；该回答未通过。夹具 Key、过期时间及消费组稳定状态未变，实例停止；日常 DSH 已重连用户 Redis DB0。此前构建的其他模型结果不扩大到当前构建。
+
+
 ## 2026-11-05 专业读取命令说明修正
 
 - `src/host/ai-tools.ts` 修正 JSON、TimeSeries、GEO 和 Stream 消费组工具的模型可见描述，说明主要查询外还会使用 TYPE 检查，避免将查询命令误称为唯一命令；不改变实际 Redis 命令或读取范围。
