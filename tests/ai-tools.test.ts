@@ -3,6 +3,7 @@ import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import type { ApprovalService } from '@deepseek-ai/dsh-user-approval'
 import { ConnectionFailure, RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import type { ConnectionErrorCode, DatabaseTarget, UiAction } from '../src/domain.ts'
 import type { PreparedAiPage } from '../src/host/ai-page-store.ts'
@@ -85,6 +86,8 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
   if (view.id === null) throw new Error('Missing fixture connection')
   const target = { id: view.id, generation: view.generation, db: view.db }
   const ctx = new Context()
+  // Synthetic approvals isolate reader tests; denial/race cases have their own suite.
+  ctx.provide('approval', { request: async () => 'allowed-once' } as unknown as ApprovalService)
   await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
   const fiber = await ctx.plugin({ name: 'redis-ai-test', inject: ['tools'], apply: (scope: Context) => { registerRedisTools(scope, reader) } })
   const agent = { id: 'agent-a', ctx, session: { id: 'a' } } as unknown as Agent

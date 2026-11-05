@@ -24,6 +24,8 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const connections = new RedisConnections()
   const reader = new RedisAiReader(connections, () => undefined, async () => { throw new Error('Explicit reads must not depend on sidebar selection') }, () => false)
   const ctx = new Context()
+  // The fixture explicitly permits this fixed scope so Redis ACL remains the tested boundary.
+  ctx.provide('approval', { request: async () => 'allowed-once' })
   try {
     assert.equal((await connections.connect('fixture-session', { ...settings, username, password }, signal)).state, 'connected')
     await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)

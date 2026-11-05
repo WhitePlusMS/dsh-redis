@@ -2,6 +2,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
 import type { AiJson, RedisAiReader } from './ai-reader.ts'
 import type { ReportKind } from './ai-report-samples.ts'
+import { hashFilterParameters, keySearchParameters, registerRedisQueryScope } from './ai-query-scope.ts'
 
 /** Identity is supplied by DSH execution, never accepted as model arguments. */
 function owner(exec: ToolRunContext): string {
@@ -18,6 +19,7 @@ const reportable = ' 返回的 reportSampleId 标识本次采样；用户明确�
 
 /** Official registry registrations are owned and unwound by this plugin fiber. */
 export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
+  const assertQueryScope = registerRedisQueryScope(ctx, reader)
   const diagnostic = (session: string, signal: AbortSignal, kind: ReportKind, read: () => Promise<AiJson>) => reader.withBudget(session, signal, async stage => {
     const result = await read(), prepared = reader.reportSamples.prepare(session, kind, result, signal)
     stage(prepared)
@@ -29,9 +31,9 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, []); return reader.status(session) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_keys', description: '使用 SCAN 在当前对话连接的当前 DB 按明确 MATCH 检索 Key。MATCH 过滤返回的名称，并不保证 Redis 只遍历匹配前缀；完成迭代可能遍历整个当前 DB 的键空间，COUNT 100 是工作量提示而非硬上限。用户禁止扫描整个键空间时不能承诺匹配条件能避免遍历。每次调用都必须提供 match，包括续读；根据用户给出的名称线索确定范围，线索不足时请用户补充，只有用户明确要求浏览整个当前 DB 才使用 *。结果 pattern 是实际使用的条件。cursor 是不透明续读令牌，续读保持相同 match；一个 Redis 批次可分为多个结果，空页带 cursor 不等于没有匹配项。只返回本批，不冒充全库。即使 scanComplete 为 true，SCAN 也不是一致性快照，并发变化时不能断言某时刻的完整或唯一集合，跨批可能重复。',
-    parameters: { match: { type: 'string', required: true }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'cursor']); return reader.scan(session, args, exec.signal, stage) }) },
+    name: 'redis_viewer_keys', description: '首次查询须等待 DSH 原生范围确认；拒绝或取消后先澄清，不得自动重试或改用其他工具绕过。使用 SCAN 在当前对话连接的当前 DB 按明确 MATCH 检索 Key。MATCH 过滤返回的名称，并不保证 Redis 只遍历匹配前缀；完成迭代可能遍历整个当前 DB 的键空间，COUNT 100 是工作量提示而非硬上限。用户禁止扫描整个键空间时不能承诺匹配条件能避免遍历。每次调用都必须提供 match，包括续读；根据用户给出的名称线索确定范围，线索不足时请用户补充，只有用户明确要求浏览整个当前 DB 才使用 *。结果 pattern 是实际使用的条件。cursor 是不透明续读令牌，续读保持相同 match；一个 Redis 批次可分为多个结果，空页带 cursor 不等于没有匹配项。只返回本批，不冒充全库。即使 scanComplete 为 true，SCAN 也不是一致性快照，并发变化时不能断言某时刻的完整或唯一集合，跨批可能重复。',
+    parameters: keySearchParameters, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); assertQueryScope(exec); return reader.withBudget(session, exec.signal, stage => reader.scan(session, args, exec.signal, stage)) },
   }))
   ctx.tools.register(defineTool({
     name: 'redis_viewer_key_metadata', description: '用户只问明确 Key 是否存在、类型或过期时间时优先使用本工具，不读取字段或值。提供 key 或 keyBase64 中恰好一个，无需侧栏选择。ttlMs 为 -1 表示采样时没有设置过期时间，不代表过去从未设置或将来不会过期；非负数为采样时剩余毫秒。sampledAt 是 UTC 的 ISO 8601 时间（Z 表示 UTC），不是本地时间。多命令采样不是原子快照，不能推断业务含义或提出未经用户请求的写入操作。',
@@ -45,9 +47,9 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['key', 'keyBase64', 'field', 'fieldBase64', 'member', 'memberBase64', 'cursor', 'offset', 'count', 'bytes', 'match', 'start', 'end', 'direction']); return reader.read(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_filter_hash', description: '仅在用户明确指定当前 DB 的 Key MATCH 范围、Hash 字段和目标值时调用。MATCH 过滤候选名称，不保证 Redis 避免遍历整个当前 DB 的键空间；COUNT 是工作量提示而非硬上限。每次最多检查 10 个候选，只返回字段值与目标值按 UTF-8 字节完全相等的 Key，不返回其他值；结果包含本批各状态数量、错误及不透明 cursor；notHash 表示首次检查时不是 Hash，typeChanged 表示读取期间观察到类型变化。继续时保持 match、field 和 equals 不变。scanComplete 只表示扫描结束；跨批可能重复，SCAN 和逐项读取不是一致性快照。不得据部分结果声称全库统计，不跨 DB 或连接。',
-    parameters: { match: { type: 'string', required: true }, field: { type: 'string', required: true }, equals: { type: 'string', required: true }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
+    name: 'redis_viewer_filter_hash', description: '首次查询须等待 DSH 原生范围确认；拒绝或取消后先澄清，不得自动重试或改用其他工具绕过。仅在用户明确指定当前 DB 的 Key MATCH 范围、Hash 字段和目标值时调用。MATCH 过滤候选名称，不保证 Redis 避免遍历整个当前 DB 的键空间；COUNT 是工作量提示而非硬上限。每次最多检查 10 个候选，只返回字段值与目标值按 UTF-8 字节完全相等的 Key，不返回其他值；结果包含本批各状态数量、错误及不透明 cursor；notHash 表示首次检查时不是 Hash，typeChanged 表示读取期间观察到类型变化。继续时保持 match、field 和 equals 不变。scanComplete 只表示扫描结束；跨批可能重复，SCAN 和逐项读取不是一致性快照。不得据部分结果声称全库统计，不跨 DB 或连接。',
+    parameters: hashFilterParameters, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); assertQueryScope(exec); return reader.withBudget(session, exec.signal, stage => reader.filterHash(session, args, exec.signal, stage)) },
   }))
   ctx.tools.register(defineTool({
     name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。使用 TS.RANGE 读取并通过 TYPE 检查类型；不聚合、不跨 Key。返回时间与值的原始字符串，以及可表示范围内由毫秒时间戳换算的 timestampUtc；超出日期范围时该字段为 null。仅 state 为 value 且 cursor 非空时可续读，并保持 Key、from、to 和 count 不变。续读返回非 value 状态时旧游标失效，须从原范围重新查询；取消或未收到结果时游标状态不确定。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',

@@ -78,6 +78,9 @@ importers:
       '@deepseek-ai/dsh-typert-registry':
         specifier: 0.2.1-rc.5
         version: 0.2.1-rc.5(@deepseek-ai/cordis@4.0.5)
+      '@deepseek-ai/dsh-user-approval':
+        specifier: 0.2.1-rc.5
+        version: 0.2.1-rc.5(3b367f010b2195bc81ae9ca0fdd09efc)
       '@types/node':
         specifier: 22.18.6
         version: 22.18.6

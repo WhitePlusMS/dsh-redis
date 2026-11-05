@@ -28,6 +28,9 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const beforeStats = await stats(), connections = new RedisConnections()
   const reader = new RedisAiReader(connections, () => undefined, async () => { throw new Error('Unexpected UI dependency') }, () => false)
   const ctx = new Context()
+  let approved = false, prompts = 0
+  // This controlled fixture decision verifies transport boundaries, not real UI approval.
+  ctx.provide('approval', { request: async () => { prompts++; return approved ? 'allowed-once' : 'rejected' } })
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
     await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
@@ -37,6 +40,9 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     const scansBefore = await scanCount()
     const missingScope = await ctx.tools.execute({ callId: 'missing-scope', name: 'redis_viewer_keys', arguments: {}, agent, signal })
     assert.equal(missingScope.isError, true); assert.equal(await scanCount(), scansBefore)
+    const rejected = await ctx.tools.execute({ callId: 'rejected-scope', name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*' }, agent, signal })
+    assert.equal(rejected.isError, true); assert.equal(await scanCount(), scansBefore)
+    approved = true
     const names = new Set(); let namesCursor, nameCalls = 0
     do {
       const result = await ctx.tools.execute({ callId: 'names-' + nameCalls, name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*', ...(namesCursor === undefined ? {} : { cursor: namesCursor }) }, agent, signal })
@@ -65,6 +71,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert(checked >= 28); assert(missingField >= 1); assert(notHash >= 1); assert.equal(typeChanged, 0)
     assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:order:0']), before)
     assert.deepEqual(await stats(), beforeStats)
+    assert.equal(prompts, 3) // Rejected search, accepted search, accepted filter; no per-page prompts.
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
 }, { passwordRequired: false })
 assert(fixture.stopped)

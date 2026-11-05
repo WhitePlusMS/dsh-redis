@@ -1,6 +1,12 @@
+## 2026-11-05：首次扫描范围确认（进行中）
+
+- 文件：`src/host/ai-query-scope.ts`、`src/host/ai-tools.ts`、`tests/ai-tools.test.ts`、`tests/ai-query-scope.test.ts`、`scripts/smoke-ai-hash-filter.mjs`、`scripts/smoke-ai-permissions.mjs`、`docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`、`package.json`、`pnpm-lock.yaml`、`UPDATE_LOG.md`。
+- 原因：真实模型曾在线索不足时自行猜测 MATCH 并发起扫描，单靠工具说明不能确认用户接受的范围。
+- 修改与影响：按锁定 DSH 0.2.1-rc.5 的真实 ApprovalService 和工具流水线实现首次名称扫描及 Hash 筛选的原生确认；复用工具参数定义、现有分页游标及连接代次校验。确认不占查询超时，未确认不发读取，切库或重连使待执行请求失效；拒绝不会被模型参数绕过。只保留调用期间的原生 token，不新增持久授权或聊天界面。已知 Key 读取保持现状。首次编译发现释放钩子及联合类型收窄错误，已按现有 `ctx.effect` 风格和显式分支修正；类型检查及 101 项工具/确认专项通过；覆盖未授权无命令、拒绝/取消、卸载、参数校验、连接及 DB 变化、游标绑定和其他策略短路。两个隔离集成脚本加入受控确认，验证实际命令和 ACL，不能替代真实界面确认。最终类型检查、新构建及完整回归通过：82 文件、666 项。隔离 Redis 8.2.6 验证拒绝后 SCAN 计数不变、正常续页与混合类型筛选、真实 ACL 拒绝；数据和过期时间未变，两个测试实例已停止。`dsh-user-approval` 仅作精确版本的开发类型依赖，运行时复用宿主已注册服务，缺失时拒绝扫描；未打包另一份服务。日常安装与真实界面验收待执行。
+
 ## 2026-11-05：验收版本措辞修正
 
-- 文件：`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。规范复核发现旧筛选、诊断、认证及 GEO 记录仍称“当前包”；改为其实际旧构建 `a9dcd8d`，将连接恢复限定为当次操作。仅修正文档，避免误认为新安装包已覆盖这些验收。
+- 文件：`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。规范复核发现旧筛选、诊断、认证及 GEO 记录仍称“当前包”；改为其实际旧构建 `a9dcd8d`，将连接恢复限定为当次操作。仅修正文档，避免误认为新安装包已覆盖这些验收；复核再补齐 MEMORY 不可用场景的旧版本标记。
 
 ## 2026-11-05：原生视图日常安装与局部验收
 
