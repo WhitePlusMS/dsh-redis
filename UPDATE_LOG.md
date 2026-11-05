@@ -1,3 +1,10 @@
+## 2026-11-05：原生工具读取记录
+
+- 文件：`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence.ts`、`src/client/tool-evidence-locales.ts`、`src/client/index.ts`、`package.json`、`pnpm-lock.yaml`、`tests/client-bundle.test.ts`、`tests/tool-evidence.test.ts`、`UPDATE_LOG.md`。
+- 原因：工具数据与模型解释可能不一致，当前 DSH Web 需要使用真实的 `tool.call.toolview` 扩展点；`presentResult` 不能替代此入口。
+- 修改与影响：为现有 16 个读取/状态工具注册独立调用记录视图，直接展示记录中的连接、时间、状态和范围；固定说明 TTL、SCAN、MEMORY 与显式目标的证据边界，保留原始结果。没有额外 Redis 读取，不把历史记录与当前侧栏混用，不恢复预算条。补充准确版本的原生工具 UI 类型依赖和加载顺序，卸载时释放注册。
+- 验证：`pnpm typecheck` 通过；`pnpm test` 完成新构建，81 个测试文件、651 项通过。专项覆盖字符串 TTL、大整数、未知实际采样数、显式/选择来源、嵌套失败、部分扫描、异常输出和实际客户端产物的卸载重载。实际 DSH Web 可见性、会话绑定与真实模型仍待验证；不据此宣称模型最终回答已无幻觉。
+
 ## 2026-11-05：隔离验收夹具支持 JSON 与时间序列
 
 - 文件：`scripts/hold-ai-acceptance.mjs`、`UPDATE_LOG.md`。

@@ -8,7 +8,7 @@ import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
 import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
 
 interface BundleRegistration { id: string; factory: (require: (name: string) => unknown) => { apply: (ctx: Context) => void } }
-interface SlotEntry { key: string; inject: (sessionId: string) => RedisWorkspaceInjected }
+interface SlotEntry { name: string; key: string; inject: (sessionId: string) => RedisWorkspaceInjected }
 const require = createRequire(import.meta.url)
 
 it('loads the real browser bundle, retries a failed mount and removes all contributions on reload', async () => {
@@ -50,17 +50,19 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
       const settled = Promise.resolve(result).catch(() => undefined)
       cleanups.push(async () => { const dispose: unknown = await settled; if (typeof dispose === 'function') await dispose() })
     },
-    locale: { register: () => register('locale'), bind: () => (key: string) => key },
+    locale: { register: (namespace: string) => register('locale:' + namespace), bind: () => (key: string) => key },
     sidebarRightTabs: { register: (tab: { id: string }) => register(tab.id) },
     sidebarRight: { mounted: { getSnapshot: () => undefined, subscribe: () => () => undefined } },
     slots: {
       inject: (_name: string, enter: () => unknown) => enter(),
-      register: (entry: SlotEntry) => { slot = entry; return register('slot:' + entry.key) },
+      register: (entry: SlotEntry) => { if (entry.name === 'sidebar.right.pane.tab') slot = entry; return register('slot:' + entry.key) },
     },
     remote: { $mount: mount },
     get: (key: string) => key === 'connection' ? { generation: { getSnapshot: () => undefined, subscribe: () => () => undefined } } : ({ status, aiBudgetStatus, resumeAiBudget, openUiChannel }),
   } as unknown as Context
   client.apply(context)
+  expect(contributions.has('slot:redis_viewer_key_metadata')).toBe(true)
+  expect(contributions.has('slot:redis_viewer_filter_hash')).toBe(true)
   if (slot === undefined) throw new Error('Missing sidebar body')
   const api = slot.inject('trusted-session')
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')

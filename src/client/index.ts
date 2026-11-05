@@ -15,10 +15,12 @@ import type { SetSelectionRequest } from '../domain.ts'
 import { consumeUiActions } from './ui-actions.ts'
 import { showRedisPane, UiPanePresence } from './ui-pane-presence.ts'
 import { SelectionEpoch } from './selection-epoch.ts'
+import { registerRedisEvidence } from './RedisToolEvidence.tsx'
 
 export const inject = ['remote', 'connection', 'slots', 'locale', 'sidebarRightTabs', 'sidebarRight']
 
 export function apply(ctx: Context): void {
+  registerRedisEvidence(ctx)
   ctx.effect(installRedisStyles)
   ctx.effect(() => ctx.locale.register(NS, { zh, en }), 'redis dictionaries')
   const t = ctx.locale.bind(NS)
