@@ -2,7 +2,7 @@ import type { Context } from '@deepseek-ai/cordis'
 import { defineTool } from '@deepseek-ai/dsh-tools'
 import { MAX_KEY_BYTES, MAX_SCAN_KEYS, type UiAction } from '../domain.ts'
 import { isStreamId } from '../stream-id.ts'
-import { connectionErrorMessages } from '../connection-errors.ts'
+import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
 import { hashFieldReadRequestSchema, listReadRequestSchema, setMemberReadRequestSchema, stringReadRequestSchema } from '../typert.shared.ts'
 import { ConnectionFailure } from './connection-service.ts'
 import { byteIdentity } from './byte-identity.ts'
@@ -38,7 +38,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const sample = prepared.sample
         if (sample.state !== 'value') {
-          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? '采样时该 Key 不存在或已过期。' : sample.state === 'selection-missing' ? '采样时该消息或字段位置不存在。' : '采样时 Key 类型或消息已变化。'
+          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? keyStateMessages.missing.zh : sample.state === 'selection-missing' ? '采样时该消息或字段位置不存在。' : '采样时 Key 类型或消息已变化。'
           return { outcome: sample.state, error: sample.error, sampledAt: sample.sampledAt, message }
         }
         const field = sample.message?.fields[args.fieldIndex]?.field
@@ -70,7 +70,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const sample = prepared.sample
         if (sample.state !== 'value') {
-          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? '采样时该 Key 不存在或已过期。' : sample.state === 'selection-missing' ? '采样时该 ZSet 成员不存在。' : '采样时 Key 类型已变化，不能定位 ZSet 成员。'
+          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? keyStateMessages.missing.zh : sample.state === 'selection-missing' ? '采样时该 ZSet 成员不存在。' : '采样时 Key 类型已变化，不能定位 ZSet 成员。'
           return { outcome: sample.state, error: sample.error, sampledAt: sample.sampledAt, message }
         }
         const member = byteIdentity(Buffer.from(request.memberBase64, 'base64'))
@@ -101,7 +101,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const sample = prepared.sample
         if (sample.state !== 'value') {
-          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? '采样时该 Key 不存在或已过期。' : sample.state === 'selection-missing' ? '采样时该 Set 成员不存在。' : '采样时 Key 类型已变化，不能定位 Set 成员。'
+          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? keyStateMessages.missing.zh : sample.state === 'selection-missing' ? '采样时该 Set 成员不存在。' : '采样时 Key 类型已变化，不能定位 Set 成员。'
           return { outcome: sample.state, error: sample.error, sampledAt: sample.sampledAt, message }
         }
         const member = byteIdentity(Buffer.from(request.memberBase64, 'base64'))
@@ -130,7 +130,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         const validate = () => { if (actions.selectionRevision(session) !== revision) throw new ConnectionFailure('stale') }
         const probe = await reader.probeKey(session, target, request.keyBase64, exec.signal, validate)
         exec.signal.throwIfAborted()
-        if (probe.state === 'missing') return { outcome: 'missing', sampledAt: probe.sampledAt, message: '采样时该 Key 不存在或已过期。' }
+        if (probe.state === 'missing') return { outcome: 'missing', sampledAt: probe.sampledAt, message: keyStateMessages.missing.zh }
         if (probe.state === 'failed') return { outcome: 'failed', error: probe.error, sampledAt: probe.sampledAt, message: probe.error === null ? 'Key 检查失败。' : connectionErrorMessages[probe.error].zh }
         if (actions.selectionRevision(session) !== revision || !reader.isCurrentTarget(session, target)) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const key = byteIdentity(Buffer.from(request.keyBase64, 'base64'))
@@ -159,7 +159,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const sample = prepared.sample
         if (sample.state !== 'value') {
-          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? '采样时该 Key 不存在或已过期。' : sample.state === 'selection-missing' ? '采样时该 List 下标不存在。' : '采样时 Key 类型或 List 内容已变化，请重试。'
+          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? keyStateMessages.missing.zh : sample.state === 'selection-missing' ? '采样时该 List 下标不存在。' : '采样时 Key 类型或 List 内容已变化，请重试。'
           return { outcome: sample.state, error: sample.error, sampledAt: sample.sampledAt, message }
         }
         const outcome = await actions.dispatch(session, { kind: 'selectListIndex', keyBase64: prepared.keyBase64, index: request.offset }, prepared.target, prepared.revision, prepared.currentKey, exec.signal)
@@ -189,7 +189,7 @@ export function registerRedisLocateTool(ctx: Context, reader: RedisAiReader, act
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请重试。' }
         const sample = prepared.sample
         if (sample.state !== 'value') {
-          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? '采样时该 Key 不存在或已过期。' : sample.state === 'selection-missing' ? '采样时该 Hash 字段不存在。' : '采样时 Key 的类型已变化，不能定位 Hash 字段。'
+          const message = sample.error !== null ? connectionErrorMessages[sample.error].zh : sample.state === 'missing' ? keyStateMessages.missing.zh : sample.state === 'selection-missing' ? '采样时该 Hash 字段不存在。' : '采样时 Key 的类型已变化，不能定位 Hash 字段。'
           return { outcome: sample.state, error: sample.error, sampledAt: sample.sampledAt, message }
         }
         const field = byteIdentity(Buffer.from(request.fieldBase64, 'base64'))

@@ -2,7 +2,7 @@ import type { ConnectionErrorCode } from './domain.ts'
 
 /** Key state explanations are shared by the sidebar and model results. */
 export const keyStateMessages = {
-  missing: { zh: 'Key 已不存在或已过期。', en: 'The key no longer exists or has expired.' },
+  missing: { zh: '采样时该 Key 不存在。', en: 'The key did not exist at the time of sampling.' },
   changed: { zh: 'Key 类型或内容已变化，请刷新。', en: 'The key type or content has changed. Refresh the key.' },
 } as const
 
