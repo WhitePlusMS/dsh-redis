@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 验收基线审查修正
+
+- `docs/DSH_AI_READONLY_TASKS.md` 按提交后的独立审查修正两处旧构建状态：TimeSeries 模型证据属于 `53bd92e`，`7315b69` 的完整检查为 80 个文件、641 项通过；保留旧构建整套检查超时的事实。仅修正表述，不扩大真实模型验收范围。
+
 ## 2026-11-05 单 Key 内存真实模型复验
 
 - `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md` 更新日常 profile 安装基线与模型复验结果：工具证据和报告固定说明已正确返回，但模型随后对采样数量及碎片作自相矛盾的断言，节点不能标为通过。仅作记录，不修改 Redis 或插件行为。
