@@ -4,8 +4,8 @@ import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 
-export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE'
-const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE'])
+export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'GEOPOS' | 'GEODIST'
+const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE', 'GEOPOS', 'GEODIST'])
 const CONNECT_TIMEOUT = 8000
 const READ_TIMEOUT = 10000
 const MAX_QUEUE = 16
@@ -108,6 +108,9 @@ export class RedisTransport {
   execute(command: RedisReadCommand, arguments_: readonly RedisArgument[], signal: AbortSignal, beforeDispatch: () => void, deadline = Date.now() + READ_TIMEOUT): Promise<RedisReply> {
     // CLIENT contains administrative subcommands: permit only its read-only LIST form.
     if (command === 'CLIENT' && !(arguments_.length === 1 && arguments_[0] === 'LIST')) return Promise.reject(new RedisFrameError('protocol'))
+    // GEO reads accept only one member or one fixed member pair, never an open search.
+    if (command === 'GEOPOS' && !(arguments_.length === 2 && arguments_.every(Buffer.isBuffer))) return Promise.reject(new RedisFrameError('protocol'))
+    if (command === 'GEODIST' && !(arguments_.length === 4 && arguments_.slice(0, 3).every(Buffer.isBuffer) && typeof arguments_[3] === 'string' && ['m', 'km', 'ft', 'mi'].includes(arguments_[3]))) return Promise.reject(new RedisFrameError('protocol'))
     if (!READ_COMMANDS.has(command) || (command === 'DBSIZE' && arguments_.length !== 0) || (command === 'CONFIG' && (arguments_.length !== 2 || arguments_[0] !== 'GET' || arguments_[1] !== 'databases')) || (command === 'INFO' && !(arguments_.length === 1 && typeof arguments_[0] === 'string' && ['keyspace', 'server', 'memory', 'clients', 'stats'].includes(arguments_[0]))) || (command === 'MEMORY' && !(arguments_.length === 4 && arguments_[0] === 'USAGE' && Buffer.isBuffer(arguments_[1]) && arguments_[2] === 'SAMPLES' && arguments_[3] === '5')) || (command === 'SLOWLOG' && !(arguments_.length === 2 && arguments_[0] === 'GET' && typeof arguments_[1] === 'string' && /^(?:[1-9]|10)$/u.test(arguments_[1]))) || (command === 'XINFO' && !(arguments_.length === 2 && arguments_[0] === 'GROUPS' && Buffer.isBuffer(arguments_[1])))) return Promise.reject(new RedisFrameError('protocol'))
     return this.request([command, ...arguments_], signal, Math.min(deadline, Date.now() + READ_TIMEOUT), beforeDispatch)
   }

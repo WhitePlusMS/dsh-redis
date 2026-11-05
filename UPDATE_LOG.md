@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 GEO 精确读取
+
+- `src/host/ai-reader.ts`、`src/host/ai-tools.ts` 与 `src/host/redis-transport.ts` 增加明确 Key 和成员的 GEO 坐标及两成员距离只读查询，命令边界限制固定参数、复用当前会话预算和目标校验；区分缺失、类型变化与权限错误，不扫描或修改数据。Redis 的 ZSet 类型不证明其为 GEO 索引，结果保留该限制。`tests/ai-tools.test.ts`、`tests/redis-transport.test.ts` 覆盖参数约束、二进制身份、异常和连接变更；`docs/AI_READ_USAGE.md` 与任务清单说明使用方法及未完成验收。`scripts/hold-ai-acceptance.mjs` 新增可选的隔离 GEO 数据，验收前后核对 Key 与过期时间。
+- 参照 [Redis GEOPOS](https://redis.io/docs/latest/commands/geopos/) 和 [GEODIST](https://redis.io/docs/latest/commands/geodist/)；在独立 Redis 复现禁用 GEO 命令被误报为网络故障后，调整为明确的命令不可用状态并保留连接状态，并用真实隔离 Redis 复验。修正后完整 `pnpm check` 再次通过（80 个文件、631 项）；开发包 110 个 lib 文件及 AI 使用说明与该构建逐字节一致。
+- `docs/verification/user-questions-real-model-2026-11-05.md` 记录独立 Redis 对照及日常 DSH 模型请求：工具坐标和距离与 Redis 一致；真实模型两次请求均因上游 HTTP 500 失败、未调用工具；之后不调用工具的普通消息也出现相同上游错误，不能标记模型验收通过。隔离实例 23 个 Key 与过期时间不变，已停止；原会话已重新连接用户 Redis。
+
 ## 2026-11-05 Bitmap 版本基线修正
 
 - `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md` 修正独立审查发现的旧基线表述，区分打包时工作树、提交 `e5b8153`、新增专项测试和历史构建；已逐字节比较开发包内 110 个 lib 文件及 AI 使用说明。此变更只修正文档，不改变验收结论。

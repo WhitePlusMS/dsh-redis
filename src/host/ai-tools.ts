@@ -50,6 +50,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_geo', description: '仅在用户明确询问地理位置或距离时，指定当前 DB 的 key/keyBase64 与 member/memberBase64。查询两成员距离时另指定 other/otherBase64，unit 可为 m、km、ft、mi，默认 m；不提供第二成员则只读第一成员坐标。只使用 GEOPOS 或 GEODIST，不搜索、修改或选择 Key。结果 geoIndexVerified 为 false：ZSet 类型不能证明数据由 GEO 写入，需用户确认其用途；坐标有编码误差，距离按球形地球近似，单次结果不是快照。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, member: { type: 'string' }, memberBase64: { type: 'string' }, other: { type: 'string' }, otherBase64: { type: 'string' }, unit: { type: 'string' } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'member', 'memberBase64', 'other', 'otherBase64', 'unit']); return reader.geo(session, args, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_bitmap', description: '用户明确询问 Bitmap 位时，指定当前 DB 的 key 或 keyBase64、从零开始的位 offset 和 count（1 到 1024）。只返回该范围的 0/1 位，不返回原始字节；超出 String 长度的位按 Redis 语义为 0，Key 不存在单独报告。不能从单次采样推断业务含义或历史。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, offset: { type: 'string', required: true }, count: { type: 'integer', required: true } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'offset', 'count']); return reader.bitmap(session, args, exec.signal) }) },

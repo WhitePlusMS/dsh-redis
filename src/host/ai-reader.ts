@@ -63,6 +63,23 @@ export interface AiValueRequest {
   readonly end?: string
   readonly direction?: string
 }
+export interface AiGeoRequest {
+  readonly key?: string
+  readonly keyBase64?: string
+  readonly member?: string
+  readonly memberBase64?: string
+  readonly other?: string
+  readonly otherBase64?: string
+  readonly unit?: string
+}
+
+/** Preserve Redis decimal text while rejecting malformed and non-finite replies. */
+function geoDecimal(value: unknown, min: number, max: number): string {
+  if (!Buffer.isBuffer(value) || value.length > 64) throw new RedisFrameError('protocol')
+  const text = value.toString('ascii'), number = Number(text)
+  if (!Buffer.from(text, 'ascii').equals(value) || !/^-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?$/u.test(text) || !Number.isFinite(number) || number < min || number > max) throw new RedisFrameError('protocol')
+  return text
+}
 
 /** Reject conditions a type-specific reader would otherwise silently ignore. */
 function invalidRange(type: string, args: AiValueRequest): string | null {
@@ -306,6 +323,58 @@ export class RedisAiReader {
       }).join('')
     }
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), state: value.state, error: value.error, errorMessage: explainValue(value.error, value), offset: args.offset, count: args.count, bits, metadata: value.metadata, sampledAt: value.sampledAt })
+  }
+  /** GEO is explicit: a ZSet alone does not prove that its scores are geographic. */
+  async geo(sessionId: string, args: AiGeoRequest, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined) || (args.member === undefined) === (args.memberBase64 === undefined)) throw new Error('请分别指定一个 Key 和一个成员身份。')
+    if (args.other !== undefined && args.otherBase64 !== undefined) throw new Error('第二成员只能指定一个身份。')
+    const distance = args.other !== undefined || args.otherBase64 !== undefined
+    if ((!distance && args.unit !== undefined) || (args.unit !== undefined && !['m', 'km', 'ft', 'mi'].includes(args.unit))) throw new Error('距离单位须为 m、km、ft 或 mi；坐标查询不使用单位。')
+    const target = this.target(sessionId)
+    const request = setMemberReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), memberBase64: args.member === undefined ? args.memberBase64 : encodeIdentity(args.member) })
+    const other = distance ? setMemberReadRequestSchema.parse({ target, keyBase64: request.keyBase64, memberBase64: args.other === undefined ? args.otherBase64 : encodeIdentity(args.other) }).memberBase64 : null
+    const keyBytes = Buffer.from(request.keyBase64, 'base64'), memberBytes = Buffer.from(request.memberBase64, 'base64')
+    const unit = distance ? args.unit ?? 'm' : null, context = new RedisReadContext(this.connections, sessionId, target, signal)
+    const result = (state: string, type: string | null, coordinates: { longitude: string; latitude: string } | null, value: string | null, error: ConnectionErrorCode | null, sampledAt: string) => this.project(sessionId, {
+      readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(keyBytes), member: byteIdentity(memberBytes), other: other === null ? null : byteIdentity(Buffer.from(other, 'base64')), kind: distance ? 'distance' : 'position', unit, state, type, coordinates, distance: value, geoIndexVerified: false, snapshot: false, sampledAt, error,
+      errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 ZSet。' : state === 'unavailable' ? '服务器不支持或已禁用所需的 GEO 命令。' : state === 'member-missing' ? '采样时指定成员中至少一个不存在。' : null,
+    })
+    let readingGeo = false
+    try {
+      const firstType = await context.type(keyBytes)
+      if (firstType !== 'zset') {
+        signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+        return result(firstType === 'none' ? 'missing' : 'unsupported', firstType, null, null, null, new Date().toISOString())
+      }
+      readingGeo = true
+      const reply = distance ? await context.command('GEODIST', [keyBytes, memberBytes, Buffer.from(other ?? '', 'base64'), unit ?? 'm']) : await context.command('GEOPOS', [keyBytes, memberBytes])
+      readingGeo = false
+      const sampledAt = new Date().toISOString()
+      let coordinates: { longitude: string; latitude: string } | null = null, value: string | null = null
+      if (distance) value = reply === null ? null : geoDecimal(reply, 0, Number.MAX_VALUE)
+      else {
+        if (!Array.isArray(reply) || reply.length !== 1) throw new RedisFrameError('protocol')
+        const position = reply[0]
+        if (position !== null) {
+          if (!Array.isArray(position) || position.length !== 2) throw new RedisFrameError('protocol')
+          coordinates = { longitude: geoDecimal(position[0], -180, 180), latitude: geoDecimal(position[1], -90, 90) }
+        }
+      }
+      const lastType = await context.type(keyBytes)
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      if (lastType !== 'zset') return result(lastType === 'none' ? 'missing' : 'changed', lastType, null, null, null, sampledAt)
+      return result((distance ? value : coordinates) === null ? 'member-missing' : 'value', 'zset', coordinates, value, null, sampledAt)
+    } catch (error) {
+      signal.throwIfAborted()
+      if (readingGeo && error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
+        this.connections.assertTarget(sessionId, target)
+        return result('unavailable', 'zset', null, null, null, new Date().toISOString())
+      }
+      const code = context.error(error)
+      this.connections.assertReadResult(sessionId, target, code)
+      return result(code === 'type-changed' ? 'changed' : 'failed', null, null, null, code, new Date().toISOString())
+    } finally { context.dispose() }
   }
   /** MEMORY USAGE is a bounded estimate for one explicit Key, not a value read. */
   async memoryUsage(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {

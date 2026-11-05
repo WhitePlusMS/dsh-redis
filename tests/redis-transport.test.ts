@@ -244,6 +244,16 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'XINFO'])
     }, (socket, args) => { expect(args).toEqual([Buffer.from('XINFO'), Buffer.from('GROUPS'), Buffer.from([0, 255])]); socket.write('*0\r\n') })
   })
+  it('accepts only fixed GEO point and distance argument shapes', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['key', Buffer.from('member')], [Buffer.from('key'), Buffer.from('a'), Buffer.from('b')]]) await expect(transport.execute('GEOPOS', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      for (const args of [[], [Buffer.from('key'), Buffer.from('a'), Buffer.from('b')], [Buffer.from('key'), Buffer.from('a'), Buffer.from('b'), 'yards'], [Buffer.from('key'), Buffer.from('a'), Buffer.from('b'), 'm', 'extra']]) await expect(transport.execute('GEODIST', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('GEOPOS', [Buffer.from('key'), Buffer.from([0, 255])], signal(), () => undefined)).toEqual([null])
+      expect(await transport.execute('GEODIST', [Buffer.from('key'), Buffer.from('a'), Buffer.from('b'), 'km'], signal(), () => undefined)).toEqual(Buffer.from('1.25'))
+      expect(commands).toEqual(['PING', 'GEOPOS', 'GEODIST'])
+    }, (socket, args) => { if (String(args[0]) === 'GEOPOS') socket.write('*1\r\n$-1\r\n'); else socket.write('$4\r\n1.25\r\n') })
+  })
   it('allows only CLIENT LIST and rejects connection administration', async () => {
     await withPeer(async (transport, commands) => {
       for (const args of [[], ['KILL', 'ID', '1'], ['PAUSE', '100'], ['LIST', 'ID', '1'], [Buffer.from('LIST')]]) await expect(transport.execute('CLIENT', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })

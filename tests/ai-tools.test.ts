@@ -21,7 +21,7 @@ const cleanups: (() => Promise<void> | void)[] = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 /** Synthetic transport with two-page cursors exposes cross-consumer races. */
-async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute'], compareRead?: RedisLink['execute']) {
+async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'], checks?: { readonly confirm: (session: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>; readonly current: (session: string, revision: number | null) => boolean }, memory?: RedisLink['execute'], slowlog?: RedisLink['execute'], overview?: RedisLink['execute'], groups?: RedisLink['execute'], clients?: RedisLink['execute'], compareRead?: RedisLink['execute'], geo?: RedisLink['execute']) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   let changingTypeReads = 0
@@ -43,6 +43,7 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
         case 'SLOWLOG': return slowlog === undefined ? [] : slowlog(command, args, signal, guard)
         case 'INFO': return overview === undefined ? Buffer.alloc(0) : overview(command, args, signal, guard)
         case 'XINFO': return groups === undefined ? [] : groups(command, args, signal, guard)
+        case 'GEOPOS': case 'GEODIST': if (geo === undefined) throw new Error('Unexpected GEO request'); return geo(command, args, signal, guard)
         case 'CLIENT': return clients === undefined ? Buffer.alloc(0) : clients(command, args, signal, guard)
         case 'TYPE': if (key === 'network') failNetwork(); if (key === 'denied') throw new RedisReplyError('NOPERM fixture denied'); if (key === 'changing-type') return changingTypeReads++ === 0 ? 'hash' : 'list'; if (key === 'changing-member') return changingMemberReads++ === 0 ? 'set' : 'zset'; if (/^order:\d+$/u.test(key)) return 'hash'; return types[key] ?? 'none'
         case 'SELECT': if (select !== undefined) return select(command, args, signal, guard); if (args[0] === '3') throw new RedisReplyError('NOPERM fixture denied'); return 'OK'
@@ -107,6 +108,41 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('reads only explicit GEO position or distance and preserves binary members', async () => {
+    const calls: Array<{ command: string; args: readonly unknown[] }> = []
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (command, args) => {
+      calls.push({ command, args })
+      if (command === 'GEODIST') return String(args[2]) === 'missing' ? null : Buffer.from('166.2742')
+      return String(args[1]) === 'missing' ? [null] : [[Buffer.from('13.361389338970184'), Buffer.from('38.1155563954963')]]
+    })
+    const position = JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', memberBase64: 'AP8=' })))
+    expect(position).toMatchObject({ state: 'value', kind: 'position', geoIndexVerified: false, snapshot: false, member: { base64: 'AP8=' }, coordinates: { longitude: '13.361389338970184', latitude: '38.1155563954963' }, distance: null })
+    expect(calls[0]).toEqual({ command: 'GEOPOS', args: [Buffer.from('zset'), Buffer.from([0, 255])] })
+    expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', member: 'a', other: 'b', unit: 'km' })))).toMatchObject({ state: 'value', kind: 'distance', unit: 'km', coordinates: null, distance: '166.2742' })
+    expect(calls[1]).toEqual({ command: 'GEODIST', args: [Buffer.from('zset'), Buffer.from('a'), Buffer.from('b'), 'km'] })
+    expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', member: 'missing' })))).toMatchObject({ state: 'member-missing', coordinates: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', member: 'a', other: 'missing' })))).toMatchObject({ state: 'member-missing', distance: null, unit: 'm' })
+    expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'missing', member: 'a' })))).toMatchObject({ state: 'missing' })
+    expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'hash', member: 'a' })))).toMatchObject({ state: 'unsupported', type: 'hash' })
+    for (const args of [{ key: 'zset' }, { key: 'zset', member: 'a', memberBase64: 'YQ==' }, { key: 'zset', member: 'a', unit: 'km' }, { key: 'zset', member: 'a', other: 'b', unit: 'yards' }, { key: 'zset', member: 'a', command: 'GEOADD' }]) expect((await f.call('redis_viewer_geo', args)).isError).toBe(true)
+  })
+  it('reports GEO permission and malformed replies and rejects a replaced connection', async () => {
+    const denied = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => { throw new RedisReplyError('NOPERM synthetic-secret') })
+    const deniedText = content(await denied.call('redis_viewer_geo', { key: 'zset', member: 'a' }))
+    expect(JSON.parse(deniedText)).toMatchObject({ state: 'failed', error: 'permission' }); expect(deniedText).not.toContain('synthetic-secret')
+    const malformed = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => [[Buffer.from('NaN'), Buffer.from('0')]])
+    expect(JSON.parse(content(await malformed.call('redis_viewer_geo', { key: 'zset', member: 'a' })))).toMatchObject({ state: 'failed', error: 'protocol' })
+    const disabled = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => { throw new RedisReplyError("ERR unknown command 'GEOPOS' synthetic-secret") })
+    const disabledText = content(await disabled.call('redis_viewer_geo', { key: 'zset', member: 'a' }))
+    expect(JSON.parse(disabledText)).toMatchObject({ state: 'unavailable', error: null, connection: { state: 'connected' } }); expect(disabledText).not.toContain('synthetic-secret')
+    let release!: (value: RedisReply) => void, observed!: () => void
+    const pending = new Promise<RedisReply>(resolve => { release = resolve }), started = new Promise<void>(resolve => { observed = resolve })
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => { observed(); return pending })
+    const operation = f.call('redis_viewer_geo', { key: 'zset', member: 'a' })
+    await started; await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, new AbortController().signal)
+    release([[Buffer.from('1'), Buffer.from('2')]])
+    expect((await operation).isError).toBe(true)
+  })
   it('reads bounded Bitmap bits without exposing surrounding bytes', async () => {
     const requests: Array<readonly unknown[]> = []
     const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, args) => {
@@ -756,7 +792,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_bitmap', 'redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_bitmap', 'redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_geo', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })

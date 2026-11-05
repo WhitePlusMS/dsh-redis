@@ -13,6 +13,9 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.set('fixture:string', 'synthetic-string-value')
   await admin.rPush('fixture:list', ['synthetic-first', 'synthetic-second'])
   await admin.sendCommand(['XADD', 'fixture:stream', '1-0', 'field', 'synthetic-first', 'field', 'synthetic-second'])
+  const withGeo = process.argv.includes('--geo')
+  // GEOADD is fixture setup only; the DSH plugin never receives a write command.
+  if (withGeo) await admin.sendCommand(['GEOADD', 'fixture:places', '13.361389', '38.115556', 'fixture:west', '15.087269', '37.502669', 'fixture:east'])
   // Build delivery state only inside the owned fixture; no consumer runs during verification.
   const withUnknownLag = process.argv.includes('--unknown-lag')
   const withGroup = process.argv.includes('--stream-group') || withUnknownLag
@@ -30,6 +33,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const buffers = admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
   // Check every fixture key, including absolute expiry, before releasing the instance.
   const keys = [...Array.from({ length: 16 }, (_, index) => 'fixture:order:' + index), 'fixture:user:123', 'fixture:members', 'fixture:scores', 'fixture:string', 'fixture:list', 'fixture:stream']
+  if (withGeo) keys.push('fixture:places')
   const before = await Promise.all(keys.map(key => buffers.sendCommand(['DUMP', key])))
   const expiry = await Promise.all(keys.map(key => admin.sendCommand(['PEXPIRETIME', key])))
   const groupBefore = withGroup ? await buffers.sendCommand(['XINFO', 'GROUPS', 'fixture:stream']) : null
@@ -53,7 +57,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert(unknownGroup); assert.equal(unknownGroup.lag, null); assert.equal(unknownGroup['entries-read'], null)
     }
   }
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag }))
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)
