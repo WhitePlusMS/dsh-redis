@@ -2978,3 +2978,5 @@
 - 原因与影响：准确保留真实 DSH、用户模型和用户 Redis 验证边界，供后续针对性修复；本次只更新文档，不修改 Redis 数据或运行逻辑。
 - 补充 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实客户端明细工具调用及模型未经工具证实地归属连接的问题，诊断回答仍未通过；不记录业务数据。
 - 补充 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实 Hash 的 Stream 消费组不支持边界，模型正确报告类型；未据此宣称真实 Stream 或完整诊断已验收。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录两个真实 DSH 会话连接同一本机 Redis 后的 DB 切换隔离，以及当前源码 `4175196` 的完整检查结果；不扩大到断开或其他拓扑。
+- 验证：`pnpm check` 通过，79 个测试文件、619 项测试通过；业务 Redis 未写入，模型回答准确性和选区竞争仍未通过。
