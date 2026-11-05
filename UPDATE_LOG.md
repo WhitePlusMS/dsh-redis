@@ -1,3 +1,9 @@
+## 2026-11-05：当前包真实模型复验
+
+- 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：记录当前安装包及其真实 DSH、用户模型验收结果，避免将旧构建或专项检查当成当前完整验收。
+- 结果与影响：`a9dcd8d` 打包完整检查 80 文件、647 项通过，135 个归档文件与日常安装一致。独立 Redis 中复验 MEMORY 不可用、混合类型筛选和明确字段类型不符，记录模型表述与覆盖边界；隔离数据和 TTL 未变且夹具已停止，日常 DSH 已恢复连接用户 Redis。模糊范围猜测等问题仍未解决，任务节点不标为全部完成。
+
 ## 2026-11-05：隔离验收夹具支持禁用 MEMORY
 
 - 文件：`scripts/hold-ai-acceptance.mjs`、`UPDATE_LOG.md`。
