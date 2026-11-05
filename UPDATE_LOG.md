@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 六种基础类型当前构建复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 和独立 Redis 8.2.6 的六类型合成数据读取：内容、类型及完整状态与工具一致，Stream 重复字段有序；模型将 String 长度标成工具没有返回的字段名，Stream 表格中的 `<br>` 显示为文本，故未把整体回答准确性或展示体验标为通过。
+- 隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，测试连接断开、实例停止，原会话已重连本机 Redis。
+
 ## 2026-11-05 已保存资料成功切换真实验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 切换至独立 Redis 的真实结果：工具返回连接成功和旧连接关闭，代次增加，模型读取并正确复述一个完整的合成 String。仅覆盖单次无密码路径，未在用户服务器端单独计数旧套接字。
