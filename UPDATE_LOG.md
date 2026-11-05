@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 Bitmap 版本基线修正
+
+- `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md` 修正独立审查发现的旧基线表述，区分打包时工作树、提交 `e5b8153`、新增专项测试和历史构建；已逐字节比较开发包内 110 个 lib 文件及 AI 使用说明。此变更只修正文档，不改变验收结论。
+
 ## 2026-11-05 Bitmap 位范围读取
 
 - `src/host/ai-reader.ts` 和 `src/host/ai-tools.ts` 增加 AI Bitmap 有界只读查询，复用现有 String 字节读取和会话预算；明确 Key、位偏移和数量，输出指定范围位值，区分缺失、类型及读取错误，不向模型返回整个字节。仅处理最多 1024 位，不推断业务含义。`tests/ai-tools.test.ts` 覆盖跨字节、补零、异常和范围；`docs/AI_READ_USAGE.md` 与任务清单记录使用方法及当前验收状态。
