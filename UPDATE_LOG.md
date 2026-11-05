@@ -1,3 +1,7 @@
+## 2026-11-05：验收版本措辞修正
+
+- 文件：`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。规范复核发现旧筛选、诊断、认证及 GEO 记录仍称“当前包”；改为其实际旧构建 `a9dcd8d`，将连接恢复限定为当次操作。仅修正文档，避免误认为新安装包已覆盖这些验收。
+
 ## 2026-11-05：原生视图日常安装与局部验收
 
 - 文件：`docs/verification/native-evidence-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
