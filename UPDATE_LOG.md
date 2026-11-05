@@ -3003,3 +3003,4 @@
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录 `a86a8fc` 开发包安装、135 文件核对及真实 Redis 上名称搜索和 Hash 筛选的首批模型结果。模型正确说明 MATCH 不保证避开当前 DB 键空间，但仍对负载和完整迭代保证作错误断言，准确性未通过。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录 `a86a8fc` 完整检查 79 文件、619 项通过，以及真实模型断开一个独立会话后另一会话仍连接 DB0；切回后出现选区同步提示且重试未恢复，需继续诊断。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录真实 DSH 中 Chrome 与内置浏览器同时打开同一会话造成选区冲突的对照，以及错开会话并重试后的恢复；真实模型对一个稳定选区的读取与面板一致。原因是修正此前未识别多接收端的验收记录；影响仅为明确实际验证范围，不改变代码或 Redis 数据，选区切换竞争仍未通过。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实模型在本机 Redis 上跨 12 次工具调用完成一次自然语言前缀搜索，以及模型误报批次数、未交代扫描一致性限制；记录 200 个 Key 的有界类型抽样全为 Hash，但不推断未抽样部分。原因是保留实际验收结果和限制；仅执行只读命令，不改变业务数据或代码。
