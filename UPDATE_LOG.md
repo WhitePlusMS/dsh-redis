@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 JSON 与时序当前构建复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 记录日常 DSH、`bzkj-LLM` 与独立 Redis 模块实例的局部真实模型验收：JSON 三个路径区分大整数、null 和无匹配；TimeSeries 两页三条样本的时间和值与合成数据一致，并保留非快照与压缩桶限制。仅记录本次覆盖，不扩大到全部异常场景。
+- 隔离实例两个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重新连接用户 Redis DB0，未写入业务数据。
+
+
 ## 2026-11-05 查找后定位与单次刷新真实验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的查找后打开和单次刷新：两个原始回执为 `applied`，实际侧栏选中并显示 Hash，自动刷新保持关闭。仅验证正常路径，未记录业务 Key 或值。
