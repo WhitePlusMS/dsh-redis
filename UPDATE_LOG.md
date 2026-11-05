@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 专业读取命令说明修正
+
+- `src/host/ai-tools.ts` 修正 JSON、TimeSeries、GEO 和 Stream 消费组工具的模型可见描述，说明主要查询外还会使用 TYPE 检查，避免将查询命令误称为唯一命令；不改变实际 Redis 命令或读取范围。
+- `tests/ai-tools.test.ts` 校验注册描述包含类型检查，并在正常读取测试中核对实际命令顺序；`docs/AI_READ_USAGE.md` 同步解释多命令非原子读取。真实模型复验仍需执行，不能保证其自由文本始终准确。
+
+
 ## 2026-11-05 GEO 与 Stream 消费组局部复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与独立 Redis 的 GEO 坐标距离和 Stream pending、lag 合成样本：数值一致，模型的消费组命令描述遗漏 TYPE，完整回答仍未通过。

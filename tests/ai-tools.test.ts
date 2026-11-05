@@ -121,6 +121,7 @@ describe('official Redis model tools', () => {
     expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', timestampUtc: '1970-01-01T00:00:01.000Z', value: '1.25' }, { timestampMs: '2000', timestampUtc: '1970-01-01T00:00:02.000Z', value: '-3.5' }], complete: false, snapshot: false })
     expect(first.cursor).toMatch(/^ts:/u); expect(first.coverage).toContain('未闭合桶')
     expect(calls[0]).toEqual([Buffer.from('series'), '0', '3000', 'COUNT', '3'])
+    expect(f.commands).toEqual(['TYPE', 'TS.RANGE', 'TYPE'])
     for (const changed of [{ key: 'plain', from: '0', to: '3000', count: 2 }, { key: 'series', from: '1', to: '3000', count: 2 }, { key: 'series', from: '0', to: '3001', count: 2 }, { key: 'series', from: '0', to: '3000', count: 1 }]) expect((await f.call('redis_viewer_timeseries', { ...changed, cursor: first.cursor })).isError).toBe(true)
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2, cursor: first.cursor })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '3000', value: '9' }], complete: true, cursor: null })
     expect(calls[1]).toEqual([Buffer.from('series'), '2001', '3000', 'COUNT', '3'])
@@ -192,6 +193,7 @@ describe('official Redis model tools', () => {
     })
     expect(JSON.parse(content(await f.call('redis_viewer_json_path', { key: 'module', path: '$.large' })))).toMatchObject({ state: 'value', matchesJson: '[9007199254740993]', matchCount: 1, snapshot: false })
     expect(calls[0]).toEqual([Buffer.from('module'), '$.large'])
+    expect(f.commands).toEqual(['TYPE', 'JSON.GET', 'TYPE'])
     expect(JSON.parse(content(await f.call('redis_viewer_json_path', { key: 'module', path: '$.null' })))).toMatchObject({ state: 'value', matchesJson: '[null]', matchCount: 1 })
     expect(JSON.parse(content(await f.call('redis_viewer_json_path', { key: 'module', path: '$.missing' })))).toMatchObject({ state: 'value', matchesJson: '[]', matchCount: 0 })
     expect(JSON.parse(content(await f.call('redis_viewer_json_path', { key: 'missing', path: '$.x' })))).toMatchObject({ state: 'missing' })
@@ -226,6 +228,7 @@ describe('official Redis model tools', () => {
     const position = JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', memberBase64: 'AP8=' })))
     expect(position).toMatchObject({ state: 'value', kind: 'position', geoIndexVerified: false, snapshot: false, member: { base64: 'AP8=' }, coordinates: { longitude: '13.361389338970184', latitude: '38.1155563954963' }, distance: null })
     expect(calls[0]).toEqual({ command: 'GEOPOS', args: [Buffer.from('zset'), Buffer.from([0, 255])] })
+    expect(f.commands).toEqual(['TYPE', 'GEOPOS', 'TYPE'])
     expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', member: 'a', other: 'b', unit: 'km' })))).toMatchObject({ state: 'value', kind: 'distance', unit: 'km', coordinates: null, distance: '166.2742' })
     expect(calls[1]).toEqual({ command: 'GEODIST', args: [Buffer.from('zset'), Buffer.from('a'), Buffer.from('b'), 'km'] })
     expect(JSON.parse(content(await f.call('redis_viewer_geo', { key: 'zset', member: 'missing' })))).toMatchObject({ state: 'member-missing', coordinates: null })
@@ -640,6 +643,12 @@ describe('official Redis model tools', () => {
       const schema = schemas.find(item => item.name === name)
       expect(schema?.description).toContain('connection.generation 是插件连接与 DB 视图的版本')
       expect(schema?.description).toContain('不能仅凭版本变化推断物理连接重建或 Redis 服务器重启')
+    }
+  })
+  it('describes type checks alongside specialist read commands', async () => {
+    const f = await fixture(), schemas = f.ctx.tools.schemas()
+    for (const name of ['redis_viewer_json_path', 'redis_viewer_timeseries', 'redis_viewer_geo', 'redis_viewer_stream_groups']) {
+      expect(schemas.find(item => item.name === name)?.description).toContain('TYPE')
     }
   })
   it('tells the model the limits of TTL and completed Key scans', async () => {

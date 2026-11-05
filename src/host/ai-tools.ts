@@ -50,17 +50,17 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。只使用 TS.RANGE，不聚合、不跨 Key。返回时间与值的原始字符串，以及可表示范围内由毫秒时间戳换算的 timestampUtc；超出日期范围时该字段为 null。仅 state 为 value 且 cursor 非空时可续读，并保持 Key、from、to 和 count 不变。续读返回非 value 状态时旧游标失效，须从原范围重新查询；取消或未收到结果时游标状态不确定。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',
+    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。使用 TS.RANGE 读取并通过 TYPE 检查类型；不聚合、不跨 Key。返回时间与值的原始字符串，以及可表示范围内由毫秒时间戳换算的 timestampUtc；超出日期范围时该字段为 null。仅 state 为 value 且 cursor 非空时可续读，并保持 Key、from、to 和 count 不变。续读返回非 value 状态时旧游标失效，须从原范围重新查询；取消或未收到结果时游标状态不确定。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, from: { type: 'string', required: true }, to: { type: 'string', required: true }, count: { type: 'integer' }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, async stage => { strict(args, ['key', 'keyBase64', 'from', 'to', 'count', 'cursor']); const page = await reader.prepareTimeSeries(session, args, exec.signal); stage(page); return page.result }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_json_path', description: '仅在用户明确指定 RedisJSON Key 和以 $ 开头的 JSONPath 时调用；key 与 keyBase64 选一个，path 必填，不自行扩大为根路径或通配符。只执行一个 JSON.GET，结果 matchesJson 是 Redis 返回的 JSON 数组原文：[] 表示没有匹配，[null] 表示匹配到 null。大整数保持原文。查询可能遍历或返回整个子树，Redis 无服务端分页；超限不返回部分 JSON。单次采样不是快照，模块不可用、权限及类型不符应分别说明。',
+    name: 'redis_viewer_json_path', description: '仅在用户明确指定 RedisJSON Key 和以 $ 开头的 JSONPath 时调用；key 与 keyBase64 选一个，path 必填，不自行扩大为根路径或通配符。使用一个 JSON.GET 读取并通过 TYPE 检查类型，结果 matchesJson 是 Redis 返回的 JSON 数组原文：[] 表示没有匹配，[null] 表示匹配到 null。大整数保持原文。查询可能遍历或返回整个子树，Redis 无服务端分页；超限不返回部分 JSON。单次采样不是快照，模块不可用、权限及类型不符应分别说明。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, path: { type: 'string', required: true } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'path']); return reader.jsonPath(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_geo', description: '仅在用户明确询问地理位置或距离时，指定当前 DB 的 key/keyBase64 与 member/memberBase64。查询两成员距离时另指定 other/otherBase64，unit 可为 m、km、ft、mi，默认 m；不提供第二成员则只读第一成员坐标。只使用 GEOPOS 或 GEODIST，不搜索、修改或选择 Key。结果 geoIndexVerified 为 false：ZSet 类型不能证明数据由 GEO 写入，需用户确认其用途；坐标有编码误差，距离按球形地球近似，单次结果不是快照。',
+    name: 'redis_viewer_geo', description: '仅在用户明确询问地理位置或距离时，指定当前 DB 的 key/keyBase64 与 member/memberBase64。查询两成员距离时另指定 other/otherBase64，unit 可为 m、km、ft、mi，默认 m；不提供第二成员则只读第一成员坐标。使用 GEOPOS 或 GEODIST 读取并通过 TYPE 检查类型；不搜索、修改或选择 Key。结果 geoIndexVerified 为 false：ZSet 类型不能证明数据由 GEO 写入，需用户确认其用途；坐标有编码误差，距离按球形地球近似，单次结果不是快照。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, member: { type: 'string' }, memberBase64: { type: 'string' }, other: { type: 'string' }, otherBase64: { type: 'string' }, unit: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'member', 'memberBase64', 'other', 'otherBase64', 'unit']); return reader.geo(session, args, exec.signal) }) },
   }))
@@ -95,7 +95,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'clients', () => { strict(args, []); return reader.clients(session, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_stream_groups', description: '用户询问 Stream 消费组或消息积压时，按明确 key 或 keyBase64 只读 XINFO GROUPS。返回每组 pending（已投递未确认）和 lag（未投递，可能未知），以及消费人数和最后投递 ID；不读取消息，不确认或推进消费。最多输出 20 个组，complete 为 false 表示只返回部分；Redis 不能服务端分页，超大响应会明确失败。采样不是一致性快照，不能单凭一次计数推断积压原因或趋势。' + reportable,
+    name: 'redis_viewer_stream_groups', description: '用户询问 Stream 消费组或消息积压时，按明确 key 或 keyBase64 只读 XINFO GROUPS 并通过 TYPE 检查类型。返回每组 pending（已投递未确认）和 lag（未投递，可能未知），以及消费人数和最后投递 ID；不读取消息，不确认或推进消费。最多输出 20 个组，complete 为 false 表示只返回部分；Redis 不能服务端分页，超大响应会明确失败。采样不是一致性快照，不能单凭一次计数推断积压原因或趋势。' + reportable,
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'stream_groups', () => { strict(args, ['key', 'keyBase64']); return reader.streamGroups(session, args, exec.signal) }) },
   }))
