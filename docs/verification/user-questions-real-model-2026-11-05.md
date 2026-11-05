@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `7315b69` 的单 Key 内存报告回读**：日常 DSH、`bzkj-LLM` 与本机 Redis 中明确要求采样并保存本地报告，实际调用 `redis_viewer_memory` 和 `redis_viewer_save_diagnostic_report`，后者返回 `saved`。回读报告确认类别、采样 UTC 时间、请求采样数、未知实际采样数和固定的采样/内存范围说明与工具结果一致；Key 保存为 SHA-256 摘要。模型本次复述采样与保存状态一致；只验证一个正常报告，不代表取消、权限等异常或此前对采样与碎片的错误推断已消除。报告位于日常 profile 的固定报告目录，未将业务 Key、值或指标写入仓库。
+
 - **当前构建 `7315b69` 的六种基础类型复验**：日常 DSH、`bzkj-LLM` 和独立 Redis 8.2.6 中，在没有预选 Key 的情况下明确给出六个合成 Key；模型实际调用六次 `redis_viewer_value`，String、Hash、List、Set、ZSet、Stream 的内容、类型、完整状态与工具及夹具一致，Stream 的两个同名字段按顺序保留，回答也说明多次读取不是原子快照。模型将 String 的 22 字节标为 `fullByteLength`，但该 String 工具结果提供的是 `metadata.length` 与 `byteLength`，未提供这个字段名；Stream 表格内 `<br>` 在界面以文本显示。故正常内容复述通过，完整回答准确性和显示体验未完全通过；不代表分页、取消和异常覆盖。隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，测试连接断开、实例停止，原会话已重连本机 Redis。
 
 - **当前构建 `7315b69` 的唯一资料成功切换**：日常 DSH 中由原本机 Redis 连接切换到独立 Redis 8.2.6 的无密码临时资料。`bzkj-LLM` 先列出资料并调用 `redis_viewer_connect_profile`，工具返回 `connected`、`previousRelease: closed`、DB0，连接代次从 1 增至 2；随后 `redis_viewer_value` 显式读取合成 String，完整值、类型和状态与模型回答及夹具一致。界面显示独立实例的 22 个合成 Key；此回执说明插件报告旧连接已关闭，本次未在用户 Redis 服务器端单独计数验证旧套接字。测试资料已删除，测试连接断开并手动重连原 `127.0.0.1:6379`，界面显示原 DB0；隔离实例的 22 个 Key、DUMP 和绝对过期时间不变，实例已停止。仅覆盖单次明文无密码切换及一个 String 读取，不涵盖其他拓扑、认证或竞态。

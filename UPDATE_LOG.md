@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 单 Key 内存报告真实回读
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 及本机 Redis 的单 Key 内存报告保存；回读采样 UTC、请求参数、未知实际数量、固定说明及 Key 摘要，与工具证据一致。该正常路径不代表异常路径或此前模型错误推断已消除。
+- 报告保存在日常 profile 固定目录；未向仓库写入业务 Key、值或指标，用户 Redis 未修改。
+
 ## 2026-11-05 六种基础类型当前构建复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 和独立 Redis 8.2.6 的六类型合成数据读取：内容、类型及完整状态与工具一致，Stream 重复字段有序；模型将 String 长度标成工具没有返回的字段名，Stream 表格中的 `<br>` 显示为文本，故未把整体回答准确性或展示体验标为通过。
