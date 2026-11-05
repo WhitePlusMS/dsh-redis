@@ -39,12 +39,12 @@ export class RedisAiHashFilter {
       const data = scanKeysResultSchema.parse({ state: raw.state, error: raw.error, keys: raw.keys, cursor: null, sampledAt: raw.sampledAt })
       if (data.state === 'failed' && cursor !== null) throw new Error('筛选失败结果包含无效游标。')
       const expected = Buffer.from(expectedBase64, 'base64'), matches: RedisKey[] = []
-      const counts = { checked: 0, matched: 0, different: 0, missingField: 0, missingKey: 0, typeChanged: 0, failed: 0 }
+      const counts = { checked: 0, matched: 0, different: 0, missingField: 0, missingKey: 0, notHash: 0, typeChanged: 0, failed: 0 }
       const errors = new Set<string>()
       const readStartedAt = new Date().toISOString()
       if (data.state === 'page') for (const key of data.keys) {
         signal.throwIfAborted()
-        const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, key.base64, { kind: 'hash', fieldBase64 }, signal)
+        const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, key.base64, { kind: 'hash', fieldBase64 }, signal, undefined, 'unsupported')
         signal.throwIfAborted()
         this.connections.assertReadResult(sessionId, target, sample.error)
         counts.checked++
@@ -54,7 +54,8 @@ export class RedisAiHashFilter {
           else counts.different++
         } else if (sample.state === 'selection-missing') counts.missingField++
         else if (sample.state === 'missing') counts.missingKey++
-        else if (sample.state === 'changed' || sample.state === 'unsupported') counts.typeChanged++
+        else if (sample.state === 'unsupported') counts.notHash++
+        else if (sample.state === 'changed') counts.typeChanged++
         else { counts.failed++; if (sample.error !== null) errors.add(sample.error) }
       }
       signal.throwIfAborted()

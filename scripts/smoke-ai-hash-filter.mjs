@@ -48,7 +48,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert(++nameCalls < 20)
     } while (namesCursor !== undefined)
     assert.equal(names.size, 28); assert(await scanCount() > scansBefore)
-    const found = new Set(); let cursor, calls = 0, checked = 0, missingField = 0, typeChanged = 0
+    const found = new Set(); let cursor, calls = 0, checked = 0, missingField = 0, notHash = 0, typeChanged = 0
     do {
       const result = await ctx.tools.execute({ callId: 'fixture-' + calls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:order:*', field: 'status', equals: 'synthetic-failed', ...(cursor === undefined ? {} : { cursor }) }, agent, signal })
       assert.equal(result.isError, false)
@@ -56,13 +56,13 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert(!text.includes('synthetic-private-value')); assert(!text.includes('synthetic-ready'))
       const page = JSON.parse(text)
       assert.equal(page.state, 'page'); assert(page.counts.checked <= 10)
-      checked += page.counts.checked; missingField += page.counts.missingField; typeChanged += page.counts.typeChanged
+      checked += page.counts.checked; missingField += page.counts.missingField; notHash += page.counts.notHash; typeChanged += page.counts.typeChanged
       for (const key of page.matches) found.add(Buffer.from(key.base64, 'base64').toString('utf8'))
       cursor = page.cursor ?? undefined
       assert(++calls < 20)
     } while (cursor !== undefined)
     assert.deepEqual([...found].sort(), [...expected].sort())
-    assert(checked >= 28); assert(missingField >= 1); assert(typeChanged >= 1)
+    assert(checked >= 28); assert(missingField >= 1); assert(notHash >= 1); assert.equal(typeChanged, 0)
     assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:order:0']), before)
     assert.deepEqual(await stats(), beforeStats)
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }

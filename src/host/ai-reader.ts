@@ -716,10 +716,10 @@ export class RedisAiReader {
     if (args.cursor !== undefined || args.offset !== undefined || args.count !== undefined || args.bytes !== undefined || args.match !== undefined || args.start !== undefined || args.end !== undefined || args.direction !== undefined) throw new Error('精确字段读取不能同时使用分页或范围参数。')
     const target = this.target(sessionId)
     const request = hashFieldReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), fieldBase64: args.field === undefined ? args.fieldBase64 : encodeIdentity(args.field) })
-    const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, request.keyBase64, { kind: 'hash', fieldBase64: request.fieldBase64 }, signal)
+    const sample = await new RedisSelectedReader(this.connections).read(sessionId, target, request.keyBase64, { kind: 'hash', fieldBase64: request.fieldBase64 }, signal, undefined, 'unsupported')
     signal.throwIfAborted()
     this.connections.assertReadResult(sessionId, target, sample.error)
-    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), field: byteIdentity(Buffer.from(request.fieldBase64, 'base64')), errorMessage: sample.state === 'selection-missing' ? '采样时指定的 Hash 字段不存在。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), field: byteIdentity(Buffer.from(request.fieldBase64, 'base64')), errorMessage: sample.state === 'selection-missing' ? '采样时指定的 Hash 字段不存在。' : sample.state === 'unsupported' ? '指定 Key 不是 Hash。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
   }
   /** Discover Set versus ZSet, then reuse the exact member reader without UI state. */
   private async readExplicitMember(sessionId: string, args: AiValueRequest, signal: AbortSignal): Promise<AiJson> {

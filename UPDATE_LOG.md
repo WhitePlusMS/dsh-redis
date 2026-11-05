@@ -1,6 +1,14 @@
 # 更新说明
 
 
+## 2026-11-05 区分筛选中的非 Hash 与类型变化
+
+- `src/host/selected-reader.ts`、`src/host/ai-hash-filter.ts`：对指定字段的筛选，将首次检查就不是 Hash 的候选记入 `notHash`，只有读取期间观察到类型变化才计入 `typeChanged`；侧栏选择仍按已有选区类型检查。原因是稳定的 String 等候选此前被误报为发生类型变化。
+- `src/host/ai-reader.ts`、`src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`：明确字段查询遇到首次类型不符时返回不支持及说明，工具与使用文档解释两个计数的证据范围。
+- `tests/ai-tools.test.ts`、`scripts/smoke-ai-hash-filter.mjs`：覆盖稳定非 Hash 和读取期间类型变化，并在独立 Redis 夹具核对真实非 Hash 计数。类型检查和构建通过；首次专项 94 项通过、1 项旧断言仍期待类型变化，修正后 3 个专项文件、95 项全部通过。独立 Redis 8.2.6 真实筛选确认稳定非 Hash 单独计数、类型变化计数为零，夹具停止且未观察到测试写命令增加；新包及真实 DSH 模型复验待执行，不改变用户 Redis 数据或写入能力。
+
+
+
 ## 2026-11-05 扫描案例真实对话
 
 - 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录美团扫描案例启发下的日常 DSH、用户模型和本机 Redis 单批名称搜索。模型按明确模式仅扫描一批，正确区分空页、未完成和非快照；COUNT 的槽位数量表述比工具工作量提示更具体，不能当作实际工作量保证。

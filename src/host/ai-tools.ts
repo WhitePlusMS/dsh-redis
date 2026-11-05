@@ -45,7 +45,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['key', 'keyBase64', 'field', 'fieldBase64', 'member', 'memberBase64', 'cursor', 'offset', 'count', 'bytes', 'match', 'start', 'end', 'direction']); return reader.read(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_filter_hash', description: '仅在用户明确指定当前 DB 的 Key MATCH 范围、Hash 字段和目标值时调用。MATCH 过滤候选名称，不保证 Redis 避免遍历整个当前 DB 的键空间；COUNT 是工作量提示而非硬上限。每次最多检查 10 个候选，只返回字段值与目标值按 UTF-8 字节完全相等的 Key，不返回其他值；结果包含本批各状态数量、错误及不透明 cursor。继续时保持 match、field 和 equals 不变。scanComplete 只表示扫描结束；跨批可能重复，SCAN 和逐项读取不是一致性快照。不得据部分结果声称全库统计，不跨 DB 或连接。',
+    name: 'redis_viewer_filter_hash', description: '仅在用户明确指定当前 DB 的 Key MATCH 范围、Hash 字段和目标值时调用。MATCH 过滤候选名称，不保证 Redis 避免遍历整个当前 DB 的键空间；COUNT 是工作量提示而非硬上限。每次最多检查 10 个候选，只返回字段值与目标值按 UTF-8 字节完全相等的 Key，不返回其他值；结果包含本批各状态数量、错误及不透明 cursor；notHash 表示首次检查时不是 Hash，typeChanged 表示读取期间观察到类型变化。继续时保持 match、field 和 equals 不变。scanComplete 只表示扫描结束；跨批可能重复，SCAN 和逐项读取不是一致性快照。不得据部分结果声称全库统计，不跨 DB 或连接。',
     parameters: { match: { type: 'string', required: true }, field: { type: 'string', required: true }, equals: { type: 'string', required: true }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))

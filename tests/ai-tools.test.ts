@@ -508,6 +508,14 @@ describe('official Redis model tools', () => {
     expect(f.commands.every(command => !['SET', 'HSET', 'DEL', 'KEYS'].includes(command))).toBe(true)
     for (const args of [{ field: 'status', equals: 'failed' }, { match: '\ud800', field: 'status', equals: 'failed' }, { match: '*', field: '\ud800', equals: 'failed' }, { match: '*', field: 'a'.repeat(1025), equals: 'failed' }, { match: '*', field: 'status', equals: 'x'.repeat(4097) }]) expect((await f.call('redis_viewer_filter_hash', args)).isError).toBe(true)
   })
+  it('distinguishes an initially non-Hash candidate from a type change during filtering', async () => {
+    const f = await fixture(undefined, async () => [Buffer.from('0'), [Buffer.from('plain'), Buffer.from('changing-type')]])
+    const page = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: '*', field: 'status', equals: 'failed' })))
+    expect(page).toMatchObject({ counts: { checked: 2, notHash: 1, typeChanged: 1, failed: 0 }, scanComplete: true })
+    expect(f.commands.filter(command => command === 'HGET')).toHaveLength(1)
+    const explicit = JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', field: 'status' })))
+    expect(explicit).toMatchObject({ value: { state: 'unsupported' }, errorMessage: '指定 Key 不是 Hash。' })
+  })
   it('continues a filter after an empty SCAN page without claiming it finished', async () => {
     const f = await fixture(undefined, async (_command, args) => args[0] === '0' ? [Buffer.from('7'), []] : [Buffer.from('0'), [Buffer.from('order:0')]])
     const first = JSON.parse(content(await f.call('redis_viewer_filter_hash', { match: 'order:*', field: 'status', equals: 'failed' }))) as { cursor: string }
@@ -553,7 +561,7 @@ describe('official Redis model tools', () => {
     expect(JSON.parse(content(binary))).toMatchObject({ field: { base64: 'AP8=' }, value: { state: 'value' } })
     expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'hash', field: 'absent' })))).toMatchObject({ errorMessage: '采样时指定的 Hash 字段不存在。', value: { state: 'selection-missing', cell: null } })
     expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'missing', field: 'status' })))).toMatchObject({ value: { state: 'missing' } })
-    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', field: 'status' })))).toMatchObject({ value: { state: 'changed' } })
+    expect(JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', field: 'status' })))).toMatchObject({ value: { state: 'unsupported' }, errorMessage: '指定 Key 不是 Hash。' })
     for (const args of [{ field: 'status' }, { key: 'hash', field: 'status', fieldBase64: 'eA==' }, { key: 'hash', field: 'status', match: '*' }, { key: 'hash', fieldBase64: '!!!' }, { key: 'hash', field: '\ud800' }]) expect((await f.call('redis_viewer_value', args)).isError).toBe(true)
   })
   it('rejects a named field read when its connection changes before dispatch', async () => {

@@ -20,7 +20,7 @@ export interface StreamSelectedResult { readonly selected: SelectedResult; reado
 /** Fixed read commands address exact raw identities; never rescan to find a row. */
 export class RedisSelectedReader {
   constructor(private readonly connections: RedisConnections) {}
-  async read(sessionId: string, target: DatabaseTarget, keyBase64: string, item: RedisSelectionItem, signal: AbortSignal, validate: () => void = () => undefined): Promise<SelectedResult> {
+  async read(sessionId: string, target: DatabaseTarget, keyBase64: string, item: RedisSelectionItem, signal: AbortSignal, validate: () => void = () => undefined, firstMismatch: 'changed' | 'unsupported' = 'changed'): Promise<SelectedResult> {
     const result = (state: SelectedResult['state'], metadata: KeyMetadata | null = null, cell: BytePrefix | null = null, score: string | null = null, error: ConnectionErrorCode | null = null, sampledAt = new Date().toISOString()): SelectedResult => ({ state, error, metadata, cell, score, sampledAt })
     if (item.kind === 'list') {
       const page = await new RedisLists(this.connections).read(sessionId, { target, keyBase64, offset: item.index, count: 1 }, signal, validate)
@@ -33,7 +33,8 @@ export class RedisSelectedReader {
     try {
       const key = Buffer.from(keyBase64, 'base64'), firstType = await context.type(key)
       if (firstType === 'none') return result('missing')
-      if (firstType !== item.kind) return result('changed')
+      // A previously selected row implies a change; an explicit query only establishes a mismatch.
+      if (firstType !== item.kind) return result(firstMismatch)
       const raw = item.kind === 'hash'
         ? await context.command('HGET', [key, Buffer.from(item.fieldBase64, 'base64')])
         : await context.command(item.kind === 'set' ? 'SISMEMBER' : 'ZSCORE', [key, Buffer.from(item.memberBase64, 'base64')])
