@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 Stream 消费组真实验收准备
+
+- `scripts/hold-ai-acceptance.mjs` 增加可选 `--stream-group` 夹具，在独立 Redis 中设置 1 条待确认和 1 条待投递消息，并在测试前后核对组状态、待确认列表、消费类命令计数及 Key 和过期时间；构造时的消息投递仅发生在隔离实例。
+- `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH 和用户模型的消费组实际验收：pending、lag 数量解释正确，但模型无依据误报 Stream 总数和待确认消息 ID，整个诊断未通过。参照 [Redis XINFO GROUPS 文档](https://redis.io/docs/latest/commands/xinfo-groups/) 区分 pending、lag 和可能未知的状态。
+- 独立夹具验收前后 22 个 Key 和过期时间、消费组状态及消费类命令计数一致，测试连接已断开并停止夹具；用户 Redis 不建立或推进消费组。
+
 ## 2026-11-05 隔离权限验收准备
 
 - `scripts/hold-ai-acceptance.mjs` 增加可选 `--restricted` 模式，仅在独立临时 Redis 中创建测试用受限用户，拒绝 `HGET` 和 `SCAN`，用于日常 DSH 和真实模型的权限不足验收；不更改用户 Redis 或保存真实凭据。

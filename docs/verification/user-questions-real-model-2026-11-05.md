@@ -13,6 +13,7 @@
 
 ## 待修正及未覆盖
 
+- 当前构建 `729e707` 在日常 DSH、用户模型和独立 Redis 8.2.6 中验证 Stream 消费组：夹具内有两条消息，先在隔离实例创建组并投递其中一条；模型仅调用 `redis_viewer_stream_groups`，工具返回 `pending: 1`、`lag: 1`、`lagStatus: available`、`lastDeliveredId: 1-0`，没有读取消息内容。模型正确区分已投递未确认和未投递的数量，但又无依据称 Stream 总共只有 1 条并将该 ID 判定为未确认消息；该工具未返回 Stream 总数或待确认消息 ID，实际 Stream 有 2 条，故诊断回答未通过。验收前后 22 个合成 Key 的 DUMP、绝对过期时间、消费组和待确认列表一致，消费类命令计数未增长；测试连接已断开，独立实例已停止。用户 Redis 未建立或推进消费组。
 - 当前构建 `729e707`、日常 DSH 和用户模型使用独立 Redis 8.2.6 受限账号复验权限：`ACL DRYRUN` 确认允许 `GETRANGE`、拒绝 `HGET` 和 `SCAN`；模型实际调用值及名称工具，字段读取返回 `failed/permission` 且没有值，搜索返回 `failed/permission`、`scanComplete: false`，模型均报告无权限而未当作不存在；同一账号读取允许的 String 成功，工具值与回答一致。界面 Key 列表也显示权限不足。
 - 随后先断开隔离连接，再通过界面输入错误的临时测试密码：界面提示认证失败，模型只调用状态工具，得到 `state: error`、`error: auth` 并说明当前不能读取；本次不覆盖旧连接仍活动时的候选交换。可见对话与所核对工具结果未出现测试密码，但这不是对所有日志的穷尽审计。全部 22 个合成 Key 的 DUMP、绝对过期时间和数量未变，独立实例已停止；原本机 Redis 会话显示已连接。
 - 当前构建 `729e707`、日常 DSH 与用户模型在独立 Redis 8.2.6 上复验 Hash、List、Set、ZSet、Stream 的明确 Key 正常读取：五次 `redis_viewer_value` 均为显式目标，模型报告的类型、合成内容、完整状态及 Stream 同名字段顺序与工具一致；ZSet 为排名读取，`complete: true` 而 `scanComplete: false`。模型生成的表格中部分 `<br>` 标签在 DSH 对话中作为文本显示，需单独评估展示体验。此项仅证明小型合成数据正常读取。

@@ -13,6 +13,13 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.set('fixture:string', 'synthetic-string-value')
   await admin.rPush('fixture:list', ['synthetic-first', 'synthetic-second'])
   await admin.sendCommand(['XADD', 'fixture:stream', '1-0', 'field', 'synthetic-first', 'field', 'synthetic-second'])
+  // Build delivery state only inside the owned fixture; no consumer runs during verification.
+  const withGroup = process.argv.includes('--stream-group')
+  if (withGroup) {
+    await admin.sendCommand(['XADD', 'fixture:stream', '2-0', 'field', 'synthetic-undelivered'])
+    await admin.sendCommand(['XGROUP', 'CREATE', 'fixture:stream', 'fixture-group', '0-0'])
+    await admin.sendCommand(['XREADGROUP', 'GROUP', 'fixture-group', 'fixture-consumer', 'COUNT', '1', 'STREAMS', 'fixture:stream', '>'])
+  }
   // Optional credentials exist only on this owned fixture and are not reused elsewhere.
   if (process.argv.includes('--restricted')) {
     await admin.sendCommand(['ACL', 'SETUSER', 'fixture-reader', 'reset', 'on', '>fixture-only', '~fixture:*', '+@read', '+ping', '-hget', '-scan'])
@@ -22,7 +29,23 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const keys = [...Array.from({ length: 16 }, (_, index) => 'fixture:order:' + index), 'fixture:user:123', 'fixture:members', 'fixture:scores', 'fixture:string', 'fixture:list', 'fixture:stream']
   const before = await Promise.all(keys.map(key => buffers.sendCommand(['DUMP', key])))
   const expiry = await Promise.all(keys.map(key => admin.sendCommand(['PEXPIRETIME', key])))
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted') }))
+  const groupBefore = withGroup ? await buffers.sendCommand(['XINFO', 'GROUPS', 'fixture:stream']) : null
+  const pendingBefore = withGroup ? await buffers.sendCommand(['XPENDING', 'fixture:stream', 'fixture-group']) : null
+  const watchedCommands = ['xreadgroup', 'xack', 'xclaim', 'xautoclaim', 'xgroup|setid', 'xdel', 'xtrim']
+  const commandCounts = async () => {
+    const rows = (await admin.info('commandstats')).split('\n')
+    return Object.fromEntries(watchedCommands.map(name => {
+      const row = rows.find(line => line.startsWith('cmdstat_' + name + ':calls='))
+      return [name, Number(row?.match(/:calls=(\d+)/u)?.[1] ?? 0)]
+    }))
+  }
+  const beforeCommands = withGroup ? await commandCounts() : null
+  if (withGroup) {
+    assert(Array.isArray(pendingBefore)); assert.equal(Number(pendingBefore[0]), 1)
+    assert(Array.isArray(groupBefore) && groupBefore[0] && typeof groupBefore[0] === 'object')
+    assert.equal(Number(groupBefore[0].pending), 1); assert.equal(Number(groupBefore[0].lag), 1)
+  }
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)
@@ -33,7 +56,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   assert.deepEqual(await Promise.all(keys.map(key => buffers.sendCommand(['DUMP', key]))), before)
   assert.deepEqual(await Promise.all(keys.map(key => admin.sendCommand(['PEXPIRETIME', key]))), expiry)
   assert.equal(await admin.dbSize(), keys.length)
-  console.log(JSON.stringify({ fixtureDataUnchanged: true }))
+  if (withGroup) {
+    assert.deepEqual(await buffers.sendCommand(['XINFO', 'GROUPS', 'fixture:stream']), groupBefore)
+    assert.deepEqual(await buffers.sendCommand(['XPENDING', 'fixture:stream', 'fixture-group']), pendingBefore)
+    assert.deepEqual(await commandCounts(), beforeCommands)
+  }
+  console.log(JSON.stringify({ fixtureDataUnchanged: true, ...(withGroup ? { groupStateUnchanged: true, noConsumptionCommands: true } : {}) }))
 }, { passwordRequired: false })
 assert(fixture.stopped)
 console.log(JSON.stringify({ fixtureStopped: true }))
