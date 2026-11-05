@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `1375e2f` 的 JSON、TimeSeries 与 GEO 合成样本复验**：日常 DSH、`bzkj-LLM` 和独立 Redis 8.2.6 中，未预选 Key，模型对三个明确 JSONPath 调用三次 `redis_viewer_json_path`，回答保留大整数 `[9007199254740993]`，区分 `[null]` 与 `[]`；TimeSeries 用两次 `redis_viewer_timeseries` 读取 0–3000 毫秒，三条样本的 UTC 时间为纪元后 1、2、3 秒，值依次为 1.25、-3.5、9，说明非快照和压缩桶限制；GEO 调用两次 `redis_viewer_geo`，回答的合成距离 `166.2742 km` 与夹具一致，但命令依据表只列 GEOPOS、GEODIST，仍遗漏实际的 TYPE 检查，故 GEO 完整依据未通过。仅验证这些正常样本；三个隔离 Key 的 DUMP、绝对过期时间和数量未变，实例已停止，日常 DSH 已重连用户 Redis DB0。
+
 - **当前构建 `1375e2f` 的本机会话切库**：日常 DSH、`bzkj-LLM` 和用户 Redis 中明确要求 DB0 → DB1 → DB0；模型依次调用两次 `redis_viewer_select_db` 和两次 `redis_viewer_status`，原始回执及模型报告的 DB、连接状态和代次一致，最终侧栏显示 DB0 已连接。模型称全程未读写任何 Key，但切回后侧栏自动加载了 Key 名称，该表述不准确；本次未要求读取 Key 值或修改数据。仅验证一个会话的正常切换，不能证明多会话隔离、拒绝或并发切换。
 
 - **当前构建 `1375e2f` 的本机定位与单次刷新**：日常 DSH、`bzkj-LLM` 和用户 Redis DB0 中要求打开一个明确 Hash 并刷新一次；模型依次调用 `redis_viewer_locate_key` 和 `redis_viewer_refresh`，两项原始回执均为 `applied`，侧栏实际选中该 Key 并显示其字段，自动刷新保持关闭。仅覆盖一次正常路径，不能替代隐藏页面、多接收端、用户选择变化、取消和回执丢失等验收；业务 Key 与内容不写入仓库，未修改用户数据。

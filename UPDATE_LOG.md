@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 当前包专业数据模型复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 与独立 Redis 对当前构建的 JSON 三路径、时序两页和 GEO 距离合成样本：值与夹具一致；GEO 模型命令依据仍遗漏 TYPE，完整依据未通过。异常路径及独立会话未以此验收通过。
+- 三个隔离 Key 的内容、绝对过期时间和数量未变，实例停止；日常 DSH 已重连用户 Redis DB0。
+
+
 ## 2026-11-05 用户 Redis 会话切库复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH 和 `bzkj-LLM` 对用户 Redis 的 DB0→DB1→DB0：两次切换和状态回执一致，最终界面已返回 DB0。模型称未读取任何 Key，但侧栏自动加载了 Key 名称，范围表述不准确；仅覆盖单会话正常路径。
