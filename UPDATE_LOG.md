@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 单 Key 内存真实模型复验
+
+- `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md` 更新日常 profile 安装基线与模型复验结果：工具证据和报告固定说明已正确返回，但模型随后对采样数量及碎片作自相矛盾的断言，节点不能标为通过。仅作记录，不修改 Redis 或插件行为。
+- 构建 `7315b69` 的 `pnpm check` 通过 80 个文件、641 项测试；安装包 SHA-256 和 110 个构建文件与日常 profile 核对一致。日常 DSH 已连接用户本机 Redis，本次业务读取为只读。DSH 工具接口文档未承诺控制模型最终自然语言，故不以提示补丁替代真实验收。
+
 ## 2026-11-05 GEO 精确读取
 
 - `src/host/ai-reader.ts`、`src/host/ai-tools.ts` 与 `src/host/redis-transport.ts` 增加明确 Key 和成员的 GEO 坐标及两成员距离只读查询，命令边界限制固定参数、复用当前会话预算和目标校验；区分缺失、类型变化与权限错误，不扫描或修改数据。Redis 的 ZSet 类型不证明其为 GEO 索引，结果保留该限制。`tests/ai-tools.test.ts`、`tests/redis-transport.test.ts` 覆盖参数约束、二进制身份、异常和连接变更；`docs/AI_READ_USAGE.md` 与任务清单说明使用方法及未完成验收。`scripts/hold-ai-acceptance.mjs` 新增可选的隔离 GEO 数据，验收前后核对 Key 与过期时间。
