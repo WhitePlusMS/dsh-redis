@@ -244,6 +244,15 @@ describe('bounded Redis socket transport', () => {
       expect(commands).toEqual(['PING', 'XINFO'])
     }, (socket, args) => { expect(args).toEqual([Buffer.from('XINFO'), Buffer.from('GROUPS'), Buffer.from([0, 255])]); socket.write('*0\r\n') })
   })
+  it('allows one explicit JSONPath and no write or formatting commands', async () => {
+    await withPeer(async (transport, commands) => {
+      for (const args of [[], ['key', '$'], [Buffer.from('key')], [Buffer.from('key'), 'x'], [Buffer.from('key'), '$', '$.other'], [Buffer.from('key'), '$' + 'x'.repeat(1024)], [Buffer.from('key'), '$\ud800']]) await expect(transport.execute('JSON.GET', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      await expect(transport.execute('JSON.SET' as RedisReadCommand, [Buffer.from('key'), '$', '1'], signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })
+      expect(commands).toEqual(['PING'])
+      expect(await transport.execute('JSON.GET', [Buffer.from([0, 255]), '$.x'], signal(), () => undefined)).toEqual(Buffer.from('[1]'))
+      expect(commands).toEqual(['PING', 'JSON.GET'])
+    }, (socket, args) => { expect(args).toEqual([Buffer.from('JSON.GET'), Buffer.from([0, 255]), Buffer.from('$.x')]); socket.write('$3\r\n[1]\r\n') })
+  })
   it('accepts only fixed GEO point and distance argument shapes', async () => {
     await withPeer(async (transport, commands) => {
       for (const args of [[], ['key', Buffer.from('member')], [Buffer.from('key'), Buffer.from('a'), Buffer.from('b')]]) await expect(transport.execute('GEOPOS', args, signal(), () => undefined)).rejects.toMatchObject({ code: 'protocol' })

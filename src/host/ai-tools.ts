@@ -50,6 +50,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_json_path', description: '仅在用户明确指定 RedisJSON Key 和以 $ 开头的 JSONPath 时调用；key 与 keyBase64 选一个，path 必填，不自行扩大为根路径或通配符。只执行一个 JSON.GET，结果 matchesJson 是 Redis 返回的 JSON 数组原文：[] 表示没有匹配，[null] 表示匹配到 null。大整数保持原文。查询可能遍历或返回整个子树，Redis 无服务端分页；超限不返回部分 JSON。单次采样不是快照，模块不可用、权限及类型不符应分别说明。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, path: { type: 'string', required: true } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'path']); return reader.jsonPath(session, args, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_geo', description: '仅在用户明确询问地理位置或距离时，指定当前 DB 的 key/keyBase64 与 member/memberBase64。查询两成员距离时另指定 other/otherBase64，unit 可为 m、km、ft、mi，默认 m；不提供第二成员则只读第一成员坐标。只使用 GEOPOS 或 GEODIST，不搜索、修改或选择 Key。结果 geoIndexVerified 为 false：ZSet 类型不能证明数据由 GEO 写入，需用户确认其用途；坐标有编码误差，距离按球形地球近似，单次结果不是快照。',
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, member: { type: 'string' }, memberBase64: { type: 'string' }, other: { type: 'string' }, otherBase64: { type: 'string' }, unit: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'member', 'memberBase64', 'other', 'otherBase64', 'unit']); return reader.geo(session, args, exec.signal) }) },

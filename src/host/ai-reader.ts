@@ -324,6 +324,66 @@ export class RedisAiReader {
     }
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), state: value.state, error: value.error, errorMessage: explainValue(value.error, value), offset: args.offset, count: args.count, bits, metadata: value.metadata, sampledAt: value.sampledAt })
   }
+  /** One explicit JSONPath; preserve the Redis JSON text instead of rounding numbers. */
+  async jsonPath(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly path: string }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    if (typeof args.path !== 'string' || !args.path.startsWith('$') || Buffer.byteLength(args.path) > 1024 || Buffer.from(args.path, 'utf8').toString('utf8') !== args.path) throw new Error('请提供不超过 1024 字节、以 $ 开头的有效文本 JSONPath。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const keyBytes = Buffer.from(request.keyBase64, 'base64'), context = new RedisReadContext(this.connections, sessionId, target, signal)
+    const result = (state: string, type: string | null, matchesJson: string | null, matchCount: number | null, error: ConnectionErrorCode | null, sampledAt = new Date().toISOString()) => ({
+      readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(keyBytes), path: args.path, state, type, matchesJson, matchCount, snapshot: false, sampledAt, error,
+      errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 RedisJSON 类型。' : state === 'unavailable' ? '服务器不支持或已禁用 JSON.GET。' : state === 'query-failed' ? 'Redis 拒绝了 JSON 路径查询，请检查路径和模块。' : null,
+    })
+    let firstType: string | null = null, readingJson = false
+    let data: ReturnType<typeof result>
+    try {
+      firstType = await context.type(keyBytes)
+      // Also probe missing and non-JSON keys, so an absent module is not called a missing key.
+      readingJson = true
+      const reply = await context.command('JSON.GET', [keyBytes, args.path])
+      readingJson = false
+      const sampledAt = new Date().toISOString()
+      const lastType = await context.type(keyBytes)
+      signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+      if (firstType !== lastType) data = result(lastType === 'none' ? 'missing' : 'changed', lastType, null, null, null, sampledAt)
+      else if (lastType === 'none' && reply === null) data = result('missing', lastType, null, null, null, sampledAt)
+      else {
+        if (lastType !== 'ReJSON-RL' || !Buffer.isBuffer(reply)) throw new RedisFrameError('protocol')
+        const text = reply.toString('utf8')
+        if (!Buffer.from(text, 'utf8').equals(reply)) throw new RedisFrameError('protocol')
+        let parsed: unknown
+        try { parsed = JSON.parse(text) as unknown } catch { throw new RedisFrameError('protocol') }
+        if (!Array.isArray(parsed)) throw new RedisFrameError('protocol')
+        data = result('value', lastType, text, parsed.length, null, sampledAt)
+      }
+    } catch (error) {
+      signal.throwIfAborted()
+      if (readingJson && error instanceof RedisReplyError && /^ERR unknown command(?: |$)/iu.test(error.message)) {
+        this.connections.assertTarget(sessionId, target); data = result('unavailable', firstType, null, null, null)
+      } else if (readingJson && error instanceof RedisReplyError && (/^WRONGTYPE(?: |$)/u.test(error.message) || error.message === 'Existing key has wrong Redis type')) {
+        try {
+          const lastType = await context.type(keyBytes)
+          signal.throwIfAborted(); this.connections.assertTarget(sessionId, target)
+          data = result(lastType === 'none' ? 'missing' : firstType === lastType && lastType !== 'ReJSON-RL' ? 'unsupported' : 'changed', lastType, null, null, null)
+        } catch (checkError) {
+          signal.throwIfAborted()
+          const code = context.error(checkError)
+          this.connections.assertReadResult(sessionId, target, code)
+          data = result('failed', null, null, null, code)
+        }
+      } else if (readingJson && error instanceof RedisReplyError && !/^(?:NOPERM|DENIED)(?: |$)/u.test(error.message)) {
+        this.connections.assertTarget(sessionId, target); data = result('query-failed', firstType, null, null, null)
+      } else {
+        const code = context.error(error)
+        this.connections.assertReadResult(sessionId, target, code)
+        data = result(code === 'type-changed' ? 'changed' : 'failed', null, null, null, code)
+      }
+    } finally { context.dispose() }
+    // Apply the output limit outside the transport catch: never mislabel a large result as network failure.
+    return this.project(sessionId, data)
+  }
   /** GEO is explicit: a ZSet alone does not prove that its scores are geographic. */
   async geo(sessionId: string, args: AiGeoRequest, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()

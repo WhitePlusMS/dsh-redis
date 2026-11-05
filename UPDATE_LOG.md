@@ -3096,3 +3096,12 @@
 - 验证：类型检查通过；AI 工具、报告和预算共 3 个文件、80 项测试通过，覆盖正常时间、日期最大范围、超范围及原始秒数保留。真实模型与当前包的完整打包检查仍待执行。
 - 完整打包验证：`pnpm pack` 的类型检查、构建及全部回归通过，共 80 个测试文件、625 项；开发包已生成，真实 DSH 和模型复验仍待执行。
 - 更新 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md`：记录源码 `7b23e68` 开发包已安装日常 DSH、135 文件与包一致；真实模型复验同一条本机慢日志时 UTC 和北京时间换算正确，但额外作了无工具依据的日志“过期”描述。原因是保留时间修正和模型准确性的独立边界；未清理日志或修改 Redis 配置。
+
+### 2026-11-05 RedisJSON 单路径只读查询（进行中）
+
+- `src/host/redis-transport.ts`：仅放行单 Key、单 JSONPath 的 `JSON.GET`，拒绝格式选项、多个路径及写命令。
+- `src/host/ai-tools.ts`、`src/host/ai-reader.ts`：新增明确指定 Key 和路径的 AI 查询，保留 Redis 原始 JSON 数字文本，区分无匹配、JSON null、缺失、类型不符、模块不可用、权限和查询失败；读取继续受现有超时、连接代次和结果预算约束。
+- `tests/ai-tools.test.ts`、`tests/redis-transport.test.ts`：覆盖精度、空匹配、参数边界和错误分支，并将新工具纳入模型 schema 注册清单。复测 97 项通过；读取类型变化时的二次检查也保留真实错误。
+- `scripts/smoke-ai-json-path.mjs`：新增只在独立 RedisJSON 实例写入合成样本的集成检查，比较注册工具与真实命令的结果及 ACL，并核对数据和过期时间未被读取操作改变。首轮发现真实 RedisJSON 对非 JSON 类型返回 `Existing key has wrong Redis type`，已按实测修正分类及测试；独立实例复验通过，真实 DSH 模型验收仍待完成。
+- `docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`：说明 JSONPath 的数组语义、无服务端分页与大小限制，并记录当前验收状态。独立 Redis 8.2.6 RedisJSON 集成检查复验通过，数据和 TTL 不变；本机 Redis 8.10.0 未提供 JSON.GET，工具实测返回不可用且连接保持正常。日常 DSH 的 HZ-bzkj-LLM 普通消息重试五次仍返回上游 HTTP 500，因此真实模型验收待完成。
+- 完整检查：`pnpm check` 通过，80 个测试文件、634 项测试；`git diff --check` 无空白错误。本次仅完成代码和已列范围的验证，真实 DSH 模型及未覆盖场景仍待验收。
