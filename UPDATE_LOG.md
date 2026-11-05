@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 专业数据验收状态同步
+
+- `docs/DSH_AI_READONLY_TASKS.md` 根据提交 `6a83982` 后的两路独立审查，同步当前构建已复验的 JSON 和 TimeSeries 合成样本；保留其他回答和异常场景未全部通过的边界，避免任务清单与验收记录冲突。
+
+
 ## 2026-11-05 JSON 与时序当前构建复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 记录日常 DSH、`bzkj-LLM` 与独立 Redis 模块实例的局部真实模型验收：JSON 三个路径区分大整数、null 和无匹配；TimeSeries 两页三条样本的时间和值与合成数据一致，并保留非快照与压缩桶限制。仅记录本次覆盖，不扩大到全部异常场景。
