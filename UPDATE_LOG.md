@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 GEO 与 Stream 消费组局部复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与独立 Redis 的 GEO 坐标距离和 Stream pending、lag 合成样本：数值一致，模型的消费组命令描述遗漏 TYPE，完整回答仍未通过。
+- 夹具前后 DUMP、过期时间和组信息一致；脚本错误地将自然增长的待确认空闲毫秒作全等比较，导致断言失败且后续数量断言未执行。记录固定身份及投递次数的前后对照，隔离端口已停止；日常 DSH 已重连本机 Redis，未写入用户业务数据。
+
+
 ## 2026-11-05 专业数据验收状态同步
 
 - `docs/DSH_AI_READONLY_TASKS.md` 根据提交 `6a83982` 后的两路独立审查，同步当前构建已复验的 JSON 和 TimeSeries 合成样本；保留其他回答和异常场景未全部通过的边界，避免任务清单与验收记录冲突。
