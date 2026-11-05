@@ -3125,3 +3125,4 @@
 - `src/host/ai-reader.ts`、`src/host/ai-tools.ts`、`docs/AI_READ_USAGE.md`：时间序列样本补充由原始毫秒确定性换算的 UTC 时间，超出 JavaScript 日期范围时返回 null 并保留原始值；`tests/ai-tools.test.ts` 和 `scripts/smoke-ai-timeseries.mjs` 覆盖纪元、范围边界及压缩桶。原因是真实模型将 0–3000 毫秒的纪元含义解释错误，提供可核对的时间证据；模型回答是否改善仍需真实复验。
 - UTC 时间字段验证：类型检查、86 项相关测试及隔离 RedisTimeSeries 真模块对照通过；测试实例已停止，独立夹具数据与过期时间未变。真实 DSH 与模型尚未复验该字段。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `53bd92e` 的包哈希、日常安装对照、完整检查中浏览器测试超时及其单独复跑；真实 DSH、`bzkj-LLM`、独立 Redis 的两批时间序列复验中，模型正确复述三个 UTC 时间及非快照和压缩桶限制。原因是区分当前构建的局部修正与仍未通过的完整检查及其他验收；隔离数据未变且实例已停止，本机 Redis 会话已恢复。
+- 提交 `83cd642` 后双轴只读审查发现验收记录中旧版 `8f57a61` 仍称“当前构建”。修正 `docs/verification/user-questions-real-model-2026-11-05.md` 为当时构建、曾安装，并明确本机模块缺失结果所属版本，避免将旧验收扩大为新版证据。
