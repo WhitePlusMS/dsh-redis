@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 基础类型与截断真实模型复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建的六类型合成读取：原始值、类型及重复 Stream 字段顺序一致，模型仍误标 String 长度字段且表格显示原样 `<br>`。
+- 随后仅请求 String 前 5 字节，工具只返回指定片段并标记不完整，模型却引用同一会话的前一轮完整值，故该回答范围未通过；不推断工具额外读取或其他会话必然重现。隔离 22 个 Key 的内容和过期时间未变，实例停止，日常 DSH 已重连用户 Redis DB0。
+
+
 ## 2026-11-05 受限账号真实模型复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 和独立 Redis 对 HGET、SCAN 权限拒绝的复验：模型区分拒绝与数据不存在，但字段回答误引一个旧测试连接端口，完整回答不算完全准确；不扩大到全部 ACL。

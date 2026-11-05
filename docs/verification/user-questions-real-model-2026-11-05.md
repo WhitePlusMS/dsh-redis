@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `1375e2f` 的六种基础类型和部分 String 读取**：日常 DSH、`bzkj-LLM`、独立 Redis 8.2.6，未预选 Key，模型对六个明确合成 Key 调用六次 `redis_viewer_value`；String、Hash、List、Set、ZSet 和 Stream 的内容、类型、完整状态与工具及夹具一致，Stream 同名字段按原序保留。模型仍把 String 的长度标为工具未提供的 `fullByteLength`，Hash、List 和 Stream 表格中的 `<br>` 以文本显示，故完整回答和展示未通过。随后请求只读取同一 String 的前 5 字节：工具只返回 `synth`、`byteLength: 5`、`metadata.length: 22`、`complete: false`、`nextOffset: 5`；模型正确标记为部分读取，却从同一对话前一轮补述完整合成值，超出本次要求和本轮工具证据，截断场景回答未通过。不能据此推断插件额外读取或在独立新会话必然出现同样情况。夹具 22 个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重连用户 Redis DB0。
+
 - **当前构建 `1375e2f` 的受限账号复验**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6 的临时受限账号中，明确读取一个合成 Hash 字段时，`redis_viewer_value` 返回 `failed/permission`、无值；模型正确说明无法取得当前值，但主动引用旧对话采样并将曾成功读取该字段的连接归于端口 `13115 / 3295` 等，其中 `13115` 的夹具不含该 Hash，故历史证据描述不准确。接着按前缀查找时，`redis_viewer_keys` 返回 `failed/permission`、`scanComplete: false`；模型说明未取得候选不等于不存在，界面也显示权限不足。两个操作只覆盖该账号的 HGET 与 SCAN 被拒绝，不覆盖所有 ACL 配置或独立新对话。隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重新连接用户 Redis DB0。
 
 - **当前构建 `1375e2f` 的合成订单筛选**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6，未预选 Key，模型对指定模式及 Hash 字段执行两次 `redis_viewer_filter_hash`，续读令牌和查询条件保持一致。两批分别检查 10、6 个候选并匹配 3、1 个；模型列出的四个合成订单和每批计数与原始结果及夹具一致，最终 `scanComplete: true`，并解释 MATCH 过滤名称、全键空间遍历、跨批重复和非快照限制。本次只覆盖正常两页与明确条件，不能证明权限、类型变化、取消或并发修改场景通过。夹具 22 个 Key 的 DUMP、绝对过期时间及数量未变，实例已停止；日常 DSH 已重连用户 Redis DB0。
