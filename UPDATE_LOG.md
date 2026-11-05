@@ -2977,3 +2977,4 @@
 - 更新 `docs/DSH_AI_READONLY_TASKS.md`：将真实选区竞争明确标为未通过，避免将正常界面动作回执误认为完整的选区安全验收。
 - 原因与影响：准确保留真实 DSH、用户模型和用户 Redis 验证边界，供后续针对性修复；本次只更新文档，不修改 Redis 数据或运行逻辑。
 - 补充 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实客户端明细工具调用及模型未经工具证实地归属连接的问题，诊断回答仍未通过；不记录业务数据。
+- 补充 `docs/verification/user-questions-real-model-2026-11-05.md`：记录真实 Hash 的 Stream 消费组不支持边界，模型正确报告类型；未据此宣称真实 Stream 或完整诊断已验收。
