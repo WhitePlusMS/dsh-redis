@@ -154,6 +154,20 @@ describe('official Redis model tools', () => {
     expect(failed.retryAdvice).toContain('重新查询')
     expect((await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor })).isError).toBe(true)
   })
+  it('retains a TimeSeries cursor when a continuation is cancelled before delivery', async () => {
+    let calls = 0, observed!: () => void
+    const started = new Promise<void>(resolve => { observed = resolve })
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, _args, signal) => {
+      if (++calls === 1) return [[1n, '1'], [2n, '2']]
+      if (calls === 2) return new Promise<RedisReply>((_resolve, reject) => { observed(); signal.addEventListener('abort', () => reject(new ConnectionFailure('cancelled')), { once: true }) })
+      return [[2n, '2']]
+    })
+    const args = { key: 'series', from: '0', to: '2', count: 1 }
+    const first = JSON.parse(content(await f.call('redis_viewer_timeseries', args)))
+    const controller = new AbortController(), pending = f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor }, { signal: controller.signal })
+    await started; controller.abort(); await pending
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '2', value: '2' }], complete: true })
+  })
   it('distinguishes unavailable, denied and malformed TimeSeries reads', async () => {
     const make = (execute: RedisLink['execute']) => fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, execute)
     const absent = await make(async () => { throw new RedisReplyError("ERR unknown command 'TS.RANGE', with args beginning with: 'author'") })

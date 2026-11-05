@@ -3120,3 +3120,4 @@
 - `tests/ai-tools.test.ts` 补充更换 Key、范围、数量、会话、DB 和连接后续读拒绝；`scripts/smoke-ai-timeseries.mjs` 增加真实压缩规则和桶范围对照；`docs/AI_READ_USAGE.md` 同步游标与压缩语义。隔离 Redis 8.2.6 中确认默认查询省略未闭合桶且已闭合桶可包含结束时间之后的样本，数据与 TTL 不变；类型检查及相关 104 项测试通过。
 - 提交 `8fa8abd` 后规范审查指出失败状态也会 `complete: false` 但没有游标。`src/host/ai-tools.ts` 与 `docs/AI_READ_USAGE.md` 改为仅成功且游标非空时续读；`tests/ai-tools.test.ts` 核对缺失及类型不符均无游标。原因是避免模型把失败当成可续读结果反复请求。
 - 同次需求审查指出第二页失败后旧游标失效但没有恢复说明。沿用既有分页组件的终止行为，在 `src/host/ai-reader.ts` 明确返回从原范围重新查询的提示，工具与文档同步说明；新增失败页和旧游标失效测试，避免虚假的续读承诺。
+- 提交 `3c91d39` 后双轴复审指出取消或异常未交付结果时游标可能保留，原文字过于绝对。`src/host/ai-tools.ts` 和 `docs/AI_READ_USAGE.md` 将失效范围限定为收到非成功状态，取消或无回执标明状态不确定；`tests/ai-tools.test.ts` 验证请求中取消后可用原游标重试。原因是准确反映提交边界，不改变分页组件行为。
