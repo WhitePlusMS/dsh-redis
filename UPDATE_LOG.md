@@ -3016,3 +3016,4 @@
 - 修改 `src/host/selected-reader.ts` 和 `src/host/list-reader.ts`：将 Hash/Set/ZSet 精确成员读取与 List 页的采样时间绑定到对应 Redis 读取响应，并将 List 页时间传递给选中行；类型变化或读取失败仍按实际最终状态报告。更新 `docs/AI_READ_USAGE.md` 说明 TTL 和其他元数据的采样时刻可能不同。原因是受控时钟测试复现后续 TTL 查询延迟导致采样时间偏晚；不改变 Redis 命令、值或数据，修正后仍待验证。
 - 验证：类型检查通过；采样时间、Hash/Set/ZSet/List 定位、List 读取和 AI 工具共 7 个专项文件、99 项通过。测试使用合成连接；完整打包和真实 DSH、本机 Redis 验证仍待执行。
 - 完整打包验证：`pnpm pack` 自动执行类型检查、构建和全部测试，80 个测试文件、624 项通过；开发包已生成，真实 DSH 与本机 Redis 复验仍待执行。
+- 更新 `docs/DSH_AI_READONLY_TASKS.md` 和 `docs/verification/user-questions-real-model-2026-11-05.md`：记录源码 `fd3fb91` 开发包安装日常 DSH、135 个文件与包一致，以及真实模型对本机 Hash 字段读取时值、状态和 UTC 时间与工具返回一致。原因是明确实际验收与受控延迟测试边界；没有在用户 Redis 人为制造延迟或修改数据，其他类型与模型准确性不据此标为通过。
