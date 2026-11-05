@@ -1,3 +1,9 @@
+## 2026-11-05：本机 Redis 内存诊断复验
+
+- 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：核对当前安装包在用户真实 Redis 和模型下对采样数及内存范围的解释。
+- 结果与影响：模型正确说明实际采样数未知，但扩展出工具未提供的内存范围细节；本次整体回答未通过。仅执行一次只读调用，文档不包含业务 Key、值或数值，未修改 Redis。
+
 ## 2026-11-05：澄清历史验收的构建版本
 
 - 文件：`docs/DSH_AI_READONLY_TASKS.md`、`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/verification/enterprise-cases-research-2026-11-05.md`、`UPDATE_LOG.md`。
