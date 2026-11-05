@@ -8,6 +8,8 @@
 
 ## 已观察结果
 
+- **当前构建 `1375e2f` 的受限账号复验**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6 的临时受限账号中，明确读取一个合成 Hash 字段时，`redis_viewer_value` 返回 `failed/permission`、无值；模型正确说明无法取得当前值，但主动引用旧对话采样并将曾成功读取该字段的连接归于端口 `13115 / 3295` 等，其中 `13115` 的夹具不含该 Hash，故历史证据描述不准确。接着按前缀查找时，`redis_viewer_keys` 返回 `failed/permission`、`scanComplete: false`；模型说明未取得候选不等于不存在，界面也显示权限不足。两个操作只覆盖该账号的 HGET 与 SCAN 被拒绝，不覆盖所有 ACL 配置或独立新对话。隔离实例 22 个 Key 的 DUMP、绝对过期时间和数量未变，实例已停止；日常 DSH 已重新连接用户 Redis DB0。
+
 - **当前构建 `1375e2f` 的合成订单筛选**：日常 DSH、`bzkj-LLM` 与独立 Redis 8.2.6，未预选 Key，模型对指定模式及 Hash 字段执行两次 `redis_viewer_filter_hash`，续读令牌和查询条件保持一致。两批分别检查 10、6 个候选并匹配 3、1 个；模型列出的四个合成订单和每批计数与原始结果及夹具一致，最终 `scanComplete: true`，并解释 MATCH 过滤名称、全键空间遍历、跨批重复和非快照限制。本次只覆盖正常两页与明确条件，不能证明权限、类型变化、取消或并发修改场景通过。夹具 22 个 Key 的 DUMP、绝对过期时间及数量未变，实例已停止；日常 DSH 已重连用户 Redis DB0。
 
 - **当前构建 `1375e2f` 的本机缺失 Key 与客户端概况**：日常 DSH、`bzkj-LLM` 和用户 Redis DB0 中对随机测试名称做只读查询；模型调用一次 `redis_viewer_key_metadata`，原始状态为 `missing`、错误为 null，模型正确说明仅代表采样时不存在，未跨库或扫描，不能区分历史删除、过期或从未创建。随后自然语言查询客户端与阻塞连接，模型调用 `redis_viewer_overview` 的 `clients`，数值、服务器范围和 UTC 采样时间与工具一致，但称覆盖所有客户端；[Redis INFO 文档](https://redis.io/docs/latest/commands/info/)说明 `connected_clients` 不包含副本连接，因此范围解释仍未通过。本次未构造副本，不记录业务指标，也未创建测试 Key 或修改用户数据。
