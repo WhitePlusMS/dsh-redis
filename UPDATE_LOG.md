@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 查找后定位与单次刷新真实验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的查找后打开和单次刷新：两个原始回执为 `applied`，实际侧栏选中并显示 Hash，自动刷新保持关闭。仅验证正常路径，未记录业务 Key 或值。
+
 ## 2026-11-05 真实名称搜索与预算恢复
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的名称搜索：前 8 批后预算耗尽，界面恢复预算后从原游标续读 4 批并找到 1 个候选，末批结束；模型正确说明非快照，但批次数误报且使用笼统绝对表述。仅查名称，未记录业务 Key 或修改 Redis。
