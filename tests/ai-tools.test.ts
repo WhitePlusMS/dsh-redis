@@ -107,6 +107,34 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
 }
 
 describe('official Redis model tools', () => {
+  it('reads bounded Bitmap bits without exposing surrounding bytes', async () => {
+    const requests: Array<readonly unknown[]> = []
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, args) => {
+      requests.push(args)
+      return Buffer.from('hello').subarray(Number(args[1]), Number(args[2]) + 1)
+    })
+    const result = content(await f.call('redis_viewer_bitmap', { key: 'plain', offset: '6', count: 6 }))
+    expect(JSON.parse(result)).toMatchObject({ state: 'value', offset: '6', count: 6, bits: '000110' })
+    expect(result).not.toContain('hello'); expect(result).not.toContain('aGVsbG8=')
+    expect(requests).toEqual([[Buffer.from('plain'), '0', '1']])
+    expect(JSON.parse(content(await f.call('redis_viewer_bitmap', { key: 'plain', offset: '38', count: 5 })))).toMatchObject({ state: 'value', bits: '11000' })
+    expect(JSON.parse(content(await f.call('redis_viewer_bitmap', { keyBase64: 'cGxhaW4=', offset: '4294967295', count: 1 })))).toMatchObject({ state: 'value', bits: '0' })
+    expect(JSON.parse(content(await f.call('redis_viewer_bitmap', { key: 'missing', offset: '0', count: 1 })))).toMatchObject({ state: 'missing', bits: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_bitmap', { key: 'hash', offset: '0', count: 1 })))).toMatchObject({ state: 'unsupported', bits: null })
+    expect(JSON.parse(content(await f.call('redis_viewer_bitmap', { key: 'denied', offset: '0', count: 1 })))).toMatchObject({ state: 'failed', error: 'permission', bits: null })
+    for (const args of [{ key: 'plain', offset: '-1', count: 1 }, { key: 'plain', offset: '01', count: 1 }, { key: 'plain', offset: '4294967295', count: 2 }, { key: 'plain', offset: '0', count: 1025 }, { key: 'plain', offset: '0', count: 0 }, { key: 'plain', offset: '0', count: 1, command: 'SETBIT' }]) expect((await f.call('redis_viewer_bitmap', args)).isError).toBe(true)
+  })
+  it('rejects Bitmap samples from a connection replaced during the read', async () => {
+    let release!: (value: RedisReply) => void, observed!: () => void
+    const pending = new Promise<RedisReply>(resolve => { release = resolve })
+    const started = new Promise<void>(resolve => { observed = resolve })
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => { observed(); return pending })
+    const operation = f.call('redis_viewer_bitmap', { key: 'plain', offset: '0', count: 8 })
+    await started
+    await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, new AbortController().signal)
+    release(Buffer.from('h'))
+    expect((await operation).isError).toBe(true)
+  })
   it('validates the format tool and binds it to the confirmed session selection', async () => {
     const f = await fixture()
     await f.ctx.plugin({ name: 'format-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisFormatTool(scope, f.reader, f.actions) })
@@ -728,7 +756,7 @@ describe('official Redis model tools', () => {
   })
   it('registers into the real model schema assembly and unloads with its fiber', async () => {
     const f = await fixture()
-    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
+    expect((await f.ctx.systemPrompt.assemble()).tools.map(tool => tool.name).sort()).toEqual(['redis_viewer_bitmap', 'redis_viewer_clients', 'redis_viewer_compare_strings', 'redis_viewer_filter_hash', 'redis_viewer_key_metadata', 'redis_viewer_keys', 'redis_viewer_memory', 'redis_viewer_overview', 'redis_viewer_select_db', 'redis_viewer_slowlog', 'redis_viewer_status', 'redis_viewer_stream_groups', 'redis_viewer_value'])
     await f.fiber.dispose()
     expect(f.ctx.tools.schemas()).toHaveLength(0)
   })

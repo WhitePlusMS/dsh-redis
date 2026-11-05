@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 Bitmap 位范围读取
+
+- `src/host/ai-reader.ts` 和 `src/host/ai-tools.ts` 增加 AI Bitmap 有界只读查询，复用现有 String 字节读取和会话预算；明确 Key、位偏移和数量，输出指定范围位值，区分缺失、类型及读取错误，不向模型返回整个字节。仅处理最多 1024 位，不推断业务含义。`tests/ai-tools.test.ts` 覆盖跨字节、补零、异常和范围；`docs/AI_READ_USAGE.md` 与任务清单记录使用方法及当前验收状态。
+- 根据 [Redis GETBIT 文档](https://redis.io/docs/latest/commands/getbit/) 对超出字符串末尾的位置按零解释。`pnpm check` 通过 80 个文件、627 项测试；独立 Redis 8.2.6 和 ToolRuntime 的多个范围与 GETBIT 一致。
+- `docs/verification/user-questions-real-model-2026-11-05.md` 记录当前开发包在日常 DSH、用户模型和独立 Windows Redis 8.10.0 中的跨字节、补零与缺失验收；数值一致，但模型对选区状态作无依据判断，整体回答准确性未通过。隔离数据和过期时间不变，测试实例已停止，原会话已重新连接用户 Redis。
+
 ## 2026-11-05 未知积压量验收记录补充
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 补充工具实际返回的原始 UTC 采样时间，修正独立审查指出的记录遗漏；不改变验收结论或 Redis 数据。

@@ -22,6 +22,7 @@
 - “看看 Redis 当前内存和连接数。”
 - “查看当前客户端连接的空闲时间。”
 - “查看 `events:orders` 的消费组积压情况。”
+- “查看 `flags:today` 从第 6 位开始的 8 个 Bitmap 位。”
 - “解释一下我在侧栏选中的当前这个值。”
 - “刷新当前侧栏中选中的 Key。”
 - “把当前选中值以 JSON 格式显示。”
@@ -59,6 +60,7 @@
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
 | `redis_viewer_clients` | 无 | 只读服务器客户端列表，最多展示 20 条 ID、连接及空闲秒数、DB 和标志；不返回客户端地址、名称、用户名或命令。当前连接视图仍包含目标服务器地址 |
 | `redis_viewer_stream_groups` | 必填 `key` 或 `keyBase64` 中一个 | 只读消费组数、`pending` 与 `lag`，最多返回 20 组；`lagStatus` 区分未知和服务器未报告，`complete` 标明是否全部返回 |
+| `redis_viewer_bitmap` | 必填 `key` 或 `keyBase64`、从零开始的位 `offset` 和位数 `count` | 最多读取 1024 位，只返回请求的位；超出 String 长度的位为零，缺失 Key 与读取失败单独报告 |
 | `redis_viewer_profiles` / `redis_viewer_connect_profile` | 先列出资料，再提供同一会话返回的 `id` 与 `snapshotToken` | 用户明确选择已有资料时尝试连接；资料或令牌变化会拒绝，失败保留原连接，密码须在本地表单填写 |
 | `redis_viewer_disconnect` | `id` 和 `generation` 均来自当前状态 | 用户明确要求时断开当前会话；连接身份已变化则拒绝，取消或回执丢失后须查询状态 |
 | `redis_viewer_refresh` | 无 | 用户明确要求时刷新当前唯一可见面板的选中 Key；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。失败或回执丢失后检查面板，不能断言刷新没有发生 |

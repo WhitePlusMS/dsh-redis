@@ -50,6 +50,11 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
+    name: 'redis_viewer_bitmap', description: '用户明确询问 Bitmap 位时，指定当前 DB 的 key 或 keyBase64、从零开始的位 offset 和 count（1 到 1024）。只返回该范围的 0/1 位，不返回原始字节；超出 String 长度的位按 Redis 语义为 0，Key 不存在单独报告。不能从单次采样推断业务含义或历史。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, offset: { type: 'string', required: true }, count: { type: 'integer', required: true } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'offset', 'count']); return reader.bitmap(session, args, exec.signal) }) },
+  }))
+  ctx.tools.register(defineTool({
     name: 'redis_viewer_memory', description: '只读估计当前对话连接、当前 DB 中一个明确 Key 的内存占用。提供 key 或 keyBase64 中恰好一个；不需要侧栏选择。使用 MEMORY USAGE 和固定 SAMPLES 5，聚合类型为采样估计而非精确总量；bytes 为十进制字符串。Key 不存在、权限不足和读取失败分别报告，不读取值、不跨库。' + reportable,
     parameters: { key: { type: 'string' }, keyBase64: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'memory', () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },

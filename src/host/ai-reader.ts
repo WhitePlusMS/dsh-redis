@@ -286,6 +286,27 @@ export class RedisAiReader {
       return result('failed', null, null, code)
     } finally { context.dispose() }
   }
+  /** Read only the bytes overlapping an explicitly requested bit range. */
+  async bitmap(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly offset: string; readonly count: number }, signal: AbortSignal): Promise<AiJson> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    if (!/^(?:0|[1-9]\d{0,9})$/u.test(args.offset) || !Number.isInteger(args.count) || args.count < 1 || args.count > 1024) throw new Error('位偏移须为非负整数，位数须为 1 到 1024。')
+    const offset = Number(args.offset)
+    if (offset + args.count - 1 > 0xffffffff) throw new Error('请求的位范围超过 Redis Bitmap 偏移上限。')
+    const target = this.target(sessionId), start = Math.floor(offset / 8), end = Math.floor((offset + args.count - 1) / 8)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: String(start), count: end - start + 1 })
+    const value = await this.strings.read(sessionId, request, signal)
+    signal.throwIfAborted(); this.connections.assertReadResult(sessionId, target, value.error)
+    let bits: string | null = null
+    if (value.state === 'value') {
+      const bytes = Buffer.from(value.base64, 'base64')
+      bits = Array.from({ length: args.count }, (_, index) => {
+        const relative = offset % 8 + index
+        return String(((bytes[Math.floor(relative / 8)] ?? 0) >> (7 - relative % 8)) & 1)
+      }).join('')
+    }
+    return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), state: value.state, error: value.error, errorMessage: explainValue(value.error, value), offset: args.offset, count: args.count, bits, metadata: value.metadata, sampledAt: value.sampledAt })
+  }
   /** MEMORY USAGE is a bounded estimate for one explicit Key, not a value read. */
   async memoryUsage(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string }, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
