@@ -3,7 +3,7 @@
 ## 2026-11-05 限定 AI String 读取范围
 
 - `src/host/string-reader.ts` 将界面 UTF-8 边界上下文设为读取器配置；`src/host/ai-reader.ts` 的 AI 读取和比较禁用边界字节，Redis GETRANGE 按请求范围执行，工具结果不再包含界面专用的 prefix/suffix。界面预览继续保留原有跨字符处理。
-- 同步 `src/host/ai-tools.ts` 和 `docs/AI_READ_USAGE.md` 的比较与字节范围说明；扩展 `tests/ai-tools.test.ts`、`scripts/smoke-ai-six-types.mjs` 验证偏移、命令参数和响应边界。`pnpm typecheck`、针对范围和界面预览的 84 项测试、独立 Redis 8.2.6 的六类型工具专项及完整 `pnpm check`（80 个测试文件、626 项）通过；独立实例已停止。Redis GETRANGE 两端均包含，依据 [Redis 官方文档](https://redis.io/docs/latest/commands/getrange/)。实际日常 DSH 与模型复验仍待安装新构建。
+- 同步 `src/host/ai-tools.ts` 和 `docs/AI_READ_USAGE.md` 的比较与字节范围说明；扩展 `tests/ai-tools.test.ts`、`scripts/smoke-ai-six-types.mjs` 验证偏移、命令参数和响应边界。`pnpm typecheck`、针对范围和界面预览的 84 项测试、独立 Redis 8.2.6 的六类型工具专项及完整 `pnpm check`（80 个测试文件、626 项）通过；独立实例已停止。Redis GETRANGE 两端均包含，依据 [Redis 官方文档](https://redis.io/docs/latest/commands/getrange/)。开发包 SHA-256 为 `b6b7f9e17afd6e3f645a006d740d5e18e8d7a2b0cb51c1605d0308ca2392cf2b`，已安装日常 profile，135 个包文件与安装内容一致。日常 DSH 的全新会话与用户模型实际复验前 4 字节，工具结果无额外上下文字节，模型未继续读取；模型却将偏移参数标签误写为 `bytes=0`，回答准确性仍未完全通过。独立 Redis 22 个合成 Key 的内容及绝对过期时间未变，测试实例已停止；同步 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`。
 
 ## 2026-11-05 六类型真实模型验收准备
 
