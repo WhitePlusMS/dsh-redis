@@ -1,6 +1,13 @@
 # 更新说明
 
 
+## 2026-11-05 认证故障案例真实对话
+
+- 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录 GitHub 认证故障启发的当前构建隔离复验。模型报告认证失败和原连接状态，随后通过明确请求成功只读原连接一个 Key 的元数据；首次回答只有状态证据，不覆盖候选连接释放及其他异常。
+- 临时资料已删除，独立实例的 22 个合成 Key、绝对过期时间和数量未变，实例已停止；首次启动因输入提前关闭而中止，未完成数据断言。未修改用户 Redis 数据，也不记录业务 Key 或凭据。
+
+
+
 ## 2026-11-05 本地缓存一致性真实对话
 
 - 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录美团缓存案例启发下的日常 DSH、用户模型和本机 Redis 只读对话。模型仅获取明确 Key 的元数据并正确说明无法判断应用本地缓存一致性；它将非快照采样说成同一时刻的事实，且建议引用旧对话字段，完整案例仍待验证。
