@@ -3116,3 +3116,5 @@
 - `scripts/smoke-ai-timeseries.mjs`：新增独立 RedisTimeSeries 样本、续读、空范围、类型和 ACL 对照，真实 Redis 8.2.6 模块专项通过，采样前后序列及 TTL 一致。本机 Redis 8.10.0 实测无 TS.RANGE，工具返回不可用且连接仍正常。
 - `docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`：说明时间戳范围、每批上限、非快照和压缩序列限制，并将真实模块对照、用户 Redis 缺少模块及日常模型上游 HTTP 500 的验收边界写入清单。
 - 完整检查：`pnpm check` 通过，80 个测试文件、637 项测试；当前真实模型验收仍未完成，测试通过不等同于模型回答准确。
+- 提交 `3932927` 后需求审查指出续读未绑定连接与条件，压缩序列范围提示不充分。`src/host/ai-reader.ts` 复用现有提交后生效的分页存储生成不透明游标，绑定会话、连接代次、DB、Key、起止和数量；`src/host/ai-tools.ts` 明示压缩序列可能省略未闭合桶或包含结束时间后的原始样本。原因是防止跨目标混用页面及夸大覆盖范围；首次类型检查指出可选数量不能显式传 `undefined`，已修复，相关验证待补充。
+- `tests/ai-tools.test.ts` 补充更换 Key、范围、数量、会话、DB 和连接后续读拒绝；`scripts/smoke-ai-timeseries.mjs` 增加真实压缩规则和桶范围对照；`docs/AI_READ_USAGE.md` 同步游标与压缩语义。隔离 Redis 8.2.6 中确认默认查询省略未闭合桶且已闭合桶可包含结束时间之后的样本，数据与 TTL 不变；类型检查及相关 104 项测试通过。

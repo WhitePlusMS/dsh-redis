@@ -118,12 +118,28 @@ describe('official Redis model tools', () => {
       return args[1] === '0' ? [[1000n, '1.25'], [2000n, '-3.5'], [3000n, '9']] : [[3000n, '9']]
     })
     const first = JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2 })))
-    expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', value: '1.25' }, { timestampMs: '2000', value: '-3.5' }], complete: false, nextFrom: '2001', snapshot: false })
+    expect(first).toMatchObject({ state: 'value', samples: [{ timestampMs: '1000', value: '1.25' }, { timestampMs: '2000', value: '-3.5' }], complete: false, snapshot: false })
+    expect(first.cursor).toMatch(/^ts:/u); expect(first.coverage).toContain('未闭合桶')
     expect(calls[0]).toEqual([Buffer.from('series'), '0', '3000', 'COUNT', '3'])
-    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: first.nextFrom, to: '3000', count: 2 })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '3000', value: '9' }], complete: true, nextFrom: null })
+    for (const changed of [{ key: 'plain', from: '0', to: '3000', count: 2 }, { key: 'series', from: '1', to: '3000', count: 2 }, { key: 'series', from: '0', to: '3001', count: 2 }, { key: 'series', from: '0', to: '3000', count: 1 }]) expect((await f.call('redis_viewer_timeseries', { ...changed, cursor: first.cursor })).isError).toBe(true)
+    expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'series', from: '0', to: '3000', count: 2, cursor: first.cursor })))).toMatchObject({ state: 'value', samples: [{ timestampMs: '3000', value: '9' }], complete: true, cursor: null })
+    expect(calls[1]).toEqual([Buffer.from('series'), '2001', '3000', 'COUNT', '3'])
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'missing', from: '0', to: '3000' })))).toMatchObject({ state: 'missing', complete: false })
     expect(JSON.parse(content(await f.call('redis_viewer_timeseries', { key: 'plain', from: '0', to: '3000' })))).toMatchObject({ state: 'unsupported', type: 'string' })
     for (const args of [{ key: 'series', from: '-', to: '+' }, { key: 'series', from: '01', to: '2' }, { key: 'series', from: '3', to: '2' }, { key: 'series', from: '0', to: '9223372036854775808' }, { key: 'series', from: '0', to: '1', count: 101 }, { key: 'series', from: '0', to: '1', aggregation: 'sum' }]) expect((await f.call('redis_viewer_timeseries', args)).isError).toBe(true)
+  })
+  it('rejects TimeSeries continuation across sessions, database switches and reconnects', async () => {
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async () => [[1n, '1'], [2n, '2']])
+    const args = { key: 'series', from: '0', to: '2', count: 1 }
+    const first = JSON.parse(content(await f.call('redis_viewer_timeseries', args)))
+    await f.connections.connect('b', { host: '127.0.0.1', port: 6379, username: 'reader', password: '', tls: null }, new AbortController().signal)
+    const other = { id: 'agent-b', ctx: f.ctx, session: { id: 'b' } } as unknown as Agent
+    expect((await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor }, { agent: other })).isError).toBe(true)
+    await f.reader.selectDatabase('a', 2, new AbortController().signal)
+    expect((await f.call('redis_viewer_timeseries', { ...args, cursor: first.cursor })).isError).toBe(true)
+    const second = JSON.parse(content(await f.call('redis_viewer_timeseries', args)))
+    await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: 'reader', password: '', tls: null }, new AbortController().signal)
+    expect((await f.call('redis_viewer_timeseries', { ...args, cursor: second.cursor })).isError).toBe(true)
   })
   it('distinguishes unavailable, denied and malformed TimeSeries reads', async () => {
     const make = (execute: RedisLink['execute']) => fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, execute)

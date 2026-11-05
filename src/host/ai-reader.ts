@@ -15,7 +15,7 @@ import { projectStreamGroups } from './stream-groups.ts'
 import { projectClients } from './client-list.ts'
 import { MAX_AI_RESULT_BYTES, RedisAiBudget } from './ai-budget.ts'
 import { RedisAiKeyPages } from './ai-key-pages.ts'
-import type { PreparedAiPage } from './ai-page-store.ts'
+import { AiPageStore, type PreparedAiPage } from './ai-page-store.ts'
 import { AiPageCoordinator } from './ai-page-coordinator.ts'
 import { RedisAiHashPages, isAiHashCursor } from './ai-hash-pages.ts'
 import { RedisAiSetPages, isAiSetCursor } from './ai-set-pages.ts'
@@ -31,6 +31,8 @@ import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, h
 const json = z.json()
 const explain = (error: ConnectionErrorCode | null): string | null => error === null ? null : connectionErrorMessages[error].zh
 type OverviewSection = keyof typeof overviewFields
+type TimeSeriesSample = { timestampMs: string; value: string }
+type TimeSeriesPage = { state: string; error: ConnectionErrorCode | null; cursor: string | null; payload: Record<string, unknown>; samples: TimeSeriesSample[] }
 /** Text identities must round-trip exactly; arbitrary bytes use canonical Base64. */
 function encodeIdentity(value: string): string {
   const bytes = Buffer.from(value, 'utf8')
@@ -113,6 +115,7 @@ export class RedisAiReader {
   private readonly zsetPages: AiPageCoordinator<RedisAiZSetPages>
   private readonly streams: RedisStreams
   private readonly streamPages: AiPageCoordinator<RedisAiStreamPages>
+  private readonly timeSeriesPages = new AiPageStore<TimeSeriesPage, TimeSeriesSample>('ts:')
   private readonly selections = new Map<string, { readonly target: DatabaseTarget; readonly selection: RedisSelection; readonly sampledAt: string }>()
   constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean) {
     this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections, false)
@@ -325,7 +328,7 @@ export class RedisAiReader {
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(Buffer.from(request.keyBase64, 'base64')), state: value.state, error: value.error, errorMessage: explainValue(value.error, value), offset: args.offset, count: args.count, bits, metadata: value.metadata, sampledAt: value.sampledAt })
   }
   /** Read one bounded forward window of raw time-series samples. */
-  async timeSeries(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly from: string; readonly to: string; readonly count?: number }, signal: AbortSignal): Promise<AiJson> {
+  private async timeSeries(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly from: string; readonly to: string; readonly count?: number }, signal: AbortSignal) {
     signal.throwIfAborted()
     if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
     const validTimestamp = (value: string) => typeof value === 'string' && /^(?:0|[1-9]\d{0,18})$/u.test(value) && BigInt(value) <= 9223372036854775807n
@@ -335,8 +338,7 @@ export class RedisAiReader {
     const target = this.target(sessionId)
     const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
     const keyBytes = Buffer.from(request.keyBase64, 'base64'), context = new RedisReadContext(this.connections, sessionId, target, signal)
-    type Sample = { timestampMs: string; value: string }
-    const result = (state: string, type: string | null, samples: Sample[], complete: boolean, nextFrom: string | null, error: ConnectionErrorCode | null, sampledAt = new Date().toISOString()) => ({
+    const result = (state: string, type: string | null, samples: TimeSeriesSample[], complete: boolean, nextFrom: string | null, error: ConnectionErrorCode | null, sampledAt = new Date().toISOString()) => ({
       readOnly: true, connection: this.connections.status(sessionId), key: byteIdentity(keyBytes), from: args.from, to: args.to, count, state, type, samples, complete, nextFrom, snapshot: false, sampledAt, error,
       errorMessage: error !== null ? explain(error) : state === 'missing' || state === 'changed' ? keyStateMessages[state].zh : state === 'unsupported' ? '指定 Key 不是 TimeSeries 类型。' : state === 'unavailable' ? '服务器不支持或已禁用 TS.RANGE。' : state === 'query-failed' ? '服务器拒绝了时间序列查询，请检查服务与范围。' : null,
     })
@@ -384,7 +386,27 @@ export class RedisAiReader {
         const code = context.error(error); this.connections.assertReadResult(sessionId, target, code); data = result(code === 'type-changed' ? 'changed' : 'failed', null, [], false, null, code)
       }
     } finally { context.dispose() }
-    return this.project(sessionId, data)
+    return data
+  }
+  /** Opaque continuation binds the original range to the session and connection. */
+  async prepareTimeSeries(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly from: string; readonly to: string; readonly count?: number; readonly cursor?: string }, signal: AbortSignal): Promise<PreparedAiPage> {
+    signal.throwIfAborted()
+    if ((args.key === undefined) === (args.keyBase64 === undefined)) throw new Error('请明确指定一个 Key 或规范 Base64 Key。')
+    const target = this.target(sessionId)
+    const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
+    const binding = JSON.stringify([target.id, target.generation, target.db, request.keyBase64, args.from, args.to, args.count ?? 100])
+    return this.timeSeriesPages.prepare({
+      sessionId, binding, selection: null, cursor: args.cursor ?? null, signal,
+      fetch: async next => {
+        const value = await this.timeSeries(sessionId, { keyBase64: request.keyBase64, from: next ?? args.from, to: args.to, ...(args.count === undefined ? {} : { count: args.count }) }, signal)
+        const { nextFrom, samples, ...payload } = value
+        return { state: value.state === 'value' ? 'page' : value.state, error: value.error, cursor: nextFrom, payload, samples }
+      },
+      rows: page => page.samples,
+      output: (page, samples, cursor) => ({ ...page.payload, from: args.from, state: page.state === 'page' ? 'value' : page.state, samples, cursor, complete: page.state === 'page' && cursor === null, coverage: '仅包含 TS.RANGE 返回的样本；压缩序列不含最新未闭合桶，已关闭桶可能包含结束时间之后的原始样本。' }),
+      validate: error => this.connections.assertReadResult(sessionId, target, error), discard: () => undefined,
+      oversize: '时间序列结果超过单次预算，请缩小读取范围。',
+    })
   }
   /** One explicit JSONPath; preserve the Redis JSON text instead of rounding numbers. */
   async jsonPath(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly path: string }, signal: AbortSignal): Promise<AiJson> {
@@ -851,11 +873,12 @@ export class RedisAiReader {
     this.setPages.disposeSession(sessionId)
     this.zsetPages.disposeSession(sessionId)
     this.streamPages.disposeSession(sessionId)
+    this.timeSeriesPages.disposeSession(sessionId)
     this.disposeCursors(sessionId)
   }
   disposeSession(sessionId: string): void { this.clearTarget(sessionId); this.budget.disposeSession(sessionId); this.reportSamples.disposeSession(sessionId) }
   private disposeCursors(sessionId: string): void {
     this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.zsetRanks.disposeSession(sessionId); this.streams.disposeSession(sessionId)
   }
-  dispose(): void { this.selections.clear(); this.budget.dispose(); this.reportSamples.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
+  dispose(): void { this.selections.clear(); this.budget.dispose(); this.reportSamples.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.timeSeriesPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
 }

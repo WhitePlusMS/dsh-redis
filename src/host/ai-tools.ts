@@ -50,9 +50,9 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, stage => { strict(args, ['match', 'field', 'equals', 'cursor']); return reader.filterHash(session, args, exec.signal, stage) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。只使用 TS.RANGE 查询原始样本，不聚合、不跨 Key。返回时间与值的原始字符串，complete 为 false 表示还有样本；可使用 nextFrom 继续，必须保持 Key 和结束时间。样本可能是压缩序列，不能推断原始测量或趋势；多批不是快照。',
-    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, from: { type: 'string', required: true }, to: { type: 'string', required: true }, count: { type: 'integer' } }, output, timeoutMs: 15000,
-    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, () => { strict(args, ['key', 'keyBase64', 'from', 'to', 'count']); return reader.timeSeries(session, args, exec.signal) }) },
+    name: 'redis_viewer_timeseries', description: '用户明确给出当前 DB 的 TimeSeries Key 和时间范围时调用；key/keyBase64 选一个，from 和 to 是包含两端的 Unix 毫秒时间戳十进制字符串，count 为每批最多 100 个样本，默认 100。只使用 TS.RANGE，不聚合、不跨 Key。返回时间与值的原始字符串；complete 为 false 时使用 cursor 续读，保持 Key、from、to 和 count 不变。complete 仅指 TS.RANGE 可见结果；压缩序列省略最新未闭合桶，已关闭桶可能包含结束时间后的原始样本。多批不是快照。',
+    parameters: { key: { type: 'string' }, keyBase64: { type: 'string' }, from: { type: 'string', required: true }, to: { type: 'string', required: true }, count: { type: 'integer' }, cursor: { type: 'string' } }, output, timeoutMs: 15000,
+    async execute(args, exec) { const session = owner(exec); return reader.withBudget(session, exec.signal, async stage => { strict(args, ['key', 'keyBase64', 'from', 'to', 'count', 'cursor']); const page = await reader.prepareTimeSeries(session, args, exec.signal); stage(page); return page.result }) },
   }))
   ctx.tools.register(defineTool({
     name: 'redis_viewer_json_path', description: '仅在用户明确指定 RedisJSON Key 和以 $ 开头的 JSONPath 时调用；key 与 keyBase64 选一个，path 必填，不自行扩大为根路径或通配符。只执行一个 JSON.GET，结果 matchesJson 是 Redis 返回的 JSON 数组原文：[] 表示没有匹配，[null] 表示匹配到 null。大整数保持原文。查询可能遍历或返回整个子树，Redis 无服务端分页；超限不返回部分 JSON。单次采样不是快照，模块不可用、权限及类型不符应分别说明。',
