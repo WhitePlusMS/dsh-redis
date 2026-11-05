@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 当前构建真实模型查询复验
+
+- 日常 DSH 和用户模型在独立 Redis 8.2.6 中复验 `729e707` 的 Hash、List、Set、ZSet 和 Stream，核对五次显式目标工具返回、值与完整状态；Stream 同名字段顺序正确。模型表格中的部分 `<br>` 在对话里作为文本显示，范围仅为合成正常数据。
+- 针对 16 个合成订单，两批筛选得到 4 个正确匹配，累计检查及匹配数与工具一致；七个名称候选正确列出并等待用户确认，空搜索结果及迭代状态也与工具一致。模型仍未说明 SCAN 非快照及可能遍历的键空间，并对空搜索断言当前不存在，故范围解释未通过。
+- 结束时 22 个合成 Key 的 DUMP、绝对过期时间和数量未变，独立 Redis 已停止；同步 `docs/DSH_AI_READONLY_TASKS.md` 与 `docs/verification/user-questions-real-model-2026-11-05.md`，不把数值通过当成整体验收完成。
+
 ## 2026-11-05 核实日常 profile 依赖来源
 
 - 使用已安装 DSH 0.2.1-rc.5 提供的只读运行时解析 API 和日常 profile 核对本插件 peer：12 个宿主包来自 installation 且版本匹配；界面 slots 仅作类型引用，React 由 Web 前端模块表提供，产物版本标识为 18.3.1。依据和局限写入 `docs/verification/user-questions-real-model-2026-11-05.md`，`peers check` 的非零结果保留，不向 profile 引入重复宿主包。
