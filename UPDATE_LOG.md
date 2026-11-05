@@ -1,6 +1,13 @@
 # 更新说明
 
 
+## 2026-11-05 高负载案例真实对话
+
+- 更新 `docs/verification/enterprise-cases-research-2026-11-05.md`、`docs/verification/user-questions-real-model-2026-11-05.md`：记录美团高负载案例启发的问题在当前日常 DSH、用户模型和本机 Redis 的真实调用及结论。模型正确指出现有 Redis 采样不足以证明网络或系统中断根因，但错误承诺插件可按时段查慢日志和延迟事件，完整回答未通过。
+- 影响仅为保存验收证据和能力限制；未制造负载，未修改 Redis 数据或配置，不将业务指标写入仓库。
+
+
+
 ## 2026-11-05 企业公开案例验收准备
 
 - 新增 `docs/verification/enterprise-cases-research-2026-11-05.md`：核对美团和 GitHub 一手案例，记录可提出的问题、应有证据、历史观察和待验收边界。原因是为用户要求的真实案例验收准备可核对依据，明确旧版 Redis 缺陷和本地采样不能代表当前或企业生产环境。
