@@ -2985,3 +2985,4 @@
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录新构建通过日常 DSH、用户模型及真实 Redis 的一个显式 Hash 单字段复验；不记录业务身份或值。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录收起侧栏后同一真实字段仍可通过显式参数读取及回答；不推及未测试的数据类型。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录线索不足时模型未擅自搜索，但错误声称 MATCH 可避免全库遍历；回答准确性仍未通过。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `8981f5e` 的完整 `pnpm check` 通过，共 79 个测试文件、619 项；自动测试通过不等于真实模型准确性通过。
