@@ -1,3 +1,9 @@
+## 2026-11-05：澄清历史验收的构建版本
+
+- 文件：`docs/DSH_AI_READONLY_TASKS.md`、`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/verification/enterprise-cases-research-2026-11-05.md`、`UPDATE_LOG.md`。
+- 原因：独立审查发现旧版本验收仍标为“当前构建”，可能与新安装的 `a9dcd8d` 混淆。
+- 修改与影响：将旧包 `1375e2f` 等的结果标为此前构建，包括权限、切库及企业案例；不改变已记录的验证结果，不宣称新包已复验这些场景。
+
 ## 2026-11-05：当前包真实模型复验
 
 - 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
