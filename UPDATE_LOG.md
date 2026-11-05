@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 候选连接认证失败真实验收
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH 和 `bzkj-LLM` 对独立受限 Redis 的连接尝试：资料唯一，候选返回认证失败，原连接标识、代次、DB 与界面状态保留；模型提示在本地表单处理凭据。未核对候选套接字释放，不扩大验收范围。
+- 隔离实例的 22 个 Key、DUMP 和绝对过期时间前后一致；测试资料已删除，隔离实例已停止，用户本机 Redis 和日常 DSH 继续运行。
+
 ## 2026-11-05 缺失连接资料真实验收
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前安装构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的只读验证：资料列表为空时未尝试连接；原会话仍连接，后续元数据读取成功且 TTL 限制解释正确。该场景不覆盖候选认证失败、资料同名及资源释放；不记录真实 Key 或值。
