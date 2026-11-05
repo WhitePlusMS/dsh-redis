@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 本机慢日志与内存诊断复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 和用户 Redis 的两项只读采样：慢日志事件时间、耗时和范围与只读对照一致；内存工具已标记实际采样未知及可能含内部碎片，但模型再次断言抽取五项并笼统排除分配器碎片，解释仍未通过。
+- 未清理慢日志、修改配置或用户数据，也未把业务 Key 和指标写入仓库；不将单次查询扩大为其他异常场景通过。
+
+
 ## 2026-11-05 当前包专业数据模型复验
 
 - `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录日常 DSH、`bzkj-LLM` 与独立 Redis 对当前构建的 JSON 三路径、时序两页和 GEO 距离合成样本：值与夹具一致；GEO 模型命令依据仍遗漏 TYPE，完整依据未通过。异常路径及独立会话未以此验收通过。
