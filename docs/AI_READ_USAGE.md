@@ -54,7 +54,7 @@
 | `redis_viewer_value` | `key`或`keyBase64`可省略；精确 Hash 字段用`field`或`fieldBase64`，Set/ZSet 成员用`member`或`memberBase64`；按类型提供范围/游标 | 六类型结果、TTL、读取时间、完整性和续读信息；精确字段或成员需明确 Key，不能混用分页参数 |
 | `redis_viewer_filter_hash` | 必填`match`、`field`、`equals`，续读用`cursor` | 每批最多检查 10 个候选；返回精确匹配的 Key 和本批各状态计数，不返回未匹配的值；续读条件必须一致 |
 | `redis_viewer_memory` | 必填 `key` 或 `keyBase64` 中一个 | `MEMORY USAGE` 使用固定 5 个样本；返回字节数、时间，聚合数据是估计；区分不存在、无权限与失败 |
-| `redis_viewer_compare_strings` | 左侧 `left` / `leftBase64` 和右侧 `right` / `rightBase64` 各选一个 | 比较当前 DB 两个 String 的前 4096 字节，底层可能额外读取 3 个边界字节；不返回值。只有两侧完整且相同才返回 `equal`，相同截断前缀返回 `undetermined`，两次采样不是原子快照 |
+| `redis_viewer_compare_strings` | 左侧 `left` / `leftBase64` 和右侧 `right` / `rightBase64` 各选一个 | 比较当前 DB 两个 String 的前 4096 字节，不返回值。只有两侧完整且相同才返回 `equal`，相同截断前缀返回 `undetermined`，两次采样不是原子快照 |
 | `redis_viewer_slowlog` | 可选 `count`，范围 1–10，默认 10 | 返回服务器范围的慢日志原始 Unix 秒、事件 UTC 时间、耗时和命令名；超出日期范围时 UTC 时间为 `null`，原始秒数仍保留。不返回命令参数及客户端信息；空列表不代表历史从无慢查询 |
 | `redis_viewer_overview` | 必填 `section`：`server`、`memory`、`clients` 或 `stats` | 返回该服务器类别的固定白名单指标；数值为字符串，缺失字段用 `partial` 标明，不返回 INFO 原文 |
 | `redis_viewer_clients` | 无 | 只读服务器客户端列表，最多展示 20 条 ID、连接及空闲秒数、DB 和标志；不返回客户端地址、名称、用户名或命令。当前连接视图仍包含目标服务器地址 |
@@ -81,7 +81,7 @@ Key 名称搜索和 Hash 条件筛选均使用 Redis `SCAN MATCH`：MATCH 过滤
 
 范围筛选的字段和目标值按 UTF-8 原始字节精确比较，字段最多 1,024 字节、目标值最多 4,096 字节。每次调用最多检查 10 个候选，并受同一会话的连续调用预算限制；每个 Redis RESP 响应受 1 MiB 解析上限约束，但一次筛选会依次发出扫描、类型、字段和 TTL 等多个命令，因此不能把 64 KiB 模型输出上限误认为 Redis 总接收量。结果的 `counts` 仅描述本批，`sampledAt` 是扫描时间，`readStartedAt` 和 `readFinishedAt` 是本批读取时间范围。跨批可能遇到重复 Key，扫描结束也不是一致性快照；缺失、类型变化和读取失败均单独计数，不能把部分结果当作完整统计。
 
-二进制值保留Base64和字节长度，不能当作损坏文本；UTF-8前缀不完整时文本可能为空。未读取字节、其他分页及过滤掉的字段都不应被模型当作已知。
+AI 的 String 查询严格读取请求的字节范围，不返回界面预览使用的边界字节。二进制值保留Base64和字节长度，不能当作损坏文本；UTF-8前缀不完整时文本可能为空。未读取字节、其他分页及过滤掉的字段都不应被模型当作已知。
 
 ## 只读及运行边界
 

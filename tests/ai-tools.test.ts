@@ -773,6 +773,20 @@ describe('official Redis model tools', () => {
     expect(continued.isError).toBeFalsy()
     expect(content(continued)).toContain('"scanComplete":true')
   })
+  it('reads and exposes only the requested String byte window', async () => {
+    const ranges: Array<readonly unknown[]> = []
+    const f = await fixture(undefined, undefined, undefined, undefined, undefined, undefined, undefined, undefined, async (_command, args) => {
+      ranges.push(args)
+      return Buffer.from('hello').subarray(Number(args[1]), Number(args[2]) + 1)
+    })
+    const first = JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', bytes: 1 })))
+    const middle = JSON.parse(content(await f.call('redis_viewer_value', { key: 'plain', offset: '2', bytes: 1 })))
+    expect(ranges).toEqual([[Buffer.from('plain'), '0', '0'], [Buffer.from('plain'), '2', '2']])
+    expect(first.value).toMatchObject({ text: 'h', byteLength: 1, complete: false, nextOffset: '1' })
+    expect(middle.value).toMatchObject({ text: 'l', byteLength: 1, complete: false, nextOffset: '3' })
+    expect(first.value).not.toHaveProperty('prefix'); expect(first.value).not.toHaveProperty('suffix')
+    expect(middle.value).not.toHaveProperty('prefix'); expect(middle.value).not.toHaveProperty('suffix')
+  })
   it('labels prefixes and filtered/continued pages truthfully and honors pre-cancellation', async () => {
     const f = await fixture()
     const large = await f.call('redis_viewer_value', { key: 'large' })

@@ -98,7 +98,7 @@ export class RedisAiReader {
   private readonly streamPages: AiPageCoordinator<RedisAiStreamPages>
   private readonly selections = new Map<string, { readonly target: DatabaseTarget; readonly selection: RedisSelection; readonly sampledAt: string }>()
   constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean) {
-    this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections)
+    this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections, false)
     this.keyPages = new RedisAiKeyPages(connections, this.keys)
     this.hashFilter = new RedisAiHashFilter(connections)
     this.hashes = new RedisHashes(connections, true); this.hashPages = new AiPageCoordinator([new RedisAiHashPages(connections, this.hashes), new RedisAiHashPages(connections, new RedisHashes(connections, true))]); this.lists = new RedisLists(connections)
@@ -617,7 +617,10 @@ export class RedisAiReader {
       // The type can change between discovery and the type-specific reader.
       // A supported replacement type is a change, not an unsupported key.
       if (typeof data === 'object' && data !== null && 'state' in data && data.state === 'unsupported' && 'metadata' in data && typeof data.metadata === 'object' && data.metadata !== null && 'type' in data.metadata && data.metadata.type !== probe.metadata?.type) data = { ...data, state: 'changed' }
-    } else if (probe.state === 'value') data = { ...probe, text: aiText(Buffer.from(probe.base64, 'base64')) }
+    } else if (probe.state === 'value') {
+      const { prefix: _prefix, suffix: _suffix, ...window } = probe
+      data = { ...window, text: aiText(Buffer.from(probe.base64, 'base64')) }
+    }
     this.connections.assertReadResult(sessionId, target, readError)
     if (selected !== null && this.selections.get(sessionId) !== selected) throw new Error('侧栏选择已变化，请读取新的当前选择。')
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: selected === null ? 'explicit' : 'selection', key: byteIdentity(Buffer.from(keyBase64, 'base64')), errorMessage: explainValue(readError, data), value: data })

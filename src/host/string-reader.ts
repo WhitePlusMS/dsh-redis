@@ -8,7 +8,7 @@ class InvalidTypeArguments extends Error {}
 
 /** Only fixed metadata and GETRANGE operations; never fetch a full value then truncate. */
 export class RedisStrings {
-  constructor(private readonly connections: RedisConnections) {}
+  constructor(private readonly connections: RedisConnections, private readonly includeTextContext = true) {}
 
   async read(sessionId: string, request: StringReadRequest, signal: AbortSignal, validateType?: (type: string) => string | null): Promise<StringReadResult> {
     const context = new RedisReadContext(this.connections, sessionId, request.target, signal)
@@ -26,12 +26,14 @@ export class RedisStrings {
       if (firstTtl === -2n) return result('missing')
       if (firstType !== 'string') return result('unsupported', null, { type: firstType, ttlMs: String(firstTtl), length: null })
       const firstLength = await context.integer('STRLEN', [key]), offset = BigInt(request.offset)
-      const start = offset > 3n ? offset - 3n : 0n
-      const wantedEnd = offset + BigInt(request.count) + 2n
+      // AI reads use no context, so Redis receives precisely the requested range.
+      const contextBytes = this.includeTextContext ? 3n : 0n
+      const start = offset > contextBytes ? offset - contextBytes : 0n
+      const wantedEnd = offset + BigInt(request.count) + contextBytes - 1n
       const end = wantedEnd > MAX_INTEGER ? MAX_INTEGER : wantedEnd
       const reply = await context.command('GETRANGE', [key, String(start), String(end)])
       if (!Buffer.isBuffer(reply)) throw new RedisFrameError('protocol')
-      if (reply.length > MAX_VALUE_BYTES + 6 || reply.length > request.count + Number(offset - start) + 3) throw new RedisFrameError('oversize')
+      if (reply.length > MAX_VALUE_BYTES + Number(contextBytes * 2n) || reply.length > request.count + Number(offset - start + contextBytes)) throw new RedisFrameError('oversize')
       const secondType = await context.type(key)
       if (secondType === 'none') return result('missing')
       if (secondType !== firstType) return result('changed')
@@ -43,7 +45,7 @@ export class RedisStrings {
       if (BigInt(reply.length) !== expected) return result('changed')
       const skip = Math.min(Number(offset - start), reply.length)
       const bytes = reply.subarray(skip, skip + request.count)
-      // Three context bytes either side complete any crossing UTF-8 scalar.
+      // UI context can complete a crossing UTF-8 scalar; AI requests omit it.
       const prefix = reply.subarray(0, skip), suffix = reply.subarray(skip + request.count)
       const next = offset + BigInt(bytes.length)
       return {

@@ -1,5 +1,10 @@
 # 更新说明
 
+## 2026-11-05 限定 AI String 读取范围
+
+- `src/host/string-reader.ts` 将界面 UTF-8 边界上下文设为读取器配置；`src/host/ai-reader.ts` 的 AI 读取和比较禁用边界字节，Redis GETRANGE 按请求范围执行，工具结果不再包含界面专用的 prefix/suffix。界面预览继续保留原有跨字符处理。
+- 同步 `src/host/ai-tools.ts` 和 `docs/AI_READ_USAGE.md` 的比较与字节范围说明；扩展 `tests/ai-tools.test.ts`、`scripts/smoke-ai-six-types.mjs` 验证偏移、命令参数和响应边界。`pnpm typecheck`、针对范围和界面预览的 84 项测试、独立 Redis 8.2.6 的六类型工具专项及完整 `pnpm check`（80 个测试文件、626 项）通过；独立实例已停止。Redis GETRANGE 两端均包含，依据 [Redis 官方文档](https://redis.io/docs/latest/commands/getrange/)。实际日常 DSH 与模型复验仍待安装新构建。
+
 ## 2026-11-05 六类型真实模型验收准备
 
 - 扩展 `scripts/hold-ai-acceptance.mjs`：在独立 Redis 夹具中补充 String、List、含重复字段的 Stream，并对全部合成 Key 的内容和绝对过期时间做结束前回读核验；原有 Hash、Set、ZSet 数据保留。目的是补足用户 Redis 当前抽样未发现的类型，不改变用户 Redis。

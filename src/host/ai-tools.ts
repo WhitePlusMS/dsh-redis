@@ -55,7 +55,7 @@ export function registerRedisTools(ctx: Context, reader: RedisAiReader): void {
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'memory', () => { strict(args, ['key', 'keyBase64']); return reader.memoryUsage(session, args, exec.signal) }) },
   }))
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_compare_strings', description: '仅在用户明确给出当前 DB 的两个 String Key 并要求比较时使用。左侧 left/leftBase64 与右侧 right/rightBase64 各选一个，Base64 用于二进制 Key。每侧比较前 4096 字节，底层读取器还可能读取 3 个文本边界字节；不返回原始值。comparison 为 equal、different、undetermined 或 unavailable。长度或前缀不同可判断不同；前缀相同但有截断只能说无法判定。两次采样有各自时间，并非原子快照；不存在、类型不符、权限失败分别在两侧报告。' + reportable,
+    name: 'redis_viewer_compare_strings', description: '仅在用户明确给出当前 DB 的两个 String Key 并要求比较时使用。左侧 left/leftBase64 与右侧 right/rightBase64 各选一个，Base64 用于二进制 Key。每侧最多比较前 4096 字节，不返回原始值。comparison 为 equal、different、undetermined 或 unavailable。长度或前缀不同可判断不同；前缀相同但有截断只能说无法判定。两次采样有各自时间，并非原子快照；不存在、类型不符、权限失败分别在两侧报告。' + reportable,
     parameters: { left: { type: 'string' }, leftBase64: { type: 'string' }, right: { type: 'string' }, rightBase64: { type: 'string' } }, output, timeoutMs: 15000,
     async execute(args, exec) { const session = owner(exec); return diagnostic(session, exec.signal, 'compare_strings', () => { strict(args, ['left', 'leftBase64', 'right', 'rightBase64']); return reader.compareStrings(session, args, exec.signal) }) },
   }))
