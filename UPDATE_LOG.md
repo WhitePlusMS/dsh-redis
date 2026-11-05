@@ -2983,3 +2983,4 @@
 - 修改 `src/connection-errors.ts` 和 `src/host/ai-locate-tool.ts`：统一中英文缺失 Key 提示为采样时不存在，定位工具复用同一提示，避免从单次缺失推断历史或过期原因；只修改结果说明，不改变 Redis 命令。类型检查、3 个文件的 79 项相关测试通过，新构建及真实 DSH 复验待进行。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `8981f5e` 开发包安装到日常 profile、135 文件与包一致，以及重启后真实模型对未写入测试名称的缺失 Key 提示复验通过；明确其他真实模型问题未解决。
 - 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录新构建通过日常 DSH、用户模型及真实 Redis 的一个显式 Hash 单字段复验；不记录业务身份或值。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md`：记录收起侧栏后同一真实字段仍可通过显式参数读取及回答；不推及未测试的数据类型。
