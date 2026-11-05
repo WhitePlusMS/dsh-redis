@@ -1,5 +1,11 @@
 # 更新说明
 
+## 2026-11-05 本机缺失 Key 和客户端概况复验
+
+- `docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与用户 Redis 上的只读检查：缺失 Key 的采样和未知历史原因解释正确；客户端数值一致，但模型仍笼统称覆盖所有客户端，未说明副本连接不计入，范围解释未通过。
+- 本次没有创建测试 Key、写入用户数据或在仓库记录业务指标；仅覆盖单次查询，不代表其他异常或存在副本环境已验收。
+
+
 ## 2026-11-05 内存验收版本引用修正
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 按提交后独立规范审查，将内存复验引用明确为 `7315b69`，避免误认为已在当前安装构建复验。
