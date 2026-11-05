@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 缺失诊断用语澄清
+
+- 独立审查发现 `docs/verification/user-questions-real-model-2026-11-05.md` 中“无权限错误”有歧义，改为“未发生权限错误”，明确本次只验证 Key 缺失，未将其当作权限拒绝测试。
+
 ## 2026-11-05 缺失 Key 真实模型诊断
 
 - `docs/verification/user-questions-real-model-2026-11-05.md` 和 `docs/DSH_AI_READONLY_TASKS.md` 记录当前构建在日常 DSH、`bzkj-LLM` 与本机 Redis 的一次随机名称缺失查询：模型准确区分采样时不存在与未知历史原因，未擅自跨库或扫描；未创建 Key，未修改用户 Redis。
