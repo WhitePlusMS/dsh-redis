@@ -1,3 +1,9 @@
+## 2026-11-05：当前包 GEO 全新会话复验
+
+- 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：验证当前包的 GEO 正常查询以及此前模型遗漏 TYPE 的问题，避免把历史会话结果误当作新包证据。
+- 结果与影响：新只读会话中的真实模型返回两成员坐标与距离，均与隔离 Redis 直接只读命令一致，并说明 TYPE、编码误差及非快照；只覆盖正常合成样本。23 个隔离 Key 的内容、绝对过期时间及数量未变，夹具已停止，原会话仍连接用户 Redis。
+
 ## 2026-11-05：当前包错误凭据复验
 
 - 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
