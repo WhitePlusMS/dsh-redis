@@ -1,3 +1,9 @@
+## 2026-11-05：隔离验收夹具支持 JSON 与时间序列
+
+- 文件：`scripts/hold-ai-acceptance.mjs`、`UPDATE_LOG.md`。
+- 原因：当前包需通过真实 DSH 与用户模型复验 JSON 和时间序列；日常 Redis 未提供对应模块。
+- 修改与影响：增加显式 `--modules` 开关，确认独立实例具备两个模块后创建固定合成 JSON 和三个时间序列样本，纳入既有 DUMP、绝对过期时间和数量对照；默认不创建，用户 Redis 不受影响。类型检查通过；隔离 Redis 8.2.6 直接只读命令确认 JSON 大整数、null、缺失路径和三个时序样本；该夹具保持运行等待真实模型验收，结束后核对数据和停止。
+
 ## 2026-11-05：当前包 GEO 全新会话复验
 
 - 文件：`docs/verification/user-questions-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
