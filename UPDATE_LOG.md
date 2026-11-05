@@ -1,5 +1,9 @@
 # 更新说明
 
+## 2026-11-05 未知积压量验收记录补充
+
+- `docs/verification/user-questions-real-model-2026-11-05.md` 补充工具实际返回的原始 UTC 采样时间，修正独立审查指出的记录遗漏；不改变验收结论或 Redis 数据。
+
 ## 2026-11-05 Stream 未知积压量验收准备
 
 - `scripts/hold-ai-acceptance.mjs` 新增可选 `--unknown-lag`：只在独立测试 Redis 创建从中间 ID 开始的消费组，并校验 Redis 返回的 lag 与 entries-read 均为未知；继续对比 Key、过期时间、消费组及消费类命令计数。用户 Redis 不做消费组写入。
