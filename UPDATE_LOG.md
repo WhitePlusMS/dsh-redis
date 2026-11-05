@@ -3121,3 +3121,4 @@
 - 提交 `8fa8abd` 后规范审查指出失败状态也会 `complete: false` 但没有游标。`src/host/ai-tools.ts` 与 `docs/AI_READ_USAGE.md` 改为仅成功且游标非空时续读；`tests/ai-tools.test.ts` 核对缺失及类型不符均无游标。原因是避免模型把失败当成可续读结果反复请求。
 - 同次需求审查指出第二页失败后旧游标失效但没有恢复说明。沿用既有分页组件的终止行为，在 `src/host/ai-reader.ts` 明确返回从原范围重新查询的提示，工具与文档同步说明；新增失败页和旧游标失效测试，避免虚假的续读承诺。
 - 提交 `3c91d39` 后双轴复审指出取消或异常未交付结果时游标可能保留，原文字过于绝对。`src/host/ai-tools.ts` 和 `docs/AI_READ_USAGE.md` 将失效范围限定为收到非成功状态，取消或无回执标明状态不确定；`tests/ai-tools.test.ts` 验证请求中取消后可用原游标重试。原因是准确反映提交边界，不改变分页组件行为。
+- 更新 `docs/verification/user-questions-real-model-2026-11-05.md` 与 `docs/DSH_AI_READONLY_TASKS.md`：记录源码 `8f57a61` 的完整检查首次超时、单项及整套复跑结果；归档哈希、安装文件对照；当前 `bzkj-LLM` 对本机模块缺失和隔离 JSON、TimeSeries、GEO 的实际工具输出与回答错误；并记录重启 DSH 中断一条正在执行的请求、随后恢复本机 Redis 连接。原因是区分工具数值通过与模型解释未通过，保留操作影响和未覆盖项；未写入用户 Redis。
