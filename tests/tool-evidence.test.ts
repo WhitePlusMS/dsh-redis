@@ -86,3 +86,12 @@ it('keeps recorded server and DB visible while moving opaque connection identifi
   expect(evidence?.rows).toContainEqual({ label: 'connection.db', value: '1' })
   expect(evidence?.rows.some(row => row.label === 'connection.id')).toBe(false)
 })
+
+it.each(['selected', 'currentSelection'])('keeps nested %s connection identities out of expanded values', key => {
+  const selection = { keyBase64: 'aw==', item: { kind: 'hash', fieldBase64: 'Zg==' } }
+  const selected = { target: { id: 'fixture-nested-id', generation: 2, db: 1 }, selection, sampledAt: 'fixture-time' }
+  const evidence = redisEvidence('redis_viewer_value', JSON.stringify({ readOnly: true, [key]: selected }))
+  expect(evidence?.values).toEqual([{ label: `${key}.selection`, value: JSON.stringify(selection, null, 2) }])
+  expect(evidence?.rows).toContainEqual({ label: `${key}.sampledAt`, value: 'fixture-time' })
+  expect(evidence?.raw).toContain('fixture-nested-id')
+})

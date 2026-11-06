@@ -1,3 +1,9 @@
+## 2026-11-06：选区记录隐藏嵌套连接身份
+
+- 文件：`src/client/tool-evidence.ts`、`tests/tool-evidence.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：`c9b5d70` 的规范审查无发现，需求审查发现 P3：`selected` 和 `currentSelection` 包含嵌套目标 ID/代次，整体展开与连接详情折叠的要求不符。
+- 修改与影响：默认只投影这两个记录中的 `selection` 和 `sampledAt`；完整目标身份继续保留在原始结果中。增加两种选区信封的回归，不改变读取/选区同步逻辑。`pnpm typecheck`、新构建和 15 项专项通过；先前 674 项打包结果仅对应上一提交，新包完整检查待执行。
+
 ## 2026-11-06：原生读取记录直接展示值（进行中）
 
 - 文件：`src/client/tool-evidence.ts`、`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence-locales.ts`、`tests/tool-evidence.test.ts`、`tests/client-bundle.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。

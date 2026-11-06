@@ -57,7 +57,17 @@ export function redisEvidence(tool: string, text: string): RedisEvidence | null 
     if (value.text === null) addValue('value.base64', value.base64)
   }
   for (const key of ['type', 'ttlMs', 'length']) add(`metadata.${key}`, metadata?.[key])
-  for (const key of ['keys', 'matches', 'samples', 'coordinates', 'distance', 'bits', 'fields', 'missing', 'entries', 'clients', 'groups', 'left', 'right', 'selected', 'currentSelection']) addValue(key, data[key])
+  for (const key of ['keys', 'matches', 'samples', 'coordinates', 'distance', 'bits', 'fields', 'missing', 'entries', 'clients', 'groups', 'left', 'right']) addValue(key, data[key])
+  // Selection envelopes also carry technical target identities. Expose only the
+  // recorded selection and its time here; the full envelope remains in raw data.
+  for (const key of ['selected', 'currentSelection']) {
+    const selected = record(data[key])
+    if (data[key] === null) addValue(key, null)
+    if (selected !== null) {
+      addValue(`${key}.selection`, selected.selection)
+      add(`${key}.sampledAt`, selected.sampledAt)
+    }
+  }
   // JSON.GET returns JSON source inside a string. Do not parse it: large integers
   // would lose precision, and [null] must remain distinct from no matches ([]).
   if (typeof data.matchesJson === 'string') values.push({ label: 'matchesJson', value: data.matchesJson })
