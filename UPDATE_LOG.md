@@ -1,3 +1,9 @@
+## 2026-11-06：保留结果卡片与自然语言解释，核对回合结束接口
+
+- 文件：`docs/DSH_AI_READONLY_IMPLEMENTATION_PLAN.md`、`docs/DSH_AI_READONLY_TASKS.md`、`docs/verification/turn-conclusion-2026-11-06.md`、`UPDATE_LOG.md`。根据用户“都有吧”的确认保留卡片与解释，遵循最简和单一职责原则，不新增聊天或存储机制，不给普通读取强制结束回合。
+- 依据：已安装 DSH 0.2.1-rc.5 的 ToolRuntime 隔离验证共 5 项通过；尤其确认正常返回业务 failed 仍可携带结束标记，因此该接口不能代替业务完成判断或事实校验。AgentLoop 对标记的处理仅以源码核对，不声称真实模型回合已验证。
+- 影响与验证：只更新方案和证据文档，产品、模型配置及日常包不变；临时脚本语法检查及运行均退出 0，Context 已释放，无新服务、Redis 查询或模型调用。`pnpm typecheck` 与 `git diff --check` 通过；此前回答错误与未验收项继续保留。
+
 ## 2026-11-06：缺失 Key 与 TTL 历史边界实测
 
 - 文件：`docs/verification/diagnostic-evidence-boundaries-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。记录当前日常安装的新对话证据，遵循事实可核验和最简原则，不改应用、认证、模型或包。区分定点工具事实、引导后的回答、模型额外解释及尚未通过的真实回执注入。
