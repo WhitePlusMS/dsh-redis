@@ -1,3 +1,11 @@
+## 2026-11-06：交付文档与现行能力同步
+
+- 文件：`README.md`、`README.zh.md`、`CHANGELOG.md`、`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md`、`docs/INSTALLATION.md`、`docs/INSTALLATION.zh.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因与原则：交付说明仍有四工具、协议 14、旧检查数量以及当前包应使用旧 DSH 的过时表述。遵循最简原则，依据注册代码、预算入口、结果视图和既有包证据修正文档；不改运行代码、配置、依赖或历史 Release 记录。
+- 修改与影响：补齐全部工具目录、扫描范围确认、原始读取记录、专业数据、额度恢复入口及模型解释边界；区分界面实际回执与人工范围确认、额度周期与消息轮次；开发说明同步协议 15 / 20 RPC / 32 工具。中英文安装说明区分旧 Release 与当前 0.1.1 的 DSH 0.2.1-rc.5 要求，README 引用 622dce6 的限定验收结果并保留 peer 警告和未完成项。
+- 验证：七份随包文档的工具目录与源码 32/32 一致、无缺漏或虚构名称；16 个读取视图、20 个 RPC 及协议 15 核对一致。62 个本地链接目标在工作区及既有包目录布局内，12 个 main 源码链接目标在工作区存在；不代表远端链接可访问或已发布。结果存临时目录 `dsh-redis-delivery-docs-20261106/checks.json`，diff 检查通过。
+- 范围：仅文档，未重跑不变产品代码的完整测试，未重新打包或替换已安装归档，未启动/停止服务；最终成品交付和完整模型/UI 异常验收仍未完成。
+
 ## 2026-11-06：候选连接等待期间手动切库验收
 
 - 文件：`docs/verification/connection-db-race-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。新增当前安装 `622dce6` 的真实切库交错证据；复用现有候选事务与代理，遵循最简原则，产品代码、模型配置和包未变。

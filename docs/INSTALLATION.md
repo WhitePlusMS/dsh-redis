@@ -4,11 +4,11 @@ English | [简体中文](INSTALLATION.zh.md)
 
 This guide covers `v0.1.0` Release packages, the two supported installation interfaces, and local development packages. [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private; downloading its Release assets requires repository access.
 
-The Release instructions and verified environment below are historical and apply to `v0.1.0`. Current source is `0.1.1` and declares DSH `0.2.1-rc.5`; its complete native installation and model acceptance remain pending. Do not assume that installing `v0.1.0` provides current development features.
+The Release instructions and verified environment below are historical and apply to `v0.1.0`. Current source is `0.1.1` and declares DSH `0.2.1-rc.5`. A local build from application source `622dce6` was installed through the CLI and loaded in that Web baseline on 2026-11-06; 137 installed files matched its archive. This does not establish a new Release, complete model/UI acceptance or a passing cross-plugin peers check. See the [installation evidence](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md). Do not assume that installing `v0.1.0` provides current development features.
 
 ## Supported target
 
-| Item | Current baseline |
+| Item | Historical v0.1.0 baseline |
 | --- | --- |
 | Host | DeepSeek Harness Web `0.2.0-rc.2` |
 | Verified platform | Windows, Node.js `22.22.1` |
@@ -169,7 +169,7 @@ A SHA256 value calculated locally identifies the file you have. When an archive 
 | Source code archive has no loadable entry | Use the built `.tgz`; the current source Git tree omits `lib/` |
 | `cannot resolve profile bundle "dsh-redis"` | Replace a moved/deleted development source in the same profile: remove, then add the verified built package; a plain `install` reuses the old source |
 | Package installed, no Redis entry | Target profile, bundle enable switch, Host reload/restart, browser refresh and Host diagnostics |
-| DSH rejects compatibility | Use the documented `0.2.0-rc.2` baseline; do not treat a forced version exemption as verified compatibility |
+| DSH rejects compatibility | Match the package to its declared DSH version: historical v0.1.0 evidence uses `0.2.0-rc.2`, current 0.1.1 source declares `0.2.1-rc.5`. Do not force a version exemption or downgrade the current build to the old baseline |
 | Connection fails | Host-to-Redis reachability, port, ACL credentials, TLS and CA; inspect the actual returned error |
 | Connection appears elsewhere | Open the conversation where you manually connected; network connections are session-specific |
 | Keys stop loading below the total | MATCH filters and bounded scanning can produce a partial result; inspect the progress state before refreshing or narrowing the search |

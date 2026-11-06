@@ -135,7 +135,11 @@ Desktop, macOS and Linux operation have not been verified. The declared Node.js 
 | `redis_viewer_value` | Read a named Key or, with no Key argument, the current sidebar selection |
 | `redis_viewer_select_db` | Switch this conversation's DB when explicitly requested and synchronize the sidebar |
 
-The development build also registers bounded Hash filtering, Key memory estimates, slow-log metadata, server overview, client metadata and Stream consumer-group diagnostics, plus saved-profile and UI tools. On explicit request it can save a sanitized diagnostic sample locally. See the packaged [AI usage guide](docs/AI_READ_USAGE.md) for parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
+The development build also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI usage guide](docs/AI_READ_USAGE.md) for the full tool list, parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
+
+An initial Key-name search or Hash filter requires DSH's native scope confirmation, showing the server, DB and query conditions. Continuation pages retain the same scope; direct reads of a known Key do not require this scan confirmation. Denial or cancellation stops the query. `SCAN MATCH` can still traverse the current DB's entire keyspace and does not produce a consistent snapshot.
+
+Expand a tool call to inspect its **Redis read record**: returned values, query conditions, timestamps, completeness and raw results come from that call. Model explanations can still contain unsupported claims or mix in historical results; the record does not validate the model's prose. If the cumulative read allowance is exhausted, open **Plugin information → Continue reading** after pending calls finish. A new message, DB switch or reconnection does not reset that allowance.
 
 These are custom tools registered through DSH's native Tool API, **not an MCP server**. The Client uses Typert RPC to synchronize selection identifiers; values are read from Redis when a tool is called. UI and AI paging state are separate, while both use the same session-owned network connection.
 
@@ -153,7 +157,9 @@ Not included: Redis writes, a free-form command console, direct RDB/AOF loading,
 
 ## Verification and known issue
 
-The 2026-11-04 MATCH-preset implementation passed typecheck, build and **76 test files / 600 tests**. Later diagnostic reports and the updated protocol passed targeted checks; a complete check of the current package is recorded separately. Earlier development builds passed some real DSH/model questions using synthetic data. Current native UI channel and complete real-model acceptance remain pending; see the [verification record in the source repository](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md). Historical tests do not prove acceptance of the current build.
+On 2026-11-06, application source `622dce6` passed strict type checks, build and **83 test files / 682 tests** during packaging; 137 installed files matched the archive. Native DSH/model testing verified one rejected query without further scanning, and a later connection-race run verified that manual DB selection superseded a pending candidate. These are bounded results for that application source, not complete acceptance or a new Release. See the [package and rejection record](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md), [connection-race record](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/connection-db-race-2026-11-06.md) and [remaining tasks](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md).
+
+Model explanations still have observed factual and scope errors; some responses also display inline think tags. The installed profile reported cross-plugin peer warnings, so its peers check is not claimed to pass. Full model/UI edge-case acceptance and final package delivery remain open. This documentation update has not replaced the installed archive.
 
 A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
 

@@ -6,9 +6,15 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 - Development build: ask about named Keys and explicit fields/members without first selecting a sidebar row; search names and filter Hash fields within bounded ranges.
 - Development build: bounded memory, slow-log, server, client, String comparison and Stream consumer-group diagnostics; explicitly requested local diagnostic reports exclude Redis values and raw Key/group names.
-- Development build: explicit saved-profile connection, disconnect, one-shot refresh, preview-format and saved MATCH-preset actions. UI actions require confirmation; full native DSH and model acceptance remains pending.
+- Development build: explicit saved-profile connection, disconnect, one-shot refresh, preview-format and saved MATCH-preset actions. UI actions require an acknowledgement from the actual view; full native DSH and model acceptance remains pending.
+- Development build: native scope confirmation before initial Key-name searches and Hash filters, with same-query continuation pages; rejection, cancellation and unavailable confirmation stop the scan with distinct outcomes.
+- Development build: recorded tool views show actual values, query conditions, scope, timestamps and raw results. They do not validate or rewrite model explanations.
+- Development build: bounded RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, with explicit module, permission and completeness limits.
 - 开发版支持直接查询指定 Key、字段与成员，并按范围查找名称和筛选 Hash；提供有界诊断及用户明确要求的本地诊断报告，报告不含 Redis 值和原始 Key/消费组名。
-- 开发版支持明确要求时连接已保存资料、断开、单次刷新、切换预览格式及应用 MATCH 预设。界面动作须确认，完整原生 DSH 与模型验收仍待完成。
+- 开发版支持明确要求时连接已保存资料、断开、单次刷新、切换预览格式及应用 MATCH 预设。界面动作须由实际视图回执确认，完整原生 DSH 与模型验收仍待完成。
+- 开发版名称搜索与 Hash 筛选首批需要原生范围确认，同条件续页沿用该查询；拒绝、取消与确认不可用分别报告并阻止扫描。
+- 开发版读取记录直接显示本次值、查询条件、范围、采样时间和原始结果；记录不校验或改写模型解释。
+- 开发版提供有界 RedisJSON 路径、TimeSeries 样本、Bitmap 位范围及 GEO 坐标/距离读取，明确模块、权限与完整性边界。
 
 ## [0.1.0] — 2026-10-20
 

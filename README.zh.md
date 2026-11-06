@@ -135,7 +135,11 @@ Desktop、macOS、Linux 尚未验收。Node.js 声明范围也不等于范围内
 | `redis_viewer_value` | 读取指定 Key；不传 Key 时读取侧栏当前选择 |
 | `redis_viewer_select_db` | 用户明确要求时切换本对话的 DB，并同步侧栏 |
 
-开发版还注册了有界 Hash 筛选、Key 内存估计、慢日志、服务器概况、客户端和 Stream 消费组诊断，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。参数与限制见随包的 [AI 使用说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
+开发版还注册了有界 Hash 筛选、内存/慢日志/服务器/客户端/消费组诊断、RedisJSON 路径、TimeSeries 样本、Bitmap 位范围及 GEO 坐标/距离读取，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。完整工具目录、参数与限制见随包的 [AI 使用说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
+
+名称搜索与 Hash 筛选首批需要 DSH 原生范围确认，显示服务器、DB 与查询条件；同条件续页沿用该查询，已知 Key 的直接读取不需要这项扫描确认。拒绝或取消会停止查询。`SCAN MATCH` 仍可能遍历当前 DB 整个键空间，结果不是一致性快照。
+
+展开工具调用可查看“Redis 读取记录”，其中值、查询条件、时间、完整性及原始结果直接来自本次调用。模型解释仍可能无依据推断或混用历史结果，记录不代表已校验模型文字。累计读取额度耗尽时，待在途调用结束后打开“插件信息 → 继续读取”；新消息、切库或重连不会重置该额度。
 
 这是通过 DSH 原生 Tool API 注册的自定义工具，**不是 MCP 服务**。Client 通过 Typert RPC 同步选择标识，工具实际调用时才从 Redis 读取值。界面和 AI 的分页状态分开，复用同一会话所属的网络连接。
 
@@ -153,7 +157,9 @@ Key 列表最多缓存 5,000 个 Key 或 2 MiB 编码结果。每轮自动扫描
 
 ## 验证与已知问题
 
-2026-11-04 的 MATCH 预设实现通过类型检查、构建及 **76 个测试文件 / 600 项测试**；此后的诊断报告和协议调整已通过专项检查，当前成品包的完整检查另行记录。此前部分开发构建使用合成数据通过了真实 DSH/模型提问；当前构建的原生界面通道及完整真实模型验收仍待完成，详见[源码仓库中的验收记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/user-questions-real-model-2026-11-04.md)。历史测试不能代表当前构建已验收。
+2026-11-06 应用源码 `622dce6` 打包时通过严格类型检查、构建及 **83 个测试文件 / 682 项测试**，137 个安装文件与归档一致。真实 DSH/模型验证了单次拒绝查询后不再扫描；后续连接竞态实测确认手动切库优先于等待中的候选连接。这些是该应用源码的局部证据，不代表全部验收或新 Release 发布。详见[包与拒绝记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md)、[连接竞态记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/connection-db-race-2026-11-06.md)及[剩余任务](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
+
+模型解释仍有事实和范围错误，部分响应会在正文显示 think 标签；安装 profile 曾报告跨插件 peer 警告，不能称 peers 检查通过。完整模型/界面异常验收及最终成品交付仍未完成。本次文档更新尚未替换已安装归档。
 
 原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
 

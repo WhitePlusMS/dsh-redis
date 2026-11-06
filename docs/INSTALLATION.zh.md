@@ -4,11 +4,11 @@
 
 本文说明 `v0.1.0` Release 成品包、界面/CLI 两种安装入口及本地开发包。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载 Release 附件需要仓库访问权限。
 
-下方 Release 步骤和已验证环境属于 `v0.1.0` 的历史记录。当前源码版本为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`；完整原生安装及模型验收仍待完成。安装 `v0.1.0` 不代表包含当前开发功能。
+下方 Release 步骤和已验证环境属于 `v0.1.0` 的历史记录。当前源码版本为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`。2026-11-06 应用源码 `622dce6` 的本地包已通过 CLI 安装并在该 Web 环境加载，137 个安装文件与归档一致；这不代表新 Release 发布、完整模型/界面验收或跨插件 peers 检查通过，详见[安装证据](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md)。安装 `v0.1.0` 不代表包含当前开发功能。
 
 ## 适用环境
 
-| 项目 | 当前基线 |
+| 项目 | v0.1.0 历史基线 |
 | --- | --- |
 | 宿主 | DeepSeek Harness Web `0.2.0-rc.2` |
 | 实际验证的平台 | Windows、Node.js `22.22.1` |
@@ -169,7 +169,7 @@ $packageForInstall
 | Source code 归档没有可加载入口 | 使用构建后的 `.tgz`；当前源码 Git 树不含 `lib/` |
 | `cannot resolve profile bundle "dsh-redis"` | 在同一 profile 移除已失效的开发来源，再添加核对过的成品包；单独 `install` 会复用旧来源 |
 | 安装后没有 Redis 入口 | 目标 profile、组合包开关、Host 重载或重启、浏览器刷新及 Host 诊断 |
-| DSH 提示版本不兼容 | 使用已验证的 `0.2.0-rc.2` 基线，不把强制版本豁免当作兼容性验证 |
+| DSH 提示版本不兼容 | 核对包声明的 DSH 版本：v0.1.0 历史证据使用 `0.2.0-rc.2`，当前 0.1.1 源码声明 `0.2.1-rc.5`；不要强制豁免或让当前包降回旧基线 |
 | 无法连接 | Host 到 Redis 的网络、端口、ACL、TLS、CA，以及实际返回的错误 |
 | 换对话后看不到连接 | 回到手动连接的对话；网络连接按会话隔离 |
 | 加载数量小于 DB 总数 | MATCH 筛选和有上限的扫描可能只返回部分结果，先查看加载状态，再刷新或缩小筛选范围 |

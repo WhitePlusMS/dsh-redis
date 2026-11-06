@@ -1,6 +1,6 @@
 # 在DSH对话中读取Redis
 
-接入方式为 DSH 原生插件工具，不是 Redis MCP Server；当前开放读取和明确切 DB，未开放业务数据写入。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
+本说明适用于当前 `0.1.1` 开发源码及 DSH `0.2.1-rc.5`，不表示旧版 `v0.1.0` Release 已包含这些能力。接入方式为 DSH 原生插件工具，不是 Redis MCP Server；开放只读查询、明确连接/切库、界面动作及本地资料保存，未开放 Redis 业务数据写入。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
 
 ## 使用顺序
 
@@ -38,6 +38,16 @@
 
 名称搜索和 Hash 条件筛选首次执行前会显示 DSH 原生范围确认，列出服务器、DB、MATCH 及筛选条件。接受后可在现有读取预算内续读同一查询；条件改变、重新发起首批查询或连接变化时须重新确认。拒绝、取消或缺少可用确认界面时不开始扫描。确认不占 Redis 查询超时；等待期间切库或重连会使原请求失效。已知 Key 的直接读取无需这项扫描确认。
 
+拒绝后停止本次查询，不自动重复提问或换工具绕过；“确认服务不可用”应检查 DSH 交互通道，不能当成已获同意。普通读取仍受 DSH 会话工具策略限制。
+
+## 核对结果与继续读取
+
+展开本轮的工具调用，可以查看“Redis 读取记录”。状态、基础读取、筛选、专业数据及诊断记录直接展示工具返回的连接/DB、实际值或样本、采样时间和完整性；“原始结果”保留完整工具 JSON，连接 ID 和代次放在“连接详情”。记录属于那次调用，打开它不会重新读取 Redis。连接与界面动作等其他工具保留 DSH 的原始调用结果。
+
+模型的解释与工具记录要分别核对。当前仍观察到历史结果混用、额外归因及范围解释错误；原始记录方便核对，但不能保证模型文字完全准确。缺失与空值、被拒绝与确认不可用、未读取与已读取但截断应分别理解；TTL 单次结果不能证明历史过期原因。部分模型响应还会把 think 标签显示在正文中，这不等于 Redis 连接失败。
+
+读取额度按会话累计：经预算入口的工具每个周期最多准入 32 次，累计 JSON 最多 1 MiB，单次最多 64 KiB；预留不足时会提前停止准入。它不会随新消息、切库或重连自动重置。耗尽时打开 Redis 侧栏右上角“插件信息”，如仍有请求结束中先刷新状态，再点“继续读取”。这只恢复额度，不重新执行旧请求，也不扩大已确认的查询条件；续读仍须使用有效游标。
+
 ## 当前选择如何解释
 
 | 侧栏选择 | 不传Key的值工具读取 |
@@ -72,6 +82,11 @@
 | `redis_viewer_geo` | 必填 `key` / `keyBase64` 和 `member` / `memberBase64`；距离查询另给 `other` / `otherBase64`，可选 `unit` | 精确读取一个成员的坐标，或两个成员的距离；距离单位为 `m`、`km`、`ft`、`mi`，默认米。ZSet 类型不能证明它是地理索引，坐标和距离存在 Redis 的编码及球形地球近似误差 |
 | `redis_viewer_profiles` / `redis_viewer_connect_profile` | 先列出资料，再提供同一会话返回的 `id` 与 `snapshotToken` | 用户明确选择已有资料时尝试连接；资料或令牌变化会拒绝，失败保留原连接，密码须在本地表单填写 |
 | `redis_viewer_disconnect` | `id` 和 `generation` 均来自当前状态 | 用户明确要求时断开当前会话；连接身份已变化则拒绝，取消或回执丢失后须查询状态 |
+| `redis_viewer_show` | 无 | 明确要求时打开本对话的 Redis 面板，只有界面确认可见才返回 `applied`；不建立 Redis 连接 |
+| `redis_viewer_locate_key` | `key` 或 `keyBase64` 中一个 | 在当前连接及唯一可见面板中定位明确 Key；工具以 TYPE 定点检查，界面选中后会加载内容，不能把定位等同于整个插件不读值 |
+| `redis_viewer_locate_hash_field` | `field` 或 `fieldBase64` 中一个 | 定位当前已选 Hash 的字段，通过 HGET 采样并等待界面确认，不跨 Key |
+| `redis_viewer_locate_list_index` | 非负十进制字符串 `index` | 定位当前已选 List 的位置；并发插入/删除可能改变该位置对应的元素 |
+| `redis_viewer_locate_set_member` | `member` 或 `memberBase64` 中一个 | 定位当前已选 Set 的成员，通过 SISMEMBER 定点采样并等待界面确认，不扫描成员 |
 | `redis_viewer_refresh` | 无 | 用户明确要求时刷新当前唯一可见面板的选中 Key；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。失败或回执丢失后检查面板，不能断言刷新没有发生 |
 | `redis_viewer_format` | 必填 `format`：`text`、`json`、`hex` 或 `base64` | 用户明确要求时切换当前可见值预览；成功须确认对应格式已渲染。无效或不完整 JSON 返回失败，字段名预览不会随值格式动作改变 |
 | `redis_viewer_match_presets` / `redis_viewer_save_match_preset` / `redis_viewer_apply_match_preset` | 列出预设；保存时提供名称和 MATCH；应用时提供已列出的 `id` | 预设存于本地 profile；仅用户明确要求时保存或应用。应用会清除当前 Key 选择、设置界面筛选并启动扫描；`applied` 不表示扫描已经完成 |
