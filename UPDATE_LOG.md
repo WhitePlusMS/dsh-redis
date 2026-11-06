@@ -1,3 +1,10 @@
+## 2026-11-06：刷新中用户取消、换 Key 与收起侧栏验收
+
+- 文件：`docs/verification/refresh-user-interruption-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。补齐当前安装 ba1a4da 的三种真实交错，澄清取消立即停止等待、已发送响应仍需接收的既有约定；遵循最简与证据原则，不修改产品、SDK、模型配置或安装包。
+- 验证：真实 DSH / bzkj-LLM 三轮均返回 stale，没有误报成功；换 Key 后显示新 List，迟到 String 未覆盖；取消和隐藏后不追加旧读取命令，原连接可手动刷新。重新展开会加载 DB/Key 元数据，不称完全无请求。此前等待器未识别的一轮只计超时。
+- 隔离证据：已安装 SDK HTTP 载体与现有 String 读取器约 3.78 毫秒返回 cancelled，迟到响应接收及后续命令对齐通过；首次脚本清理 API 修正后退出 0。4 项现有传输专项通过，不冒充完整浏览器链路或整套回归。临时脚本、DOM、代理与截图分别存 user-actions/drain 两个临时目录，不随包。
+- 影响与清理：仅扩充验收记录，不增加运行行为。22 条合成数据和绝对过期时间未变，代理与夹具退出 0、3386/11997 释放，日常 DSH 3080 / PID20528 保留。后台 hidden、渲染后回执丢失及整体模型准确性仍未完成。
+
 ## 2026-11-06：刷新回执修复安装与真实模型复验
 
 - 文件：`docs/verification/refresh-receipt-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。记录源码 ba1a4da 的成品与三轮真实复验，并将旧安装基线标为当时状态；遵循证据分层与最简原则，不追加产品修改。
