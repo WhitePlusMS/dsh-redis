@@ -124,7 +124,7 @@ pnpm build
 - `scripts/redis-fixture.mjs` 默认需要 Docker；TLS 专项还需要有 `cryptography` 的 Python，路径由 `REDIS_TEST_PYTHON` 提供。WSL 模式要求既有 rootfs 准备记录，只清理 owner 匹配的所属实例。
 - `scripts/smoke-dsh.mjs` 是持有临时 DSH/Redis 的夹具，需指定已经核对的 `DSH_CLI_ENTRY`，准备项目 `.scratch/runtime/` 内的独立 profile/home。界面验收通过原生浏览器工具进行；完成后必须调用其控制端 `/stop`，不能仅关闭浏览器。
 - 默认夹具阻断真实模型，`REDIS_SMOKE_REAL_MODEL=1` 才允许真实 provider。凭据副本只放忽略的临时目录，验收后删除；未经当前任务授权不改日常模型、代理、路由或真实业务数据。
-- `scripts/verify-release-package.mjs` 仍固定旧 `.scratch/artifacts/dsh-redis-0.1.0.tgz` 和报告路径。它是既有专项工具，不应直接拿来核对任意新文件名，或覆盖旧报告后当作本次通过。`REDIS_VERIFY_PACKAGE_ROOT` 只改变安装目录，不改变固定 tgz 路径。
+- `scripts/verify-release-package.mjs` 必须显式提供 `--archive <tgz>`、`--installed <安装后的 dsh-redis 目录>`、`--output <新的报告路径>`，并设置 `REDIS_TEST_PYTHON` 和 `DSH_CLI_ENTRY`。它核对归档完整文件集、源码/安装字节、manifest、Host SDK 和依赖版本；Host SDK 要与项目 devDependencies 锁定的测试版本一致。不会启动服务，报告已存在时失败，不覆盖旧证据；不再接受旧的隐式归档或 `REDIS_VERIFY_PACKAGE_ROOT` 入口。包内容检查不代替真实模型/界面验收，React 浏览器共享身份仍需原生验证。
 
 版本发布时重新执行默认打包检查，并从实际 Release 重新下载成品，在独立 profile 中验收 CLI 安装及原生 DSH 界面安装、启用和连接入口。真实 Redis/模型的验收范围另行记录，不用安装通过替代业务数据联调。
 
