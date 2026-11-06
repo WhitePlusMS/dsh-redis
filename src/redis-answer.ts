@@ -100,7 +100,9 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   const ttl = text(data.ttlMs ?? metadata.ttlMs)
   if (ttl === '-1') paragraphs.push('采样时没有设置过期时间；不能据此判断过去是否设置过，或将来是否会过期。')
   else if (ttl !== null && /^\d+$/u.test(ttl)) paragraphs.push(`采样时剩余过期时间为 ${ttl} 毫秒。`)
-  if (data.scanComplete !== undefined || value.scanComplete !== undefined) {
+  if (type === 'zset' && value.mode === 'range') {
+    paragraphs.push(value.nextOffset === null ? '本次排名读取已到达末尾；这不是 SCAN 扫描。' : '本次只读取指定排名范围，后续排名可按下一偏移继续读取。')
+  } else if (data.scanComplete !== undefined || value.scanComplete !== undefined) {
     const ended = (data.scanComplete ?? value.scanComplete) === true
     // Stream uses XRANGE/XREVRANGE pagination, not the SCAN command family.
     paragraphs.push(type === 'stream'
