@@ -1,3 +1,10 @@
+## 2026-11-06：混合类型筛选与权限拒绝验收
+
+- 文件：`scripts/hold-ai-acceptance.mjs`、`docs/verification/mixed-filter-permissions-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：当前自然语言筛选异常验收需要同时包含缺字段和稳定非 Hash 候选，并与普通未匹配明确区分。
+- 修改与影响：增加可选 `--mixed-filter`，仅在所属独立 Redis 中创建两条合成候选；默认场景不变。两条 Key 纳入原有 DUMP、绝对过期时间和数量的结束对照，ready 回执记录该模式；复用 `--restricted` 进行权限拒绝验收。不改应用源码或已安装包。任务清单链接本轮证据并保留整体未完成状态。
+- 验证：脚本语法和严格类型通过；已安装源码 `02988c2`、真实 DSH / `bzkj-LLM` 与隔离 Redis 8.2.6 中，两轮 18 候选的匹配/无匹配分类及 HGET/SCAN 权限拒绝与工具一致。模型仍有 HEXISTS 能力承诺、无遗漏推断和凭证变化表述错误，不记为完整回答通过。24 条合成数据、绝对过期时间和数量校验一致；界面断开、所属实例停止，日常 DSH 保留。完整页面和截图只存本机临时目录，没有业务数据入库。
+
 ## 2026-11-06：值展示安装与真实回放验收
 
 - 文件：`docs/verification/native-values-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。

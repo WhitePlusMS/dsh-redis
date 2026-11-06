@@ -9,6 +9,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
   for (let index = 0; index < 16; index++) {
     await admin.hSet('fixture:order:' + index, { status: index % 4 === 0 ? 'synthetic-failed' : 'synthetic-ready', note: 'synthetic-only' })
   }
+  // Missing fields and stable non-Hash candidates must remain distinct outcomes.
+  const mixedFilter = process.argv.includes('--mixed-filter')
+  if (mixedFilter) {
+    await admin.hSet('fixture:order:missing-field', 'other', 'synthetic-other')
+    await admin.set('fixture:order:wrong-type', 'synthetic-string')
+  }
   await admin.hSet('fixture:user:123', { name: 'synthetic-user', status: 'synthetic-active' })
   await admin.sendCommand(['SADD', 'fixture:members', 'synthetic-user'])
   await admin.sendCommand(['ZADD', 'fixture:scores', '3.75', 'synthetic-user'])
@@ -45,6 +51,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
   const buffers = admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
   // Check every fixture key, including absolute expiry, before releasing the instance.
   const keys = [...Array.from({ length: 16 }, (_, index) => 'fixture:order:' + index), 'fixture:user:123', 'fixture:members', 'fixture:scores', 'fixture:string', 'fixture:list', 'fixture:stream']
+  if (mixedFilter) keys.push('fixture:order:missing-field', 'fixture:order:wrong-type')
   if (withGeo) keys.push('fixture:places')
   if (withModules) keys.push('fixture:json', 'fixture:timeseries')
   const before = await Promise.all(keys.map(key => buffers.sendCommand(['DUMP', key])))
@@ -70,7 +77,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
       assert(unknownGroup); assert.equal(unknownGroup.lag, null); assert.equal(unknownGroup['entries-read'], null)
     }
   }
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo, modules: withModules, disableMemory }))
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, mixedFilter, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo, modules: withModules, disableMemory }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)
