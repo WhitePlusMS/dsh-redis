@@ -19,8 +19,14 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   }
   await admin.hSet('fixture:order:missing-field', 'other', 'synthetic-other')
   await admin.set('fixture:order:wrong-type', 'synthetic-string')
+  await admin.hSet('fixture:predicate', { '': '', '状态': '待处理\u0000\n' })
+  const largeCondition = { field: '\u0000'.repeat(1024), equals: '\u0000'.repeat(4096) }
+  const largeKeys = Array.from({ length: 3 }, (_, index) => 'fixture:budget:' + index + ':'.repeat(12000))
+  for (const key of largeKeys) await admin.hSet(key, largeCondition.field, largeCondition.equals)
   const buffers = admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
-  const before = await buffers.sendCommand(['DUMP', 'fixture:order:0'])
+  const fixtureKeys = [...Array.from({ length: 26 }, (_, index) => 'fixture:order:' + index), 'fixture:order:missing-field', 'fixture:order:wrong-type', 'fixture:predicate', ...largeKeys]
+  const before = await Promise.all(fixtureKeys.map(key => buffers.sendCommand(['DUMP', key])))
+  const expiry = await Promise.all(fixtureKeys.map(key => admin.sendCommand(['PEXPIRETIME', key])))
   const stats = async () => {
     const info = await admin.info('commandstats')
     return Object.fromEntries(['hset', 'hdel', 'set', 'del'].map(name => [name, Number(new RegExp('^cmdstat_' + name + ':calls=(\\d+)', 'mu').exec(info)?.[1] ?? 0)]))
@@ -61,6 +67,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert(!text.includes('synthetic-private-value')); assert(!text.includes('synthetic-ready'))
       const page = JSON.parse(text)
+      assert.deepEqual(page.condition, { field: 'status', equals: 'synthetic-failed' })
       assert.equal(page.state, 'page'); assert(page.counts.checked <= 10)
       checked += page.counts.checked; missingField += page.counts.missingField; notHash += page.counts.notHash; typeChanged += page.counts.typeChanged
       for (const key of page.matches) found.add(Buffer.from(key.base64, 'base64').toString('utf8'))
@@ -69,9 +76,32 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     } while (cursor !== undefined)
     assert.deepEqual([...found].sort(), [...expected].sort())
     assert(checked >= 28); assert(missingField >= 1); assert(notHash >= 1); assert.equal(typeChanged, 0)
-    assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:order:0']), before)
+    // Full predicates must survive UTF-8 and JSON escaping, not display-label truncation.
+    for (const condition of [{ field: '', equals: '' }, { field: '状态', equals: '待处理\u0000\n' }]) {
+      const result = await ctx.tools.execute({ callId: 'predicate-' + condition.field, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:predicate', ...condition }, agent, signal })
+      assert.equal(result.isError, false)
+      const page = JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
+      assert.deepEqual(page.condition, condition)
+      assert.equal(page.counts.matched, 1); assert.equal(page.scanComplete, true)
+    }
+    // Escaped conditions consume the same 64 KiB output budget as Key identities.
+    const largeFound = new Set(); let largeCursor, largeCalls = 0
+    do {
+      const result = await ctx.tools.execute({ callId: 'large-predicate-' + largeCalls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:budget:*', ...largeCondition, ...(largeCursor === undefined ? {} : { cursor: largeCursor }) }, agent, signal })
+      assert.equal(result.isError, false)
+      const text = result.content.filter(block => block.type === 'text').map(block => block.text).join(''), page = JSON.parse(text)
+      assert(Buffer.byteLength(text) <= 65536); assert.deepEqual(page.condition, largeCondition)
+      assert.equal(page.state, 'page'); assert.equal(page.counts.failed, 0)
+      for (const key of page.matches) largeFound.add(Buffer.from(key.base64, 'base64').toString('utf8'))
+      largeCursor = page.cursor ?? undefined
+      assert(++largeCalls < 20)
+    } while (largeCursor !== undefined)
+    assert(largeCalls > 1); assert.deepEqual([...largeFound].sort(), [...largeKeys].sort())
+    assert.deepEqual(await Promise.all(fixtureKeys.map(key => buffers.sendCommand(['DUMP', key]))), before)
+    assert.deepEqual(await Promise.all(fixtureKeys.map(key => admin.sendCommand(['PEXPIRETIME', key]))), expiry)
+    assert.equal(await admin.dbSize(), fixtureKeys.length)
     assert.deepEqual(await stats(), beforeStats)
-    assert.equal(prompts, 3) // Rejected search, accepted search, accepted filter; no per-page prompts.
+    assert.equal(prompts, 6) // Rejected/accepted search and four filters; no per-page prompts.
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }
 }, { passwordRequired: false })
 assert(fixture.stopped)

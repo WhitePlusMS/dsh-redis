@@ -34,6 +34,12 @@ it('does not promote malformed, oversized or unrelated output to structured read
   for (const text of ['bad json', 'null', '[]', '{"state":"value"}', ' '.repeat(131073)]) expect(redisEvidence('redis_viewer_value', text)).toBeNull()
 })
 
+it.each([{ field: '', equals: '' }, { field: '状态', equals: '待处理\u0000\n' }])('shows the exact recorded filter condition, including empty and escaped text: %j', condition => {
+  const evidence = redisEvidence('redis_viewer_filter_hash', JSON.stringify({ readOnly: true, condition, state: 'failed', error: 'permission' }))
+  expect(evidence?.values).toContainEqual({ label: 'condition', value: JSON.stringify(condition, null, 2) })
+  expect(redisEvidence('redis_viewer_filter_hash', '{"readOnly":true}')?.values).not.toContainEqual(expect.objectContaining({ label: 'condition' }))
+})
+
 it('shows only the recorded String window with its range and completeness', () => {
   const evidence = redisEvidence('redis_viewer_value', JSON.stringify({ readOnly: true, value: { text: 'synth', base64: 'c3ludGg=', byteLength: 5, offset: '0', nextOffset: '5', complete: false, metadata: { type: 'string', length: '22' } } }))
   expect(evidence?.values).toEqual([{ label: 'value.text', value: '"synth"' }])

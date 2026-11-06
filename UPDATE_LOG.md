@@ -1,3 +1,10 @@
+## 2026-11-06：筛选记录保留实际条件
+
+- 文件：`src/host/ai-hash-filter.ts`、`src/client/tool-evidence.ts`、`tests/tool-evidence.test.ts`、`scripts/smoke-ai-hash-filter.mjs`、`scripts/smoke-ai-permissions.mjs`、`docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：真实验收中不同字段比较查询的记录仅有 pattern 和计数，卡片自身不能说明实际字段及目标值。
+- 修改与影响：每批结果保存完整 `condition.field/equals` 并由既有卡片展示；不依赖历史参数、当前选择或模型解释。查询条件计入分页输出预算，保留空文本、中文和控制字符；不增加 Redis 命令，不返回未匹配值。
+- 验证：语法、严格类型与 118 项专项通过。独立 Redis 8.2.6 专项核对全部续页、空字段、中文控制字符、权限失败，以及上限字段/目标值与三条长 Key 的多页完整返回；各页不超过 64 KiB。筛选夹具全部 32 条数据、绝对过期时间、数量及写命令计数不变，权限夹具数据和绝对过期时间不变，测试实例均已停止。新源码尚未安装；日常包仍为 `02988c2`，不把脚本专项当作新包真实模型验收。
+
 ## 2026-11-06：混合类型筛选与权限拒绝验收
 
 - 文件：`scripts/hold-ai-acceptance.mjs`、`docs/verification/mixed-filter-permissions-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。

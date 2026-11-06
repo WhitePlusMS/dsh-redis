@@ -57,7 +57,7 @@ export function redisEvidence(tool: string, text: string): RedisEvidence | null 
     if (value.text === null) addValue('value.base64', value.base64)
   }
   for (const key of ['type', 'ttlMs', 'length']) add(`metadata.${key}`, metadata?.[key])
-  for (const key of ['keys', 'matches', 'samples', 'coordinates', 'distance', 'bits', 'fields', 'missing', 'entries', 'clients', 'groups', 'left', 'right']) addValue(key, data[key])
+  for (const key of ['condition', 'keys', 'matches', 'samples', 'coordinates', 'distance', 'bits', 'fields', 'missing', 'entries', 'clients', 'groups', 'left', 'right']) addValue(key, data[key])
   // Selection envelopes also carry technical target identities. Expose only the
   // recorded selection and its time here; the full envelope remains in raw data.
   for (const key of ['selected', 'currentSelection']) {

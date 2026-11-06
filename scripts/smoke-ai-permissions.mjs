@@ -45,6 +45,10 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.equal(deniedValue.value.state, 'failed'); assert.equal(deniedValue.value.error, 'permission')
     const deniedSearch = await call('redis_viewer_keys', { match: 'fixture:acl:*' })
     assert.equal(deniedSearch.state, 'failed'); assert.equal(deniedSearch.error, 'permission')
+    const condition = { field: 'status', equals: 'synthetic-query' }
+    const deniedFilter = await call('redis_viewer_filter_hash', { match: 'fixture:acl:*', ...condition })
+    assert.equal(deniedFilter.state, 'failed'); assert.equal(deniedFilter.error, 'permission')
+    assert.deepEqual(deniedFilter.condition, condition); assert.equal(deniedFilter.counts.checked, 0)
     assert.deepEqual(await Promise.all(names.map(key => buffers.sendCommand(['DUMP', key]))), before)
     assert.deepEqual(await Promise.all(names.map(key => admin.sendCommand(['PEXPIRETIME', key]))), expiry)
   } finally { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() }

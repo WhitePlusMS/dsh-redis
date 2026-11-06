@@ -19,12 +19,16 @@ export class RedisAiHashFilter {
   constructor(private readonly connections: RedisConnections) { this.keys = new RedisKeys(connections) }
 
   async prepare(sessionId: string, target: DatabaseTarget, pattern: string, fieldBase64: string, expectedBase64: string, cursor: string | null, signal: AbortSignal): Promise<PreparedAiPage> {
+    // Both texts were validated losslessly at the reader boundary. Keep the full
+    // predicate in every recorded page, including empty and failed results.
+    const condition = { field: Buffer.from(fieldBase64, 'base64').toString('utf8'), equals: Buffer.from(expectedBase64, 'base64').toString('utf8') }
     const page = await this.pages.prepare({
       sessionId, binding: JSON.stringify([target.id, target.generation, target.db, pattern, fieldBase64, expectedBase64]), selection: null, cursor, signal,
       fetch: next => this.keys.scan(sessionId, { target, pattern, cursor: next }, signal),
       rows: result => result.keys,
-      // Reserve space for counts, connection metadata and the field identity.
-      output: (result, keys, next) => ({ ...result, keys, cursor: next, reserve: RESULT_RESERVE }),
+      // Measure the actual condition too: JSON escaping can expand control text.
+      // The reserve covers counts and connection metadata, not the predicate.
+      output: (result, keys, next) => ({ ...result, condition, keys, cursor: next, reserve: RESULT_RESERVE }),
       validate: error => this.connections.assertReadResult(sessionId, target, error),
       discard: () => this.keys.disposeSession(sessionId),
       maxRows: MAX_CANDIDATES_PER_CALL,
@@ -60,7 +64,7 @@ export class RedisAiHashFilter {
       }
       signal.throwIfAborted()
       this.connections.assertReadResult(sessionId, target, data.error)
-      const result = z.json().parse({ readOnly: true, connection: this.connections.status(sessionId), pattern, scanScope: KEY_SCAN_SCOPE, state: data.state, error: data.error,
+      const result = z.json().parse({ readOnly: true, connection: this.connections.status(sessionId), pattern, condition, scanScope: KEY_SCAN_SCOPE, state: data.state, error: data.error,
         errorMessage: data.error === null ? null : connectionErrorMessages[data.error].zh, matches, counts, errors: [...errors], cursor,
         scanComplete: data.state === 'page' && cursor === null, sampledAt: data.sampledAt, readStartedAt, readFinishedAt: new Date().toISOString(),
         coverage: '本批候选；跨批可能重复，SCAN 与逐项读取不是同一时刻的快照。' })
