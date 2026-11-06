@@ -1,6 +1,18 @@
 # 当前可用交付与剩余问题
 
-更新：2026-11-06。**当前有可使用的开发包，原定“全部优化完成”的目标尚未达到。** 本页汇总交付状态，不替代[七项任务及验收条件](DSH_AI_READONLY_TASKS.md)，也不将历史构建的局部记录升级为当前版本全部通过。
+更新：2026-11-06。**新的查找、读取、回答流程已实现并打包，日常运行实例尚未替换。** 本次实现提交 `7f8de2f`，审查边界修复 `8a51b33`。本页不替代[七项任务及验收条件](DSH_AI_READONLY_TASKS.md)，不把本轮流程交付等同于历史七项全部完成。
+
+## 本轮新增交付
+
+- 完成必要查询后，无参数调用 `redis_viewer_answer`，Host 自动汇总本轮当前连接和 DB 的真实读取记录，展示中文事实、原值和限制，再结束回合。普通读取继续支持分页、字段读取和比较；最终答案保留失败/拒绝、部分结果及超出保留上限的提示。
+- 新包：`.scratch/artifacts/answer-20261106/dsh-redis-0.1.1-f8318c3de039da9d8e0b5d5230567af6092826a848a513fce58062fb284680cb.tgz`，SHA-256 即文件名中的完整哈希，源码绑定 `8a51b33446a71a190688703ac58f44cbe943f7a5`。
+- 默认打包检查：严格类型、构建、84 个测试文件 / 693 项全部通过。独立 profile 安装通过，143 个成品文件逐字节一致，118 个运行文件、13 项 Host peers 和 3 项依赖通过既有校验器检查。Spec / Standards 独立复核均无剩余发现。
+- 主实现通过真实 bzkj-LLM、隔离 Redis 8.2.6、产品 ToolRuntime/SessionStore/reader 的两轮流程：status→keys→value→answer；key_metadata→answer。合成数据及数量不变，所属 Redis 已停止并清理。随后三项审查边界修复通过专项及完整打包检查。
+- 真实模型测试使用 HTTP 驱动工具流程，不是 DSH Web/AgentLoop 端到端验收；真实 Client bundle 的答案视图及转义已回归。最终工具不校验此前模型的自由文本，也不替模型判断用户问题是否已经完成。日常 DSH、业务数据、模型配置及远端 Git 均未改变。
+
+本机证据在 `C:/Users/admin/AppData/Local/Temp/dsh-redis-answer-20261106/`：`model-flow.json` 保留内部调用 ID 方案失败，`model-flow-v2.json` 为无参数方案的两轮通过，`pack.log`、`installed-verification.json`、`artifact.json` 记录本轮成品。没有以重复追问模型得到偶然正确答案替代修复。
+
+以下是本轮改造前的交接快照，旧包和失败记录保留其原有时间边界。
 
 ## 现在可以使用什么
 

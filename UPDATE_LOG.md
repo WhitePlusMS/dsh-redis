@@ -3607,6 +3607,7 @@
 
 - 原因：真实读取结果正确，但模型自由补充了未经证实的历史、数值或范围；用户要求直接完成查询到回答链路。按最简、单一职责原则新增独立最终回答工具，普通读取继续支持后续查询。
 - 独立审查后补齐：失败/拒绝作为本轮记录保留，未结束读取不允许收束；超过 32 条保留上限明确提示遗漏次数。专业数据答案补齐 Key 和 GEO 成员身份，二进制或截短标签使用完整 Base64 身份。`tests/ai-answer.test.ts` 新增拒绝、记录上限及目标身份回归。
+- 最终交付：应用提交 `8a51b33` 默认打包检查 84 文件 / 693 项通过；包 SHA-256 为 `f8318c3de039da9d8e0b5d5230567af6092826a848a513fce58062fb284680cb`。独立 profile 安装后 143 个成品文件与归档一致，118 个运行文件及依赖版本校验通过；Spec / Standards 复核均 0 个剩余发现。`docs/DELIVERY_STATUS.md` 更新本轮结果并保留旧交接快照。日常实例没有替换，未推送或发布。
 - 文件：`src/host/ai-answer.ts` 订阅 DSH 已提交会话事件，自动引用本轮、同会话、同连接代次和 DB 的读取记录，限制记录及答案大小；答案准备成功后调用正式 `concludeTurn()`。真实模型首轮暴露内部调用 ID 不可可靠填写，因此移除该参数，改由 Host 自动绑定，不以补提示词让模型猜 ID。不另建查询、游标或聊天系统。
 - 文件：`src/redis-answer.ts` 从实际记录生成中文事实、原值、TTL 与覆盖解释，保留 JSON 原文和精确数值；`src/redis-read-tools.ts` 统一读取工具目录，`src/client/tool-evidence.ts` 移出目录常量，`src/runtime.ts` 注册最终回答工具，`src/host/ai-tools.ts` 补充工作流入口提示。
 - 文件：`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence-locales.ts` 展示最终文字和原值，沿用原生工具视图和 React 文本转义；`tsconfig.client.json` 加入共享文件。`tests/ai-answer.test.ts` 覆盖实际 reader/ToolRuntime/SessionStore 串联、旧引用、切库重连、取消及精度边界。
