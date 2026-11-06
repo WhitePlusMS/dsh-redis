@@ -87,7 +87,7 @@
 | `redis_viewer_locate_hash_field` | `field` 或 `fieldBase64` 中一个 | 定位当前已选 Hash 的字段，通过 HGET 采样并等待界面确认，不跨 Key |
 | `redis_viewer_locate_list_index` | 非负十进制字符串 `index` | 定位当前已选 List 的位置；并发插入/删除可能改变该位置对应的元素 |
 | `redis_viewer_locate_set_member` | `member` 或 `memberBase64` 中一个 | 定位当前已选 Set 的成员，通过 SISMEMBER 定点采样并等待界面确认，不扫描成员 |
-| `redis_viewer_refresh` | 无 | 用户明确要求时刷新当前唯一可见面板的选中 Key；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。失败或回执丢失后检查面板，不能断言刷新没有发生 |
+| `redis_viewer_refresh` | 无 | 用户明确要求时读取当前唯一可见面板选中 Key 的当前查看范围并更新预览；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。工具回执不返回读到的值，不等于没有读取值。`disconnected` 指界面动作通道，不能据此判断 Redis 连接状态；失败或回执丢失不能证明读取未发生或命令已撤回 |
 | `redis_viewer_format` | 必填 `format`：`text`、`json`、`hex` 或 `base64` | 用户明确要求时切换当前可见值预览；成功须确认对应格式已渲染。无效或不完整 JSON 返回失败，字段名预览不会随值格式动作改变 |
 | `redis_viewer_match_presets` / `redis_viewer_save_match_preset` / `redis_viewer_apply_match_preset` | 列出预设；保存时提供名称和 MATCH；应用时提供已列出的 `id` | 预设存于本地 profile；仅用户明确要求时保存或应用。应用会清除当前 Key 选择、设置界面筛选并启动扫描；`applied` 不表示扫描已经完成 |
 | `redis_viewer_save_diagnostic_report` | 保存时提供同一会话诊断结果中的 `reportSampleId` | 明确要求时将已有采样保存到 DSH profile 的 `data/dsh-redis/reports`，不会重新读取 Redis。支持概况、慢日志、客户端、Key 内存、String 比较及消费组；Key 和组名以 SHA-256 身份记录，慢日志报告不含命令名称或参数。不接收自由文本、路径或 Redis 值；只在会话内暂存最近 16 项，保存中断时检查目录。结果过大时可能不提供报告标识 |

@@ -27,7 +27,7 @@ export function registerRedisUiTools(ctx: Context, actions: UiActionCoordinator<
 /** Refresh a confirmed current selection once; never enable periodic refresh. */
 export function registerRedisRefreshTool(ctx: Context, reader: RedisAiReader, actions: UiActionCoordinator<UiAction>): void {
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_refresh', description: '仅在用户明确要求刷新当前 Redis 面板选中的 Key 时调用。只发起一次当前查看范围的只读刷新，不开启自动刷新；只有对应读取结果渲染且选择重新同步后才返回 applied。连接或选择变化、隐藏、失败、取消和回执丢失时检查界面，不能假定刷新没有发生。',
+    name: 'redis_viewer_refresh', description: '仅在用户明确要求刷新当前 Redis 面板选中的 Key 时调用。刷新会从 Redis 读取当前查看范围并更新预览，不修改数据、不自动开启周期刷新；本工具结果只返回界面回执，不返回读到的值，不能据此声称没有读取值。只有对应读取结果渲染且选择重新同步后才返回 applied。disconnected 表示界面动作通道断开，不能据此判断 Redis 连接已断开；其他未确认结果也不能证明读取未发生或命令已撤回。按实际回执说明，不能推测超时或失败的根因。',
     parameters: {}, output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
     async execute(args, exec) {
       exec.signal.throwIfAborted()
@@ -38,7 +38,11 @@ export function registerRedisRefreshTool(ctx: Context, reader: RedisAiReader, ac
         const prepared = await reader.prepareUiSelection(session, exec.signal).catch((error: unknown) => { if (error instanceof ConnectionFailure && error.code === 'stale') return null; throw error })
         if (prepared === null) return { outcome: 'stale', message: '连接或界面选择已变化，请检查面板。' }
         const outcome = await actions.dispatch(session, { kind: 'refresh', target: prepared.target, keyBase64: prepared.keyBase64 }, null, prepared.revision, prepared.current, exec.signal)
-        return { outcome, message: outcome === 'applied' ? '已确认当前面板完成一次只读刷新。' : '未能确认刷新结果，请检查当前面板。' }
+        // A UI receipt is not a Redis connection-status sample or proof that no read was sent.
+        const message = outcome === 'applied'
+          ? '已确认当前面板完成当前查看范围的一次 Redis 只读读取并显示结果；本工具回执不包含读到的值。'
+          : `${outcome === 'disconnected' ? '界面动作通道已断开；此回执不代表 Redis 连接状态。' : ''}未能确认刷新结果；读取可能已经发出，不能断言未读取值或命令已撤回。请检查当前面板。`
+        return { outcome, message }
       })
     },
   }))
