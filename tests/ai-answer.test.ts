@@ -163,3 +163,12 @@ it('preserves exact JSON, binary values, large integers and partial-result cavea
   expect(memory.paragraphs.join('')).toContain('9007199254740993 字节'); expect(memory.paragraphs.join('')).toContain('实际采样数和误差未知')
   for (const raw of ['null', '{}', '[]', '{"state":"answered","readOnly":true,"answers":[{}]}']) expect(parseRedisAnswer(raw)).toBeNull()
 })
+
+it('distinguishes Stream range pagination from SCAN and omits inapplicable member scores', () => {
+  const stream = describeRedisResult('redis_viewer_value', { connection: { db: 0 }, value: { type: 'stream', state: 'page', scanComplete: true, complete: false, messages: [] } })
+  expect(stream.paragraphs.join('')).toContain('指定消息范围的分页读取已结束')
+  expect(stream.paragraphs.join('')).not.toContain('SCAN')
+  const member = describeRedisResult('redis_viewer_value', { connection: { db: 0 }, member: { label: '"member"' }, value: { state: 'value', metadata: { type: 'set' }, score: null } })
+  expect(member.paragraphs.join('')).toContain('采样时存在')
+  expect(member.values.some(value => value.label === '分数')).toBe(false)
+})

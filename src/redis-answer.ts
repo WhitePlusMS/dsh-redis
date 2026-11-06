@@ -77,10 +77,11 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   } else if (tool === 'redis_viewer_value') {
     paragraphs.push(`${target}${type === null ? '' : `（${type}）`}的本次读取结果如下。`)
     if (data.field !== undefined) paragraphs.push(`指定字段：${identity(data.field)}。`)
-    if (data.member !== undefined) paragraphs.push(`指定成员：${identity(data.member)}。`)
+    if (data.member !== undefined) paragraphs.push(`指定成员：${identity(data.member)}${state === 'value' ? '，采样时存在' : ''}。`)
     if (value.text !== undefined) add(value.text === null ? '二进制值（Base64）' : '值', value.text === null ? value.base64 : value.text)
     if (value.cell !== undefined) add('选定值', value.cell)
-    for (const [key, label] of [['entries', '条目'], ['members', '成员'], ['messages', '消息'], ['score', '分数']] as const) add(label, value[key])
+    for (const [key, label] of [['entries', '条目'], ['members', '成员'], ['messages', '消息']] as const) add(label, value[key])
+    if (value.score !== null) add('分数', value.score)
     add('选择记录', object(data.selected).selection)
   } else if (tool === 'redis_viewer_memory') {
     paragraphs.push(`${target} 的 MEMORY USAGE 结果为 ${String(data.bytes)} 字节。SAMPLES ${String(data.requestedSamples)} 是请求参数，实际采样数和误差未知；结果包含 Key、值的分配和管理开销，可能包含内部碎片，不是服务器总内存。`)
@@ -99,7 +100,13 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   const ttl = text(data.ttlMs ?? metadata.ttlMs)
   if (ttl === '-1') paragraphs.push('采样时没有设置过期时间；不能据此判断过去是否设置过，或将来是否会过期。')
   else if (ttl !== null && /^\d+$/u.test(ttl)) paragraphs.push(`采样时剩余过期时间为 ${ttl} 毫秒。`)
-  if (data.scanComplete !== undefined || value.scanComplete !== undefined) paragraphs.push((data.scanComplete ?? value.scanComplete) === true ? '本次扫描迭代已结束，但 SCAN 不是一致性快照，跨批可能重复。' : '扫描尚未结束，当前结果不是完整匹配集合。')
+  if (data.scanComplete !== undefined || value.scanComplete !== undefined) {
+    const ended = (data.scanComplete ?? value.scanComplete) === true
+    // Stream uses XRANGE/XREVRANGE pagination, not the SCAN command family.
+    paragraphs.push(type === 'stream'
+      ? ended ? '指定消息范围的分页读取已结束；不代表整个 Stream，跨批读取不是一致性快照。' : '指定消息范围尚未读完，当前结果只包含已返回的消息。'
+      : ended ? '本次扫描迭代已结束，但 SCAN 不是一致性快照，跨批可能重复。' : '扫描尚未结束，当前结果不是完整匹配集合。')
+  }
   if (data.complete === false || value.complete === false || object(value.cell).complete === false) paragraphs.push('本次仅返回部分数据，不能把它当作完整值或完整列表。')
   if (tool === 'redis_viewer_keys' || tool === 'redis_viewer_filter_hash') paragraphs.push('MATCH 按 Key 名称匹配；SCAN 仍可能遍历当前 DB 的键空间，COUNT 只是工作量提示。')
   for (const [key, label] of [['cursor', '续读令牌'], ['nextOffset', '下一偏移'], ['nextFrom', '下一时间范围']] as const) {
