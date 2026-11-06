@@ -1,3 +1,10 @@
+## 2026-11-06：筛选条件安装与真实展示验收
+
+- 文件：`docs/verification/filter-condition-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：补齐 `4f7ffd4` 的完整检查、实际安装及新查询证据，避免将此前脚本通过误记为真实模型通过。
+- 修改与影响：记录 82 文件/678 项完整打包检查、包哈希、137 文件安装一致性及两轮四页实际条件展示；任务清单更新当前安装基线。保留模型空用户名解释错误、原始 think 文本展示及未覆盖场景，不把七项任务标为全部完成。
+- 验证：新包经官方 CLI 安装并重启已核验日常 DSH（PID 36220）；两轮分别匹配 4/0 项，四张卡片条件与原 JSON 一致，旧记录没有被新条件覆盖。24 条隔离数据、绝对过期时间和数量校验一致，实例已停止；日常服务保留、无在途模型请求。源码提交后两路只读审查均无发现。本次仅文档，不重复完整测试。
+
 ## 2026-11-06：筛选记录保留实际条件
 
 - 文件：`src/host/ai-hash-filter.ts`、`src/client/tool-evidence.ts`、`tests/tool-evidence.test.ts`、`scripts/smoke-ai-hash-filter.mjs`、`scripts/smoke-ai-permissions.mjs`、`docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
