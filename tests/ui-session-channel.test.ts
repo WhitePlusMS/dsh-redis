@@ -34,6 +34,7 @@ it('releases a hidden browser session channel and restores it when visible', asy
     }
   })
   const ctx = {
+    uiConversation: { events: { register: () => () => undefined } },
     effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
     sidebarRight: { mounted: { getSnapshot: () => session, subscribe: () => () => undefined } },
@@ -81,6 +82,7 @@ it('opens the active session pane and waits for a visible body before acknowledg
   const openUiChannel = vi.fn(() => stream), openTab = vi.fn()
   vi.stubGlobal('document', visibleDocument())
   const ctx = {
+    uiConversation: { events: { register: () => () => undefined } },
     effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key },
     sidebarRightTabs: { register: () => () => undefined },
@@ -123,6 +125,7 @@ it('disposes the old stream on carrier loss and opens one stream for the new gen
   })
   vi.stubGlobal('document', visibleDocument())
   const ctx = {
+    uiConversation: { events: { register: () => () => undefined } },
     effect: (operation: () => unknown) => { const dispose = operation(); if (typeof dispose === 'function') cleanups.push(dispose as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
     sidebarRight: { mounted: { getSnapshot: () => session, subscribe: (listener: () => void) => { sessionChanged = listener; return () => { sessionChanged = undefined } } } },
@@ -158,6 +161,7 @@ it('retries a failed or ended stream with a bounded delay and cancels on unload'
     .mockRejectedValueOnce(new Error('not ready'))
     .mockImplementation(() => ({ send: () => undefined, end: () => undefined, dispose, async *[Symbol.asyncIterator]() {} }))
   const ctx = {
+    uiConversation: { events: { register: () => () => undefined } },
     effect: (operation: () => unknown) => { const result = operation(); if (typeof result === 'function') cleanups.push(result as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
     sidebarRight: { mounted: { getSnapshot: () => 'a' as SessionId, subscribe: () => () => undefined } },
@@ -195,6 +199,7 @@ it('keeps manual recovery available after repeated opening failures', async () =
   const openUiChannel = vi.fn().mockRejectedValue(new Error('not ready'))
   const session = 'a' as SessionId
   const ctx = {
+    uiConversation: { events: { register: () => () => undefined } },
     effect: (operation: () => unknown) => { const result = operation(); if (typeof result === 'function') cleanups.push(result as () => void) },
     locale: { register: () => () => undefined, bind: () => (key: string) => key }, sidebarRightTabs: { register: () => () => undefined },
     sidebarRight: { mounted: { getSnapshot: () => session, subscribe: () => () => undefined } },

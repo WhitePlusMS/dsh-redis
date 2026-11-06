@@ -9,7 +9,7 @@ import { EVIDENCE_NS } from './tool-evidence-locales.ts'
 
 interface TurnAnswer {
   readonly turn: number
-  readonly callId: string
+  readonly callId: string | null
   readonly answers: readonly RedisAnswerSection[] | null
 }
 
@@ -24,13 +24,14 @@ declare module '@deepseek-ai/dsh-client-ui-conversation/client' {
 export const redisAnswerDefinition: ConversationNodeDefinition<TurnAnswer> = {
   kind: 'redis-answer',
   match(event) {
-    if (event.type === 'tool/call' && event.data.name === 'redis_viewer_answer') return { id: String(event.data.turn), role: 'start' }
+    if (event.type === 'turn/start') return { id: String(event.data.turn), role: 'start' }
+    if (event.type === 'tool/call' && event.data.name === 'redis_viewer_answer') return { id: String(event.data.turn), role: 'update' }
     if (event.type === 'tool/result') return { id: String(event.data.turn), role: 'update' }
     return null
   },
   start(_context, { event }) {
-    if (event.type !== 'tool/call') throw new Error('Redis answer requires its recorded tool call')
-    return { turn: event.data.turn, callId: event.data.callId, answers: null }
+    if (event.type !== 'turn/start') throw new Error('Redis answer requires its recorded turn start')
+    return { turn: event.data.turn, callId: null, answers: null }
   },
   update({ state }, { event }) {
     if (event.type === 'tool/call') return { turn: event.data.turn, callId: event.data.callId, answers: null }

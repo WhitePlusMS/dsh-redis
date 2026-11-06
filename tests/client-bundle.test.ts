@@ -101,10 +101,15 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   if (answerDefinition === undefined || turnAnswer === undefined) throw new Error('Missing transcript answer')
   const definition = answerDefinition
   type Match = Parameters<typeof definition.start>[1]
-  const call = { event: { type: 'tool/call', data: { turn: 2, name: 'redis_viewer_answer', callId: 'answer-call' } }, role: 'start', location: { kind: 'unresolved' } } as Match
-  expect(definition.match(call.event)).toEqual({ id: '2', role: 'start' })
-  const answerContext: ConversationNodeContext = { key: 'redis-answer:2', kind: 'redis-answer', id: '2', matches: [call], start: call, current: new Map(), state: undefined }
-  const initial = definition.start(answerContext, call, { previous: () => undefined })
+  const start = { event: { type: 'turn/start', data: { turn: 2 } }, role: 'start', location: { kind: 'unresolved' } } as Match
+  const call = { event: { type: 'tool/call', data: { turn: 2, name: 'redis_viewer_answer', callId: 'answer-call' } }, role: 'update', location: { kind: 'unresolved' } } as Parameters<typeof definition.update>[1]
+  expect(definition.match(start.event)).toEqual({ id: '2', role: 'start' })
+  expect(definition.match(call.event)).toEqual({ id: '2', role: 'update' })
+  const answerContext: ConversationNodeContext = { key: 'redis-answer:2', kind: 'redis-answer', id: '2', matches: [start], start, current: new Map(), state: undefined }
+  const started = definition.start(answerContext, start, { previous: () => undefined })
+  const ordinary = { ...call, event: { type: 'tool/result', data: { turn: 2, message: { toolCallId: 'read-call', content: [] } } } } as typeof call
+  expect(definition.update({ ...answerContext, state: started }, ordinary)).toBe(started)
+  const initial = definition.update({ ...answerContext, state: started }, call)
   const result = { ...call, role: 'update', event: { type: 'tool/result', data: { turn: 2, message: { toolCallId: 'answer-call', content: [{ type: 'text', text: JSON.stringify({ readOnly: true, state: 'answered', answers: [{ callId: 'read-call', tool: 'redis_viewer_value', paragraphs: ['本轮答案'], values: [{ label: '值', text: '<script>bad()</script>' }] }] }) }] } } } } as Parameters<typeof definition.update>[1]
   const answered = definition.update({ ...answerContext, state: initial }, result)
   const data = definition.buildLocationData?.({ ...answerContext, state: answered }, 'turn', null)
