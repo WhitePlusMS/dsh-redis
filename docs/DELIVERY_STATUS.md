@@ -1,88 +1,47 @@
-# 当前可用交付与剩余问题
+# 当前交付与工具验收边界
 
-更新：2026-11-06。**按用户决定，本轮以当前已安装版本收尾，停止继续改造和验收。** 新包已安装日常 DSH，正文答案、基础/专业读取、两批筛选、诊断和界面定位刷新已有真实流程结果。本轮收尾不代表原七项所有验收条件全部通过；下方保留已知限制和历史证据。本页不替代[七项任务及验收条件](DSH_AI_READONLY_TASKS.md)。
+更新：2026-11-06。按用户确认，**本轮以“工具正常调用、准确返回信息、正确交给模型”为标准收尾。** 模型收到结果后的自由回答、推断和措辞不作为插件缺陷或交付阻塞。当前标准见[工具验收清单](DSH_AI_READONLY_TASKS.md)。
 
-收尾约定：保留当前日常安装及服务；临时 Redis 和自建连接资料已清理。取消等待用户最小化 Chrome 的测试请求，不再自动重试或扩展验证。模型自由文本的越界解释、真实后台/丢回执及原清单未覆盖组合留待后续另行决定，不作为本轮继续运行的任务。没有推送或公开发布。
+## 当前日常安装
 
-## 当前日常安装（69c63d8）
+- 应用源码：`69c63d824f500466e79d34a2c1ea8b602f95c851`，日常 `web` profile 已安装。
+- 包：`.scratch/artifacts/explanation-20261106/dsh-redis-0.1.1-b4e9a2af74f5e4dfbbfc587d62b5b40d15f94446004c54951be9eaf5996498ee.tgz`；SHA-256 为文件名中的完整哈希。
+- 默认打包通过严格类型、构建和 **84 个测试文件 / 698 项测试**；143 个安装文件与归档一致，118 个运行文件、15 个 Host peer、3 个依赖校验通过。
+- 交付时日常 DSH 为 `127.0.0.1:3080` / PID43120，会话“仅可查看”。本次仅改源码仓库文档，不重打包、不替换已安装归档、不重启服务。没有推送或公开发布。
+- 原生卡片和 AI 解释继续保留；`redis_viewer_answer` 汇总实际记录，不重新查询，不调用 `concludeTurn()`。插件负责记录与传递，后续回答由 DSH/模型完成。
 
-- 当前源码 `69c63d824f500466e79d34a2c1ea8b602f95c851`。包位于 `.scratch/artifacts/explanation-20261106/dsh-redis-0.1.1-b4e9a2af74f5e4dfbbfc587d62b5b40d15f94446004c54951be9eaf5996498ee.tgz`；SHA-256 为文件名中的完整哈希。已安装到日常 `web` profile，143 个文件与归档一致，118 个运行文件、15 个 Host peer、3 个依赖校验通过。没有推送或公开发布。
-- 默认打包流程已通过严格类型、构建和 **84 个测试文件 / 698 项测试**。这次移除证据卡片工具的提前结束回合行为，保留卡片后让模型继续解释用户问题；四项回归已先复现旧行为再通过修复。不改变 Redis 读取、权限、预算或数据。
-- 本机 bzkj 配置使用宿主正式支持的关闭思考参数，原配置有备份，密钥及地址未变。配置生效后的真实 Web 已显示 Off，严格 JSON、两批 Hash 筛选及两页 TimeSeries 成功，没有新的正文 think。此证据取得于上一安装包，不冒充本包的解释复验，也不代表自动审查格式问题已修复。
-- 新包运行于日常服务 PID43120 / `127.0.0.1:3080`。此前登录阻塞已解除：18:06 在 Chrome 原会话看到已登录页面，权限仍为“仅可查看”，模型 Off，没有更改权限或绕过认证。
-- 18:07—18:09 的当前包真实 Web 流程已完成：广告值/TTL/缺失与概况/慢日志后同时显示自然语言解释和证据卡片；候选资料认证失败后原连接 ID 不变且 `fixture:string` 可读；Hash 筛选 2 批累计检查 18 次、匹配 4 次且去重 4 个、非 Hash/缺字段各 1、失败 0。没有新的正文 think。证据分别为 `diagnostics-after-explanation.txt`、`auth-after-explanation.txt`、`filter-after-explanation.txt`。
-- **完整准确性仍未完成**：诊断自由文本额外声称“仓库里没有任何应用侧缓存的内容或版本信息”，本轮并未读取仓库；筛选解释额外推断全部 18 次检查未观察到重复，并把 KEYS/索引作为确定完整匹配集合的替代建议，现有结果不足以支持这些扩展。主问题的否定结论和原生记录正确，不代表整段自由文本已被校验；不继续重复提问来碰到一次正确回答。
-- 本机证据目录：`C:/Users/admin/AppData/Local/Temp/dsh-redis-model-contract-20261106/`。`explanation-pack.log`、`explanation-artifact.json`、`explanation-install-verification.json` 对应本包；`native-pagination.txt` 和 `diagnostics-before-explanation.txt` 分别记录配置修复后的分页结果与发现提前结束问题的原始网页事实。服务重启记录在 `authenticated-process.json`，不包含登录凭据。
-- 真实后台场景仍未完成：创建另一标签后原页面原生 visibilityState 仍为 visible；随后尝试正常窗口切换时，Computer Use 因无法可靠识别 Windows 当前页面地址而终止本轮操作，没有绕过限制或伪造 hidden。渲染后成功回执丢失及原清单其他未覆盖项也不因此通过。
-- 清理：自建无密码资料 `Fixture Auth Off 20261106` 已从界面删除，资料列表只剩“新建连接”；没有清理其他资料。本轮 3161 临时 Redis 正常退出 0，合成数据及消费组状态不变、无消费命令。日常 DSH 保留；浏览器被工具终止前未手动断开面板，测试服务关闭后其连接不可继续使用。
+## 已有工具链路证据
 
-## 上一日常安装快照（0fb50db）
+当前包在真实 DSH / bzkj-LLM / 隔离 Redis 8.2.6 中完成：
 
-以下是上一包的历史记录；其中 PID、模型未改、think 尚存在及夹具清理状态仅属于当次操作，不能覆盖上方当前状态。
+- 广告值、TTL、缺失 Key、服务器概况及慢日志读取，原始结果、正文卡片和后续模型交互同时存在。
+- 候选资料认证失败返回 failed/auth；失败前后原连接 ID 不变，随后成功读取 `fixture:string`。
+- Hash 筛选两批完成，累计检查 18 次、匹配 4 次、匹配名称去重后 4 个，非 Hash/缺字段各 1、失败 0；计数及范围来自工具记录。
 
-- 源码 `0fb50db`；包 `.scratch/artifacts/read-state-final-20261106/dsh-redis-0.1.1-d3d32c5fa314ea7628a725781e4ffec848221d3579b33206d4611244f42e7f31.tgz`，SHA-256 为文件名中的完整哈希。日常 profile `web` 已替换并正常启动（127.0.0.1:3080 / PID39952）；143 个文件与包一致，118 个运行文件、15 个 Host peer 及 3 个依赖校验通过。没有推送或公开发布。
-- 答案通过正式 `conversation.chat.turnTail` 显示在聊天正文，工具活动折叠后仍可见，历史答案也可重放。普通读取不提前结束；最终答案引用本轮记录，保留失败、部分读取和范围说明。
-- 真实 DSH / bzkj-LLM / 隔离 Redis 8.2.6 已完成：侧栏收起时的六类定点读取，JSON 大整数/null/无匹配，时间序列续页，GEO、Bitmap、消费组已知/未知 lag。Stream 范围与 ZSet 排名说明在 `cd598ec` 安装后重新查询正确。没有把历史旧答案改写为新版结果。
-- 用户批准切回“仅可查看”后，筛选两批成功完成：18 次检查、4 个去重匹配、非 Hash/缺字段各 1、失败 0。`6475670` 安装后最终正文已显示游标链累计汇总；重新发起的查询分开，缺少起始页不称完整迭代，跨批不是快照。
-- `cd598ec` 真实诊断取得广告 Key 的缺失/TTL、值、88 字节 MEMORY USAGE、内存概况及慢日志，答案保留历史/归因边界。定位、单次刷新、JSON 显示均 applied，自动刷新关闭。UI 自由回答仍出现未经回执证明的“没有扫描”，`444f476` 因此将九个界面工具的原回执接入同一答案入口；新一轮未连接打开成功，但模型选择普通文字，没有调用最终答案工具，不能称 UI-only 自动收束已稳定验证。
-- `444f476` 真实受限账号五项专业请求均为权限拒绝，没有替代读取、没有误报不存在。实测发现失败信封的 complete=false 被描述为部分数据，`0fb50db` 已统一限定成功状态才展示完整性、扫描及覆盖说明。17:32 在日常 Web、原 bzkj-LLM 和新隔离实例中复验 TimeSeries/消费组权限拒绝，正文均显示无可用结果，没有部分数据或 TS.RANGE 覆盖提示；证据为本机目录 `read-state-live.txt`、`read-state-live.jpg`。
-- 17:31 在“仅可查看”会话明确要求调用最终答案工具后，未连接 show → answer 成功，正文展示真实 applied 回执及未连接说明。这证明显式工作流可用，不能替代没有提示时的自动收束验证。本轮 28 条合成数据、绝对过期时间及消费组状态未变，临时实例已停止，日常服务保留。
-- 检查按变更范围进行：此前完整检查 84 文件 / 694 项通过；之后的累计、界面回执和失败状态改动完成严格类型、构建及 15 项相关回归，没有把前次全量测试冒充最新版全量。Spec/Standards 复核发现的无连接目标显示已修正，并有未连接 show → answer 回归；最后状态修复两路均无新增发现。
+本机证据目录：`C:/Users/admin/AppData/Local/Temp/dsh-redis-model-contract-20261106/`。`explanation-pack.log`、`explanation-artifact.json`、`explanation-install-verification.json` 对应本包；`diagnostics-after-explanation.txt`、`auth-after-explanation.txt`、`filter-after-explanation.txt` 保存实际网页联调结果。模型回复仅辅助说明链路已运行，不作为数值正确性或解释质量的验收依据。
 
-本机本轮证据目录：`C:/Users/admin/AppData/Local/Temp/dsh-redis-finish-20261106/`。`read-state-artifact.json` 和 `read-state-install-verification.json` 对应当前安装；`readonly-filter-diagnostics.json`、`filter-summary-live.txt` 为实际正文结果。验收仅使用隔离合成数据，业务数据与模型配置未修改。28 条合成数据、绝对过期时间和消费组状态结束对照一致，无消费命令；自建夹具已停止。当前日常服务保留，采用官方 `--no-open` 启动，未再次弹出浏览器。
+此前构建的六类型、JSON/TimeSeries/GEO/Bitmap/消费组、权限拒绝、定位刷新及连接竞态证据保留原版本边界，不能冒充当前包重新执行的结果：
 
-仍须区分：本轮正常链路通过不等于所有异常组合通过；真实后台 hidden、渲染后成功回执丢失、部分连接/权限组合及四个案例的完整收口尚未覆盖。宿主模型把 think 放入正文/标题的问题仍存在；切回只读恢复了 Redis 工具执行，没有宣称修复自动审查模型格式。以下内容均为本轮此前快照，旧包及旧失败不能视为当前安装结论。
-
-## 较早的答案工具交付（8a51b33）
-
-- 完成必要查询后，无参数调用 `redis_viewer_answer`，Host 自动汇总本轮当前连接和 DB 的真实读取记录，展示中文事实、原值和限制，再结束回合。普通读取继续支持分页、字段读取和比较；最终答案保留失败/拒绝、部分结果及超出保留上限的提示。
-- 新包：`.scratch/artifacts/answer-20261106/dsh-redis-0.1.1-f8318c3de039da9d8e0b5d5230567af6092826a848a513fce58062fb284680cb.tgz`，SHA-256 即文件名中的完整哈希，源码绑定 `8a51b33446a71a190688703ac58f44cbe943f7a5`。
-- 默认打包检查：严格类型、构建、84 个测试文件 / 693 项全部通过。独立 profile 安装通过，143 个成品文件逐字节一致，118 个运行文件、13 项 Host peers 和 3 项依赖通过既有校验器检查。Spec / Standards 独立复核均无剩余发现。
-- 主实现通过真实 bzkj-LLM、隔离 Redis 8.2.6、产品 ToolRuntime/SessionStore/reader 的两轮流程：status→keys→value→answer；key_metadata→answer。合成数据及数量不变，所属 Redis 已停止并清理。随后三项审查边界修复通过专项及完整打包检查。
-- 真实模型测试使用 HTTP 驱动工具流程，不是 DSH Web/AgentLoop 端到端验收；真实 Client bundle 的答案视图及转义已回归。最终工具不校验此前模型的自由文本，也不替模型判断用户问题是否已经完成。日常 DSH、业务数据、模型配置及远端 Git 均未改变。
-
-本机证据在 `C:/Users/admin/AppData/Local/Temp/dsh-redis-answer-20261106/`：`model-flow.json` 保留内部调用 ID 方案失败，`model-flow-v2.json` 为无参数方案的两轮通过，`pack.log`、`installed-verification.json`、`artifact.json` 记录本轮成品。没有以重复追问模型得到偶然正确答案替代修复。
-
-以下是本轮改造前的交接快照，旧包和失败记录保留其原有时间边界。
-
-## 现在可以使用什么
-
-日常 DSH 已安装只读 Redis 插件。可以按明确 Key 查询基础类型、字段或成员，在确认范围内查找和筛选，查看诊断及专业数据，并按请求定位、刷新或切换已有连接。原生结果卡片和 AI 自然语言解释同时保留；卡片显示对应工具记录，AI 的额外解释仍需与记录核对。
-
-本地交付包：`.scratch/artifacts/current-package-20261106/dsh-redis-0.1.1-a2ae154ef39118a70cc12ce7eafb324fe23a1df98a79bea9f521f112e62cc688.tgz`。
-
-- SHA-256：`a2ae154ef39118a70cc12ce7eafb324fe23a1df98a79bea9f521f112e62cc688`。
-- 源输入核对绑定提交 `7c79011f54c1d64d62a0828ece198d6d6978de04`：239 个源输入、136 个非 manifest 成品文件及 manifest 转换一致；提交后 tracked 工作区干净。原打包报告保留其当时未提交状态，没有改写历史。
-- 完整打包检查：83 文件 / 684 项通过；包校验器正常和失败场景共 12 项通过。
-- 独立安装、重装均有 137 文件与归档一致；三份非空合成连接资料、预设和报告在卸载/重装后完整保留并回读一致。
-- 新旧包的 112 个运行文件完全相同，新包只有开发说明变化。日常安装仍与原 `ba1a4da` 来源包一致，因此**不需要为了本次文档交付重新安装或重启日常 DSH**。
-
-详细证据见[当前包与资料保留记录](verification/current-package-2026-11-06.md)。新包没有公开发布或推送；原生界面安装、运行中卸载、其他平台以及 `peers check` 均不能由上述 CLI 检查推定通过。
-
-## 七项任务逐项状态
-
-下表“已有证据”只覆盖链接中说明的源码、模型和场景。跨构建记录可帮助定位，不能掩盖尚未完成的真实验收。
-
-| 原任务 | 已有实现与证据 | 仍未完成 |
+| 工具范围 | 既有记录 | 保留的覆盖限制 |
 | --- | --- | --- |
-| 1. 直接查询与查找对象 | 已知 Key 无需预选；六类读取、精确字段/成员、名称续读、范围确认及拒绝；见[基础记录](verification/user-questions-real-model-2026-11-05.md)、[意图和拒绝](verification/intent-and-rejection-2026-11-06.md) | 模型仍可能混用历史与当前结果、扩大扫描结论；当前构建全部约定异常场景没有完整证据 |
-| 2. 指定范围筛选和汇总 | 有界筛选、条件随结果记录、分类计数、续读和权限拒绝；见[混合筛选](verification/mixed-filter-permissions-2026-11-06.md)、[条件展示](verification/filter-condition-2026-11-06.md) | 模型对扫描完整性和实际命令仍有误述；取消、超限、类型/并发变化的真实组合未全部覆盖 |
-| 3. 根据证据排查问题 | 元信息、内存、概况、慢日志、客户端、消费组、比较及选定报告；见[诊断边界](verification/diagnostic-evidence-boundaries-2026-11-06.md)、[诊断实测](verification/diagnostics-specialized-2026-11-06.md) | 工具事实正确不等于整个回答正确；TTL 历史、内存归因、命令说明等额外解释已有明确失败 |
-| 4. 界面核对和竞态 | 定位/刷新回执，超时、断流、取消、用户换目标及收起侧栏有真实记录；见[刷新回执](verification/refresh-receipt-2026-11-06.md)、[用户中断](verification/refresh-user-interruption-2026-11-06.md)、[多页面](verification/multiple-pages-2026-11-06.md) | 真实后台 hidden 和渲染后成功回执丢失未通过；不能用关闭页面、合成 visibility 事件或内存通道回归替代 |
-| 5. 连接和环境 | 认证失败、候选超时/取消、成功交换、旧连接保持、会话隔离及切 DB 竞态有记录；见[连接事务](verification/connection-transactions-2026-11-06.md)、[取消](verification/cancellation-error-2026-11-06.md)、[切库竞态](verification/connection-db-race-2026-11-06.md) | 失败根因的模型解释仍有过度推断；其他缺凭据/并发组合不称已完整验收。mTLS、SSH、Sentinel、Cluster 仍按实际环境需求单独实施，不称已支持 |
-| 6. 专业数据 | JSON 大整数/null/无匹配、时序、Bitmap、GEO 和消费组，部分空结果及权限拒绝有工具对照；见[专业边界](verification/diagnostics-specialized-2026-11-06.md) | 模型虚构字段、混淆历史目标等问题未消除；模块缺失、上限、取消和并发的全部约定原生场景尚无完整覆盖 |
-| 7. 案例与成品交付 | 当前包、独立 CLI 生命周期及非空资料保留已核对；[四个公开案例](verification/enterprise-cases-research-2026-11-05.md)有来源和局部真实对照 | 四个案例完整回答没有全部通过；最终真实模型/UI验收、原生安装/运行中卸载及其余交付边界未完成，不把开发包称为全部验收完成版 |
+| 基础读取与查找 | [基础记录](verification/user-questions-real-model-2026-11-05.md)、[范围与拒绝](verification/intent-and-rejection-2026-11-06.md) | 未形成全部 ACL、取消及目标变化组合的当前包真实证据 |
+| 筛选与汇总 | [混合筛选](verification/mixed-filter-permissions-2026-11-06.md)、[条件记录](verification/filter-condition-2026-11-06.md) | 取消、超限及并发组合未全部覆盖 |
+| 诊断与报告 | [诊断边界](verification/diagnostic-evidence-boundaries-2026-11-06.md)、[诊断采样](verification/diagnostics-specialized-2026-11-06.md) | 仅覆盖已有采样及权限场景，不声称有跨系统或网络根因诊断能力 |
+| 界面回执 | [刷新回执](verification/refresh-receipt-2026-11-06.md)、[用户中断](verification/refresh-user-interruption-2026-11-06.md)、[多页面](verification/multiple-pages-2026-11-06.md) | 真实后台 hidden、渲染后成功回执丢失尚无完整真实证据；不等于已证明产品失败 |
+| 连接与环境 | [连接事务](verification/connection-transactions-2026-11-06.md)、[取消](verification/cancellation-error-2026-11-06.md)、[切库竞态](verification/connection-db-race-2026-11-06.md) | 未穷举缺凭据及并发组合；mTLS、SSH、Sentinel、Cluster 不在现有支持范围 |
+| 专业数据 | [专业边界](verification/diagnostics-specialized-2026-11-06.md) | 模块缺失、上限、取消及并发的全部原生组合未覆盖 |
+| 成品生命周期 | [独立安装与资料保留](verification/current-package-2026-11-06.md)、[案例来源](verification/enterprise-cases-research-2026-11-05.md) | 原生界面安装、运行中卸载、其他平台及整个 profile 的 peers 检查不能由已有 CLI 证据推定通过 |
 
-## 为什么不继续重复验证
+这些限制如实保留，按用户决定留待实际需求另行处理，不继续扩展本轮验收。模型未复述元信息、虚构额外解释或回答不够好，不列入上表的插件待办。
 
-已观察到多次“工具返回正确，模型追加解释错误”。本插件已经提供确定性卡片，但没有证据表明可以可靠校验宿主的任意自由文本。用户要求卡片与 AI 解释都保留；[结束回合接口](verification/turn-conclusion-2026-11-06.md)不能判断任务完成或事实正确，不能通过截断普通读取规避问题。再重复相同问题得到一次正确回答，也不能证明已经修复。
+## 问题归属
 
-正文 `<think>` 是另外的宿主/服务响应格式观察：合成服务探针已见标签混入 `content`，现有适配器没有将它拆为独立推理字段；见[响应契约记录](verification/intent-and-rejection-2026-11-06.md)。本次未改用户模型配置，不把整个模型说成不可用，也不把格式问题与 Redis 数据错误混为一谈。
+- 工具调用失败、数据或元信息错误、权限/范围越界、分页错误、卡片显示错误、结果未交给模型：检查并修复插件负责的环节。
+- 正确结果已交给模型，模型仍误述数值、历史、命令或故障原因：属于模型使用效果，不作为插件交付阻塞，也不为此反复调整插件提示词或重跑同一问题。
+- 宿主认证、模型服务、审查服务或推理文本格式问题单独定位；不能把它们直接记成 Redis 数据读取缺陷。此前 bzkj Off 配置与 think 观察仅保留为本机联调环境记录，不是插件保证所有模型输出格式的承诺。
 
-2026-11-06 本轮后台核对使用浏览器原生 CDP 只读 `document.visibilityState`：两个验收标签在切换后仍都报告 visible，没有取得 hidden；随后标签清单已无这两个验收页，未继续重开页面干扰用户。此前回执注入路线受到认证与调试能力限制，见[注入边界](verification/diagnostic-evidence-boundaries-2026-11-06.md)。这些是未取得验收证据，不是证明产品一定失败或通过。
+## 收尾状态
 
-## 后续执行边界
+临时 Redis 已退出，合成数据和消费组状态未变、无消费命令；自建无密码连接资料已删除，日常安装及服务保留。后台窗口人工配合请求已取消，不再自动重试。
 
-保留原七项任务，不删减未完成项。已经通过的完整测试不因文档修改重复运行；仅在应用/依赖/相关脚本变更、出现新失败或有明确未覆盖场景时运行相应检查。模型问题需要可验证的修复方案后再复验；真实后台和丢回执需要能产生并观察对应状态的合法测试条件。没有这些条件时明确报告卡点，不以反复提示、扩大临时脚本或新增报告充当功能修复。
-
-本轮整理交付没有改变产品、连接资料、模型配置或日常服务。完成这份交付说明不代表总目标完成。
+旧安装快照及旧验收口径可在 Git `79f3cd3` 与 `docs/verification/` 查询。历史记录不改写；其中因“完整模型回答未通过”得出的未完成结论，不再决定当前插件验收状态。调整口径也不把未测工具场景改成已通过。

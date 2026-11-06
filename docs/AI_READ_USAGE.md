@@ -48,7 +48,7 @@
 
 同一筛选的连续页按实际游标关联，最终答案累计各分类的检查次数，并按完整 Key 身份去重已返回的匹配名称；重新发起的查询分别汇总。缺少起始页时只说明已记录批次，不称完整迭代。累计次数可能含重复检查，去重结果也不是一致性快照。
 
-卡片不校验模型的自由文本，也不替模型判断用户是否还有未完成的问题。解释应以本轮证据为依据，不能为补充解释重复读取或扩大范围。缺失与空值、被拒绝与确认不可用、未读取与截断分别显示；TTL 不能证明历史原因。模型推理输出格式由宿主和服务配置决定，这与 Redis 连接状态不同。
+插件负责工具可调用、返回数据及必要范围信息准确、结果正确交给模型，并如实显示原生卡片。模型收到结果后的解释、推断、措辞和输出格式不属于插件验收条件；卡片不校验自由文本。若工具本身返回错误数据、遗漏必要元信息或没有把结果交给模型，仍属于需要排查的插件问题。缺失与空值、被拒绝与确认不可用、未读取与截断分别显示；TTL 不能证明历史原因。后续请求仍受原有权限、范围和预算约束。
 
 读取额度按会话累计：经预算入口的工具每个周期最多准入 32 次，累计 JSON 最多 1 MiB，单次最多 64 KiB；预留不足时会提前停止准入。它不会随新消息、切库或重连自动重置。耗尽时打开 Redis 侧栏右上角“插件信息”，如仍有请求结束中先刷新状态，再点“继续读取”。这只恢复额度，不重新执行旧请求，也不扩大已确认的查询条件；续读仍须使用有效游标。
 
@@ -130,6 +130,6 @@ RedisJSON 的 `JSON.GET` 没有服务端分页，复杂路径或根路径可能�
 
 TimeSeries 按明确的闭区间读取最多 100 条，并额外读取一条判断是否还有数据；时间戳和数值均作为字符串保留。`timestampUtc` 是由毫秒值确定性换算的 UTC 时间，超出日期表示范围时为 `null`，原始毫秒仍保留。续读返回非 `value` 状态时旧游标失效，须从原时间范围重新查询；取消或未收到结果时不能确定游标状态。多批之间可能发生并发变化，`complete` 仅指 TS.RANGE 当次可见结果已读完，不代表历史快照。目标 Key 可能是压缩序列，默认查询省略最新未闭合桶，而已关闭桶也可能包含结束时间之后的原始样本；结果不能自动等同原始测量。参见 [Redis TS.RANGE 文档](https://redis.io/docs/latest/commands/ts.range/)。
 
-实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。实际检查、模型服务故障与日常安装状态见[源码仓库中的实施记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_IMPLEMENTATION.md)；自动化或脚本模型通过不等于真实模型自然语言验收通过。
+实现以当前项目锁定的 DSH 工具契约为准；[rc.2 历史契约](https://github.com/deepseek-ai/deepseek-harness/blob/639ed015397290b3745d163aafe02ffee4aa3f84/docs/cookbook/adding-a-tool.md)仅对应旧版本。当前安装与工具链路证据见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)，历史接线见[实施记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_IMPLEMENTATION.md)。自动化检查不代替真实 DSH 调用与结果传递验证，模型如何组织最终回答不作为插件验收门槛。
 
 2026-10-19曾完成[真实模型与真实数据联调](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/ai-read-real-data-2026-10-19.md)：真实 Hash 检索/读取、当前选中字段、明确切库与侧栏同步、跨会话隔离通过。该记录只适用于当时构建；实际库只有 Hash，其他五类不标为真实数据验证通过。

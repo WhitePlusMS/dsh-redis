@@ -10,7 +10,7 @@
 
 **只读查看 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
 
-下方安装示例对应已发布的 **v0.1.0**，历史验证环境是 DSH Web `0.2.0-rc.2`。当前源码版本为 **0.1.1**，声明使用 DSH `0.2.1-rc.5`；新增 AI 能力仍在验收，不能认为已包含在旧版 Release 中。
+下方安装示例对应已发布的 **v0.1.0**，历史验证环境是 DSH Web `0.2.0-rc.2`。当前源码版本为 **0.1.1**，声明使用 DSH `0.2.1-rc.5`；本轮已按工具调用、返回及传递标准完成本地交付收尾，新增能力不代表已包含在旧版 Release 中。
 
 [安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
 
@@ -157,9 +157,9 @@ Key 列表最多缓存 5,000 个 Key 或 2 MiB 编码结果。每轮自动扫描
 
 ## 验证与已知问题
 
-2026-11-06 应用源码 `622dce6` 打包时通过严格类型检查、构建及 **83 个测试文件 / 682 项测试**，137 个安装文件与归档一致。真实 DSH/模型验证了单次拒绝查询后不再扫描；后续连接竞态实测确认手动切库优先于等待中的候选连接。这些是该应用源码的局部证据，不代表全部验收或新 Release 发布。详见[包与拒绝记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md)、[连接竞态记录](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/connection-db-race-2026-11-06.md)及[剩余任务](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
+2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。本轮按工具职责边界收尾，未发布新 Release；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
 
-模型解释仍有事实和范围错误，部分响应会在正文显示 think 标签；安装 profile 曾报告跨插件 peer 警告，不能称 peers 检查通过。完整模型/界面异常验收及最终成品交付仍未完成。本次文档更新尚未替换已安装归档。
+插件负责工具可调用、返回数据及必要元信息准确，并将结果正确交给模型。模型收到正确结果后的解释、推断、措辞和 think 格式不作为插件缺陷或交付阻塞；工具自身的数据、权限、分页、错误处理及传递问题仍需修复。真实后台/丢回执等未测组合保留为覆盖限制；整个 profile 的跨插件 peers 检查不声明通过。本次文档更新不替换已安装归档。
 
 原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
 

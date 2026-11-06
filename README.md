@@ -10,7 +10,7 @@ English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme
 
 **Read-only · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
 
-The installation examples below describe the published **v0.1.0** package, verified historically with DSH Web `0.2.0-rc.2`. The current source declares **0.1.1** and DSH `0.2.1-rc.5`; its new AI features are still being verified and are not claimed to be in that Release.
+The installation examples below describe the published **v0.1.0** package, verified historically with DSH Web `0.2.0-rc.2`. The current source declares **0.1.1** and DSH `0.2.1-rc.5`. This local delivery is closed under the tool invocation, result accuracy and result delivery criteria; its new features are not claimed to be in the older Release.
 
 [Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
 
@@ -157,9 +157,9 @@ Not included: Redis writes, a free-form command console, direct RDB/AOF loading,
 
 ## Verification and known issue
 
-On 2026-11-06, application source `622dce6` passed strict type checks, build and **83 test files / 682 tests** during packaging; 137 installed files matched the archive. Native DSH/model testing verified one rejected query without further scanning, and a later connection-race run verified that manual DB selection superseded a pending candidate. These are bounded results for that application source, not complete acceptance or a new Release. See the [package and rejection record](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md), [connection-race record](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/connection-db-race-2026-11-06.md) and [remaining tasks](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md).
+On 2026-11-06, application source `69c63d8` passed strict type checks, build and **84 test files / 698 tests** during packaging; 143 files in the daily installation matched the archive. Native DSH runs covered query/diagnostic result delivery, reads on the original connection after candidate authentication failed, and two filter batches with cumulative counts. This local delivery is closed within the plugin's tool responsibilities; no new Release was published. See [delivery status](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md) and [tool acceptance criteria](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md) for evidence and coverage limits.
 
-Model explanations still have observed factual and scope errors; some responses also display inline think tags. The installed profile reported cross-plugin peer warnings, so its peers check is not claimed to pass. Full model/UI edge-case acceptance and final package delivery remain open. This documentation update has not replaced the installed archive.
+The plugin is responsible for callable tools, accurate data and required metadata, and correct delivery of results to the model. Interpretation, inference, wording and think formatting after correct results arrive are not plugin defects or delivery blockers. Tool data, permissions, paging, error handling and delivery defects remain in scope. Untested background-page and lost-receipt combinations remain coverage limits; the profile-wide peers check is not claimed to pass. This documentation update does not replace the installed archive.
 
 A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
 
