@@ -3642,3 +3642,10 @@
 - 文件：src/host/ai-answer.ts 对 9 个已注册的打开/定位/刷新/格式工具捕获真实 outcome/message，绑定发起时连接；src/redis-answer.ts 独立展示原回执，明确不是值或连接状态采样，打开面板可能加载名称。tests/ai-answer.test.ts 核对 UI-only 回合可完成、无新增 Redis 命令、超时不被当作成功。docs/AI_READ_USAGE.md 同步正文展示、汇总与回执边界。
 - 检查：严格类型、构建及 14 项答案/真实 Client bundle 专项通过。前一累计版本 6475670 已安装日常 profile，143 文件一致、15 个 Host peer 通过；真实 Web 新一轮最终答案已显示 2 批、18 次检查、4 个去重匹配、非 Hash/缺字段各 1、失败 0。新回执改动尚待安装后实际流程核对。
 - 独立复核指出未连接时 target 为 null；已改为明确尚未连接 Redis，有目标仅称连接目标，并增加断开后 show → answer 回归。类型、构建和 14 项专项再次通过，Spec 确认该问题已消除。
+- docs/DELIVERY_STATUS.md 更新当前日常包为 444f476 / 8c11ee39，明确143文件安装一致、真实已通过链路、当前专项与先前全量的区别；旧记录标为历史，未覆盖项继续保留。仅文档更新，不重复构建。
+
+## 2026-11-06：失败结果不冒充部分读取
+
+- 真实受限账号的 JSON、TimeSeries、GEO、Bitmap、消费组五项调用均返回权限错误，最终答案未重试或把错误当不存在。但 TimeSeries/消费组失败信封也含 complete=false，旧展示错误追加了部分数据提示。
+- src/redis-answer.ts 仅对成功 value/page/partial 状态展示完整性、扫描进度及覆盖说明；query-failed 明确归入无可用结果。tests/ai-answer.test.ts 覆盖失败、缺失、类型/状态变化和不可用，避免错误暗示继续翻页。遵循最简原则统一处理状态，不逐工具增加补丁；未改变任何 Redis 命令、权限或预算。
+- 严格类型、构建、15 项专项通过；Spec/Standards 对统一状态判断均无剩余发现。实际独立 Redis 结束对照确认28条数据及过期时间不变、消费组状态不变、无消费命令，夹具已停止。未连接的真实 show 回合成功，但模型没有调用最终答案工具，不能声称UI-only自动收束已经稳定验证。

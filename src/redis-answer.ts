@@ -80,6 +80,9 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   }
   const value = object(data.value), metadata = object(data.metadata ?? value.metadata), connection = object(data.connection)
   const state = text(data.state ?? value.state), type = text(data.type ?? value.type ?? metadata.type)
+  // Failure envelopes also carry complete=false / scanComplete=false. Those
+  // flags do not mean that data was delivered or that continuation is possible.
+  const hasResult = state === 'value' || state === 'page' || state === 'partial'
   const paragraphs: string[] = [], values: { label: string; text: string }[] = []
   const add = (label: string, content: unknown) => { if (content !== undefined) values.push({ label, text: JSON.stringify(content, null, 2) }) }
   const target = data.key === undefined ? (data.source === 'selection' ? '读取时的侧栏选择' : '本次查询') : `Key ${identity(data.key)}`
@@ -99,7 +102,7 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   if (failure !== null) paragraphs.push(failure)
   if (state === 'missing') paragraphs.push(`${target} 在采样时不存在；这次读取不能判断缺失原因。`)
   else if (state === 'selection-missing') paragraphs.push(`${target} 中指定的字段或成员在采样时不存在。`)
-  else if (state === 'changed' || state === 'failed' || state === 'unsupported' || state === 'unavailable') paragraphs.push(`${target} 未取得可用结果（${state}）。`)
+  else if (state === 'changed' || state === 'failed' || state === 'unsupported' || state === 'unavailable' || state === 'query-failed') paragraphs.push(`${target} 未取得可用结果（${state}）。`)
   else if (tool === 'redis_viewer_keys') {
     paragraphs.push(`按名称条件 ${JSON.stringify(data.pattern)} 查找，本批返回 ${Array.isArray(data.keys) ? data.keys.length : 0} 个候选。`)
     add('候选 Key', data.keys)
@@ -136,22 +139,22 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   const ttl = text(data.ttlMs ?? metadata.ttlMs)
   if (ttl === '-1') paragraphs.push('采样时没有设置过期时间；不能据此判断过去是否设置过，或将来是否会过期。')
   else if (ttl !== null && /^\d+$/u.test(ttl)) paragraphs.push(`采样时剩余过期时间为 ${ttl} 毫秒。`)
-  if (type === 'zset' && value.mode === 'range') {
+  if (hasResult && type === 'zset' && value.mode === 'range') {
     paragraphs.push(value.nextOffset === null ? '本次排名读取已到达末尾；这不是 SCAN 扫描。' : '本次只读取指定排名范围，后续排名可按下一偏移继续读取。')
-  } else if (data.scanComplete !== undefined || value.scanComplete !== undefined) {
+  } else if (hasResult && (data.scanComplete !== undefined || value.scanComplete !== undefined)) {
     const ended = (data.scanComplete ?? value.scanComplete) === true
     // Stream uses XRANGE/XREVRANGE pagination, not the SCAN command family.
     paragraphs.push(type === 'stream'
       ? ended ? '指定消息范围的分页读取已结束；不代表整个 Stream，跨批读取不是一致性快照。' : '指定消息范围尚未读完，当前结果只包含已返回的消息。'
       : ended ? '本次扫描迭代已结束，但 SCAN 不是一致性快照，跨批可能重复。' : '扫描尚未结束，当前结果不是完整匹配集合。')
   }
-  if (data.complete === false || value.complete === false || object(value.cell).complete === false) paragraphs.push('本次仅返回部分数据，不能把它当作完整值或完整列表。')
+  if (hasResult && (data.complete === false || value.complete === false || object(value.cell).complete === false)) paragraphs.push('本次仅返回部分数据，不能把它当作完整值或完整列表。')
   if (tool === 'redis_viewer_keys' || tool === 'redis_viewer_filter_hash') paragraphs.push('MATCH 按 Key 名称匹配；SCAN 仍可能遍历当前 DB 的键空间，COUNT 只是工作量提示。')
   for (const [key, label] of [['cursor', '续读令牌'], ['nextOffset', '下一偏移'], ['nextFrom', '下一时间范围']] as const) {
     const continuation = data[key] ?? value[key]
     if (continuation !== undefined && continuation !== null) add(label, continuation)
   }
-  if (typeof data.coverage === 'string') paragraphs.push(data.coverage)
+  if (hasResult && typeof data.coverage === 'string') paragraphs.push(data.coverage)
   if (tool !== 'redis_viewer_status' && tool !== 'redis_viewer_select_db') paragraphs.push('以上是本次采样事实；多命令或多批读取不是一致性快照，不能单独证明历史、变化趋势或故障原因。')
   return { paragraphs, values }
 }

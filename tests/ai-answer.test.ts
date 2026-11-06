@@ -223,3 +223,11 @@ it('answers UI-only turns from their exact receipt without inventing value sampl
   expect(failure.paragraphs.join('')).toContain('读取可能已经发出')
   expect(failure.values[0]?.text).toContain('timeout')
 })
+
+it('does not describe failed or missing results as partial data or unfinished scans', () => {
+  for (const state of ['failed', 'query-failed', 'missing', 'unsupported', 'changed', 'unavailable']) {
+    const result = describeRedisResult('redis_viewer_timeseries', { state, connection: { db: 0 }, complete: false, scanComplete: false, coverage: '仅包含 TS.RANGE 返回的样本', samples: [], errorMessage: '未取得结果' })
+    expect(result.paragraphs.join('')).not.toMatch(/仅返回部分数据|扫描尚未结束|仅包含 TS.RANGE/)
+    expect(result.paragraphs.join('')).toContain('未取得结果')
+  }
+})
