@@ -1,3 +1,7 @@
+## 2026-11-06：安装基线措辞同步
+
+- 文件：`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。安装证据文档提交后自查发现两处旧源码仍标为当前安装，改为当次历史记录，并将交付栏同步为 `4f7ffd4` / 678 项及新验收链接。只修正版本口径，不改代码、包或验收结论。
+
 ## 2026-11-06：筛选条件安装与真实展示验收
 
 - 文件：`docs/verification/filter-condition-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
