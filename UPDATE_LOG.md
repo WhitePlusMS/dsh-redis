@@ -1,3 +1,10 @@
+## 2026-11-06：文档同步包与独立安装生命周期验收
+
+- 文件：`docs/verification/delivery-package-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。记录源码 15efd5c 的实际归档、独立安装/卸载/重装和清理；复用官方 CLI，遵循最简原则，不改固定旧路径的验证脚本或日常 profile。
+- 验证：默认 prepack 严格类型、构建及 83 文件 / 682 项通过，测试阶段 199.01 秒。137 个包文件按白名单核验，136 个源码/产物内容匹配；112 个运行文件与 622dce6 归档相同，69 个包内本地链接存在。新包 SHA-256 为 `43b11d18ebd1e9b0814b19ff52c9ff4e783ed2ad79974d5d262865154110ddf9`，包与校验文件保留在忽略的 artifacts 子目录。
+- 影响与边界：独立 profile 两次安装的 137 文件均匹配，卸载移除依赖/bundle/包链接，空连接资料两次卸载及重装后均保持；只 dump 配置，未启动 Host、读取 Redis 或模型。最终测试包已卸载，没有凭据存储；日常 DSH 3080 / PID10476 保留原包。安装器仍有 peer 警告，不称其检查通过；新包原生加载、非空资料和完整场景未借此验收。
+- 证据：临时目录 `dsh-redis-delivery-docs-20261106` 保存清单、逐字节校验和生命周期回执；本次记录不随包，不要求重复打包。文档执行 diff 检查，上一文档节点两路独立审查均 0 项。
+
 ## 2026-11-06：交付文档与现行能力同步
 
 - 文件：`README.md`、`README.zh.md`、`CHANGELOG.md`、`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md`、`docs/INSTALLATION.md`、`docs/INSTALLATION.zh.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
