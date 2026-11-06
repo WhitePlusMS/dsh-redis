@@ -1,3 +1,10 @@
+## 2026-11-06：缺失 Key 与 TTL 历史边界实测
+
+- 文件：`docs/verification/diagnostic-evidence-boundaries-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。记录当前日常安装的新对话证据，遵循事实可核验和最简原则，不改应用、认证、模型或包。区分定点工具事实、引导后的回答、模型额外解释及尚未通过的真实回执注入。
+- 验证：真实 DSH / bzkj-LLM 在无选中 Key、侧栏收起时读取缺失 Key 和 String TTL，工具结果与原始 JSON 一致；命令增量 TYPE/TYPE/PTTL/TYPE，无值读取、扫描或切库。模型正确区分 null 与 -1、当前与历史，仍有未经证实的历史断言和 SET 参数解释错误；依据官方文档逐项记录，不计为完整准确性通过。
+- 临时验证：HTTP 代理因端口绑定认证拒绝而撤回，CDP 注入不受工具支持且未执行；未绕过。最终验收使用原始授权地址。原始结果/命令提取断言通过，初次临时依赖定位、证据目录及 DOM 缩进问题和恢复过程保留在本机记录。
+- 影响与清理：22 条合成数据、绝对过期时间和数量一致；所有所属代理/夹具退出 0，测试页面关闭，相关端口释放，日常 DSH 3080 / PID20528 保留。只跑文档 diff 检查，不将未变产品的旧测试重复计为本轮通过。
+
 ## 2026-11-06：刷新渲染后的成功回执丢失回归
 
 - 文件：`tests/ui-action-confirmation-browser.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。现有丢回执测试覆盖定位动作，未覆盖刷新完成后的上行成功回执。遵循最简原则复用真实 Chromium、现有 React List 组件、Host 通道和 ToolRuntime，增加回执丢失后超时与断流两种场景，不修改产品或模型配置。任务清单记录局部覆盖及真实验收仍待完成的边界。
