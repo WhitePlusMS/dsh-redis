@@ -3603,3 +3603,11 @@
 - `tests/ai-tools.test.ts`、`scripts/smoke-ai-memory.mjs`、`docs/AI_READ_USAGE.md` 同步验证及说明，并检查诊断报告保留新的结构化参数；类型检查、84 项专项及隔离 Redis 真命令对照通过，隔离数据和 TTL 未变；真实模型复验待执行。
 - `docs/verification/user-questions-real-model-2026-11-05.md` 记录当前已安装构建的两项真实诊断：工具原值复述一致，但单位标记、实际采样数和碎片解释不准确。原因是保留模型推断错误和工具采样证据的区别，不将本机业务身份或指标写入仓库。
 - 提交 `81cf8de` 后需求审查建议让保存的报告脱离对话也可理解。`src/host/ai-report-samples.ts` 用固定字面量白名单保留两条采样及范围说明，`src/host/ai-reader.ts` 复用同一说明，`tests/ai-tools.test.ts` 回读确认并拒绝替换为自由文本；类型检查及首轮 84 项测试通过，新增拒绝测试后需复测。
+## 2026-11-06：实现查找、读取后的本轮答案收束
+
+- 原因：真实读取结果正确，但模型自由补充了未经证实的历史、数值或范围；用户要求直接完成查询到回答链路。按最简、单一职责原则新增独立最终回答工具，普通读取继续支持后续查询。
+- 文件：`src/host/ai-answer.ts` 订阅 DSH 已提交会话事件，自动引用本轮、同会话、同连接代次和 DB 的读取记录，限制记录及答案大小；答案准备成功后调用正式 `concludeTurn()`。真实模型首轮暴露内部调用 ID 不可可靠填写，因此移除该参数，改由 Host 自动绑定，不以补提示词让模型猜 ID。不另建查询、游标或聊天系统。
+- 文件：`src/redis-answer.ts` 从实际记录生成中文事实、原值、TTL 与覆盖解释，保留 JSON 原文和精确数值；`src/redis-read-tools.ts` 统一读取工具目录，`src/client/tool-evidence.ts` 移出目录常量，`src/runtime.ts` 注册最终回答工具，`src/host/ai-tools.ts` 补充工作流入口提示。
+- 文件：`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence-locales.ts` 展示最终文字和原值，沿用原生工具视图和 React 文本转义；`tsconfig.client.json` 加入共享文件。`tests/ai-answer.test.ts` 覆盖实际 reader/ToolRuntime/SessionStore 串联、旧引用、切库重连、取消及精度边界。
+- 源码依据：重新对照临时目录中 RedisVL `merge_locked_filter` 与 futuretea `continueScan`/`takeScanItems`，保留现有服务端范围确认和 surplus 分页；本轮新增的是 DSH 答案记录绑定，没有复制 SSPL 代码。
+- 文件：`tests/client-bundle.test.ts` 验证实际打包视图和文本转义；`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md` 更新调用方式、33 个工具和最终回答边界。严格类型、构建及 125 项相关回归通过；无参数简化后类型与 7 项受影响回归通过。真实 bzkj-LLM + Redis 8.2.6 + 产品 ToolRuntime/SessionStore/reader 的两轮通过：status→keys→value→answer，以及 key_metadata→answer；合成数据及数量不变，所属 Redis 已停止。临时证据 `dsh-redis-answer-20261106/model-flow-v2.json` 保留首轮失败与修复后结果；本项不是 DSH Web/AgentLoop 验收，日常安装尚未更新。

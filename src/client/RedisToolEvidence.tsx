@@ -1,7 +1,9 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ToolCallViewProps } from '@deepseek-ai/dsh-client-ui-tool/client'
-import { evidenceTools, redisEvidence, type EvidenceRow } from './tool-evidence.ts'
+import { redisEvidence, type EvidenceRow } from './tool-evidence.ts'
+import { evidenceTools } from '../redis-read-tools.ts'
+import { parseRedisAnswer } from '../redis-answer.ts'
 import { EVIDENCE_NS, evidenceEn, evidenceZh } from './tool-evidence-locales.ts'
 
 type Props = ToolCallViewProps & PropsLocale<typeof EVIDENCE_NS>
@@ -18,6 +20,14 @@ export function RedisToolEvidence(props: Props) {
   if (props.phase !== 'result') return <div data-redis-tool={props.toolName} role="status">{t('title')} · {t(props.phase === 'preparing' ? 'preparing' : 'running')}</div>
   const { block } = props
   const raw = block.content.map(item => item.type === 'text' ? item.text : JSON.stringify(item)).join('\n')
+  const answer = !block.isError && props.toolName === 'redis_viewer_answer' ? parseRedisAnswer(raw) : null
+  if (answer !== null) return <section data-redis-tool={props.toolName} data-call-id={props.callId} aria-label={t('answer')}>
+    {answer.map(item => <div key={item.callId}>
+      {item.paragraphs.map((paragraph, index) => <p key={index} style={{ margin: '6px 0', overflowWrap: 'anywhere' }}>{paragraph}</p>)}
+      {item.values.map((value, index) => <div key={index}><span>{value.label}</span><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '320px', overflow: 'auto' }}>{value.text}</pre></div>)}
+    </div>)}
+    {props.inspect !== undefined && <button type="button" onClick={props.inspect}>{t('inspect')}</button>}
+  </section>
   const evidence = block.isError ? null : redisEvidence(props.toolName, raw)
   return <section data-redis-tool={props.toolName} data-call-id={props.callId} aria-label={t('title')}
     style={{ borderLeft: '2px solid var(--dsw-alias-border-l2)', padding: '4px 12px', minWidth: 0 }}>
@@ -38,7 +48,7 @@ export function RedisToolEvidence(props: Props) {
 
 export function registerRedisEvidence(ctx: Context): void {
   ctx.effect(() => ctx.locale.register(EVIDENCE_NS, { zh: evidenceZh, en: evidenceEn }), 'redis evidence dictionaries')
-  for (const key of evidenceTools) ctx.effect(() => ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
+  for (const key of [...evidenceTools, 'redis_viewer_answer']) ctx.effect(() => ctx.slots.inject('tool.call.toolview', () => ctx.slots.register({
     name: 'tool.call.toolview', key, locale: EVIDENCE_NS,
   }, RedisToolEvidence)), `redis evidence ${key}`)
 }

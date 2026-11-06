@@ -1,6 +1,7 @@
 import type { Context } from '@deepseek-ai/cordis'
 import { RedisRemoteService } from './remote-service.ts'
 import { registerRedisTools } from './host/ai-tools.ts'
+import { registerRedisAnswerTool } from './host/ai-answer.ts'
 import { registerRedisFormatTool, registerRedisRefreshTool, registerRedisUiTools } from './host/ai-ui-tools.ts'
 import { registerRedisProfileTools } from './host/ai-profile-tools.ts'
 import { registerRedisLocateTool } from './host/ai-locate-tool.ts'
@@ -15,6 +16,7 @@ export function apply(ctx: Context): void {
   const service = new RedisRemoteService(ctx)
   const snapshots = new RedisProfileSnapshots()
   registerRedisTools(ctx, service.ai)
+  registerRedisAnswerTool(ctx, service.ai)
   registerRedisProfileTools(ctx, service.ai, snapshots, (agent, signal) => service.listProfiles(agent, {}, signal))
   registerRedisConnectionTools(ctx, service.ai, snapshots, (agent, profile, signal, isCurrent) => service.connectSavedProfile(agent, profile, signal, isCurrent), (agent, target, signal) => service.disconnect(agent, target, signal))
   registerRedisMatchTools(ctx, service.ai, new RedisMatchPresets(ctx.profileContext.dir), service.uiActions)

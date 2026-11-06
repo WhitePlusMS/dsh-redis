@@ -83,6 +83,14 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(html).toContain('<details><summary>details</summary>')
   expect(html).not.toContain('<script>')
   expect(html).toContain('data-call-id="fixture-call"')
+  const answerView = toolViews.get('redis_viewer_answer')
+  if (answerView === undefined) throw new Error('Missing final answer view')
+  const answerHtml = renderToStaticMarkup(answerView({ phase: 'result', toolName: 'redis_viewer_answer', callId: 'answer-call', t: (key: string) => key,
+    block: { content: [{ type: 'text', text: JSON.stringify({ readOnly: true, state: 'answered', answers: [{ callId: 'read-call', tool: 'redis_viewer_value', paragraphs: ['采样时没有设置过期时间。'], values: [{ label: '值', text: '<script>bad()</script>' }] }] }) }] },
+  }))
+  expect(answerHtml).toContain('采样时没有设置过期时间。')
+  expect(answerHtml).toContain('&lt;script&gt;bad()&lt;/script&gt;')
+  expect(answerHtml).not.toContain('<script>')
   if (slot === undefined) throw new Error('Missing sidebar body')
   const api = slot.inject('trusted-session')
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')
