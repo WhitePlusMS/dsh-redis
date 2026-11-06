@@ -71,6 +71,13 @@ export function parseRedisAnswer(raw: string): readonly RedisAnswerSection[] | n
 }
 
 export function describeRedisResult(tool: string, data: Record<string, unknown>) {
+  if (data.kind === 'ui-receipt') {
+    const receipt = object(data.receipt), connection = object(data.connection), endpoint = object(connection.target)
+    return {
+      paragraphs: [typeof endpoint.host === 'string' ? `操作发起时的连接目标：${JSON.stringify(endpoint.host)}:${String(endpoint.port)}；DB ${String(connection.db)}。` : '操作发起时尚未连接 Redis。', text(receipt.message) ?? '界面操作结果见回执。', ...(tool === 'redis_viewer_show' && receipt.outcome === 'applied' ? ['打开已连接面板可能自动加载 DB 与 Key 名称；此回执不证明没有发生名称扫描。'] : []), '此处记录界面动作回执，不把它当作当前 Redis 值、连接状态或故障根因的采样。'],
+      values: [{ label: '界面回执', text: JSON.stringify(receipt, null, 2) }],
+    }
+  }
   const value = object(data.value), metadata = object(data.metadata ?? value.metadata), connection = object(data.connection)
   const state = text(data.state ?? value.state), type = text(data.type ?? value.type ?? metadata.type)
   const paragraphs: string[] = [], values: { label: string; text: string }[] = []

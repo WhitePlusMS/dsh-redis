@@ -3635,3 +3635,10 @@
 - 当前安装 cd598ec 在真实 DSH / bzkj-LLM 完成两批筛选：18 次检查、4 个匹配，非 Hash 和缺字段各 1，失败 0；原生范围确认一次后续页成功。ZSet 排名和 Stream 范围说明修正也已在新查询中确认。广告缓存缺失/TTL、值、MEMORY USAGE、服务器内存与慢日志实际返回，答案保留历史和归因边界。
 - 实测发现最终答案缺少用户要求的跨批汇总。按最简和单一职责原则修改 src/host/ai-answer.ts，仅保留已提交调用的输入游标；src/redis-answer.ts 沿真实游标链累计各分类检查次数，按完整 Base64 Key 去重匹配。重新发起的查询分开，缺少起始页时明确只汇总已记录批次，保留 SCAN 非快照说明；不新增 Redis 请求或分页存储。
 - tests/ai-answer.test.ts 新增续页累计、重复 Key、重启查询、跨轮缺页及实际 ToolRuntime/SessionStore 集成回归。严格类型通过（首次 exactOptionalPropertyTypes 错误已立即修正），12 项答案测试通过。安装与剩余真实流程尚在继续，未将局部通过标为全部完成。
+
+## 2026-11-06：界面回执接入本轮答案
+
+- 原因：真实 Web 的打开、定位、手动刷新与 JSON 格式均 applied，但模型自行追加没有扫描的断言，界面回执并不能证明它。按最简原则复用现有答案收束，不新增 UI 操作或强制结束中间步骤。
+- 文件：src/host/ai-answer.ts 对 9 个已注册的打开/定位/刷新/格式工具捕获真实 outcome/message，绑定发起时连接；src/redis-answer.ts 独立展示原回执，明确不是值或连接状态采样，打开面板可能加载名称。tests/ai-answer.test.ts 核对 UI-only 回合可完成、无新增 Redis 命令、超时不被当作成功。docs/AI_READ_USAGE.md 同步正文展示、汇总与回执边界。
+- 检查：严格类型、构建及 14 项答案/真实 Client bundle 专项通过。前一累计版本 6475670 已安装日常 profile，143 文件一致、15 个 Host peer 通过；真实 Web 新一轮最终答案已显示 2 批、18 次检查、4 个去重匹配、非 Hash/缺字段各 1、失败 0。新回执改动尚待安装后实际流程核对。
+- 独立复核指出未连接时 target 为 null；已改为明确尚未连接 Redis，有目标仅称连接目标，并增加断开后 show → answer 回归。类型、构建和 14 项专项再次通过，Spec 确认该问题已消除。

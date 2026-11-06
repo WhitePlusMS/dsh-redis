@@ -5,7 +5,7 @@ import SessionStore from '@deepseek-ai/dsh-session'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import { createToolResultMessage, ToolCallId } from '@deepseek-ai/dsh-llm'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
+import ToolRuntime, { defineTool } from '@deepseek-ai/dsh-tools'
 import type { ApprovalService } from '@deepseek-ai/dsh-user-approval'
 import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
@@ -201,4 +201,25 @@ it('adds the filter total from committed tool calls without rereading Redis', as
   expect(answer.isError).toBe(false)
   expect(content(answer)).toContain('本次迭代汇总：2 批，累计检查 2 次，匹配 2 次，匹配 Key 去重后 1 个')
   expect(f.commands).toEqual(before)
+})
+
+it('answers UI-only turns from their exact receipt without inventing value samples or extra reads', async () => {
+  const f = await fixture()
+  f.ctx.tools.register(defineTool({ name: 'redis_viewer_show', description: 'Synthetic UI receipt', parameters: {}, output: { schema: { type: 'json' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }] }, execute: async () => ({ outcome: 'applied', message: '当前对话的 Redis 面板已确认可见。' }) }))
+  await f.call('redis_viewer_show', {})
+  const answer = await f.call('redis_viewer_answer', {})
+  expect(answer).toMatchObject({ isError: false, concludesTurn: true })
+  expect(content(answer)).toContain('不证明没有发生名称扫描')
+  expect(content(answer)).toContain('界面回执')
+  expect(content(answer)).not.toContain('采样时间')
+  expect(f.commands).toEqual([])
+  f.nextTurn(); f.connections.disposeSession('answer-a')
+  await f.call('redis_viewer_show', {})
+  const disconnected = await f.call('redis_viewer_answer', {})
+  expect(disconnected.isError).toBe(false)
+  expect(content(disconnected)).toContain('操作发起时尚未连接 Redis')
+  expect(content(disconnected)).not.toContain('undefined')
+  const failure = describeRedisResult('redis_viewer_refresh', { kind: 'ui-receipt', connection: { db: 0, target: { host: '127.0.0.1', port: 6379 } }, receipt: { outcome: 'timeout', message: '未能确认刷新结果；读取可能已经发出。' } })
+  expect(failure.paragraphs.join('')).toContain('读取可能已经发出')
+  expect(failure.values[0]?.text).toContain('timeout')
 })
