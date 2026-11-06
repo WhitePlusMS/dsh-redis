@@ -1,3 +1,9 @@
+## 2026-11-06：取消错误文案修复
+
+- 文件：`src/host/ai-reader.ts`、`tests/ai-cancellation.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。先添加真实 DSH ToolRuntime 回归，覆盖对象取消原因、操作返回/抛错、未交付分页回滚、预算释放及普通错误保留；公共预算边界在 signal 已取消时转为固定错误说明，不输出原始原因，不声称连接交换或已发送命令已撤回。
+- 原因：临时最小脚本复现 `Error: [object Object]`；直接返回的对照由宿主生成正常 aborted，标准 Error 原因也正常，定位到插件公共预算边界的原样抛出。新增测试的类型检查先通过，修复前两条运行器回归重现对象字符串，直接抛对象还触发断言库的错误匹配异常；修复后验证进行中。测试不连接 Redis、不改宿主，普通错误及现有 finally 清理不变。
+- 验证：修复后严格类型、构建、5 文件 / 127 项相关回归及原始临时复现均通过，原复现现返回固定停止说明，inFlight=0。diff 检查通过；完整打包与日常 DSH 安装、真实停止复验尚待执行，不能将离线结果标为原生验收通过。
+
 ## 2026-11-06：连接事务、取消与会话隔离验收
 
 - 文件：`docs/verification/connection-transactions-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。

@@ -140,6 +140,10 @@ export class RedisAiReader {
       if (!finished) throw new Error('会话已结束，请重新打开 Redis 侧栏。')
       committed = true
       return result
+    } catch (error) {
+      // DSH may abort with an object. Never expose that reason or imply a committed action was undone.
+      if (signal.aborted) throw new Error('Redis 调用已停止，结果可能未确认；请先查询当前状态，不要盲目重试。')
+      throw error
     } finally { if (!finished) this.budget.finish(admission.lease, 0); if (!committed) staged.page?.rollback() }
   }
   budgetStatus(sessionId: string) { return this.budget.status(sessionId) }
