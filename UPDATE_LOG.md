@@ -1,3 +1,10 @@
+## 2026-11-06：专业数据权限与公开案例夹具
+
+- 文件：`scripts/hold-ai-acceptance.mjs`、`docs/verification/diagnostics-specialized-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：当前构建仍缺少专业命令 ACL 拒绝和合成广告缓存的真实模型证据，复用既有持有夹具而不是创建新测试服务框架。
+- 修改与影响：可选 `--enterprise` 仅创建一个合成广告 String 并加入 DUMP、绝对过期时间和数量对照；可选 `--restricted-specialized` 在所属实例创建专用账号，拒绝 JSON.GET、TS.RANGE、GEOPOS、GEODIST、GETRANGE、XINFO GROUPS，保持元信息可读，且要求相应样本已启用。默认夹具数据与原受限账号不变，产品代码和协议不变。
+- 验证：修改后严格类型、脚本语法和 diff 检查通过。日常 DSH / bzkj-LLM 的 24 次工具调用留下 23 条读取卡片；广告、诊断数值、八项专业边界和六项权限拒绝与隔离数据一致。模型仍有无依据归因、虚构字段和历史目标误述，完整节点未通过。26 个 Key 的数据、绝对过期时间、数量、消费组及消费命令计数未变，夹具退出 0 并停止，日常服务保留。ACL DRYRUN 首次探针把拒绝字符串误当异常，修正断言后六项通过；详见新增验收记录。产品代码、依赖和安装包未变。
+
 ## 2026-11-06：选区竞态与模型显示归属核对
 
 - 文件：`docs/verification/selection-and-model-display-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。

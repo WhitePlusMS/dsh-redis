@@ -19,6 +19,9 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
   await admin.sendCommand(['SADD', 'fixture:members', 'synthetic-user'])
   await admin.sendCommand(['ZADD', 'fixture:scores', '3.75', 'synthetic-user'])
   await admin.set('fixture:string', 'synthetic-string-value')
+  const enterprise = process.argv.includes('--enterprise')
+  // A public-case-shaped sample, not copied enterprise or user data.
+  if (enterprise) await admin.set('fixture:ad:1001', '{"id":"1001","status":"synthetic-active"}')
   await admin.rPush('fixture:list', ['synthetic-first', 'synthetic-second'])
   await admin.sendCommand(['XADD', 'fixture:stream', '1-0', 'field', 'synthetic-first', 'field', 'synthetic-second'])
   const withModules = process.argv.includes('--modules')
@@ -48,12 +51,19 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
   if (process.argv.includes('--restricted')) {
     await admin.sendCommand(['ACL', 'SETUSER', 'fixture-reader', 'reset', 'on', '>fixture-only', '~fixture:*', '+@read', '+ping', '-hget', '-scan'])
   }
+  const restrictedSpecialized = process.argv.includes('--restricted-specialized')
+  if (restrictedSpecialized) {
+    assert(withModules && withGeo && withGroup, 'Specialized ACL acceptance requires modules, GEO and a Stream group')
+    // Keep TYPE and metadata readable so denials come from the actual value command.
+    await admin.sendCommand(['ACL', 'SETUSER', 'fixture-specialized', 'reset', 'on', '>fixture-only', '~fixture:*', '+@read', '+ping', '-json.get', '-ts.range', '-geopos', '-geodist', '-getrange', '-xinfo|groups'])
+  }
   const buffers = admin.withTypeMapping({ [RESP_TYPES.BLOB_STRING]: Buffer })
   // Check every fixture key, including absolute expiry, before releasing the instance.
   const keys = [...Array.from({ length: 16 }, (_, index) => 'fixture:order:' + index), 'fixture:user:123', 'fixture:members', 'fixture:scores', 'fixture:string', 'fixture:list', 'fixture:stream']
   if (mixedFilter) keys.push('fixture:order:missing-field', 'fixture:order:wrong-type')
   if (withGeo) keys.push('fixture:places')
   if (withModules) keys.push('fixture:json', 'fixture:timeseries')
+  if (enterprise) keys.push('fixture:ad:1001')
   const before = await Promise.all(keys.map(key => buffers.sendCommand(['DUMP', key])))
   const expiry = await Promise.all(keys.map(key => admin.sendCommand(['PEXPIRETIME', key])))
   const groupBefore = withGroup ? await buffers.sendCommand(['XINFO', 'GROUPS', 'fixture:stream']) : null
@@ -77,7 +87,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin, metadata })
       assert(unknownGroup); assert.equal(unknownGroup.lag, null); assert.equal(unknownGroup['entries-read'], null)
     }
   }
-  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, mixedFilter, restricted: process.argv.includes('--restricted'), streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo, modules: withModules, disableMemory }))
+  console.log(JSON.stringify({ ready: true, host: settings.host, port: settings.port, syntheticKeys: keys.length, mixedFilter, restricted: process.argv.includes('--restricted'), restrictedSpecialized, enterprise, streamGroup: withGroup, unknownLag: withUnknownLag, geo: withGeo, modules: withModules, disableMemory }))
   await new Promise((resolve, reject) => {
     process.stdin.once('data', resolve)
     process.stdin.once('error', reject)
