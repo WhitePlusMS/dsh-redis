@@ -3649,3 +3649,4 @@
 - 真实受限账号的 JSON、TimeSeries、GEO、Bitmap、消费组五项调用均返回权限错误，最终答案未重试或把错误当不存在。但 TimeSeries/消费组失败信封也含 complete=false，旧展示错误追加了部分数据提示。
 - src/redis-answer.ts 仅对成功 value/page/partial 状态展示完整性、扫描进度及覆盖说明；query-failed 明确归入无可用结果。tests/ai-answer.test.ts 覆盖失败、缺失、类型/状态变化和不可用，避免错误暗示继续翻页。遵循最简原则统一处理状态，不逐工具增加补丁；未改变任何 Redis 命令、权限或预算。
 - 严格类型、构建、15 项专项通过；Spec/Standards 对统一状态判断均无剩余发现。实际独立 Redis 结束对照确认28条数据及过期时间不变、消费组状态不变、无消费命令，夹具已停止。未连接的真实 show 回合成功，但模型没有调用最终答案工具，不能声称UI-only自动收束已经稳定验证。
+- 最后状态修复0fb50db已打包安装日常profile，SHA256 d3d32c5fa314ea7628a725781e4ffec848221d3579b33206d4611244f42e7f31；143文件与包一致，15个Host peer校验通过。官方--no-open启动，3080由PID39952监听；未读取启动日志。docs/DELIVERY_STATUS.md同步实际安装及未完成边界；最后提示修正未取得新的Web查询复验。
