@@ -1,3 +1,9 @@
+## 2026-11-06：多页面接收端与无接收端验收
+
+- 文件：`docs/verification/multiple-pages-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。补齐双面板记录未覆盖的独立页面接收场景；遵循最简原则，复用现有通道，不改产品、安装包、模型配置或网络设置。
+- 真实验证：两个可见页面承载同一会话时 show 返回 ambiguous，关闭第二页恢复 applied；发送后关闭唯一页面，实际 no_receiver；重新进入后的新请求 applied。四轮各一次 show，没有 Redis 连接/读取或自动重试。保存原始回执、两页 DOM 和 visibilityState，明确同引擎多页面不等于不同浏览器兼容性，全关闭发生在派发前不等于丢失回执，完整节点仍未完成。
+- 影响与清理：只保留最终验收页；无自建服务需要清理，日常 DSH 3080 / PID10476 保留。临时证据位于 `dsh-redis-multiple-pages-20261106`。本轮执行文档 diff 检查，不把上一节点的 20 项回归重复计作新增测试，也不重复未变代码的编译/打包。
+
 ## 2026-11-06：双面板歧义、恢复与隐藏刷新验收
 
 - 文件：`docs/verification/double-pane-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。补充当前安装 `622dce6` 的真实界面交错证据；遵循最简原则，复用已有面板判断和夹具，不修改产品代码、包、依赖或模型配置。
