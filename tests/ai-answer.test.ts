@@ -19,7 +19,7 @@ afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await c
 /** Actual readers, tool runtime and committed session events; only Redis transport
  * and approval UI are synthetic. Ordinary reads must not end the workflow.
  */
-async function fixture() {
+async function fixture(approval: 'allowed-once' | 'rejected' = 'allowed-once') {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   const link: RedisLink = {
@@ -40,7 +40,7 @@ async function fixture() {
   const settings = { host: '127.0.0.1', port: 6379, username: '', password: 'not-in-answer', tls: null }
   await connections.connect('answer-a', settings, new AbortController().signal)
   const ctx = new Context()
-  ctx.provide('approval', { request: async () => 'allowed-once' } as unknown as ApprovalService)
+  ctx.provide('approval', { request: async () => approval } as unknown as ApprovalService)
   await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
   const fiber = await ctx.plugin({ name: 'redis-answer-test', inject: ['tools'], apply(scope: Context) { registerRedisTools(scope, reader); registerRedisAnswerTool(scope, reader) } })
   const session = ctx.sessions.create(SessionId('answer-a'))
@@ -121,6 +121,36 @@ it('can answer a disconnected status without reconnecting or sending Redis comma
   const answer = await f.call('redis_viewer_answer', {})
   expect(answer).toMatchObject({ isError: false, concludesTurn: true })
   expect(content(answer)).toContain('disconnected'); expect(f.commands).toEqual([])
+})
+
+it('keeps rejection visible after an earlier successful status instead of returning only that status', async () => {
+  const f = await fixture('rejected')
+  await f.call('redis_viewer_status', {})
+  const denied = await f.call('redis_viewer_keys', { match: 'order:*' })
+  expect(denied.isError).toBe(true)
+  const answer = await f.call('redis_viewer_answer', {})
+  expect(answer.isError).toBe(false)
+  expect(content(answer)).toContain('拒绝')
+  expect(parseRedisAnswer(content(answer))?.[0]?.tool).toBe('redis_viewer_keys')
+  expect(f.commands).toEqual([])
+})
+
+it('announces omitted early records after the bounded ledger fills', async () => {
+  const f = await fixture()
+  for (let i = 0; i < 33; i++) await f.call('redis_viewer_status', {})
+  const answer = await f.call('redis_viewer_answer', {})
+  expect(answer.isError).toBe(false)
+  expect(content(answer)).toContain('不是完整查询汇总')
+  expect(JSON.parse(content(answer)).omittedCalls).toBe(1)
+  expect(content(answer)).toContain('读取')
+})
+
+it('retains each professional result target and full binary GEO member identity', () => {
+  for (const tool of ['redis_viewer_json_path', 'redis_viewer_timeseries', 'redis_viewer_bitmap', 'redis_viewer_stream_groups', 'redis_viewer_geo']) {
+    const result = describeRedisResult(tool, { connection: { db: 0 }, key: { label: '"fixture:target"' }, member: { label: '0xff', base64: '/w==' }, other: { label: '"second"' }, state: 'value' })
+    expect(result.paragraphs.join('')).toContain('fixture:target')
+    if (tool === 'redis_viewer_geo') { expect(result.paragraphs.join('')).toContain('/w=='); expect(result.paragraphs.join('')).toContain('second') }
+  }
 })
 
 it('preserves exact JSON, binary values, large integers and partial-result caveats', () => {

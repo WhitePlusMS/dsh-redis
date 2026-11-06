@@ -5,7 +5,12 @@ function object(value: unknown): Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : {}
 }
 function text(value: unknown): string | null { return typeof value === 'string' ? value : null }
-function identity(value: unknown): string { const data = object(value); return text(data.label) ?? `Base64 ${JSON.stringify(data.base64 ?? value)}` }
+function identity(value: unknown): string {
+  const data = object(value), label = text(data.label)
+  // Display labels can be shortened or hexadecimal previews; preserve the full
+  // identity for those cases instead of treating a preview as the actual key.
+  return label !== null && !label.endsWith('…') && !label.startsWith('0x') ? label : `Base64 ${JSON.stringify(data.base64 ?? value)}`
+}
 
 export interface RedisAnswerSection {
   readonly callId: string
@@ -48,6 +53,11 @@ export function describeRedisResult(tool: string, data: Record<string, unknown>)
   if (data.source === 'explicit') paragraphs.push('按明确指定的目标读取。')
   if (data.source === 'selection') paragraphs.push('按读取时确认的侧栏选择读取；之后的选择变化不改变这份记录。')
   const failure = text(data.errorMessage)
+  if (data.key !== undefined && !['redis_viewer_value', 'redis_viewer_key_metadata', 'redis_viewer_memory'].includes(tool)) paragraphs.push(`查询目标：${target}。`)
+  if (tool === 'redis_viewer_geo') {
+    if (data.member !== undefined) paragraphs.push(`成员：${identity(data.member)}。`)
+    if (data.other !== undefined && data.other !== null) paragraphs.push(`另一成员：${identity(data.other)}。`)
+  }
   for (const [key, label] of [['path', 'JSONPath'], ['from', '起始时间（毫秒）'], ['to', '结束时间（毫秒）'], ['offset', '起始位置'], ['count', '请求数量'], ['unit', '单位'], ['section', '概况类别']] as const) add(label, data[key])
   for (const [key, label] of [['offset', '值的起始位置'], ['pattern', '值的名称条件'], ['start', '起始消息 ID'], ['end', '结束消息 ID'], ['direction', '读取方向']] as const) add(label, value[key])
   if (failure !== null) paragraphs.push(failure)

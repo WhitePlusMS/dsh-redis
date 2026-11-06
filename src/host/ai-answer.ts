@@ -6,9 +6,10 @@ import { MAX_AI_RESULT_BYTES, MAX_AI_SESSION_CALLS } from './ai-budget.ts'
 import { evidenceTools } from '../redis-read-tools.ts'
 import { describeRedisResult } from '../redis-answer.ts'
 import { connectionViewSchema } from '../typert.shared.ts'
+import type { ConnectionView } from '../domain.ts'
 
-interface ReadRecord { readonly tool: string; result?: Record<string, unknown> }
-interface TurnReads { readonly turn: number; readonly calls: Map<string, ReadRecord> }
+interface ReadRecord { readonly tool: string; readonly connection: ConnectionView; result?: Record<string, unknown> }
+interface TurnReads { readonly turn: number; readonly calls: Map<string, ReadRecord>; omittedCalls: number }
 
 /** Consume committed session events, never model-supplied copies of Redis data.
  * This bounded, turn-local index holds no cursor or query state. The final answer
@@ -17,25 +18,35 @@ interface TurnReads { readonly turn: number; readonly calls: Map<string, ReadRec
 export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): void {
   const sessions = new Map<string, TurnReads>()
   const readable = new Set<string>(evidenceTools)
+  const currentConnection = (sessionId: string) => {
+    const status = reader.status(sessionId)
+    if (status === null || typeof status !== 'object' || Array.isArray(status)) throw new Error('Redis 状态无效。')
+    return connectionViewSchema.parse(status.connection)
+  }
   const observe = (sessionId: string, event: SessionEvent) => {
     if (event.type === 'turn/start') {
-      sessions.set(sessionId, { turn: event.data.turn, calls: new Map() }); return
+      sessions.set(sessionId, { turn: event.data.turn, calls: new Map(), omittedCalls: 0 }); return
     }
     if (event.type === 'turn/end') { sessions.delete(sessionId); return }
     const current = sessions.get(sessionId)
     if (current === undefined) return
     // Newly admitted input must not inherit an earlier answer's observations.
-    if (event.type === 'user/message' && event.data.source.kind === 'user') { current.calls.clear(); return }
+    if (event.type === 'user/message' && event.data.source.kind === 'user') { current.calls.clear(); current.omittedCalls = 0; return }
     if (event.type === 'tool/call' && event.data.turn === current.turn && readable.has(event.data.name)) {
-      if (current.calls.size >= MAX_AI_SESSION_CALLS) current.calls.delete(current.calls.keys().next().value ?? '')
-      current.calls.set(event.data.callId, { tool: event.data.name }); return
+      if (current.calls.size >= MAX_AI_SESSION_CALLS) { current.calls.delete(current.calls.keys().next().value ?? ''); current.omittedCalls++ }
+      current.calls.set(event.data.callId, { tool: event.data.name, connection: currentConnection(sessionId) }); return
     }
     if (event.type !== 'tool/result' || event.data.turn !== current.turn) return
     const message = event.data.message, entry = current.calls.get(message.toolCallId)
-    if (entry === undefined || message.isError) return
+    if (entry === undefined) return
+    // Rejections/cancellation are evidence too. They refer to the connection at
+    // dispatch and must not be mistaken for a successful Redis observation.
+    const failed = (reason: string) => { entry.result = { readOnly: true, connection: entry.connection, state: 'failed', errorMessage: reason } }
+    failed('读取未取得可用的结构化结果，请查看对应调用记录。')
     if (message.content.length !== 1 || message.content[0]?.type !== 'text') return
     const text = message.content[0].text
     if (Buffer.byteLength(text) > MAX_AI_RESULT_BYTES) return
+    if (message.isError) { failed(text); return }
     try {
       const value: unknown = JSON.parse(text)
       if (typeof value === 'object' && value !== null && !Array.isArray(value) && 'readOnly' in value && value.readOnly === true) entry.result = value as Record<string, unknown>
@@ -54,9 +65,8 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
       if (exec.agent === undefined) throw new Error('Redis 工具调用缺少有效的 DSH 对话身份。')
       if (Object.keys(args).length !== 0) throw new Error('完成回答不接受参数；本轮读取记录由 Host 自动引用。')
       const sessionId = exec.agent.session.id, current = sessions.get(sessionId)
-      const status = reader.status(sessionId)
-      if (status === null || typeof status !== 'object' || Array.isArray(status)) throw new Error('Redis 状态无效。')
-      const target = connectionViewSchema.parse(status.connection)
+      const target = currentConnection(sessionId)
+      if ([...(current?.calls.values() ?? [])].some(record => record.result === undefined)) throw new Error('本轮还有读取未结束，请等待结果后再回答。')
       const records = [...(current?.calls ?? [])].filter(([, record]) => {
         const connection = record.result?.connection
         return typeof connection === 'object' && connection !== null && 'id' in connection && 'generation' in connection && 'db' in connection && connection.id === target.id && connection.generation === target.generation && connection.db === target.db
@@ -64,7 +74,9 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
       if (records.length === 0) throw new Error('本轮当前连接和 DB 尚无已完成的读取，请先查询再回答。')
       const hasData = records.some(([, record]) => record.tool !== 'redis_viewer_status' && record.tool !== 'redis_viewer_select_db')
       const answers = records.filter(([, record]) => !hasData || (record.tool !== 'redis_viewer_status' && record.tool !== 'redis_viewer_select_db')).map(([callId, record]) => ({ callId, tool: record.tool, ...describeRedisResult(record.tool, record.result ?? {}) }))
-      const result = { readOnly: true, state: 'answered', answers }
+      const omittedCalls = current?.omittedCalls ?? 0
+      if (omittedCalls > 0) answers[0]?.paragraphs.unshift(`本轮较早的 ${omittedCalls} 次调用已超出摘要保留上限；这里仅汇总最近记录，不是完整查询汇总，早期结果请查看原调用。`)
+      const result = { readOnly: true, state: 'answered', omittedCalls, answers }
       if (Buffer.byteLength(JSON.stringify(result)) > MAX_AI_RESULT_BYTES) {
         // Do not truncate a JSON value or silently discard an earlier page.
         // The original call cards already own every value; keep all summaries.
