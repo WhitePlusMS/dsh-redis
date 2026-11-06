@@ -1,3 +1,9 @@
+## 2026-11-06：刷新渲染后的成功回执丢失回归
+
+- 文件：`tests/ui-action-confirmation-browser.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。现有丢回执测试覆盖定位动作，未覆盖刷新完成后的上行成功回执。遵循最简原则复用真实 Chromium、现有 React List 组件、Host 通道和 ToolRuntime，增加回执丢失后超时与断流两种场景，不修改产品或模型配置。任务清单记录局部覆盖及真实验收仍待完成的边界。
+- 检查内容：刷新前后返回不同合成值，先确认预览实际显示新值，再等待超时或主动关闭 Host 通道；断言工具未误报 applied、保留读取可能发生的说明，且没有自动再次派发刷新或读取。Redis 读取使用合成函数，不是日常 DSH、真实 Redis 或模型验收。
+- 验证：`pnpm typecheck` 通过；`pnpm exec vitest run tests/ui-action-confirmation-browser.test.ts` 共 15 项通过，45.29 秒测试耗时。新增两项分别返回 timeout / disconnected，刷新后的 fresh 仍显示，均只派发一次刷新且仅增加一次合成读取；工具保留未确认说明。测试自行关闭浏览器及 Host 上下文，本轮没有启动开发服务或替换日常安装包，真实 DSH 回执丢失与整体模型准确性仍待完成。
+
 ## 2026-11-06：刷新中用户取消、换 Key 与收起侧栏验收
 
 - 文件：`docs/verification/refresh-user-interruption-2026-11-06.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。补齐当前安装 ba1a4da 的三种真实交错，澄清取消立即停止等待、已发送响应仍需接收的既有约定；遵循最简与证据原则，不修改产品、SDK、模型配置或安装包。

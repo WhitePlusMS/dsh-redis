@@ -20,7 +20,7 @@ import { TYPERT } from '../src/typert.host.ts'
 
 const browserPath = ['C:/Program Files/Google/Chrome/Application/chrome.exe', 'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe', '/usr/bin/chromium'].find(path => existsSync(path))
 
-it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ack', 'manual-aba', 'hidden', 'multiple', 'refresh', 'refresh-delayed', 'refresh-user-change', 'refresh-hidden', 'format-hex', 'format-invalid', 'format-user-change'] as const)('confirms the rendered List selection through the real Host stream when acknowledgement is %s', async mode => {
+it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ack', 'manual-aba', 'hidden', 'multiple', 'refresh', 'refresh-delayed', 'refresh-user-change', 'refresh-hidden', 'refresh-lost-timeout', 'refresh-lost-disconnected', 'format-hex', 'format-invalid', 'format-user-change'] as const)('confirms the rendered List selection through the real Host stream when acknowledgement is %s', async mode => {
   if (browserPath === undefined) throw new Error('Missing browser')
   const commands: string[] = []
   const link: RedisLink = { close: () => undefined, onFailure: () => () => undefined, async execute(command, _args, signal, guard) {
@@ -75,7 +75,7 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     const stream = { send: frame => { void window.hostSend(frame) }, end: () => {}, dispose: () => { ended = true; notify() }, async *[Symbol.asyncIterator]() { while (!ended) { const value = queue.shift(); if (value) { yield value; continue } await new Promise(resolve => { wake = resolve; if (ended || queue.length) notify() }) } } }
     const key = { base64: 'bGlzdA==', byteLength: 4, label: 'list' }, value = { base64: 'dg==', byteLength: 1, fullByteLength: 1, suffix: '' }
     const props = { target, selected: key, t: key => key, registerListHandler: handler => panes.registerListHandler('a', handler), readActionPoint: async request => ({ ok: true, value: await window.hostPoint(request) }),
-      readList: async request => { reads++; if (mode.startsWith('refresh-') && reads > 1) await new Promise(resolve => { releaseRefresh = resolve }); return { ok: true, value: { state: 'page', error: null, metadata: { type: 'list', ttlMs: '-1', length: '3' }, entries: request.count === 1 ? [{ index: request.offset, value }] : [{ index: '0', value }, { index: '1', value }, { index: '2', value }], offset: request.offset, nextOffset: null, sampledAt: '1970-01-01T00:00:00.000Z' } } } }
+      readList: async request => { reads++; if (mode.startsWith('refresh-') && reads > 1) await new Promise(resolve => { releaseRefresh = resolve }); const renderedValue = mode.startsWith('refresh-lost-') && reads > 1 ? { base64: 'ZnJlc2g=', byteLength: 5, fullByteLength: 5, suffix: '' } : value; return { ok: true, value: { state: 'page', error: null, metadata: { type: 'list', ttlMs: '-1', length: '3' }, entries: request.count === 1 ? [{ index: request.offset, value: renderedValue }] : [{ index: '0', value: renderedValue }, { index: '1', value: renderedValue }, { index: '2', value: renderedValue }], offset: request.offset, nextOffset: null, sampledAt: '1970-01-01T00:00:00.000Z' } } } }
     const publish = (request, signal) => epoch.publish(request, epoch.snapshot().revision, signal)
     function Holder() { const revision = useSelectionRevision(); return <CurrentSelection target={target} keyBase64={key.base64} revision={revision} suspended={false} publish={publish}><KeyPresentation><KeyAutoRefresh action={{ register: handler => panes.registerRefreshHandler('a', handler), target, keyBase64: key.base64 }}><div className="redis-key-view"><div className="redis-inspector" data-view="data"><FormatActionContext.Provider value={{ register: handler => panes.registerFormatHandler('a', handler), target, keyBase64: key.base64 }}><ListView {...props} /></FormatActionContext.Provider></div></div></KeyAutoRefresh></KeyPresentation></CurrentSelection> }
     installRedisStyles(); const detach = panes.attach('a')
@@ -86,6 +86,7 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
   const built = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: 'jsx', sourcefile: 'ui-action-confirmation-browser.jsx' }, bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', write: false })
   const values: UiChannelInput[] = [], observed: UiChannelInput[] = []
   let wake: (() => void) | undefined, ended = false, actionId: string | undefined, publicationId: string | undefined, held: UiChannelInput | undefined, heldFormat: UiChannelMessage | undefined, actionWrites = 0
+  let refreshRequests = 0, toolMessage = ''
   const notify = () => { const next = wake; wake = undefined; next?.() }
   const uplink: AsyncIterable<UiChannelInput> = { async *[Symbol.asyncIterator]() { while (!ended) { const value = values.shift(); if (value !== undefined) { yield value; continue } await new Promise<void>(resolve => { wake = resolve; if (ended || values.length > 0) notify() }) } } }
   const browser = await chromium.launch({ executablePath: browserPath, headless: true })
@@ -96,6 +97,8 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     await page.exposeFunction('hostPoint', (request: ActionPointReadRequest) => ctx.typertGateway.invoke({ peer: ownerPeer(ctx), namespace: 'redisViewer', method: 'readActionPoint', args: { agentId: 'a', request }, signal: hostAbort.signal }))
     await page.exposeFunction('hostSend', (frame: UiChannelInput) => {
       observed.push(frame)
+      // Drop only the completed refresh receipt; selection synchronization still reaches Host.
+      if (mode.startsWith('refresh-lost-') && !('kind' in frame) && frame.requestId === actionId && frame.outcome === 'applied' && refreshRequests === 1) { held = frame; return }
       if ('kind' in frame && frame.kind === 'publishSelection' && frame.actionRequestId !== undefined) publicationId = frame.requestId
       if ((mode === 'manual-aba' || mode === 'hidden' || mode === 'multiple') && 'kind' in frame && frame.kind === 'publishSelection' && frame.actionRequestId !== undefined) { held = frame; return }
       values.push(frame); notify()
@@ -110,6 +113,7 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     pump = (async () => {
       for await (const frame of host) {
         if (frame.kind === 'action') actionId = frame.request.requestId
+        if (frame.kind === 'action' && frame.request.action.kind === 'refresh') refreshRequests++
         if (mode === 'format-user-change' && frame.kind === 'action' && frame.request.action.kind === 'setFormat') { heldFormat = frame; continue }
         if (mode === 'lost' && frame.kind === 'selectionResult' && frame.requestId === actionId && frame.accepted) { hostAbort.abort(); ended = true; notify(); return }
         if (mode === 'lost-publish-ack' && frame.kind === 'selectionResult' && frame.requestId === publicationId && frame.accepted) { hostAbort.abort(); ended = true; notify(); return }
@@ -128,7 +132,9 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     const result = refreshing || formatting ? ctx.tools.execute({ callId: 'ui-tool-fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: refreshing ? 'redis_viewer_refresh' : 'redis_viewer_format', arguments: refreshing ? {} : { format: mode === 'format-invalid' ? 'json' : 'hex' }, agent, signal: new AbortController().signal }).then(response => {
       const text = response.content.filter(block => block.type === 'text').map(block => block.text).join('')
       if (response.isError) throw new Error(text)
-      return (JSON.parse(text) as { outcome: string }).outcome
+      const parsed = JSON.parse(text) as { outcome: string; message: string }
+      toolMessage = parsed.message
+      return parsed.outcome
     }) : coordinator.dispatch('a', action, target, revision, () => true, new AbortController().signal)
     if (mode === 'format-hex') {
       expect(await result).toBe('applied')
@@ -148,6 +154,22 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
       expect(await result).toBe('applied')
       expect(await page.evaluate(() => Reflect.get(window, 'fixture').reads())).toBeGreaterThan(readsBefore)
       expect(await page.locator('[data-row-identity="0"]').getAttribute('aria-selected')).toBe('true')
+    } else if (mode === 'refresh-lost-timeout' || mode === 'refresh-lost-disconnected') {
+      let finished = false
+      void result.then(() => { finished = true })
+      await expect.poll(() => page.evaluate(() => Reflect.get(window, 'fixture').reads()), { timeout: 5000 }).toBe(readsBefore + 1)
+      await page.evaluate(() => Reflect.get(window, 'fixture').releaseRefresh())
+      await expect.poll(() => held, { timeout: 5000 }).toBeDefined()
+      // A changed visible value proves rendering happened before the missing acknowledgement.
+      expect(await page.locator('.redis-collection-preview [data-value-preview]').textContent()).toBe('fresh')
+      expect(finished).toBe(false)
+      if (mode === 'refresh-lost-disconnected') hostAbort.abort()
+      expect(await result).toBe(mode === 'refresh-lost-timeout' ? 'timeout' : 'disconnected')
+      expect(toolMessage).toContain('未能确认刷新结果')
+      expect(toolMessage).toContain('读取可能已经发出')
+      expect(refreshRequests).toBe(1)
+      expect(await page.evaluate(() => Reflect.get(window, 'fixture').reads())).toBe(readsBefore + 1)
+      expect(await page.locator('.redis-collection-preview [data-value-preview]').textContent()).toBe('fresh')
     } else if (mode === 'refresh-delayed' || mode === 'refresh-user-change' || mode === 'refresh-hidden') {
       let finished = false
       void result.then(() => { finished = true })
