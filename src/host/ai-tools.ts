@@ -14,7 +14,7 @@ function strict(args: object, allowed: readonly string[]): void {
   if (Object.keys(args).some(key => !allowed.includes(key))) throw new Error('Redis 工具包含不支持的参数。')
 }
 const output = { schema: { type: 'json' as const }, render: (_args: unknown, value: unknown) => [{ type: 'text' as const, text: JSON.stringify(value) }] }
-const connectionViewMeaning = 'connection.generation 是插件连接与 DB 视图的版本，切换 DB 时可能递增；不能仅凭版本变化推断物理连接重建或 Redis 服务器重启。完成必要查询后无参数调用 redis_viewer_answer，由 Host 引用本轮实际读取，展示有依据的答案并结束本轮。'
+const connectionViewMeaning = 'connection.generation 是插件连接与 DB 视图的版本，切换 DB 时可能递增；不能仅凭版本变化推断物理连接重建或 Redis 服务器重启。完成必要查询后无参数调用 redis_viewer_answer，展示本轮实际记录，再依据这些证据用自然语言回答用户问题；卡片展示不代替解释。'
 const reportable = ' 返回的 reportSampleId 标识本次采样；用户明确要求保存该结果时，将它传给 redis_viewer_save_diagnostic_report，不必重新查询。标识只在本会话保留最近 16 个；若未返回该字段则本次结果不可保存报告。'
 
 /** Official registry registrations are owned and unwound by this plugin fiber. */

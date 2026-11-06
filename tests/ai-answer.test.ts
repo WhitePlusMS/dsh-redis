@@ -60,7 +60,7 @@ async function fixture(approval: 'allowed-once' | 'rejected' = 'allowed-once') {
 }
 function content(result: { readonly content: readonly { readonly type: string; readonly text?: string }[] }): string { return result.content.map(block => block.text ?? '').join('') }
 
-it('completes status → candidate search → explicit field read → grounded answer without another Redis command', async () => {
+it('keeps the turn open for explanation after status → search → read → grounded evidence without another Redis command', async () => {
   const f = await fixture()
   const status = await f.call('redis_viewer_status', {})
   const keys = await f.call('redis_viewer_keys', { match: 'order:*' })
@@ -68,7 +68,8 @@ it('completes status → candidate search → explicit field read → grounded a
   for (const result of [status, keys, read]) { expect(result.isError).toBe(false); expect(result).not.toHaveProperty('concludesTurn') }
   const before = [...f.commands]
   const answer = await f.call('redis_viewer_answer', {})
-  expect(answer).toMatchObject({ isError: false, concludesTurn: true })
+  expect(answer.isError).toBe(false)
+  expect(answer).not.toHaveProperty('concludesTurn')
   expect(f.commands).toEqual(before)
   const sections = parseRedisAnswer(content(answer))
   expect(sections).toHaveLength(2)
@@ -109,7 +110,8 @@ it('reports a missing key without inventing its history or reading values', asyn
   const f = await fixture()
   await f.call('redis_viewer_key_metadata', { key: 'missing' })
   const answer = await f.call('redis_viewer_answer', {})
-  expect(answer).toMatchObject({ isError: false, concludesTurn: true })
+  expect(answer.isError).toBe(false)
+  expect(answer).not.toHaveProperty('concludesTurn')
   expect(content(answer)).toContain('不能判断缺失原因')
   expect(f.commands).toEqual(['TYPE'])
 })
@@ -119,7 +121,8 @@ it('can answer a disconnected status without reconnecting or sending Redis comma
   f.connections.disposeSession('answer-a')
   await f.call('redis_viewer_status', {})
   const answer = await f.call('redis_viewer_answer', {})
-  expect(answer).toMatchObject({ isError: false, concludesTurn: true })
+  expect(answer.isError).toBe(false)
+  expect(answer).not.toHaveProperty('concludesTurn')
   expect(content(answer)).toContain('disconnected'); expect(f.commands).toEqual([])
 })
 
@@ -208,7 +211,8 @@ it('answers UI-only turns from their exact receipt without inventing value sampl
   f.ctx.tools.register(defineTool({ name: 'redis_viewer_show', description: 'Synthetic UI receipt', parameters: {}, output: { schema: { type: 'json' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }] }, execute: async () => ({ outcome: 'applied', message: '当前对话的 Redis 面板已确认可见。' }) }))
   await f.call('redis_viewer_show', {})
   const answer = await f.call('redis_viewer_answer', {})
-  expect(answer).toMatchObject({ isError: false, concludesTurn: true })
+  expect(answer.isError).toBe(false)
+  expect(answer).not.toHaveProperty('concludesTurn')
   expect(content(answer)).toContain('不证明没有发生名称扫描')
   expect(content(answer)).toContain('界面回执')
   expect(content(answer)).not.toContain('采样时间')

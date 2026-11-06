@@ -69,7 +69,7 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
   ctx.effect(() => () => sessions.clear(), 'redis answer evidence')
   ctx.tools.register(defineTool({
     name: 'redis_viewer_answer',
-    description: '完成 Redis 查询或界面操作的最后一步：在完成必要的查找、读取、分页及用户要求的其他操作之后，无参数调用本工具。Host 自动引用本轮当前连接和 DB 的已完成读取记录及界面回执，生成中文答案、原值及范围解释，原生卡片显示答案，然后结束本轮。仅打开、定位、刷新或切换显示格式也使用本工具收束，不必额外读取值。不要传调用 ID、Key 或自由文本。普通读取不会提前结束。只有名称线索时先 status → keys，按真实候选读取，候选不唯一且用户未要求全部时先请用户澄清；明确 Key/字段直接 value，只问类型或 TTL 用 key_metadata。保留原查询范围，不用旧选择或历史值代替当前结果。若尚有必要查询或其他任务未完成，不调用本工具。',
+    description: '完成必要的 Redis 查找、读取、分页及界面操作后，无参数调用一次本工具。Host 引用本轮当前连接和 DB 的已完成记录及界面回执，显示中文事实、原值与范围说明。本工具不会结束回合：返回后必须继续用简短自然语言回答用户的具体问题，依据本轮证据区分已知事实、推测和无法判断之处；不要只展示卡片而遗漏解释，不为写解释重复查询。仅打开、定位、刷新或切换显示格式也可以展示实际回执，不必额外读取值。不要传调用 ID、Key 或自由文本。只有名称线索时先 status → keys，按真实候选读取，候选不唯一且用户未要求全部时先请用户澄清；明确 Key/字段直接 value，只问类型或 TTL 用 key_metadata。保留原查询范围，不用旧选择或历史值代替当前结果。',
     parameters: {},
     output: { schema: { type: 'json' }, render: (_args, value) => [{ type: 'text', text: JSON.stringify(value) }] },
     async execute(args, exec) {
@@ -104,9 +104,8 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
       }
       if (Buffer.byteLength(JSON.stringify(result)) > MAX_AI_RESULT_BYTES) throw new Error('本轮摘要超过答案预算，请查看对应读取卡片。')
       exec.signal.throwIfAborted()
-      // Only this successful, fully prepared answer ends the turn. A read,
-      // validation error or missing reference must leave further work possible.
-      exec.concludeTurn()
+      // Evidence is not an answer to every user question. Leave the native
+      // assistant step open so it can explain these facts and their limits.
       return result
     },
   }))

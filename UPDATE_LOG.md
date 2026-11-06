@@ -1,3 +1,16 @@
+## 2026-11-06：保留卡片后的问题解释，修正模型思考配置
+
+- 实测根因：广告缓存和慢查询已取得正确数据，但 `redis_viewer_answer` 的 `concludeTurn()` 直接结束回合，遗漏用户要求的本地缓存一致性及网络归因解释。依据用户同时保留卡片与解释的要求，删除提前结束，不增加新框架或兼容分支。
+- 文件：`src/host/ai-answer.ts` 保留原证据绑定、预算及卡片，工具返回后允许原生 assistant 回答具体问题；`src/host/ai-tools.ts` 同步工作流说明；`tests/ai-answer.test.ts` 修正四种成功结果的回合约束，先复现四项失败；`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md` 更新实际行为。本轮严格类型已通过，安装及真实解释复验随后记录。
+- 日常配置：备份后仅调整本机 web profile 的 bzkj 默认 reasoning=off、模型 reasoningEfforts 和正式 qwen-chat-template 参数，未改密钥、地址或其他提供方。宿主 schema 验证通过，日常 DSH 重启为 PID27452；网页已显示 Off，严格 JSON、两批 Hash 筛选及两页 TimeSeries 续读均成功，无新正文 think。小型单工具探针不能代表真实 DSH 链路；没有据此认定底层模型名称。备份和变更哈希在本机 `dsh-redis-model-contract-20261106` 临时目录。
+
+## 2026-11-06：仅可查看流程与失败描述实测
+
+- 原因与原则：按用户明确批准继续仅可查看流程，遵循最简和可核验原则，只复查最后修改影响的两个错误场景，不重复基础读取和完整测试。
+- 文件：`docs/DELIVERY_STATUS.md` 更新当前安装的实测状态；本文件记录操作与影响。日常 Web / 原 bzkj-LLM / 隔离 Redis 中，TimeSeries 和消费组权限拒绝的正文不再显示部分数据或成功样本覆盖说明。显式要求最终答案的未连接 show → answer 也成功，保留自动选择该工具仍未验证的区别。
+- 临时模型契约检查：宿主源码确认工具声明使用 parameters，探针格式没有因此不同；Qwen 模板关闭思考在合成算术及严格 JSON 中有效，但默认与关闭思考两组工具探针均未产生原生工具调用，尚不能据此更改日常配置或认定模型身份。未修改模型、宿主或产品代码。
+- 证据与清理：`C:/Users/admin/AppData/Local/Temp/dsh-redis-finish-20261106/read-state-live.txt`、`read-state-live.jpg`；28 条合成数据及绝对过期时间未变，消费组状态未变且无消费命令，测试连接断开、所属实例停止。保留日常 DSH 和仅可查看会话；没有提交或推送。本轮仅文档变更，不重复编译。
+
 ## 2026-11-06：交付状态收口，停止重复验证
 
 - 文件：`docs/DELIVERY_STATUS.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。用户指出验证过度并询问交付时间，按最简和证据原则集中列出当前可用包、七项原任务、具体失败及未覆盖项，不删减任务或把开发包升级为全部通过。
