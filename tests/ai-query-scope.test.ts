@@ -94,6 +94,21 @@ describe('Redis first-query scope confirmation', () => {
     expect(f.commands).toEqual([]); expect(f.reader.budgetStatus('a').callsUsed).toBe(0)
   })
 
+  it('preserves rejection separately from unavailable confirmation in the actual tool result', async () => {
+    const rejected = await fixture(async () => 'rejected')
+    const unavailable = await fixture(async () => 'unavailable')
+    const deniedResult = await rejected.call('redis_viewer_keys', { match: 'order:*' })
+    const unavailableResult = await unavailable.call('redis_viewer_keys', { match: 'order:*' })
+    const text = (result: typeof deniedResult) => result.content.filter(block => block.type === 'text').map(block => block.text).join('')
+    expect(text(deniedResult)).toContain('查询已被拒绝')
+    expect(text(deniedResult)).not.toContain('澄清范围')
+    expect(text(unavailableResult)).toContain('确认服务不可用')
+    expect(text(unavailableResult)).not.toContain('已被拒绝')
+    expect(rejected.commands).toEqual([]); expect(unavailable.commands).toEqual([])
+    expect(rejected.reader.budgetStatus('a').callsUsed).toBe(0)
+    expect(unavailable.reader.budgetStatus('a').callsUsed).toBe(0)
+  })
+
   it('fails closed without approval and leaves explicit metadata reads available', async () => {
     const f = await fixture(null)
     expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBe(true)

@@ -59,7 +59,10 @@ export function registerRedisQueryScope(ctx: Context, reader: RedisAiReader): (e
       const zh = `确认 Redis 查询范围：${endpoint}\n${conditions}\nSCAN 可能遍历当前 DB 的整个键空间。本次确认适用于该查询及条件不变的续页，仍受现有读取预算限制；结果不是快照。`
       const outcome = await approval.request({ agent, toolName: exec.name, callId: exec.callId, reason: 'Confirm Redis query scope', displayReason: { en, zh }, signal })
       if (outcome === 'cancelled') return { kind: 'cancel' }
-      if (outcome !== 'allowed-once') return { kind: 'deny', reason: 'Redis 查询范围未获确认；未开始扫描。请按用户要求澄清范围，不要自动重试。' }
+      // Rejection can come from a user or policy. Preserve it as a decision,
+      // rather than suggesting the same query merely needs another prompt.
+      if (outcome === 'rejected') return { kind: 'deny', reason: 'Redis 查询已被拒绝；未开始扫描。停止本次查询；仅在用户主动重新发起查询时再处理，不要重复请求确认或换工具绕过。' }
+      if (outcome !== 'allowed-once') return { kind: 'deny', reason: 'Redis 查询确认服务不可用；未开始扫描。请检查 DSH 的交互确认通道，不要自动重试或改用其他工具。' }
     }
     signal.throwIfAborted()
     if (!reader.isCurrentTarget(agent.session.id, target)) return { kind: 'deny', reason: 'Redis 连接或 DB 已变化，请重新确认查询范围。' }
