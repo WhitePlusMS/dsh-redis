@@ -3,19 +3,22 @@ import { createRequire } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
+import type { ConversationNodeDefinition, ConversationNodeContext } from '@deepseek-ai/dsh-client-ui-conversation/client'
 import type { ReactNode } from 'react'
 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
 import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
 
 interface BundleRegistration { id: string; factory: (require: (name: string) => unknown) => { apply: (ctx: Context) => void } }
-interface SlotEntry { name: string; key: string; inject: (sessionId: string) => RedisWorkspaceInjected }
+interface SlotEntry { name: string; key?: string; id?: string; inject: (sessionId: string) => RedisWorkspaceInjected }
 const require = createRequire(import.meta.url)
 
 it('loads the real browser bundle, retries a failed mount and removes all contributions on reload', async () => {
   const contributions = new Set<string>()
   const cleanups: (() => Promise<void>)[] = []
   let slot: SlotEntry | undefined
+  let answerDefinition: ConversationNodeDefinition | undefined
+  let turnAnswer: ((props: Record<string, unknown>) => ReactNode) | undefined
   const toolViews = new Map<string, (props: Record<string, unknown>) => ReactNode>()
   let registration: BundleRegistration | undefined
   const importNames: string[] = []
@@ -55,12 +58,14 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
     locale: { register: (namespace: string) => register('locale:' + namespace), bind: () => (key: string) => key },
     sidebarRightTabs: { register: (tab: { id: string }) => register(tab.id) },
     sidebarRight: { mounted: { getSnapshot: () => undefined, subscribe: () => () => undefined } },
+    uiConversation: { events: { register: (definition: ConversationNodeDefinition) => { answerDefinition = definition; return register('event:' + definition.kind) } } },
     slots: {
       inject: (_name: string, enter: () => unknown) => enter(),
       register: (entry: SlotEntry, view: (props: Record<string, unknown>) => ReactNode) => {
         if (entry.name === 'sidebar.right.pane.tab') slot = entry
-        if (entry.name === 'tool.call.toolview') toolViews.set(entry.key, view)
-        return register('slot:' + entry.key)
+        if (entry.name === 'tool.call.toolview' && entry.key !== undefined) toolViews.set(entry.key, view)
+        if (entry.name === 'conversation.chat.turnTail') turnAnswer = view
+        return register('slot:' + (entry.key ?? entry.id))
       },
     },
     remote: { $mount: mount },
@@ -91,6 +96,26 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   expect(answerHtml).toContain('采样时没有设置过期时间。')
   expect(answerHtml).toContain('&lt;script&gt;bad()&lt;/script&gt;')
   expect(answerHtml).not.toContain('<script>')
+  // The completed-turn extension remains outside the collapsed process. Drive
+  // its registered event projection and render the actual production component.
+  if (answerDefinition === undefined || turnAnswer === undefined) throw new Error('Missing transcript answer')
+  const definition = answerDefinition
+  type Match = Parameters<typeof definition.start>[1]
+  const call = { event: { type: 'tool/call', data: { turn: 2, name: 'redis_viewer_answer', callId: 'answer-call' } }, role: 'start', location: { kind: 'unresolved' } } as Match
+  expect(definition.match(call.event)).toEqual({ id: '2', role: 'start' })
+  const answerContext: ConversationNodeContext = { key: 'redis-answer:2', kind: 'redis-answer', id: '2', matches: [call], start: call, current: new Map(), state: undefined }
+  const initial = definition.start(answerContext, call, { previous: () => undefined })
+  const result = { ...call, role: 'update', event: { type: 'tool/result', data: { turn: 2, message: { toolCallId: 'answer-call', content: [{ type: 'text', text: JSON.stringify({ readOnly: true, state: 'answered', answers: [{ callId: 'read-call', tool: 'redis_viewer_value', paragraphs: ['本轮答案'], values: [{ label: '值', text: '<script>bad()</script>' }] }] }) }] } } } } as Parameters<typeof definition.update>[1]
+  const answered = definition.update({ ...answerContext, state: initial }, result)
+  const data = definition.buildLocationData?.({ ...answerContext, state: answered }, 'turn', null)
+  expect(data).toMatchObject({ kind: 'turn', turn: 2, key: 'redis-answer' })
+  const tailHtml = renderToStaticMarkup(require('react').createElement(turnAnswer, { turn: { turn: 2, data: { source: () => ({ subscribe: () => () => undefined, getSnapshot: () => data?.value }) } }, t: (key: string) => key }))
+  expect(tailHtml).toContain('data-redis-turn-answer="2"')
+  expect(tailHtml).toContain('本轮答案')
+  expect(tailHtml).toContain('&lt;script&gt;bad()&lt;/script&gt;')
+  expect(tailHtml).not.toContain('<details>')
+  const failed = { ...result, event: { ...result.event, data: { ...result.event.data, message: { toolCallId: 'answer-call', isError: true, content: [{ type: 'text', text: 'denied' }] } } } } as typeof result
+  expect(definition.buildLocationData?.({ ...answerContext, state: definition.update({ ...answerContext, state: initial }, failed) }, 'turn', null)).toBeNull()
   if (slot === undefined) throw new Error('Missing sidebar body')
   const api = slot.inject('trusted-session')
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')

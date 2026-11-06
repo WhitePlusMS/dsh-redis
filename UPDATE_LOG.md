@@ -3613,3 +3613,9 @@
 - 文件：`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence-locales.ts` 展示最终文字和原值，沿用原生工具视图和 React 文本转义；`tsconfig.client.json` 加入共享文件。`tests/ai-answer.test.ts` 覆盖实际 reader/ToolRuntime/SessionStore 串联、旧引用、切库重连、取消及精度边界。
 - 源码依据：重新对照临时目录中 RedisVL `merge_locked_filter` 与 futuretea `continueScan`/`takeScanItems`，保留现有服务端范围确认和 surplus 分页；本轮新增的是 DSH 答案记录绑定，没有复制 SSPL 代码。
 - 文件：`tests/client-bundle.test.ts` 验证实际打包视图和文本转义；`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md` 更新调用方式、33 个工具和最终回答边界。严格类型、构建及 125 项相关回归通过；无参数简化后类型与 7 项受影响回归通过。真实 bzkj-LLM + Redis 8.2.6 + 产品 ToolRuntime/SessionStore/reader 的两轮通过：status→keys→value→answer，以及 key_metadata→answer；合成数据及数量不变，所属 Redis 已停止。临时证据 `dsh-redis-answer-20261106/model-flow-v2.json` 保留首轮失败与修复后结果；本项不是 DSH Web/AgentLoop 验收，日常安装尚未更新。
+## 2026-11-06：直接显示本轮 Redis 答案
+
+- 原因：日常 DSH 实际查询得到答案后，宿主折叠工具活动，导致聊天正文空白。遵循最简、单一职责原则，使用已安装 DSH 0.2.1-rc.5 的正式 `conversation.chat.turnTail` 与 `uiConversation.events` 扩展，不修改宿主、不伪造模型消息。
+- 文件：新增 `src/client/RedisTurnAnswer.tsx`，将持久化答案调用按本轮身份投影到正文；`RedisToolEvidence.tsx` 提取共享答案内容，正文与工具记录保持一致；`src/client/index.ts` 注册扩展；`package.json` 声明所用会话与聊天客户端依赖；`tests/client-bundle.test.ts` 覆盖实际打包组件的正文显示、错误结果拒绝、文本转义和卸载。
+- 影响：仅改变答案展示位置；读取范围、Redis 命令、回合结束机制不变。历史答案由宿主重放，其他工具和会话不会生成此答案区。类型检查已通过；后续安装与网页结果另记，不将静态渲染当成完整验收。
+

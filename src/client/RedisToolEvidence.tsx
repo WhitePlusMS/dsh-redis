@@ -3,10 +3,18 @@ import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ToolCallViewProps } from '@deepseek-ai/dsh-client-ui-tool/client'
 import { redisEvidence, type EvidenceRow } from './tool-evidence.ts'
 import { evidenceTools } from '../redis-read-tools.ts'
-import { parseRedisAnswer } from '../redis-answer.ts'
+import { parseRedisAnswer, type RedisAnswerSection } from '../redis-answer.ts'
 import { EVIDENCE_NS, evidenceEn, evidenceZh } from './tool-evidence-locales.ts'
 
 type Props = ToolCallViewProps & PropsLocale<typeof EVIDENCE_NS>
+
+/** The transcript answer and expandable tool record render identical facts. */
+export function RedisAnswerContent({ answers }: { readonly answers: readonly RedisAnswerSection[] }) {
+  return <>{answers.map(item => <div key={item.callId}>
+    {item.paragraphs.map((paragraph, index) => <p key={index} style={{ margin: '6px 0', overflowWrap: 'anywhere' }}>{paragraph}</p>)}
+    {item.values.map((value, index) => <div key={index}><span>{value.label}</span><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '320px', overflow: 'auto' }}>{value.text}</pre></div>)}
+  </div>)}</>
+}
 
 function EvidenceRows({ rows }: { readonly rows: readonly EvidenceRow[] }) {
   return <dl style={{ display: 'grid', gridTemplateColumns: 'max-content minmax(0,1fr)', gap: '2px 12px', fontSize: '12px' }}>
@@ -22,10 +30,7 @@ export function RedisToolEvidence(props: Props) {
   const raw = block.content.map(item => item.type === 'text' ? item.text : JSON.stringify(item)).join('\n')
   const answer = !block.isError && props.toolName === 'redis_viewer_answer' ? parseRedisAnswer(raw) : null
   if (answer !== null) return <section data-redis-tool={props.toolName} data-call-id={props.callId} aria-label={t('answer')}>
-    {answer.map(item => <div key={item.callId}>
-      {item.paragraphs.map((paragraph, index) => <p key={index} style={{ margin: '6px 0', overflowWrap: 'anywhere' }}>{paragraph}</p>)}
-      {item.values.map((value, index) => <div key={index}><span>{value.label}</span><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '320px', overflow: 'auto' }}>{value.text}</pre></div>)}
-    </div>)}
+    <RedisAnswerContent answers={answer} />
     {props.inspect !== undefined && <button type="button" onClick={props.inspect}>{t('inspect')}</button>}
   </section>
   const evidence = block.isError ? null : redisEvidence(props.toolName, raw)
