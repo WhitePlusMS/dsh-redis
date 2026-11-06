@@ -1,3 +1,9 @@
+## 2026-11-06：范围确认安装与真实模型复验记录
+
+- 文件：`docs/verification/query-scope-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：补齐源码 `882eec0` 的包安装和 11 月 5 日真实 Web/模型证据，将首次范围确认的“尚未安装”状态更新为实际结果。
+- 修改与影响：记录包 SHA-256、82 文件/666 项打包检查和 137 文件一致性；记录首次拒绝无扫描、允许查询、Hash 两批仅一次确认、待确认切 DB 拦截，及六类型、JSON/TimeSeries/GEO/Bitmap、诊断、截断和失败分类的局部复验。分别保留模型历史状态误用、Stream 字段分页误述、Bitmap 命令误述、虚构 snapshot 字段及无证据慢日志归因，不把数值正确写成整项通过。记录长持有夹具失联、最终不变性校验未返回、旧 PID 已被其他进程占用而未终止；日常 DSH 保留运行。仅更新文档，不改运行代码，不推送。
+
 ## 2026-11-05：首次扫描范围确认（进行中）
 
 - 文件：`src/host/ai-query-scope.ts`、`src/host/ai-tools.ts`、`tests/ai-tools.test.ts`、`tests/ai-query-scope.test.ts`、`scripts/smoke-ai-hash-filter.mjs`、`scripts/smoke-ai-permissions.mjs`、`docs/AI_READ_USAGE.md`、`docs/DSH_AI_READONLY_TASKS.md`、`package.json`、`pnpm-lock.yaml`、`UPDATE_LOG.md`。
