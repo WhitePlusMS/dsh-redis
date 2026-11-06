@@ -19,6 +19,35 @@ export interface RedisAnswerSection {
   readonly values: readonly { readonly label: string; readonly text: string }[]
 }
 
+/** Link only actual continuation pages. Equal conditions alone do not identify
+ * one iteration: a restarted query must not be added to its predecessor.
+ */
+export function summarizeRedisFilters(records: readonly { readonly callId: string; readonly inputCursor: string | null | undefined; readonly result: Record<string, unknown> }[]) {
+  const names = ['checked', 'matched', 'different', 'missingField', 'missingKey', 'notHash', 'typeChanged', 'failed'] as const
+  type Summary = { binding: string; first: boolean; pages: number; counts: Record<typeof names[number], number>; matches: Map<string, unknown>; callId: string; ended: boolean }
+  const pending = new Map<string, Summary>(), groups: Summary[] = []
+  for (const record of records) {
+    const data = record.result, counts = object(data.counts), condition = object(data.condition)
+    if (record.inputCursor === undefined || data.state !== 'page' || typeof data.pattern !== 'string' || typeof condition.field !== 'string' || typeof condition.equals !== 'string' || !Array.isArray(data.matches) || !names.every(name => Number.isSafeInteger(counts[name]) && Number(counts[name]) >= 0)) continue
+    const binding = JSON.stringify([data.pattern, condition.field, condition.equals])
+    let group = record.inputCursor === null ? undefined : pending.get(record.inputCursor)
+    if (group?.binding !== binding) group = undefined
+    if (record.inputCursor !== null) pending.delete(record.inputCursor)
+    if (group === undefined) {
+      group = { binding, first: record.inputCursor === null, pages: 0, counts: { checked: 0, matched: 0, different: 0, missingField: 0, missingKey: 0, notHash: 0, typeChanged: 0, failed: 0 }, matches: new Map(), callId: record.callId, ended: false }
+      groups.push(group)
+    }
+    group.pages++; group.callId = record.callId; group.ended = data.scanComplete === true && data.cursor === null
+    for (const name of names) group.counts[name] += Number(counts[name])
+    for (const match of data.matches) { const key = object(match); if (typeof key.base64 === 'string') group.matches.set(key.base64, match) }
+    if (typeof data.cursor === 'string') pending.set(data.cursor, group)
+  }
+  return new Map(groups.map(group => [group.callId, {
+    paragraphs: [`${group.first && group.ended ? '本次迭代' : '本轮已记录的连续批次'}汇总：${group.pages} 批，累计检查 ${group.counts.checked} 次，匹配 ${group.counts.matched} 次，匹配 Key 去重后 ${group.matches.size} 个；非 Hash ${group.counts.notHash} 次，缺字段 ${group.counts.missingField} 次，读取失败 ${group.counts.failed} 次。`, '累计计数包含跨批重复检查；去重名称仅代表实际返回的匹配，SCAN 不是一致性快照。'],
+    values: [{ label: '累计分类计数（检查次数）', text: JSON.stringify(group.counts, null, 2) }, { label: '已返回匹配 Key（去重）', text: JSON.stringify([...group.matches.values()], null, 2) }],
+  }]))
+}
+
 /** Validate persisted display data before rendering; Redis strings stay escaped text. */
 export function parseRedisAnswer(raw: string): readonly RedisAnswerSection[] | null {
   if (raw.length > 65536) return null

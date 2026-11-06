@@ -4,11 +4,11 @@ import { defineTool } from '@deepseek-ai/dsh-tools'
 import type { RedisAiReader } from './ai-reader.ts'
 import { MAX_AI_RESULT_BYTES, MAX_AI_SESSION_CALLS } from './ai-budget.ts'
 import { evidenceTools } from '../redis-read-tools.ts'
-import { describeRedisResult } from '../redis-answer.ts'
+import { describeRedisResult, summarizeRedisFilters } from '../redis-answer.ts'
 import { connectionViewSchema } from '../typert.shared.ts'
 import type { ConnectionView } from '../domain.ts'
 
-interface ReadRecord { readonly tool: string; readonly connection: ConnectionView; result?: Record<string, unknown> }
+interface ReadRecord { readonly tool: string; readonly connection: ConnectionView; readonly inputCursor: string | null | undefined; result?: Record<string, unknown> }
 interface TurnReads { readonly turn: number; readonly calls: Map<string, ReadRecord>; omittedCalls: number }
 
 /** Consume committed session events, never model-supplied copies of Redis data.
@@ -34,7 +34,14 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
     if (event.type === 'user/message' && event.data.source.kind === 'user') { current.calls.clear(); current.omittedCalls = 0; return }
     if (event.type === 'tool/call' && event.data.turn === current.turn && readable.has(event.data.name)) {
       if (current.calls.size >= MAX_AI_SESSION_CALLS) { current.calls.delete(current.calls.keys().next().value ?? ''); current.omittedCalls++ }
-      current.calls.set(event.data.callId, { tool: event.data.name, connection: currentConnection(sessionId) }); return
+      // Keep only the continuation identity needed for summaries, not arbitrary
+      // model arguments. Malformed inputs never become an iteration start.
+      let inputCursor: string | null | undefined
+      if (event.data.name === 'redis_viewer_filter_hash') try {
+        const args: unknown = JSON.parse(event.data.arguments)
+        if (typeof args === 'object' && args !== null && !Array.isArray(args)) inputCursor = !('cursor' in args) ? null : typeof args.cursor === 'string' ? args.cursor : undefined
+      } catch { /* The tool owns argument validation. */ }
+      current.calls.set(event.data.callId, { tool: event.data.name, connection: currentConnection(sessionId), inputCursor }); return
     }
     if (event.type !== 'tool/result' || event.data.turn !== current.turn) return
     const message = event.data.message, entry = current.calls.get(message.toolCallId)
@@ -74,6 +81,11 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
       if (records.length === 0) throw new Error('本轮当前连接和 DB 尚无已完成的读取，请先查询再回答。')
       const hasData = records.some(([, record]) => record.tool !== 'redis_viewer_status' && record.tool !== 'redis_viewer_select_db')
       const answers = records.filter(([, record]) => !hasData || (record.tool !== 'redis_viewer_status' && record.tool !== 'redis_viewer_select_db')).map(([callId, record]) => ({ callId, tool: record.tool, ...describeRedisResult(record.tool, record.result ?? {}) }))
+      const summaries = summarizeRedisFilters(records.filter(([, record]) => record.tool === 'redis_viewer_filter_hash').map(([callId, record]) => ({ callId, inputCursor: record.inputCursor, result: record.result ?? {} })))
+      for (const answer of answers) {
+        const summary = summaries.get(answer.callId)
+        if (summary !== undefined) { answer.paragraphs.push(...summary.paragraphs); answer.values.push(...summary.values) }
+      }
       const omittedCalls = current?.omittedCalls ?? 0
       if (omittedCalls > 0) answers[0]?.paragraphs.unshift(`本轮较早的 ${omittedCalls} 次调用已超出摘要保留上限；这里仅汇总最近记录，不是完整查询汇总，早期结果请查看原调用。`)
       const result = { readOnly: true, state: 'answered', omittedCalls, answers }

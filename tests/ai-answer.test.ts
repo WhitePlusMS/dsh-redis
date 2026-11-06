@@ -11,7 +11,7 @@ import { RedisConnections, type RedisLink } from '../src/host/connection-service
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { registerRedisTools } from '../src/host/ai-tools.ts'
 import { registerRedisAnswerTool } from '../src/host/ai-answer.ts'
-import { describeRedisResult, parseRedisAnswer } from '../src/redis-answer.ts'
+import { describeRedisResult, parseRedisAnswer, summarizeRedisFilters } from '../src/redis-answer.ts'
 
 const cleanup: Array<() => Promise<void>> = []
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); vi.restoreAllMocks() })
@@ -174,4 +174,31 @@ it('distinguishes Stream range pagination from SCAN and omits inapplicable membe
   const member = describeRedisResult('redis_viewer_value', { connection: { db: 0 }, member: { label: '"member"' }, value: { state: 'value', metadata: { type: 'set' }, score: null } })
   expect(member.paragraphs.join('')).toContain('采样时存在')
   expect(member.values.some(value => value.label === '分数')).toBe(false)
+})
+
+it('sums linked filter pages, deduplicates names, and separates restarted or incomplete iterations', () => {
+  const page = (cursor: string | null, matched = 1) => ({ state: 'page', pattern: 'order:*', condition: { field: 'status', equals: 'failed' }, cursor, scanComplete: cursor === null, counts: { checked: 2, matched, different: 0, missingField: 1, missingKey: 0, notHash: 0, typeChanged: 0, failed: 0 }, matches: [{ base64: 'b25l', label: '"one"' }] })
+  const result = summarizeRedisFilters([
+    { callId: 'first', inputCursor: null, result: page('next') },
+    { callId: 'last', inputCursor: 'next', result: page(null) },
+    { callId: 'restart', inputCursor: null, result: page(null) },
+    { callId: 'orphan', inputCursor: 'old-turn', result: page(null) },
+  ])
+  expect(result.has('first')).toBe(false)
+  expect(result.get('last')?.paragraphs.join('')).toContain('本次迭代汇总：2 批，累计检查 4 次，匹配 2 次，匹配 Key 去重后 1 个')
+  expect(result.get('restart')?.paragraphs.join('')).toContain('本次迭代汇总：1 批')
+  expect(result.get('orphan')?.paragraphs.join('')).toContain('本轮已记录的连续批次汇总')
+  expect(result.get('orphan')?.paragraphs.join('')).not.toContain('本次迭代汇总')
+})
+
+it('adds the filter total from committed tool calls without rereading Redis', async () => {
+  const f = await fixture(), args = { match: 'order:*', field: 'status', equals: 'failed' }
+  const first = await f.call('redis_viewer_filter_hash', args)
+  expect(first.isError).toBe(false)
+  const cursor = (JSON.parse(content(first)) as { cursor: string }).cursor
+  expect((await f.call('redis_viewer_filter_hash', { ...args, cursor })).isError).toBe(false)
+  const before = [...f.commands], answer = await f.call('redis_viewer_answer', {})
+  expect(answer.isError).toBe(false)
+  expect(content(answer)).toContain('本次迭代汇总：2 批，累计检查 2 次，匹配 2 次，匹配 Key 去重后 1 个')
+  expect(f.commands).toEqual(before)
 })
