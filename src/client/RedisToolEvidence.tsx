@@ -1,10 +1,16 @@
 import type { Context } from '@deepseek-ai/cordis'
 import type { PropsLocale } from '@deepseek-ai/dsh-client-ui-slots'
 import type { ToolCallViewProps } from '@deepseek-ai/dsh-client-ui-tool/client'
-import { evidenceTools, redisEvidence } from './tool-evidence.ts'
+import { evidenceTools, redisEvidence, type EvidenceRow } from './tool-evidence.ts'
 import { EVIDENCE_NS, evidenceEn, evidenceZh } from './tool-evidence-locales.ts'
 
 type Props = ToolCallViewProps & PropsLocale<typeof EVIDENCE_NS>
+
+function EvidenceRows({ rows }: { readonly rows: readonly EvidenceRow[] }) {
+  return <dl style={{ display: 'grid', gridTemplateColumns: 'max-content minmax(0,1fr)', gap: '2px 12px', fontSize: '12px' }}>
+    {rows.map(row => <div key={row.label} style={{ display: 'contents' }}><dt>{row.label}</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{row.value}</dd></div>)}
+  </dl>
+}
 
 /** DSH supplies the owning call and session. No state survives across tool records. */
 export function RedisToolEvidence(props: Props) {
@@ -17,10 +23,13 @@ export function RedisToolEvidence(props: Props) {
     style={{ borderLeft: '2px solid var(--dsw-alias-border-l2)', padding: '4px 12px', minWidth: 0 }}>
     <strong>{t(block.isError ? 'failed' : 'title')}</strong>
     {evidence !== null && <>
-      <dl style={{ display: 'grid', gridTemplateColumns: 'max-content minmax(0,1fr)', gap: '2px 12px', fontSize: '12px' }}>
-        {evidence.rows.map(row => <div key={row.label} style={{ display: 'contents' }}><dt>{row.label}</dt><dd style={{ margin: 0, overflowWrap: 'anywhere', whiteSpace: 'pre-wrap' }}>{row.value}</dd></div>)}
-      </dl>
+      <EvidenceRows rows={evidence.rows} />
+      {evidence.values.map(row => <div key={row.label}>
+        <span style={{ fontSize: '12px' }}>{row.label}</span>
+        <pre style={{ margin: '4px 0 8px', whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '240px', overflow: 'auto', fontSize: '12px' }}>{row.value}</pre>
+      </div>)}
       {evidence.notes.map(note => <p key={note} style={{ margin: '6px 0', fontSize: '12px', color: 'var(--dsw-alias-label-secondary)' }}>{t(note)}</p>)}
+      {evidence.details.length > 0 && <details><summary>{t('details')}</summary><EvidenceRows rows={evidence.details} /></details>}
     </>}
     <details><summary>{t('raw')}</summary><pre style={{ whiteSpace: 'pre-wrap', overflowWrap: 'anywhere', maxHeight: '360px', overflow: 'auto', fontSize: '12px' }}>{evidence?.raw ?? (raw || block.error?.code || '')}</pre></details>
     {props.inspect !== undefined && <button type="button" onClick={props.inspect}>{t('inspect')}</button>}

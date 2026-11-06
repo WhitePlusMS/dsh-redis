@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { runInNewContext } from 'node:vm'
 import { expect, it, vi } from 'vitest'
 import type { Context } from '@deepseek-ai/cordis'
+import type { ReactNode } from 'react'
 import type { TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { RedisWorkspaceInjected } from '../src/client/RedisWorkspace.tsx'
 import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
@@ -15,6 +16,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const contributions = new Set<string>()
   const cleanups: (() => Promise<void>)[] = []
   let slot: SlotEntry | undefined
+  const toolViews = new Map<string, (props: Record<string, unknown>) => ReactNode>()
   let registration: BundleRegistration | undefined
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
@@ -55,7 +57,11 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
     sidebarRight: { mounted: { getSnapshot: () => undefined, subscribe: () => () => undefined } },
     slots: {
       inject: (_name: string, enter: () => unknown) => enter(),
-      register: (entry: SlotEntry) => { if (entry.name === 'sidebar.right.pane.tab') slot = entry; return register('slot:' + entry.key) },
+      register: (entry: SlotEntry, view: (props: Record<string, unknown>) => ReactNode) => {
+        if (entry.name === 'sidebar.right.pane.tab') slot = entry
+        if (entry.name === 'tool.call.toolview') toolViews.set(entry.key, view)
+        return register('slot:' + entry.key)
+      },
     },
     remote: { $mount: mount },
     get: (key: string) => key === 'connection' ? { generation: { getSnapshot: () => undefined, subscribe: () => () => undefined } } : ({ status, aiBudgetStatus, resumeAiBudget, openUiChannel }),
@@ -63,6 +69,20 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   client.apply(context)
   expect(contributions.has('slot:redis_viewer_key_metadata')).toBe(true)
   expect(contributions.has('slot:redis_viewer_filter_hash')).toBe(true)
+  // Render the registered production bundle, not a second test-only component.
+  const valueView = toolViews.get('redis_viewer_value')
+  if (valueView === undefined) throw new Error('Missing value evidence view')
+  const { renderToStaticMarkup } = require('react-dom/server') as { renderToStaticMarkup: (node: ReactNode) => string }
+  const html = renderToStaticMarkup(valueView({ phase: 'result', toolName: 'redis_viewer_value', callId: 'fixture-call', t: (key: string) => key,
+    block: { content: [{ type: 'text', text: JSON.stringify({ readOnly: true, connection: { id: 'fixture-id', db: 1 }, value: { text: '<script>bad()</script>', complete: false } }) }] },
+  }))
+  const visible = html.split('<details>')[0] ?? ''
+  expect(visible).toContain('&lt;script&gt;bad()&lt;/script&gt;')
+  expect(visible).toContain('value.complete')
+  expect(visible).not.toContain('connection.id')
+  expect(html).toContain('<details><summary>details</summary>')
+  expect(html).not.toContain('<script>')
+  expect(html).toContain('data-call-id="fixture-call"')
   if (slot === undefined) throw new Error('Missing sidebar body')
   const api = slot.inject('trusted-session')
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')

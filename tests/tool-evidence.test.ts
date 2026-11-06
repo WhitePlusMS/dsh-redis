@@ -33,3 +33,56 @@ it('retains partial scan counts and continuation verbatim without inventing tota
 it('does not promote malformed, oversized or unrelated output to structured read evidence', () => {
   for (const text of ['bad json', 'null', '[]', '{"state":"value"}', ' '.repeat(131073)]) expect(redisEvidence('redis_viewer_value', text)).toBeNull()
 })
+
+it('shows only the recorded String window with its range and completeness', () => {
+  const evidence = redisEvidence('redis_viewer_value', JSON.stringify({ readOnly: true, value: { text: 'synth', base64: 'c3ludGg=', byteLength: 5, offset: '0', nextOffset: '5', complete: false, metadata: { type: 'string', length: '22' } } }))
+  expect(evidence?.values).toEqual([{ label: 'value.text', value: '"synth"' }])
+  expect(evidence?.rows).toEqual(expect.arrayContaining([
+    { label: 'value.offset', value: '0' }, { label: 'value.nextOffset', value: '5' },
+    { label: 'value.byteLength', value: '5' }, { label: 'value.complete', value: 'false' },
+    { label: 'metadata.length', value: '22' },
+  ]))
+  expect(evidence?.rows.some(row => row.label === 'snapshot')).toBe(false)
+})
+
+it('distinguishes empty text, binary bytes and a missing selected cell', () => {
+  const values = (value: unknown) => redisEvidence('redis_viewer_value', JSON.stringify({ readOnly: true, value }))?.values
+  expect(values({ text: '', base64: '', complete: true })).toEqual([{ label: 'value.text', value: '""' }])
+  expect(values({ text: null, base64: '/w==' })).toEqual([{ label: 'value.text', value: 'null' }, { label: 'value.base64', value: '"/w=="' }])
+  expect(values({ state: 'selection-missing', cell: null })).toEqual([{ label: 'value.cell', value: 'null' }])
+})
+
+it('preserves collection identities, per-cell truncation and repeated Stream fields in order', () => {
+  const field = { label: '"field"', base64: 'ZmllbGQ=', byteLength: 5 }
+  const cell = { text: 'first', base64: 'Zmlyc3Q=', byteLength: 5, fullByteLength: 8, complete: false }
+  const collections = {
+    entries: [{ index: '9007199254740993', field, value: cell }],
+    members: [field],
+    messages: [{ id: '1-0', fields: [{ index: 0, field, value: cell }, { index: 1, field, value: { ...cell, text: 'second' } }] }],
+  }
+  for (const [name, entries] of Object.entries(collections)) {
+    const evidence = redisEvidence('redis_viewer_value', JSON.stringify({ readOnly: true, value: { [name]: entries, scanComplete: false, complete: false, cursor: 'fixture-next' } }))
+    expect(JSON.parse(evidence?.values.find(row => row.label === `value.${name}`)?.value ?? 'null')).toEqual(entries)
+    expect(evidence?.values).toContainEqual({ label: 'value.cursor', value: '"fixture-next"' })
+    expect(evidence?.rows).toContainEqual({ label: 'value.scanComplete', value: 'false' })
+  }
+})
+
+it.each(['[9007199254740993]', '[null]', '[]'])('shows JSON.GET source unchanged: %s', matchesJson => {
+  const evidence = redisEvidence('redis_viewer_json_path', JSON.stringify({ readOnly: true, matchesJson, path: '$.value' }))
+  expect(evidence?.values).toContainEqual({ label: 'matchesJson', value: matchesJson })
+})
+
+it('keeps diagnostic unknowns and professional values without numeric conversion', () => {
+  const fields = { samples: [{ timestampMs: '9007199254740993', value: '1.2500' }], coordinates: { longitude: '1.0000', latitude: '2.0000' }, distance: null, bits: '0000', groups: [{ pending: '1', lag: null }], fields: { blocked_clients: '0' } }
+  const evidence = redisEvidence('redis_viewer_timeseries', JSON.stringify({ readOnly: true, ...fields }))
+  for (const [name, value] of Object.entries(fields)) expect(JSON.parse(evidence?.values.find(row => row.label === name)?.value ?? '"missing"')).toEqual(value)
+})
+
+it('keeps recorded server and DB visible while moving opaque connection identifiers to details', () => {
+  const evidence = redisEvidence('redis_viewer_status', JSON.stringify({ readOnly: true, connection: { id: 'fixture-id', generation: 9, db: 1, target: { host: '127.0.0.1', port: 2418, tls: false } } }))
+  expect(evidence?.details).toEqual([{ label: 'connection.id', value: 'fixture-id' }, { label: 'connection.generation', value: '9' }])
+  expect(evidence?.rows).toContainEqual({ label: 'connection.target.port', value: '2418' })
+  expect(evidence?.rows).toContainEqual({ label: 'connection.db', value: '1' })
+  expect(evidence?.rows.some(row => row.label === 'connection.id')).toBe(false)
+})

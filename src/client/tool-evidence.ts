@@ -8,7 +8,13 @@ export const evidenceTools = [
 
 export type EvidenceNote = 'ttl' | 'scan' | 'memory' | 'explicit' | 'selected' | 'snapshot'
 export interface EvidenceRow { readonly label: string; readonly value: string }
-export interface RedisEvidence { readonly rows: readonly EvidenceRow[]; readonly notes: readonly EvidenceNote[]; readonly raw: string }
+export interface RedisEvidence {
+  readonly rows: readonly EvidenceRow[]
+  readonly values: readonly EvidenceRow[]
+  readonly details: readonly EvidenceRow[]
+  readonly notes: readonly EvidenceNote[]
+  readonly raw: string
+}
 
 function record(value: unknown): Record<string, unknown> | null {
   return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null
@@ -24,15 +30,40 @@ export function redisEvidence(tool: string, text: string): RedisEvidence | null 
   try { parsed = JSON.parse(text) } catch { return null }
   const data = record(parsed)
   if (data === null || data.readOnly !== true) return null
-  const rows: EvidenceRow[] = [], notes: EvidenceNote[] = []
+  const rows: EvidenceRow[] = [], values: EvidenceRow[] = [], details: EvidenceRow[] = [], notes: EvidenceNote[] = []
   const add = (label: string, value: unknown) => { const rendered = scalar(value); if (rendered !== null) rows.push({ label, value: rendered }) }
+  // Project only fields actually returned by this call. JSON quoting distinguishes
+  // empty text, null and binary cells; ordered arrays retain duplicate Stream fields.
+  const addValue = (label: string, value: unknown) => {
+    if (value !== undefined) values.push({ label, value: JSON.stringify(value, null, 2) })
+  }
   const connection = record(data.connection), value = record(data.value), metadata = record(data.metadata) ?? record(value?.metadata)
-  if (connection !== null) for (const key of ['id', 'generation', 'db', 'state']) add(`connection.${key}`, connection[key])
-  for (const key of ['sampledAt', 'state', 'error', 'errorMessage', 'scope', 'pattern', 'source', 'selectionSync', 'type', 'ttlMs', 'returnedCount', 'totalCount', 'complete', 'scanComplete', 'bytes', 'requestedSamples', 'comparison']) add(key, data[key])
+  if (connection !== null) {
+    for (const key of ['db', 'state']) add(`connection.${key}`, connection[key])
+    for (const key of ['id', 'generation']) {
+      const rendered = scalar(connection[key])
+      if (rendered !== null) details.push({ label: `connection.${key}`, value: rendered })
+    }
+    const target = record(connection.target)
+    for (const key of ['host', 'port', 'tls']) add(`connection.target.${key}`, target?.[key])
+  }
+  for (const key of ['sampledAt', 'state', 'error', 'errorMessage', 'scope', 'pattern', 'source', 'selectionSync', 'type', 'ttlMs', 'returnedCount', 'totalCount', 'complete', 'scanComplete', 'bytes', 'requestedSamples', 'comparison', 'path', 'matchCount', 'from', 'to', 'count', 'offset', 'unit', 'geoIndexVerified', 'section', 'requestedCount', 'coverage']) add(key, data[key])
   if (data.actualSamples === null) add('actualSamples', 'null')
-  for (const key of ['key', 'field', 'member']) add(`${key}.label`, record(data[key])?.label)
-  if (value !== null) for (const key of ['sampledAt', 'state', 'error', 'complete']) add(`value.${key}`, value[key])
-  for (const key of ['type', 'ttlMs']) add(`metadata.${key}`, metadata?.[key])
+  for (const key of ['key', 'field', 'member', 'other']) add(`${key}.label`, record(data[key])?.label)
+  if (value !== null) {
+    for (const key of ['sampledAt', 'state', 'error', 'type', 'complete', 'scanComplete', 'offset', 'nextOffset', 'byteLength', 'score', 'pattern', 'direction', 'start', 'end']) add(`value.${key}`, value[key])
+    for (const key of ['text', 'cell', 'entries', 'members', 'messages']) addValue(`value.${key}`, value[key])
+    // Binary String windows have no valid UTF-8 text. Preserve their exact bytes.
+    if (value.text === null) addValue('value.base64', value.base64)
+  }
+  for (const key of ['type', 'ttlMs', 'length']) add(`metadata.${key}`, metadata?.[key])
+  for (const key of ['keys', 'matches', 'samples', 'coordinates', 'distance', 'bits', 'fields', 'missing', 'entries', 'clients', 'groups', 'left', 'right', 'selected', 'currentSelection']) addValue(key, data[key])
+  // JSON.GET returns JSON source inside a string. Do not parse it: large integers
+  // would lose precision, and [null] must remain distinct from no matches ([]).
+  if (typeof data.matchesJson === 'string') values.push({ label: 'matchesJson', value: data.matchesJson })
+  for (const [label, page] of [['cursor', data], ['value.cursor', value]] as const) {
+    if (page !== null && Object.hasOwn(page, 'cursor')) addValue(label, page.cursor)
+  }
   const counts = record(data.counts)
   if (counts !== null) for (const key of ['checked', 'matched', 'different', 'missingField', 'missingKey', 'notHash', 'typeChanged', 'failed']) add(`counts.${key}`, counts[key])
   if (tool === 'redis_viewer_key_metadata' || typeof metadata?.ttlMs === 'string') notes.push('ttl')
@@ -42,5 +73,5 @@ export function redisEvidence(tool: string, text: string): RedisEvidence | null 
   if (data.source === 'selection') notes.push('selected')
   if (tool !== 'redis_viewer_status' && tool !== 'redis_viewer_select_db') notes.push('snapshot')
   // Keep decimal strings and JSON.GET source strings intact. Never coerce them to numbers.
-  return { rows, notes, raw: JSON.stringify(data, null, 2) }
+  return { rows, values, details, notes, raw: JSON.stringify(data, null, 2) }
 }

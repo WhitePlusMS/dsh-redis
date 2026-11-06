@@ -1,3 +1,10 @@
+## 2026-11-06：原生读取记录直接展示值（进行中）
+
+- 文件：`src/client/tool-evidence.ts`、`src/client/RedisToolEvidence.tsx`、`src/client/tool-evidence-locales.ts`、`tests/tool-evidence.test.ts`、`tests/client-bundle.test.ts`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
+- 原因：读取卡片默认只显示技术状态，实际值藏在原始 JSON 内，不便核对模型回答。
+- 修改与影响：复用现有原生卡片，展开记录中的 String 窗口、cell、集合数组、JSON 原文、专业值和诊断字段；显示范围、完整性和续读，保留二进制 Base64、空文本、null、长整数及 Stream 同名字段顺序。连接 ID/代次收进详情，服务器/DB 仍直接显示。结构化块限制显示高度且可滚动；原始结果保持可展开。只投影本次已返回字段，不读侧栏、不发额外 Redis 命令、不修改宿主接口，不推断缺失字段或保证模型自由文本准确。
+- 验证：两组修改后 `pnpm typecheck` 均通过；新构建和 13 项专项通过，覆盖范围/截断、二进制/空值、重复字段、JSON 大整数/空匹配、未知诊断值及实际客户端 bundle 的 HTML 转义、默认值展示和连接详情折叠。完整打包检查通过（82 文件、674 项，179.69 秒），包 SHA-256 为 `d91f45768d9f6e92d3fe844624b38f0de1f3902867c11a3f13ffb426df3b915e`；日常安装与真实 DSH 复验待执行。当前环境复核未发现 3080 监听，不能沿用上一轮服务运行快照。
+
 ## 2026-11-06：范围确认安装与真实模型复验记录
 
 - 文件：`docs/verification/query-scope-real-model-2026-11-05.md`、`docs/DSH_AI_READONLY_TASKS.md`、`UPDATE_LOG.md`。
