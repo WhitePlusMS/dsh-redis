@@ -4,6 +4,8 @@
 - 文件：新增 `scripts/probe-dsh-approval-provenance.mjs`、`scripts/probe-redis-write-mvp.mjs` 和 `docs/verification/ai-write-approval-contract-2026-11-11.md`，记录已安装 DSH 0.2.1-rc.5 审批服务、Web/ACP 接口与合成探针及隔离 Redis 事务、WATCH 前后变化和字段 TTL 探针；更新本说明。
 - 影响：审批探针仅使用合成会话和程序应答；Redis 探针只写项目自有隔离夹具且结束后停止并清理。不改变宿主策略或业务 Redis；写入功能仍未开放，真实 DSH 人工确认链路仍需验证。
 - 补充：核查并以合成根 Agent 和程序应答者验证 DSH 标准 `userQuestions.ask()`；该接口的根 Agent 校验不能单独证明答案来自真人，避免将提问 UI 误当作现成人工来源凭证。
+- 补充：核查 DSH 会话消息的 `user` 来源与客户端生成的 `rpcId`，记录其可用于请求关联，但不能单独证明人为操作及完整提案审阅。
+- 验证：隔离 Redis 8.2.6 两项基础探针及审批合成探针通过，夹具进程停止且目录已清理；Host、Client、测试三套 TypeScript 检查和构建通过，完整 Vitest 回归 84 个文件、698 项通过。这些结果不等同写入 MVP 实机验收。
 
 ## 2026-11-11：整理提交前的本地临时文件
 
