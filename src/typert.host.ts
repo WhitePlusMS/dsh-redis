@@ -56,7 +56,7 @@ const databasesValue = z.object({ state: z.enum(['value', 'failed']), error: err
 /** Host Zod codecs are required by the rc.2 Typert loader. */
 export const redisHostDescriptors = [
   createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', empty,
-    z.object({ state: z.literal('ready'), readOnly: z.literal(true), dshBaseline: z.literal(DSH_BASELINE), protocolVersion: z.literal(PROTOCOL_VERSION) }).strict(), z.string().min(1)),
+    z.object({ state: z.literal('ready'), sidebarReadOnly: z.literal(true), aiWriteAvailable: z.literal(true), dshBaseline: z.literal(DSH_BASELINE), protocolVersion: z.literal(PROTOCOL_VERSION) }).strict(), z.string().min(1)),
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', credentials, view, z.string().min(1)),
   createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', identity, view, z.string().min(1)),
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', empty, view, z.string().min(1)),

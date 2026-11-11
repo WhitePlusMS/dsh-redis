@@ -3879,3 +3879,18 @@
 - 修改 `src/client/styles.ts`、`src/client/RedisWorkspace.tsx` 和浏览器回归：为信息区提供可聚焦的有限高度滚动，在窄屏上保留并换行显示最大长度的 Key/字段。
 - 补充浏览器测试根节点空值检查以满足 TypeScript 严格编译。
 - 调整浏览器回归断言顺序，分别在小字段和最大字段数据更新后检查对应结果。
+
+## AI 写入使用说明（2026-11-11）
+
+- 修改 `README.md`、`README.zh.md` 和 `docs/screenshots/readme-header.svg`：按实际实现说明默认关闭的 AI 写入、DSH 原生权限、支持范围、TTL 与大小限制、结果查询及未知状态，保留只读侧栏与既有真实截图。
+- 修改 `docs/DSH_AI_REDIS_WRITE_PLAN.md`：将方案状态更新为 MVP 已实现、验收进行中，不把进程内管线验证冒充独立 Web profile 验收。
+- 修改 `docs/INSTALLATION.md`、`docs/INSTALLATION.zh.md` 与 `package.json`：补充 AI 写入开关和安装后使用步骤，修正包描述。
+- 修正 `docs/AI_READ_USAGE.md` 与两份 README 的引用范围，区分历史只读验收、已完成的隔离写入验证和待验收的独立 Web profile。
+- 为 `docs/AI_READ_ARCHITECTURE.md` 标注 2026-10-19 历史快照，在 `docs/AI_READ_USAGE.md` 补充三个写入工具；README 明确合成会话与真实模型验收的区别。
+- 修正 `tests/client-bundle.test.ts` 中写死的 Typert 接口数量：新增写入开关和记录查询后由 20 个变为 23 个；完整回归原先其余 740 项通过。
+- 新增 `docs/verification/ai-write-mvp-2026-11-11.md`，并更新 README、计划：记录隔离 Redis、合成会话、真实安装的独立 DSH profile 和独立客户端回读结果，明确未完成真实浏览器对话或模型验收。
+- 修改 `src/domain.ts`、`src/remote-service.ts`、`src/typert.shared.ts`、`src/typert.host.ts` 和 `src/runtime.ts`：将模糊的全局只读状态改为侧栏只读与 AI 写入能力两个明确字段，协议版本升至 16；同步测试和包内验证记录。
+- 重新构建并安装协议 16 开发归档，在隔离 DSH Web profile 中检查状态、执行写入并由独立客户端回读；更新归档 SHA 和测试范围，避免引用协议变更前的验证记录。
+- 更新 `docs/verification/ai-write-mvp-2026-11-11.md`：完整回归重跑 90 个文件、741 项全部通过；独立 Web 首页可打开，可稍后配置 API Key，未完成浏览器对话。更新计划，说明 DSH 在进入执行体前拒绝时不会产生插件操作记录。
+- 收窄计划中拒绝结果的表述：同一操作 ID 仍可能存在此前执行的记录，本次拒绝不会创建新记录。
+- 更正隔离 Web 引导记录：可选择稍后配置 API Key；测试工作区已被识别，但浏览器内的新会话及插件交互未完成。

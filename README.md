@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — read-only Redis browsing in DeepSeek Harness">
+  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — Redis browsing and AI access in DeepSeek Harness">
 </p>
 
 # DSH Redis
 
 English | [简体中文](README.zh.md)
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) is a community plugin for **DeepSeek Harness (DSH)**. Browse Redis in the sidebar and read a named Key or the current selection from the same conversation. The tools use the Redis connection owned by that conversation.
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) is a community plugin for **DeepSeek Harness (DSH)**. Browse Redis in the sidebar, read named Keys in conversation, and optionally enable controlled AI writes. Tools use the Redis connection owned by that conversation.
 
-**Read-only · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
+**Sidebar browsing · AI reads and writes · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
 
 Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. Build and install it with the steps below. The older v0.1.0 package targets DSH 0.2.0-rc.2 and does not include the current additions.
 
@@ -20,7 +20,8 @@ Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. Build and install it wi
 
 - Browse String, Hash, List, Set, ZSet and Stream; select a collection row to inspect its details in the same view.
 - Read named Keys, search names or filter Hashes in the conversation, and request diagnostic information such as slow logs.
-- Read-only, for standalone Redis with TLS. Tool results enter DSH conversation history and may be sent to the configured model provider.
+- AI writes are off by default. Once enabled, they can replace a complete existing String value or Hash field under the DSH tool permission policy.
+- Supports standalone Redis with TLS. Tool arguments and results enter DSH conversation history and may be sent to the configured model provider.
 
 ![Manually connect Redis, browse DB and Keys, inspect the selected row, then ask in the same DSH conversation](docs/screenshots/readme-flow.svg)
 
@@ -49,6 +50,7 @@ The pack command runs type checking, build and tests. Keep the archive at that p
 4. Select the DB, folder and Key. Select a collection row to inspect it directly; change preview format, find or copy from its toolbar.
 5. Auto-refresh starts off, with a 5-second interval selected. Enable it with the refresh control. Key/DB/session changes, hiding the view, cancellation or a read failure stop it; showing the view again does not turn it back on automatically.
 6. In the current version, ask “What is the status field of `order:1001`?” directly, or ask “Explain the selected field” after selecting one. Ask explicitly to switch DB; the sidebar follows the Host's new DB.
+7. To write, open **Plugin info → Enable AI writes** in the sidebar and specify the existing Key or Hash field and complete new value in the same conversation. Execution follows DSH tool permissions: an allow policy can execute directly, while an ask policy uses the DSH approval flow. Use the returned operation ID in Plugin info to check its result.
 
 Editing or saving a profile while connected does not change the active server. In the current version you can explicitly ask AI to connect a uniquely identified saved profile; passwords are entered through the local connection form.
 
@@ -68,6 +70,7 @@ Editing or saving a profile while connected does not change the active server. I
 | Refresh | Manual refresh and optional 1/5/10/30-second refresh; selected content and view state are preserved when still present |
 | DSH integration | Native sidebar, expanded workbench, light/dark theme, English/Chinese, Lucide action icons |
 | Conversation | Native DSH tools for explicit Key reads, bounded search and filtering; the development build also has diagnostic, connection and optional UI actions |
+| AI writes | Off by default; controlled replacement of an existing String or Hash field, with precondition, concurrency and readback checks |
 
 | Type | View |
 | --- | --- |
@@ -104,7 +107,7 @@ Desktop, macOS and Linux operation have not been verified. The declared Node.js 
 | `redis_viewer_value` | Read a named Key or, with no Key argument, the current sidebar selection |
 | `redis_viewer_select_db` | Switch this conversation's DB when explicitly requested and synchronize the sidebar |
 
-The development build also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI usage guide](docs/AI_READ_USAGE.md) for the full tool list, parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
+The development build also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI read guide](docs/AI_READ_USAGE.md) for read-tool parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
 
 An initial Key-name search or Hash filter requires DSH's native scope confirmation, showing the server, DB and query conditions. Continuation pages retain the same scope; direct reads of a known Key do not require this scan confirmation. Denial or cancellation stops the query. `SCAN MATCH` can still traverse the current DB's entire keyspace and does not produce a consistent snapshot.
 
@@ -122,9 +125,13 @@ AI tool output becomes part of DSH conversation history and may be sent to the m
 
 The Key list caches at most 5,000 Keys or 2 MiB of encoded results. Each automatic scan starts at most 1,000 batches and does not start another batch after 60 seconds; you can continue it manually. If the cache limit causes part of a batch to be dropped, narrow the filter and scan again. A filtered or interrupted scan is not a full DB snapshot, and `SCAN` is not a consistent snapshot during concurrent changes. AI replies have a 64 KiB result budget; the default String window and some collection value prefixes are 4,096 bytes. Completion and value truncation are reported separately.
 
-Not included: Redis writes, a free-form command console, direct RDB/AOF loading, snapshots, dedicated special-type views, charts, URI import, profile import/export, Cluster, Sentinel, built-in SSH tunnels or client-certificate authentication. Diagnostics in the development build are bounded samples, not a full server snapshot. JSON in a normal String can still be formatted.
+The AI write MVP requires Redis 7.4 or later and no TTL on the target Key or Hash field. Key, field, old value and new value are each limited to 4,096 bytes. It replaces one complete value on an existing target; it cannot create or delete targets, perform bulk writes or change TTLs. Checks do not establish business intent or prevent later changes by other clients. Operation records are temporarily kept in Host memory. If the result is unknown, do not retry automatically; inspect the current target first.
+
+Not included: a free-form command console, direct RDB/AOF loading, snapshots, dedicated special-type views, charts, URI import, profile import/export, Cluster, Sentinel, built-in SSH tunnels or client-certificate authentication. Diagnostics in the development build are bounded samples, not a full server snapshot. JSON in a normal String can still be formatted.
 
 ## Verification and known issue
+
+AI writes have been exercised with isolated Redis 8.2.6, the in-process DSH native tool pipeline and an independently installed DSH Web profile using a synthetic session, with readback from an independent Redis client. The complete browser conversation and real-model write flow remain unverified; the historical read-only acceptance below does not cover them. [Verification record](docs/verification/ai-write-mvp-2026-11-11.md).
 
 On 2026-11-06, application source `69c63d8` passed strict type checks, build and **84 test files / 698 tests** during packaging; 143 files in the daily installation matched the archive. Native DSH runs covered query/diagnostic result delivery, reads on the original connection after candidate authentication failed, and two filter batches with cumulative counts. This local delivery is closed within the plugin's tool responsibilities; no new Release was published. See [delivery status](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md) and [tool acceptance criteria](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md) for evidence and coverage limits.
 

@@ -1,5 +1,7 @@
 # AI 如何读取 Redis：原生 DSH 工具与 MCP 的区别
 
+> 历史快照：本文记录 2026-10-19 的只读实现和 DSH 版本，不代表当前插件的全部能力。当前源码已增加默认关闭的受控 AI 写入，范围和验证状态以 [README](../README.zh.md#数据与边界) 为准。
+
 核对日期：2026-10-19。依据：当前项目源码、已安装版本对应实现，以及固定 `DSH 0.2.0-rc.2` 官方文档与源码，官方提交为 `639ed015397290b3745d163aafe02ffee4aa3f84`。
 
 当前实现采用 **DSH 原生插件的工具注册接口**，没有为本插件部署 Redis MCP Server，也没有通过 MCP Client 转发 Redis 查询。它使用官方 `@deepseek-ai/dsh-tools` 提供的 `defineTool` / `ctx.tools.register`，将我们自己的 Redis 查询功能提供给模型调用。

@@ -80,6 +80,7 @@ The Redis Host entry is `ui-redis`, supplied by the `dsh-redis` bundle. A packag
 3. Give the connection a name and optional group if you want to save its non-password settings. Choose **Connect** to establish the connection; saving alone does not connect.
 4. A new connection starts at DB 0. Select the intended DB and wait for automatic Key loading. Select a Key to view its data.
 5. To use chat, stay in this same DSH conversation and ask about the selected Key or field. The model service and DSH tool policy must be available.
+6. For AI writes, confirm the connection and DB, then open **Plugin info → Enable AI writes** in the sidebar. Specify an existing String or Hash field and the complete new value in the same conversation. DSH may allow execution directly or request approval according to its policy. See the [README](../README.md#data-and-limits) for supported writes and result lookup.
 
 The Host, rather than the browser, must be able to reach Redis. TLS certificate validation remains enabled. There is no built-in SSH tunnel, Cluster or Sentinel connection mode.
 

@@ -5,7 +5,7 @@ import { DSH_BASELINE, PROTOCOL_VERSION } from '../src/domain.ts'
 import { setSelectionRequestSchema, selectionAckSchema } from '../src/typert.shared.ts'
 import { uiActionAckSchema, uiChannelInputSchema, uiChannelMessageSchema } from '../src/typert.shared.ts'
 
-const valid = { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
+const valid = { state: 'ready', sidebarReadOnly: true, aiWriteAvailable: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
 
 it('uses a scoped, cancellable stream with strict action and acknowledgement frames', () => {
   const id = '12345678-1234-1234-1234-123456789abc'
@@ -68,7 +68,8 @@ describe('strict sidebar protocol', () => {
     for (const schema of [host, statusSchema]) {
       expect(schema.parse(valid)).toEqual(valid)
       expect(() => schema.parse({ ...valid, dshBaseline: '0.2.0-rc.2' })).toThrow()
-      expect(() => schema.parse({ ...valid, readOnly: false })).toThrow()
+      expect(() => schema.parse({ ...valid, sidebarReadOnly: false })).toThrow()
+      expect(() => schema.parse({ ...valid, aiWriteAvailable: false })).toThrow()
       expect(() => schema.parse({ ...valid, password: 'must not appear' })).toThrow()
       expect(() => schema.parse({ state: 'ready' })).toThrow()
     }

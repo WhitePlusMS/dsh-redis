@@ -27,5 +27,5 @@ export function apply(ctx: Context): void {
   registerRedisUiTools(ctx, service.uiActions)
   registerRedisRefreshTool(ctx, service.ai, service.uiActions)
   registerRedisFormatTool(ctx, service.ai, service.uiActions)
-  console.info('[dsh-redis] Read-only Host registered')
+  console.info('[dsh-redis] Redis Host registered')
 }

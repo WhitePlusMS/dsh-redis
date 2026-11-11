@@ -1,7 +1,7 @@
 {
   "name": "dsh-redis",
   "version": "0.1.1",
-  "description": "Read-only Redis viewer in the native DeepSeek Harness sidebar",
+  "description": "Redis viewer and controlled AI read/write tools for DeepSeek Harness",
   "type": "module",
   "license": "MIT",
   "engines": {
@@ -123,6 +123,7 @@
     "docs/INSTALLATION.zh.md",
     "docs/DEVELOPMENT.md",
     "docs/AI_READ_USAGE.md",
+    "docs/verification/ai-write-mvp-2026-11-11.md",
     "docs/screenshots",
     "LICENSE",
     "licenses",

@@ -23,7 +23,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   let registration: BundleRegistration | undefined
   const importNames: string[] = []
   const unmount = vi.fn(async () => undefined)
-  const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, readOnly: true as const, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION } }))
+  const status = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { state: 'ready' as const, sidebarReadOnly: true as const, aiWriteAvailable: true as const, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION } }))
   const aiBudgetStatus = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } }))
   const resumeAiBudget = vi.fn(async (_sessionId: string, _request: unknown, _signal: AbortSignal) => ({ ok: true as const, value: { accepted: true, status: { callsUsed: 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: false } } }))
   const stream = { send: vi.fn(), end: vi.fn(), dispose: vi.fn(), async *[Symbol.asyncIterator]() {} }
@@ -124,12 +124,12 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   if (slot === undefined) throw new Error('Missing sidebar body')
   const api = slot.inject('trusted-session')
   await expect(api.status(new AbortController().signal)).rejects.toThrow('Host not ready')
-  await expect(api.status(new AbortController().signal)).resolves.toMatchObject({ ok: true, value: { readOnly: true } })
+  await expect(api.status(new AbortController().signal)).resolves.toMatchObject({ ok: true, value: { sidebarReadOnly: true, aiWriteAvailable: true } })
   expect(mount).toHaveBeenCalledTimes(2)
   // Inspect the actual emitted browser contribution, not only TS source schemas.
   // rc.2 invokes decode on successful HTTP replies; create alone is insufficient.
   const descriptors = mount.mock.calls[1]?.[0].descriptors
-  expect(descriptors).toHaveLength(20)
+  expect(descriptors).toHaveLength(23)
   for (const descriptor of descriptors ?? []) {
     const codec = descriptor.result
     if (codec.mode !== 'strict' || codec.decode === undefined) throw new Error('Missing browser decoder: ' + descriptor.method)
@@ -138,9 +138,9 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   }
   const statusCodec = descriptors?.find(descriptor => descriptor.method === 'status')?.result
   if (statusCodec?.mode !== 'strict' || statusCodec.decode === undefined) throw new Error('Missing status decoder')
-  const validStatus = { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
+  const validStatus = { state: 'ready', sidebarReadOnly: true, aiWriteAvailable: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
   expect(statusCodec.decode(validStatus)).toEqual(validStatus)
-  expect(() => statusCodec.decode?.({ ...validStatus, readOnly: false })).toThrow()
+  expect(() => statusCodec.decode?.({ ...validStatus, sidebarReadOnly: false })).toThrow()
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')
   expect(api.sessionKey).toBe('trusted-session'); expect(other.sessionKey).toBe('another-session')

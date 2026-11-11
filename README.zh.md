@@ -1,14 +1,14 @@
 <p align="center">
-  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — 在 DeepSeek Harness 中只读查看 Redis">
+  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — 在 DeepSeek Harness 中查看 Redis 和使用 AI 读写">
 </p>
 
 # DSH Redis
 
 [English](README.md) | 简体中文
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **DeepSeek Harness（DSH）** 的社区插件。在侧栏查看 Redis 数据，也可以在同一对话中读取指定 Key 或当前选择。工具使用该对话所属的 Redis 连接。
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **DeepSeek Harness（DSH）** 的社区插件。在侧栏查看 Redis 数据，也可以在同一对话中读取指定 Key，并按需启用受控的 AI 写入。工具使用该对话所属的 Redis 连接。
 
-**只读查看 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
+**侧栏查看 · AI 读写 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
 
 当前源码 **0.1.1** 适配 **DSH Web 0.2.1-rc.5**。按下方步骤构建安装；旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不包含当前新增能力。
 
@@ -20,7 +20,8 @@
 
 - 浏览 String、Hash、List、Set、ZSet 和 Stream，选中集合中的一行即可在同屏查看详情。
 - 在对话中读取指定 Key、查找名称或筛选 Hash，也可以按需获取慢日志等诊断信息。
-- 当前只读，支持单机 Redis 和 TLS；工具结果进入 DSH 对话记录，并可能发送给配置的模型服务。
+- AI 写入默认关闭，启用后可替换已有 String 的完整值或已有 Hash 字段的完整值，执行遵循 DSH 工具权限策略。
+- 支持单机 Redis 和 TLS；工具参数和结果进入 DSH 对话记录，并可能发送给配置的模型服务。
 
 ![手动连接 Redis，浏览 DB 和 Key，查看选中行，再在同一 DSH 对话里提问](docs/screenshots/readme-flow.svg)
 
@@ -49,6 +50,7 @@ dsh plugin --profile web list dsh-redis
 4. 选择目标 DB、目录和 Key，点击集合中的行即可同屏查看详情；通过工具栏切换格式、查找或复制。
 5. 自动刷新默认关闭，间隔预选 5 秒，通过刷新控件开启。切换 Key/DB/会话、隐藏视图、取消或读取失败会停止；重新显示不会自行开启。
 6. 在当前版本中可直接询问“`order:1001` 的 `status` 是什么？”，也可在选中字段后询问“解释当前选中的字段”。需要切 DB 时明确提出，侧栏会跟随 Host 的新 DB。
+7. 如需修改，在侧栏顶部打开**插件信息 → 开启 AI 写入**，在当前对话中明确指定已有 Key 或 Hash 字段及完整新值。写入按照当前 DSH 工具权限执行：策略允许时可以直接执行，策略要求询问时由 DSH 处理。可用工具返回的操作 ID 在插件信息中查询结果。
 
 连接期间编辑或保存资料不会改变实际服务器。开发版支持明确要求 AI 连接唯一确定的已保存资料；需要密码时在本地连接表单填写。
 
@@ -68,6 +70,7 @@ dsh plugin --profile web list dsh-redis
 | 刷新 | 手动刷新，可选 1/5/10/30 秒自动刷新；原内容仍存在时保留选中和查看状态 |
 | DSH 界面 | 原生侧栏、展开工作区、明暗主题、中英文、Lucide 操作图标 |
 | 对话 | DSH 原生工具支持直接读取、有限范围查找与筛选；开发版还包含诊断、连接及按需界面动作 |
+| AI 写入 | 默认关闭；启用后受控替换已有 String 或 Hash 字段，检查前态、并发冲突及回读结果 |
 
 | 类型 | 查看方式 |
 | --- | --- |
@@ -104,7 +107,7 @@ Desktop、macOS、Linux 尚未验收。Node.js 声明范围也不等于范围内
 | `redis_viewer_value` | 读取指定 Key；不传 Key 时读取侧栏当前选择 |
 | `redis_viewer_select_db` | 用户明确要求时切换本对话的 DB，并同步侧栏 |
 
-开发版还注册了有界 Hash 筛选、内存/慢日志/服务器/客户端/消费组诊断、RedisJSON 路径、TimeSeries 样本、Bitmap 位范围及 GEO 坐标/距离读取，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。完整工具目录、参数与限制见随包的 [AI 使用说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
+开发版还注册了有界 Hash 筛选、内存/慢日志/服务器/客户端/消费组诊断、RedisJSON 路径、TimeSeries 样本、Bitmap 位范围及 GEO 坐标/距离读取，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。读取工具目录、参数与限制见随包的 [AI 读取说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
 
 名称搜索与 Hash 筛选首批需要 DSH 原生范围确认，显示服务器、DB 与查询条件；同条件续页沿用该查询，已知 Key 的直接读取不需要这项扫描确认。拒绝或取消会停止查询。`SCAN MATCH` 仍可能遍历当前 DB 整个键空间，结果不是一致性快照。
 
@@ -122,9 +125,13 @@ AI 工具输出会进入 DSH 对话记录，并可能发送到该对话配置的
 
 Key 列表最多缓存 5,000 个 Key 或 2 MiB 编码结果。每轮自动扫描最多启动 1,000 批，或在 60 秒到期后不再启动下一批；暂停后可手动继续。达到缓存上限并丢弃批尾时需缩小筛选范围并重新扫描。筛选或中断的结果不代表完整 DB，Redis `SCAN` 在数据并发变化时也不提供一致性快照。AI 返回预算为 64 KiB；String 默认窗口及部分集合值前缀为 4,096 字节。扫描完成与值是否截断分别表达，扫描完成不代表每个值都已完整读取。
 
-当前不包含：Redis 写入、自由命令控制台、直接打开 RDB/AOF、快照、特殊类型专用视图、曲线、URI 导入、资料导入导出、Cluster、Sentinel、内置 SSH 隧道或客户端证书认证。开发版诊断是有范围的采样，不是完整服务器快照。普通 String 内的 JSON 仍可格式化。
+AI 写入 MVP 要求 Redis 7.4 或以上，目标 Key 和 Hash 字段均不得有 TTL；Key、字段及前后值各不超过 4,096 字节。仅支持已有目标的单次完整值替换，不支持创建、删除、批量或修改 TTL。写入前后检查不能保证业务语义正确，也不能保证之后不被其他客户端修改。操作记录只在宿主内存短暂保留；结果未知时不要自动重试，需先检查目标当前值。
+
+当前不包含：自由命令控制台、直接打开 RDB/AOF、快照、特殊类型专用视图、曲线、URI 导入、资料导入导出、Cluster、Sentinel、内置 SSH 隧道或客户端证书认证。开发版诊断是有范围的采样，不是完整服务器快照。普通 String 内的 JSON 仍可格式化。
 
 ## 验证与已知问题
+
+AI 写入已在隔离 Redis 8.2.6、进程内 DSH 原生工具管线和独立安装的 DSH Web profile 中使用合成会话验证，并由独立 Redis 客户端回读。完整浏览器对话及真实模型写入流程尚未验收；不能用下方历史只读验收代替。[验证记录](docs/verification/ai-write-mvp-2026-11-11.md)。
 
 2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。本轮按工具职责边界收尾，未发布新 Release；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
 

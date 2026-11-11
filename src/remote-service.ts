@@ -184,6 +184,6 @@ export class RedisRemoteService extends TypertRemoteService {
 
   async status(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<RedisHostStatus> {
     signal.throwIfAborted()
-    return { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
+    return { state: 'ready', sidebarReadOnly: true, aiWriteAvailable: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
   }
 }

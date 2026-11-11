@@ -1,6 +1,8 @@
 # 在DSH对话中读取Redis
 
-本说明适用于当前 `0.1.1` 开发源码及 DSH `0.2.1-rc.5`，不表示旧版 `v0.1.0` Release 已包含这些能力。接入方式为 DSH 原生插件工具，不是 Redis MCP Server；开放只读查询、明确连接/切库、界面动作及本地资料保存，未开放 Redis 业务数据写入。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
+本说明适用于当前 `0.1.1` 开发源码及 DSH `0.2.1-rc.5`，不表示旧版 `v0.1.0` Release 已包含这些能力。接入方式为 DSH 原生插件工具，不是 Redis MCP Server；本文主要说明读取、连接/切库、界面动作及本地资料保存。默认关闭的 AI 写入功能及边界见 [README](../README.zh.md#数据与边界)。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
+
+写入使用 `redis_viewer_prepare_write` 生成完整提案、`redis_viewer_execute_write` 按 DSH 权限执行、`redis_viewer_write_status` 查询当前会话的临时操作记录。须先在侧栏插件信息中开启 AI 写入；当前仅支持已有 String 或已有 Hash 字段的完整值替换。
 
 ## 使用顺序
 

@@ -34,9 +34,9 @@ export const emptyRequestSchema: TypertSchema<EmptyRequest> = { parse(value) {
 } }
 
 export const statusSchema: TypertSchema<RedisHostStatus> = { parse(value) {
-  const object = objectAt(value, ['state', 'readOnly', 'dshBaseline', 'protocolVersion'])
-  if (object.state !== 'ready' || object.readOnly !== true || object.dshBaseline !== DSH_BASELINE || object.protocolVersion !== PROTOCOL_VERSION) throw new TypeError('Redis RPC: invalid Host status')
-  return { state: 'ready', readOnly: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
+  const object = objectAt(value, ['state', 'sidebarReadOnly', 'aiWriteAvailable', 'dshBaseline', 'protocolVersion'])
+  if (object.state !== 'ready' || object.sidebarReadOnly !== true || object.aiWriteAvailable !== true || object.dshBaseline !== DSH_BASELINE || object.protocolVersion !== PROTOCOL_VERSION) throw new TypeError('Redis RPC: invalid Host status')
+  return { state: 'ready', sidebarReadOnly: true, aiWriteAvailable: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
 } }
 
 const sessionIdSchema: TypertSchema<SessionId> = { parse(value) {
