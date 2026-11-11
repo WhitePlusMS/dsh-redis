@@ -49,6 +49,54 @@ async function withPeer(run: (transport: RedisTransport, commands: string[]) => 
 const SCAN_EMPTY = '*2\r\n$1\r\n0\r\n*0\r\n'
 
 describe('bounded Redis socket transport', () => {
+  it('cancels a queued transaction without dispatching it after the active read finishes', async () => {
+    const firstSeen = deferred<Socket>()
+    let reads = 0
+    await withPeer(async (transport, commands) => {
+      const first = transport.execute('SCAN', ['0'], signal(), () => undefined)
+      const peer = await firstSeen.promise
+      const controller = new AbortController()
+      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, controller.signal, () => undefined, () => { throw new Error('Must not submit') })
+      controller.abort()
+      expect(await write).toBe('not-executed')
+      expect(commands).toEqual(['PING', 'SCAN'])
+      peer.write(SCAN_EMPTY)
+      await first
+      expect(await transport.execute('SCAN', ['0'], signal(), () => undefined)).toEqual([Buffer.from('0'), []])
+      expect(commands).toEqual(['PING', 'SCAN', 'SCAN'])
+    }, socket => { if (++reads === 1) firstSeen.resolve(socket); else socket.write(SCAN_EMPTY) })
+  })
+  it('holds one queue slot from WATCH through write readback', async () => {
+    const watched = deferred<Socket>()
+    let written = false
+    const bulk = (text: string) => '$' + Buffer.byteLength(text) + '\r\n' + text + '\r\n'
+    await withPeer(async (transport, commands) => {
+      let submitted = false
+      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, signal(), () => undefined, () => { submitted = true })
+      const peer = await watched.promise
+      const read = transport.execute('SCAN', ['0'], signal(), () => undefined)
+      expect(commands).toEqual(['PING', 'INFO', 'WATCH'])
+      peer.write('+OK\r\n')
+      expect(await write).toBe('written-verified')
+      expect(submitted).toBe(true)
+      expect(await read).toEqual([Buffer.from('0'), []])
+      expect(commands.at(-1)).toBe('SCAN')
+      expect(commands.indexOf('SCAN')).toBeGreaterThan(commands.indexOf('EXEC'))
+    }, (socket, args) => {
+      const command = String(args[0])
+      if (command === 'INFO') socket.write(bulk('redis_version:8.2.6\r\n'))
+      else if (command === 'WATCH') { if (!written) watched.resolve(socket); else socket.write('+OK\r\n') }
+      else if (command === 'TYPE') socket.write('+string\r\n')
+      else if (command === 'PTTL') socket.write(':-1\r\n')
+      else if (command === 'STRLEN') socket.write(':3\r\n')
+      else if (command === 'GETRANGE') socket.write(bulk(written ? 'new' : 'old'))
+      else if (command === 'MULTI') socket.write('+OK\r\n')
+      else if (command === 'SET') socket.write('+QUEUED\r\n')
+      else if (command === 'EXEC') { if (!written) { written = true; socket.write('*1\r\n+OK\r\n') } else socket.write('*0\r\n') }
+      else if (command === 'SCAN') socket.write(SCAN_EMPTY)
+      else throw new Error('Unexpected command ' + command)
+    })
+  })
   it('separates authentication and connection commands from explicit DB selection and reads', async () => {
     await withPeer(async (transport, commands) => {
       expect(commands).toEqual(['AUTH', 'PING'])

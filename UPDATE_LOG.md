@@ -1,3 +1,12 @@
+## 2026-11-11：实现隔离的 Redis 单目标事务基础
+
+- 新增 `src/host/redis-write-transaction.ts`，并在 `src/host/redis-transport.ts` 增加仅 Host 内部使用的固定单目标事务：同一队列位置内执行版本、类型、前值和 TTL 检查，WATCH/MULTI/EXEC 后回读；无任意命令接口。
+- 按提交前、冲突、明确拒绝、已写入及回读、回执未知区分结果；取消或异常时尝试清理连接事务状态，不能确认时关闭连接。
+- 新增 `tests/redis-write-transaction.test.ts` 并扩展 `tests/redis-transport.test.ts`，覆盖固定写入流程、前态变化、取消和回执分类，以及事务期间读取排队。
+- 新增 `scripts/smoke-redis-write-transaction.mjs`，仅对随机认证的自有隔离 Redis 执行合成数据事务、独立客户端核对和 WATCH 后并发修改；不连接业务数据。
+- 此阶段尚未接入 DSH 工具、用户启用入口或操作状态查询；不得将内部事务视为已对用户开放的完整写入功能。
+- 检查：三套 TypeScript 检查和 47 项传输、连接、事务专项通过；自有 Redis 8.2.6 中 String、Hash 字段、TTL 拒绝及真实 WATCH 冲突通过，实例停止并清理；规范和方案两项审查修复问题后复核通过。
+
 ## 2026-11-11：整理 Redis 传输队列
 
 - 原因与原则：为后续 `WATCH` 到 `EXEC` 的连接级独占准备可复用的队列边界，保持最简并沿用原有超时、取消和只读命令限制。

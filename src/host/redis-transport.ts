@@ -3,6 +3,7 @@ import { createConnection, isIP, type Socket } from 'node:net'
 import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
+import { runRedisReplace, type RedisReplaceRequest, type RedisWriteResult } from './redis-write-transaction.ts'
 
 export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'GEOPOS' | 'GEODIST' | 'JSON.GET' | 'TS.RANGE'
 const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE', 'GEOPOS', 'GEODIST', 'JSON.GET', 'TS.RANGE'])
@@ -127,23 +128,25 @@ export class RedisTransport {
   }
 
   /** Queue a whole bounded operation, so later commands cannot interleave its frames. */
-  private enqueue<T>(signal: AbortSignal, deadline: number, run: () => Promise<T>): Promise<T> {
+  private enqueue<T>(signal: AbortSignal, deadline: number, run: () => Promise<T>, awaitSettlement = false): Promise<T> {
     if (signal.aborted) return Promise.reject(new RedisTransportError('cancelled'))
     if (this.queued >= MAX_QUEUE) return Promise.reject(new RedisTransportError('busy'))
     this.queued++
+    let started = false
     const operation = this.pending.then(() => {
       if (signal.aborted) throw new RedisTransportError('cancelled')
       if (Date.now() >= deadline) throw new RedisTransportError('timeout')
       if (this.failure !== null) throw this.failure
+      started = true
       return run()
     }).finally(() => { this.queued-- })
     this.pending = operation.then(() => undefined, () => undefined)
     let abort = () => undefined
     let timer: ReturnType<typeof setTimeout> | undefined
     const interrupted = new Promise<never>((_resolve, reject) => {
-      abort = () => { reject(new RedisTransportError('cancelled')) }
+      abort = () => { if (!awaitSettlement || !started) reject(new RedisTransportError('cancelled')) }
       signal.addEventListener('abort', abort, { once: true })
-      timer = setTimeout(() => { reject(new RedisTransportError('timeout')) }, Math.max(0, deadline - Date.now()))
+      timer = setTimeout(() => { if (!awaitSettlement || !started) reject(new RedisTransportError('timeout')) }, Math.max(0, deadline - Date.now()))
       timer.unref()
       if (signal.aborted) abort()
     })
@@ -180,5 +183,23 @@ export class RedisTransport {
     // Snapshot the arguments before waiting, so queued mutable buffers cannot change.
     const encoded = encodeCommand(arguments_)
     return this.enqueue(signal, deadline, () => this.frame(encoded, deadline, beforeDispatch))
+  }
+
+  /** One Host-owned transaction occupies the queue until cleanup or readback settles. */
+  async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void): Promise<RedisWriteResult> {
+    if (!Buffer.isBuffer(request.key) || !Buffer.isBuffer(request.before) || !Buffer.isBuffer(request.after)
+      || request.key.length > 4096 || request.before.length > 4096 || request.after.length > 4096
+      || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096))
+      || (request.type !== 'string' && request.type !== 'hash')) return 'not-executed'
+    const snapshot: RedisReplaceRequest = request.type === 'string'
+      ? { type: 'string', key: Buffer.from(request.key), before: Buffer.from(request.before), after: Buffer.from(request.after) }
+      : { type: 'hash', key: Buffer.from(request.key), field: Buffer.from(request.field), before: Buffer.from(request.before), after: Buffer.from(request.after) }
+    const deadline = Date.now() + READ_TIMEOUT
+    let wasSubmitted = false
+    try {
+      return await this.enqueue(signal, deadline, () => runRedisReplace(snapshot,
+        (args, beforeDispatch) => this.frame(encodeCommand(args), deadline, beforeDispatch),
+        () => this.fail(new RedisTransportError('network')), signal, guard, () => { submitted(); wasSubmitted = true }), true)
+    } catch { return wasSubmitted ? 'unknown' : 'not-executed' }
   }
 }
