@@ -16,7 +16,8 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   assert.deepEqual(await admin.sendCommand(['HPEXPIRE', 'fixture:fieldttl', '120000', 'FIELDS', '1', 'field']), [1])
   const transport = await RedisTransport.open(settings, signal)
   let submitted = 0
-  const execute = request => transport.replaceExisting(request, signal, () => undefined, () => { submitted++ })
+  const readbacks = []
+  const execute = request => transport.replaceExisting(request, signal, () => undefined, () => { submitted++ }, value => { readbacks.push(value) })
   try {
     const value = (key, before = 'old', after = 'new') => ({ type: 'string', key: Buffer.from(key), before: Buffer.from(before), after: Buffer.from(after) })
     const field = key => ({ ...value(key), type: 'hash', field: Buffer.from('field') })
@@ -33,6 +34,8 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.equal(await admin.hGet('fixture:fieldttl', 'field'), 'old')
     assert.equal(await admin.exists('fixture:missing'), 0)
     assert.equal(submitted, 2)
+    assert.equal(readbacks.length, 2)
+    for (const timestamp of readbacks) assert.equal(new Date(timestamp).toISOString(), timestamp)
 
     // The third guard runs after WATCH returns and before TYPE is dispatched.
     // A separate process waits for its own write receipt while this socket is paused.
@@ -49,7 +52,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       assert.equal(result.status, 0, 'Independent fixture mutation failed')
       raced = true
     }
-    assert.equal(await transport.replaceExisting(field('fixture:race'), signal, concurrent, () => { submitted++ }), 'conflict')
+    assert.equal(await transport.replaceExisting(field('fixture:race'), signal, concurrent, () => { submitted++ }, () => undefined), 'conflict')
     assert.equal(raced, true)
     assert.equal(await admin.hGet('fixture:race', 'field'), 'old')
     assert.equal(await admin.hGet('fixture:race', 'other'), 'changed')
@@ -60,8 +63,10 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       const view = await connections.connect('fixture-session', settings, signal)
       assert.equal(view.state, 'connected')
       const target = { id: view.id, generation: view.generation, db: view.db }
-      assert.equal(await connections.replaceExisting('other-session', target, value('fixture:session'), signal, () => undefined, () => { throw new Error('Foreign session submitted') }), 'not-executed')
-      assert.equal(await connections.replaceExisting('fixture-session', target, value('fixture:session'), signal, () => undefined, () => undefined), 'written-verified')
+      assert.equal(await connections.replaceExisting('other-session', target, value('fixture:session'), signal, () => undefined, () => { throw new Error('Foreign session submitted') }, () => undefined), 'not-executed')
+      let sampledAt
+      assert.equal(await connections.replaceExisting('fixture-session', target, value('fixture:session'), signal, () => undefined, () => undefined, value => { sampledAt = value }), 'written-verified')
+      assert.equal(new Date(sampledAt).toISOString(), sampledAt)
       assert.equal(await admin.get('fixture:session'), 'new')
     } finally { connections.dispose() }
   } finally { transport.close() }

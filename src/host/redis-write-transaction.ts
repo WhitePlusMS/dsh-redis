@@ -8,7 +8,7 @@ export type RedisWriteResult = 'not-executed' | 'conflict' | 'rejected' | 'writt
 type Send = (args: readonly RedisArgument[], beforeDispatch: () => void) => Promise<RedisReply>
 
 /** Fixed single-target transaction; caller owns the connection for the entire operation. */
-export async function runRedisReplace(request: RedisReplaceRequest, send: Send, close: () => void, signal: AbortSignal, guard: () => void, submitted: () => void): Promise<RedisWriteResult> {
+export async function runRedisReplace(request: RedisReplaceRequest, send: Send, close: () => void, signal: AbortSignal, guard: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
   let state: 'none' | 'watch' | 'multi' | 'uncertain' = 'none'
   let wasSubmitted = false
   let written = false
@@ -69,12 +69,14 @@ export async function runRedisReplace(request: RedisReplaceRequest, send: Send, 
     state = 'watch'
     if (await command(['WATCH', request.key]) !== 'OK') return 'written-unverified'
     const matched = await matches(request.after)
+    const sampledAt = new Date().toISOString()
     state = 'multi'
     if (await command(['MULTI']) !== 'OK') return 'written-unverified'
-    const readback = await send(['EXEC'], () => { check(); state = 'uncertain' })
-    if (readback === null) { state = 'none'; return 'written-unverified' }
-    if (!Array.isArray(readback) || readback.length !== 0) return 'written-unverified'
+    const receipt = await send(['EXEC'], () => { check(); state = 'uncertain' })
+    if (receipt === null) { state = 'none'; return 'written-unverified' }
+    if (!Array.isArray(receipt) || receipt.length !== 0) return 'written-unverified'
     state = 'none'
+    try { readback(sampledAt) } catch { return matched ? 'written-unverified' : 'written-mismatch' }
     return matched ? 'written-verified' : 'written-mismatch'
   } catch {
     if (wasSubmitted) return written ? 'written-unverified' : 'unknown'

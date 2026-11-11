@@ -186,7 +186,7 @@ export class RedisTransport {
   }
 
   /** One Host-owned transaction occupies the queue until cleanup or readback settles. */
-  async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void): Promise<RedisWriteResult> {
+  async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
     if (!Buffer.isBuffer(request.key) || !Buffer.isBuffer(request.before) || !Buffer.isBuffer(request.after)
       || request.key.length > 4096 || request.before.length > 4096 || request.after.length > 4096
       || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096))
@@ -199,7 +199,7 @@ export class RedisTransport {
     try {
       return await this.enqueue(signal, deadline, () => runRedisReplace(snapshot,
         (args, beforeDispatch) => this.frame(encodeCommand(args), deadline, beforeDispatch),
-        () => this.fail(new RedisTransportError('network')), signal, guard, () => { submitted(); wasSubmitted = true }), true)
+        () => this.fail(new RedisTransportError('network')), signal, guard, () => { submitted(); wasSubmitted = true }, readback), true)
     } catch { return wasSubmitted ? 'unknown' : 'not-executed' }
   }
 }

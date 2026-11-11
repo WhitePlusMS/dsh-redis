@@ -15,7 +15,7 @@ export interface RedisLink {
 }
 /** A writable link has the fixed Host-only replace operation, not a command escape hatch. */
 export interface RedisWritableLink extends RedisLink {
-  replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void): Promise<RedisWriteResult>
+  replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult>
 }
 export type RedisOpener = (settings: ConnectionRequest, signal: AbortSignal) => Promise<RedisLink>
 export type CandidateConnectionResult = { readonly state: 'connected' | 'changed'; readonly view: ConnectionView; readonly previousRelease: 'closed' | 'uncertain' } | { readonly state: 'failed'; readonly error: ConnectionErrorCode }
@@ -44,7 +44,7 @@ export const openRedis: RedisOpener = async (settings, signal) => {
   const link: RedisWritableLink = {
     close: () => { transport.close() },
     execute: (command, arguments_, requestSignal, beforeDispatch, deadline) => transport.execute(command, arguments_, requestSignal, beforeDispatch, deadline),
-    replaceExisting: (request, requestSignal, guard, submitted) => transport.replaceExisting(request, requestSignal, guard, submitted),
+    replaceExisting: (request, requestSignal, guard, submitted, readback) => transport.replaceExisting(request, requestSignal, guard, submitted, readback),
     onFailure: listener => transport.onFailure(error => { listener(connectionErrorCode(error)) }),
   }
   return link
@@ -303,7 +303,7 @@ export class RedisConnections {
   }
 
   /** Keep the original result even if the connection changes after submission. */
-  async replaceExisting(sessionId: string, target: DatabaseTarget, request: RedisReplaceRequest, signal: AbortSignal, validate: () => void, submitted: () => void): Promise<RedisWriteResult> {
+  async replaceExisting(sessionId: string, target: DatabaseTarget, request: RedisReplaceRequest, signal: AbortSignal, validate: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
     let wasSubmitted = false
     try {
       signal.throwIfAborted()
@@ -316,7 +316,7 @@ export class RedisConnections {
         validate()
       }
       guard()
-      return await link.replaceExisting(request, signal, guard, () => { submitted(); wasSubmitted = true })
+      return await link.replaceExisting(request, signal, guard, () => { submitted(); wasSubmitted = true }, readback)
     } catch { return wasSubmitted ? 'unknown' : 'not-executed' }
   }
 

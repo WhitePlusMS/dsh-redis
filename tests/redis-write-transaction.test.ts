@@ -4,9 +4,9 @@ import { RedisReplyError, type RedisArgument, type RedisReply } from '../src/hos
 
 const input: RedisReplaceRequest = { type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }
 
-function fixture(request: RedisReplaceRequest = input) {
+function fixture(request: RedisReplaceRequest = input, failReadback = false) {
   const calls: string[] = [], controller = new AbortController()
-  let closed = false, submitted = false, updated = false
+  let closed = false, submitted = false, updated = false, sampledAt: string | null = null
   let override: ((name: string) => RedisReply | Error | undefined) | undefined
   const send = async (args: readonly RedisArgument[], before: () => void): Promise<RedisReply> => {
     before()
@@ -25,9 +25,9 @@ function fixture(request: RedisReplaceRequest = input) {
     return 'OK'
   }
   return {
-    calls, controller, get closed() { return closed }, get submitted() { return submitted },
+    calls, controller, get closed() { return closed }, get submitted() { return submitted }, get sampledAt() { return sampledAt },
     setOverride(value: (name: string) => RedisReply | Error | undefined) { override = value },
-    run: () => runRedisReplace(request, send, () => { closed = true }, controller.signal, () => undefined, () => { submitted = true }),
+    run: () => runRedisReplace(request, send, () => { closed = true }, controller.signal, () => undefined, () => { submitted = true }, value => { if (failReadback) throw new Error('record failure'); sampledAt = value }),
   }
 }
 
@@ -36,6 +36,8 @@ describe('fixed Redis write transaction', () => {
     const f = fixture(request)
     expect(await f.run()).toBe('written-verified')
     expect(f.submitted).toBe(true)
+    expect(f.sampledAt).toEqual(expect.any(String))
+    expect(Number.isFinite(Date.parse(f.sampledAt!))).toBe(true)
     expect(f.closed).toBe(false)
     expect(f.calls.filter(name => name === 'SET' || name === 'HSET')).toEqual([request.type === 'string' ? 'SET' : 'HSET'])
     expect(f.calls).toContain('WATCH')
@@ -99,7 +101,17 @@ describe('fixed Redis write transaction', () => {
     let executes = 0
     f.setOverride(name => name === 'EXEC' && ++executes === 2 ? null : undefined)
     expect(await f.run()).toBe('written-unverified')
+    expect(f.sampledAt).toBeNull()
     expect(f.closed).toBe(false)
+  })
+
+  it('retains an observed mismatch when recording the sample time fails', async () => {
+    const matched = fixture(input, true)
+    expect(await matched.run()).toBe('written-unverified')
+    const mismatch = fixture(input, true)
+    let reads = 0
+    mismatch.setOverride(name => name === 'GETRANGE' && ++reads === 2 ? Buffer.from('bad') : undefined)
+    expect(await mismatch.run()).toBe('written-mismatch')
   })
 
   it('keeps the unknown outcome if connection cleanup throws after EXEC is sent', async () => {
@@ -115,6 +127,6 @@ describe('fixed Redis write transaction', () => {
       if (name === 'EXEC') throw new Error('lost')
       return 'OK'
     }
-    expect(await runRedisReplace(input, send, () => { throw new Error('close listener') }, new AbortController().signal, () => undefined, () => undefined)).toBe('unknown')
+    expect(await runRedisReplace(input, send, () => { throw new Error('close listener') }, new AbortController().signal, () => undefined, () => undefined, () => undefined)).toBe('unknown')
   })
 })

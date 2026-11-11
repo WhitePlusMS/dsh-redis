@@ -56,7 +56,7 @@ describe('bounded Redis socket transport', () => {
       const first = transport.execute('SCAN', ['0'], signal(), () => undefined)
       const peer = await firstSeen.promise
       const controller = new AbortController()
-      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, controller.signal, () => undefined, () => { throw new Error('Must not submit') })
+      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, controller.signal, () => undefined, () => { throw new Error('Must not submit') }, () => undefined)
       controller.abort()
       expect(await write).toBe('not-executed')
       expect(commands).toEqual(['PING', 'SCAN'])
@@ -72,7 +72,7 @@ describe('bounded Redis socket transport', () => {
     const bulk = (text: string) => '$' + Buffer.byteLength(text) + '\r\n' + text + '\r\n'
     await withPeer(async (transport, commands) => {
       let submitted = false
-      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, signal(), () => undefined, () => { submitted = true })
+      const write = transport.replaceExisting({ type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }, signal(), () => undefined, () => { submitted = true }, () => undefined)
       const peer = await watched.promise
       const read = transport.execute('SCAN', ['0'], signal(), () => undefined)
       expect(commands).toEqual(['PING', 'INFO', 'WATCH'])

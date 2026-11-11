@@ -17,12 +17,12 @@ describe('write connection ownership', () => {
       const view = await connections.connect('a', settings, signal())
       if (view.id === null) throw new Error('Missing connection')
       const target = { id: view.id, generation: view.generation, db: view.db }
-      expect(await connections.replaceExisting('b', target, request, signal(), () => undefined, () => { submissions++ })).toBe('not-executed')
-      expect(await connections.replaceExisting('a', { ...target, db: 1 }, request, signal(), () => undefined, () => { submissions++ })).toBe('not-executed')
-      expect(await connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ })).toBe('written-verified')
+      expect(await connections.replaceExisting('b', target, request, signal(), () => undefined, () => { submissions++ }, () => undefined)).toBe('not-executed')
+      expect(await connections.replaceExisting('a', { ...target, db: 1 }, request, signal(), () => undefined, () => { submissions++ }, () => undefined)).toBe('not-executed')
+      expect(await connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ }, () => undefined)).toBe('written-verified')
       expect(submissions).toBe(1)
       await connections.selectDatabase('a', { ...target, db: 1 }, signal())
-      expect(await connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ })).toBe('not-executed')
+      expect(await connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ }, () => undefined)).toBe('not-executed')
       expect(submissions).toBe(1)
     } finally { connections.dispose() }
   })
@@ -38,7 +38,7 @@ describe('write connection ownership', () => {
       const view = await connections.connect('a', settings, signal())
       if (view.id === null) throw new Error('Missing connection')
       const target = { id: view.id, generation: view.generation, db: view.db }
-      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ })
+      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ }, () => undefined)
       await started
       await connections.selectDatabase('a', { ...target, db: 1 }, signal())
       release()
@@ -58,7 +58,7 @@ describe('write connection ownership', () => {
       const view = await connections.connect('a', settings, signal())
       if (view.id === null) throw new Error('Missing connection')
       const target = { id: view.id, generation: view.generation, db: view.db }
-      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => undefined)
+      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => undefined, () => undefined)
       await started
       connections.disconnect('a', target)
       release()
@@ -87,7 +87,7 @@ describe('write connection ownership', () => {
       const view = await connections.connect('a', settings, signal())
       if (view.id === null) throw new Error('Missing connection')
       const target = { id: view.id, generation: view.generation, db: view.db }
-      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ })
+      const pending = connections.replaceExisting('a', target, request, signal(), () => undefined, () => { submissions++ }, () => undefined)
       await started
       const current = await connections.connect('a', settings, signal())
       expect(current.generation).toBeGreaterThan(view.generation)
