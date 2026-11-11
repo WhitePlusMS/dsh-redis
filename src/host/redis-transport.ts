@@ -126,33 +126,16 @@ export class RedisTransport {
     return this.request([command, ...arguments_], signal, Math.min(deadline, Date.now() + READ_TIMEOUT), beforeDispatch)
   }
 
-  /** Cancellation rejects the caller promptly, but drains an active bounded reply.
-   * The queue still waits for that frame; a hard deadline closes a stalled socket.
-   * Thus cancelling a view cannot cause the next command to consume its old reply.
-   */
-  private request(arguments_: readonly RedisArgument[], signal: AbortSignal, deadline: number, beforeDispatch: () => void): Promise<RedisReply> {
+  /** Queue a whole bounded operation, so later commands cannot interleave its frames. */
+  private enqueue<T>(signal: AbortSignal, deadline: number, run: () => Promise<T>): Promise<T> {
     if (signal.aborted) return Promise.reject(new RedisTransportError('cancelled'))
     if (this.queued >= MAX_QUEUE) return Promise.reject(new RedisTransportError('busy'))
-    const frame = encodeCommand(arguments_)
     this.queued++
     const operation = this.pending.then(() => {
       if (signal.aborted) throw new RedisTransportError('cancelled')
       if (Date.now() >= deadline) throw new RedisTransportError('timeout')
       if (this.failure !== null) throw this.failure
-      beforeDispatch()
-      return new Promise<RedisReply>((resolve, reject) => {
-        let timer: ReturnType<typeof setTimeout> | undefined
-        const finish = () => { if (timer !== undefined) clearTimeout(timer); if (this.active === active) this.active = null }
-        const active: PendingFrame = {
-          decoder: new RespDecoder(),
-          resolve: value => { finish(); resolve(value) },
-          reject: error => { finish(); reject(error) },
-        }
-        this.active = active
-        timer = setTimeout(() => { this.fail(new RedisTransportError('timeout')) }, Math.max(0, deadline - Date.now()))
-        timer.unref()
-        this.socket.write(frame, error => { if (error !== null && error !== undefined) this.fail(error) })
-      })
+      return run()
     }).finally(() => { this.queued-- })
     this.pending = operation.then(() => undefined, () => undefined)
     let abort = () => undefined
@@ -168,5 +151,34 @@ export class RedisTransport {
       signal.removeEventListener('abort', abort)
       if (timer !== undefined) clearTimeout(timer)
     })
+  }
+
+  /** Send one frame inside the owned queue slot; a stalled reply closes the socket. */
+  private frame(encoded: Buffer, deadline: number, beforeDispatch: () => void): Promise<RedisReply> {
+    if (Date.now() >= deadline) return Promise.reject(new RedisTransportError('timeout'))
+    if (this.failure !== null) return Promise.reject(this.failure)
+    beforeDispatch()
+    return new Promise<RedisReply>((resolve, reject) => {
+      let timer: ReturnType<typeof setTimeout> | undefined
+      const finish = () => { if (timer !== undefined) clearTimeout(timer); if (this.active === active) this.active = null }
+      const active: PendingFrame = {
+        decoder: new RespDecoder(),
+        resolve: value => { finish(); resolve(value) },
+        reject: error => { finish(); reject(error) },
+      }
+      this.active = active
+      timer = setTimeout(() => { this.fail(new RedisTransportError('timeout')) }, Math.max(0, deadline - Date.now()))
+      timer.unref()
+      this.socket.write(encoded, error => { if (error !== null && error !== undefined) this.fail(error) })
+    })
+  }
+
+  /** A cancelled caller returns promptly, while the queue drains its active frame. */
+  private request(arguments_: readonly RedisArgument[], signal: AbortSignal, deadline: number, beforeDispatch: () => void): Promise<RedisReply> {
+    if (signal.aborted) return Promise.reject(new RedisTransportError('cancelled'))
+    if (this.queued >= MAX_QUEUE) return Promise.reject(new RedisTransportError('busy'))
+    // Snapshot the arguments before waiting, so queued mutable buffers cannot change.
+    const encoded = encodeCommand(arguments_)
+    return this.enqueue(signal, deadline, () => this.frame(encoded, deadline, beforeDispatch))
   }
 }
