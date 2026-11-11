@@ -3899,3 +3899,8 @@
 
 - 更新 `docs/verification/ai-write-mvp-2026-11-11.md`、`docs/DSH_AI_REDIS_WRITE_PLAN.md`、`README.md` 和 `README.zh.md`：记录独立 DSH Web 中真实插件侧栏连接隔离 Redis，并验证 AI 写入默认关闭及开启、关闭；开关操作未更改测试值。工具写入与网页操作分别验证，真实模型对话写入仍未验收。
 - 验证记录区分测试插件创建的工具会话与宿主会话控制器创建、在网页打开的开关测试会话。
+
+## DSH Agent 工具结果传递验证（2026-11-12）
+
+- 更新 `docs/verification/ai-write-mvp-2026-11-11.md`、`docs/DSH_AI_REDIS_WRITE_PLAN.md`、`README.md` 和 `README.zh.md`：记录独立 DSH profile 中由标准 `LlmAdapter` 测试替身驱动真实 Agent，验证 String、Hash 的完整提案及写入结果进入后续模型请求，并由独立 Redis 客户端回读。明确测试替身不是真实模型，不评价模型回答。
+- 两份 README 明确网页开关和工具写入分别使用不同测试会话，避免误称已完成同会话网页端到端验收。
