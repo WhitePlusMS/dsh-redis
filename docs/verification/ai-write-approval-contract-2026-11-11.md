@@ -8,6 +8,7 @@
 - 已安装的 `@deepseek-ai/dsh-user-approval` 的 `request()` 返回 `allowed-once`、`rejected`、`cancelled` 或 `unavailable`；`approval/decided` 审计只有请求 ID 和结果，没有应答者身份。请求经 `approval/request` waterfall，可由人或机器应答。参见 [DSH 官方审批服务](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.1-rc.5/packages/interaction/user-approval/README.md)。
 - 已安装的 `@deepseek-ai/dsh-client-ui-approval` 文档说明浏览器界面通过同一 Agent-scoped Remote Event 回答。已安装的 `@deepseek-ai/dsh-acp` 是面向程序的自动化接口，其实际安装包将 ACP 的 `allow-once` 映射为同一个 `allowed-once`。因此不能把通用返回值本身当成人工来源证明。
 - `@deepseek-ai/dsh-api-remote-access` 说明参与回答转发的 waterfall 限 owner Peer；但 owner 是访问权限身份，文档并未把它定义为真人证明，不能仅凭 owner 断言人工确认。
+- 已安装的 `@deepseek-ai/dsh-user-questions` 是另一条标准提问接口：`ask()` 对带 Agent 的请求校验当前活动根 Agent，但通过 `user-questions/request` waterfall 接收结构化答案；`plan-review` intent 只改变展示。进程内合成探针注册根 Agent 替身和程序应答者后，接口返回选中的 `allow`，答案不含来源字段。因此仅换成提问接口或根 Agent 检查也不能证明回答者是真人。参见 [官方提问服务](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.1-rc.5/packages/interaction/user-questions/README.md)。
 - 当前 `dsh --version` 为 `0.2.1-rc.5`；`dsh web --dump-config` 显示当前配置包含审批服务与 Web 审批界面，并记录默认权限预设。配置清单不证明某次实际应答来自谁，也不等于已完成实机交互验证。
 
 ## 可复现探针
