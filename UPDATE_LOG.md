@@ -3908,3 +3908,7 @@
 ## 同一会话工具链路验证（2026-11-12）
 
 - 更新 `docs/verification/ai-write-mvp-2026-11-11.md`、`docs/DSH_AI_REDIS_WRITE_PLAN.md`、`README.md` 和 `README.zh.md`：记录隔离 DSH Web 中开启写入后，同一会话的 Agent 经可控测试适配器发起 String 写入、接收工具结果并由独立 Redis 客户端回读；提示词由测试插件程序化发送，不代表真实模型对话验收。
+
+## DSH 询问不可用验证（2026-11-12）
+
+- 更新 `tests/ai-write-tools.test.ts`：在原生工具执行管线中模拟询问服务返回不可用，验证 ToolRuntime 拒绝调用且不写入；不代表已完成真实 ApprovalService 无应答者的端到端验收。

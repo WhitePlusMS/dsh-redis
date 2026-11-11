@@ -13,7 +13,7 @@ import { registerRedisWriteTools } from '../src/host/ai-write-tools.ts'
 import { RedisRemoteService } from '../src/remote-service.ts'
 
 const cleanups: Array<() => Promise<void>> = []
-type FixtureApproval = 'allowed-once' | 'rejected' | 'cancelled'
+type FixtureApproval = 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 async function fixture() {
@@ -84,6 +84,8 @@ describe('DSH native Redis write tools', () => {
     f.setDecision('ask'); f.setApproval('rejected')
     expect((await f.call('redis_viewer_execute_write', { proposal })).isError).toBe(true)
     f.setApproval('cancelled')
+    expect((await f.call('redis_viewer_execute_write', { proposal })).isError).toBe(true)
+    f.setApproval('unavailable')
     expect((await f.call('redis_viewer_execute_write', { proposal })).isError).toBe(true)
     expect(f.writes).toBe(0)
     f.setApproval('allowed-once')
