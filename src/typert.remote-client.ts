@@ -1,5 +1,6 @@
 import type { DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import type { AiBudgetResume, AiBudgetStatus } from './domain.ts'
+import type { RedisWriteModeRequest, RedisWriteModeStatus } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { RemoteResult, RemoteStreamHandle, TypertRemoteContribution } from '@deepseek-ai/dsh-typert-protocol'
 import type { UiChannelInput, UiChannelMessage } from './domain.ts'
@@ -15,6 +16,8 @@ import type { StreamReadRequest, StreamReadResult } from './domain.ts'
 import { redisDescriptors, TYPERT_PACKAGE } from './typert.shared.ts'
 
 export interface RedisViewerRemote {
+  writeModeStatus: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
+  setWriteMode: (agentId: SessionId, request: RedisWriteModeRequest, signal?: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
   openUiChannel: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => RemoteStreamHandle<UiChannelMessage, UiChannelInput>
   aiBudgetStatus: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<AiBudgetStatus>>
   resumeAiBudget: (agentId: SessionId, request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<AiBudgetResume>>
@@ -38,6 +41,8 @@ export interface RedisViewerRemote {
 }
 declare module '@deepseek-ai/dsh-typert-protocol' {
   interface TypertRemoteMap {
+    'redisViewer/writeModeStatus': RedisViewerRemote['writeModeStatus']
+    'redisViewer/setWriteMode': RedisViewerRemote['setWriteMode']
     'redisViewer/openUiChannel': RedisViewerRemote['openUiChannel']
     'redisViewer/aiBudgetStatus': RedisViewerRemote['aiBudgetStatus']
     'redisViewer/resumeAiBudget': RedisViewerRemote['resumeAiBudget']
@@ -61,6 +66,8 @@ declare module '@deepseek-ai/dsh-typert-protocol' {
   }
   interface TypertRemoteNamespaceMap { redisViewer: RedisViewerRemote }
   interface TypertRemoteScopeMap {
+    'agent:redisViewer/writeModeStatus': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
+    'agent:redisViewer/setWriteMode': (request: RedisWriteModeRequest, signal?: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
     'agent:redisViewer/openUiChannel': (request: EmptyRequest, signal?: AbortSignal) => RemoteStreamHandle<UiChannelMessage, UiChannelInput>
     'agent:redisViewer/aiBudgetStatus': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<AiBudgetStatus>>
     'agent:redisViewer/resumeAiBudget': (request: EmptyRequest, signal?: AbortSignal) => Promise<RemoteResult<AiBudgetResume>>

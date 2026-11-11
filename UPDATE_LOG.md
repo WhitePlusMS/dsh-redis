@@ -3860,3 +3860,12 @@
 - 原因：旧版 Release 说明与当前源码安装混用，缺少克隆和安装核对步骤；按最简原则统一用户入口。
 - 文件：`README.md`、`README.zh.md` 明确 0.1.1 / DSH 0.2.1-rc.5，补充克隆和 list 检查，复用静态标题与真实截图，删除未实施写入规划；`docs/INSTALLATION.md`、`docs/INSTALLATION.zh.md` 将当前环境和完整构建步骤前置，CLI 使用同一成品路径，保留更新、回退与资料清理，标明旧版官方资料仅为历史参考。
 - 影响：仅文档变化，不修改产品、不安装依赖、不重打包或重启服务；README 图片与 SVG 审计、diff 检查通过。未进行浏览器视觉验收或实际安装复测。
+# AI 写入开关（2026-11-11）
+
+- 修改 `src/domain.ts`、`src/remote-service.ts`、`src/typert.shared.ts`、`src/typert.host.ts` 和 `src/typert.remote-client.ts`：通过 DSH 原生 Agent 范围的 Typert 接口查询和设置写入开关，操作绑定当前连接及数据库，过期连接不能启用或关闭新连接的写入。
+- 修改 `src/client/index.ts`、`src/client/RedisWorkspace.tsx` 和 `src/client/locales.ts`：在插件信息中提供默认关闭的 AI 写入开关及权限策略提示，保留侧栏只读浏览；DSH 策略允许时工具可直接执行。
+- 修正 `src/client/RedisWorkspace.tsx` 开关请求的空值收窄，确保 TypeScript 严格模式正确识别已加载的状态。
+- 修改 `tests/host-typert.test.ts`、`tests/ai-tools.test.ts` 和 `tests/workspace-visibility-browser.test.ts`：覆盖两端严格协议、不同会话与失效连接隔离，以及浏览器中开启和关闭开关。
+- 修正 `src/client/RedisWorkspace.tsx`、`src/client/locales.ts`：连接选择变化、窗口恢复或定时读取时刷新写入状态；请求失败、窗口隐藏时显示状态未知，避免将不确定的授权状态误报为关闭。
+- 扩展 `tests/workspace-visibility-browser.test.ts`：模拟开关已生效但回包丢失、状态查询失败和数据库切换后的恢复。
+- 对 `src/client/RedisWorkspace.tsx` 的开关和状态请求增加有界超时，等待期间显示未知状态，防止无响应时长期保留旧授权状态；浏览器测试覆盖请求永久挂起及自动恢复。

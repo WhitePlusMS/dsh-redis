@@ -73,12 +73,25 @@ describe('strict sidebar protocol', () => {
       expect(() => schema.parse({ state: 'ready' })).toThrow()
     }
   })
-  it('keeps matching endpoints and trusted Agent lookup, without command or write methods', () => {
+  it('keeps matching endpoints and trusted Agent lookup without arbitrary command methods', () => {
     expect(redisDescriptors.map(value => value.id)).toEqual(redisHostDescriptors.map(value => value.id))
-    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readActionPoint', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases', 'aiBudgetStatus', 'resumeAiBudget', 'openUiChannel'])
+    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'writeModeStatus', 'setWriteMode', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readActionPoint', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases', 'aiBudgetStatus', 'resumeAiBudget', 'openUiChannel'])
     expect(redisDescriptors[0].parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
     expect(redisDescriptors[0].cancellation).toEqual({ parameter: 'signal' })
   })
+})
+
+it('uses strict Agent-scoped write mode requests on both protocol faces', () => {
+  const target = { id: 'connection', generation: 1, db: 0 }
+  for (const descriptors of [redisDescriptors, redisHostDescriptors]) {
+    const descriptor = descriptors.find(value => value.method === 'setWriteMode')
+    const request = descriptor?.parameters.find(value => value.name === 'request')?.codec
+    if (request?.mode !== 'strict') throw new Error('Missing write mode codec')
+    expect(descriptor?.parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
+    expect(request.create().parse({ target, enabled: true })).toEqual({ target, enabled: true })
+    expect(() => request.create().parse({ target, enabled: true, sessionId: 'other' })).toThrow()
+    expect(() => request.create().parse({ target, enabled: 'true' })).toThrow()
+  }
 })
 
 it('validates budget requests and responses equally on both protocol faces', () => {

@@ -6,6 +6,7 @@ import type { RemoteStream } from '@deepseek-ai/dsh-typert-protocol'
 import { RedisAiReader } from './host/ai-reader.ts'
 import { RedisAiWriter } from './host/ai-writer.ts'
 import type { AiBudgetResume, AiBudgetStatus, DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
+import type { RedisWriteModeRequest, RedisWriteModeStatus } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
 import { ConnectionFailure, RedisConnections } from './host/connection-service.ts'
@@ -148,6 +149,19 @@ export class RedisRemoteService extends TypertRemoteService {
   async connectionStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     return this.connections.status(agent.session.id)
+  }
+  async writeModeStatus(agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<RedisWriteModeStatus> {
+    signal.throwIfAborted()
+    const connection = this.connections.status(agent.session.id)
+    const enabled = connection.state === 'connected' && connection.id !== null && this.writer.isEnabled(agent.session.id, { id: connection.id, generation: connection.generation, db: connection.db })
+    return { connection, enabled }
+  }
+  async setWriteMode(agent: Agent, request: RedisWriteModeRequest, signal: AbortSignal): Promise<RedisWriteModeStatus> {
+    signal.throwIfAborted()
+    this.connections.assertTarget(agent.session.id, request.target)
+    if (request.enabled) this.writer.enable(agent.session.id, request.target)
+    else this.writer.disable(agent.session.id)
+    return this.writeModeStatus(agent, {}, signal)
   }
   async listProfiles(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.list(signal) }
   /** Saved profiles contain no password; authentication failures require the local form. */

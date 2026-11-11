@@ -19,7 +19,8 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     import { UiPanePresence } from './src/client/ui-pane-presence.ts'
     import { installRedisStyles } from './src/client/styles.ts'
     const epoch = new SelectionEpoch(), panes = new UiPanePresence(), controller = new AbortController()
-    const budget = { stopped: false }
+    const budget = { stopped: false }, write = { enabled: false, fail: false, loseReply: false, hang: false }
+    const connection = { id: 'connection', generation: 1, db: 0, state: 'connected', error: null, target: { host: 'localhost', port: 6379, username: '', tls: false } }
     const budgetStatus = () => ({ callsUsed: budget.stopped ? 32 : 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: budget.stopped })
     const props = {
       t: key => key, sessionKey: 'fixture', selectionEpoch: epoch, retrySelection: () => {},
@@ -28,9 +29,11 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
       status: async () => ({ ok: true, value: {} }),
       aiBudgetStatus: async () => ({ ok: true, value: budgetStatus() }),
       resumeAiBudget: async () => { budget.stopped = false; return { ok: true, value: { accepted: true, status: budgetStatus() } } },
+      writeModeStatus: async () => write.fail ? ({ ok: false }) : ({ ok: true, value: { connection, enabled: write.enabled } }),
+      setWriteMode: async request => { write.enabled = request.enabled; if (write.hang) return new Promise(() => {}); return write.loseReply ? ({ ok: false }) : ({ ok: true, value: { connection, enabled: write.enabled } }) },
       connectionStatus: async () => ({ ok: true, value: { id: null, generation: 0, db: 0, state: 'disconnected', error: null, target: null } }),
     }
-    installRedisStyles(); window.fixture = { epoch, panes, budget }
+    installRedisStyles(); window.fixture = { epoch, panes, budget, write, connection }
     createRoot(document.getElementById('root')).render(<RedisWorkspace {...props} />)
   `
   const built = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: 'jsx', sourcefile: 'workspace-visibility-harness.jsx' }, bundle: true, platform: 'browser', format: 'iife', jsx: 'automatic', write: false })
@@ -43,6 +46,20 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     expect(await page.getByText('budget.title').count()).toBe(0)
     expect(await page.getByText('budget.calls').count()).toBe(0)
     await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
+    await page.getByRole('button', { name: 'write.enable' }).click()
+    await page.getByRole('button', { name: 'write.disable' }).click()
+    await expect.poll(() => page.getByRole('button', { name: 'write.enable' }).isEnabled()).toBe(true)
+    await page.evaluate(() => { const f = Reflect.get(window, 'fixture'); f.write.loseReply = true; f.write.fail = true })
+    await page.getByRole('button', { name: 'write.enable' }).click()
+    await expect.poll(() => page.getByText('write.unknown').count()).toBe(1)
+    expect(await page.getByRole('button', { name: 'write.enable' }).isDisabled()).toBe(true)
+    await page.evaluate(() => { const f = Reflect.get(window, 'fixture'); f.write.fail = false; f.write.loseReply = false; f.connection.db = 2; f.epoch.invalidate() })
+    await expect.poll(() => page.getByRole('button', { name: 'write.disable' }).isEnabled()).toBe(true)
+    expect(await page.getByText(/DB 2/).count()).toBe(1)
+    await page.evaluate(() => { Reflect.get(window, 'fixture').write.hang = true })
+    await page.getByRole('button', { name: 'write.disable' }).click()
+    await expect.poll(() => page.getByText('write.unknown').count()).toBe(1)
+    await expect.poll(() => page.getByRole('button', { name: 'write.enable' }).isEnabled(), { timeout: 10000 }).toBe(true)
     expect(await page.getByRole('button', { name: 'budget.resume' }).count()).toBe(0)
     await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
     await page.evaluate(() => { Reflect.get(window, 'fixture').budget.stopped = true })

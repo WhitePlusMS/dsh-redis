@@ -47,6 +47,9 @@ export const MAX_INFO_BYTES = 128 * 1024
 
 /** DB and opaque scan cursors are bound to a Host-issued connection generation. */
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
+/** Write permission is scoped to the current session and exact connection. */
+export interface RedisWriteModeRequest { readonly target: DatabaseTarget; readonly enabled: boolean }
+export interface RedisWriteModeStatus { readonly connection: ConnectionView; readonly enabled: boolean }
 /** Current UI identity only; never cache cell values or credentials here. */
 export type RedisSelectionItem =
   | { readonly kind: 'hash'; readonly fieldBase64: string }

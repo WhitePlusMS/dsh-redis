@@ -76,6 +76,8 @@ export function apply(ctx: Context): void {
       status: async signal => (await remote()).status(sessionId, {}, signal),
       aiBudgetStatus: async signal => (await remote()).aiBudgetStatus(sessionId, {}, signal),
       resumeAiBudget: async signal => (await remote()).resumeAiBudget(sessionId, {}, signal),
+      writeModeStatus: async signal => (await remote()).writeModeStatus(sessionId, {}, signal),
+      setWriteMode: async (request, signal) => (await remote()).setWriteMode(sessionId, request, signal),
       registerVisiblePane: () => panePresence.attach(sessionId),
       registerKeyHandler: handler => panePresence.registerKeyHandler(sessionId, handler),
       registerRefreshHandler: handler => panePresence.registerRefreshHandler(sessionId, handler),

@@ -114,6 +114,18 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
   return remote
 }
 
+it('scopes the AI write switch to the current connection and session', async () => {
+  const f = await fixture(), remote = remoteFixture(f.connections, f.reader), signal = new AbortController().signal
+  const other = { session: { id: 'b' } } as unknown as Agent
+  expect((await remote.writeModeStatus(f.agent, {}, signal)).enabled).toBe(false)
+  expect((await remote.setWriteMode(f.agent, { target: f.target, enabled: true }, signal)).enabled).toBe(true)
+  expect((await remote.writeModeStatus(other, {}, signal)).enabled).toBe(false)
+  await expect(remote.setWriteMode(other, { target: f.target, enabled: true }, signal)).rejects.toThrow()
+  await f.connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, signal)
+  expect((await remote.writeModeStatus(f.agent, {}, signal)).enabled).toBe(false)
+  await expect(remote.setWriteMode(f.agent, { target: f.target, enabled: true }, signal)).rejects.toThrow()
+})
+
 describe('official Redis model tools', () => {
   it('reads bounded explicit TimeSeries windows with truthful continuation', async () => {
     const calls: Array<readonly unknown[]> = []

@@ -8,6 +8,7 @@ import { streamReadRequestSchema, streamReadResultSchema } from './typert.shared
 import { aiBudgetStatusSchema, aiBudgetResumeSchema } from './typert.shared.ts'
 import { createRedisUiStreamInvocation, uiChannelInputSchema, uiChannelMessageSchema } from './typert.shared.ts'
 import { actionPointReadRequestSchema, actionPointReadResultSchema } from './typert.shared.ts'
+import { writeModeRequestSchema, writeModeStatusSchema } from './typert.shared.ts'
 
 const empty = z.object({}).strict()
 const error = z.enum(['auth', 'network', 'timeout', 'cancelled', 'stale', 'tls-certificate', 'tls-hostname', 'permission', 'oversize', 'protocol', 'busy', 'database', 'type-changed'])
@@ -58,6 +59,8 @@ export const redisHostDescriptors = [
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', credentials, view, z.string().min(1)),
   createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', identity, view, z.string().min(1)),
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', empty, view, z.string().min(1)),
+  createRedisInvocation('writeModeStatus', 'EmptyRequest', 'RedisWriteModeStatus', empty, z.unknown().transform(value => writeModeStatusSchema.parse(value)), z.string().min(1)),
+  createRedisInvocation('setWriteMode', 'RedisWriteModeRequest', 'RedisWriteModeStatus', z.unknown().transform(value => writeModeRequestSchema.parse(value)), z.unknown().transform(value => writeModeStatusSchema.parse(value)), z.string().min(1)),
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', empty, saved, z.string().min(1)),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfile, saved, z.string().min(1)),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', z.object({ id: profileId }).strict(), saved, z.string().min(1)),

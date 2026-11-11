@@ -4,6 +4,7 @@ import type { UiAction, UiActionAck, UiChannelInput, UiChannelMessage } from './
 import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from './domain.ts'
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { AiBudgetResume, AiBudgetStatus } from './domain.ts'
+import type { RedisWriteModeRequest, RedisWriteModeStatus } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
 import { DSH_BASELINE, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
@@ -144,6 +145,19 @@ export const profileCollectionSchema: TypertSchema<ProfileCollection> = { parse(
 export const databaseTargetSchema: TypertSchema<DatabaseTarget> = { parse(value) {
   const object = objectAt(value, ['id', 'generation', 'db'])
   return { ...connectionTargetSchema.parse({ id: object.id, generation: object.generation }), db: integerAt(object.db, 0, 65535) }
+} }
+
+export const writeModeRequestSchema: TypertSchema<RedisWriteModeRequest> = { parse(value) {
+  const object = objectAt(value, ['target', 'enabled'])
+  if (typeof object.enabled !== 'boolean') throw new TypeError('Redis RPC: invalid write mode')
+  return { target: databaseTargetSchema.parse(object.target), enabled: object.enabled }
+} }
+export const writeModeStatusSchema: TypertSchema<RedisWriteModeStatus> = { parse(value) {
+  const object = objectAt(value, ['connection', 'enabled'])
+  if (typeof object.enabled !== 'boolean') throw new TypeError('Redis RPC: invalid write mode')
+  const connection = connectionViewSchema.parse(object.connection)
+  if (object.enabled && (connection.state !== 'connected' || connection.id === null)) throw new TypeError('Redis RPC: invalid enabled connection')
+  return { connection, enabled: object.enabled }
 } }
 
 /** Stream frames are parsed on the client too: rc.2 does not decode stream items. */
@@ -539,6 +553,8 @@ export const redisDescriptors = [
   createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', connectionTargetSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', emptyRequestSchema, connectionViewSchema, sessionIdSchema),
+  createRedisInvocation('writeModeStatus', 'EmptyRequest', 'RedisWriteModeStatus', emptyRequestSchema, writeModeStatusSchema, sessionIdSchema),
+  createRedisInvocation('setWriteMode', 'RedisWriteModeRequest', 'RedisWriteModeStatus', writeModeRequestSchema, writeModeStatusSchema, sessionIdSchema),
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema, sessionIdSchema),
