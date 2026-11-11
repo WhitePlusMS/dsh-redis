@@ -131,7 +131,7 @@ Not included: a free-form command console, direct RDB/AOF loading, snapshots, de
 
 ## Verification and known issue
 
-AI writes have been exercised with isolated Redis 8.2.6, the in-process DSH native tool pipeline and an independently installed DSH Web profile using a synthetic session, with readback from an independent Redis client. The complete browser conversation and real-model write flow remain unverified; the historical read-only acceptance below does not cover them. [Verification record](docs/verification/ai-write-mvp-2026-11-11.md).
+AI writes have been exercised with isolated Redis 8.2.6, the in-process DSH native tool pipeline and an independently installed DSH Web profile using a synthetic session, with readback from an independent Redis client. Connection and the write switch were also checked in the actual DSH Web UI. These used separate sessions; a real-model conversation write remains unverified. The historical read-only acceptance below does not cover it. [Verification record](docs/verification/ai-write-mvp-2026-11-11.md).
 
 On 2026-11-06, application source `69c63d8` passed strict type checks, build and **84 test files / 698 tests** during packaging; 143 files in the daily installation matched the archive. Native DSH runs covered query/diagnostic result delivery, reads on the original connection after candidate authentication failed, and two filter batches with cumulative counts. This local delivery is closed within the plugin's tool responsibilities; no new Release was published. See [delivery status](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md) and [tool acceptance criteria](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md) for evidence and coverage limits.
 

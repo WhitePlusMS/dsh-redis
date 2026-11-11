@@ -131,7 +131,7 @@ AI 写入 MVP 要求 Redis 7.4 或以上，目标 Key 和 Hash 字段均不得�
 
 ## 验证与已知问题
 
-AI 写入已在隔离 Redis 8.2.6、进程内 DSH 原生工具管线和独立安装的 DSH Web profile 中使用合成会话验证，并由独立 Redis 客户端回读。完整浏览器对话及真实模型写入流程尚未验收；不能用下方历史只读验收代替。[验证记录](docs/verification/ai-write-mvp-2026-11-11.md)。
+AI 写入已在隔离 Redis 8.2.6、进程内 DSH 原生工具管线和独立安装的 DSH Web profile 中使用合成会话验证，并由独立 Redis 客户端回读；真实 DSH 网页中也验证了连接和写入开关。两项验证使用不同会话，真实模型对话写入尚未验收；不能用下方历史只读验收代替。[验证记录](docs/verification/ai-write-mvp-2026-11-11.md)。
 
 2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。本轮按工具职责边界收尾，未发布新 Release；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
 
