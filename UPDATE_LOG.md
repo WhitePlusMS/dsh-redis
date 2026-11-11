@@ -1,3 +1,9 @@
+## 2026-11-11：核查 DSH 写入确认契约
+
+- 原因与原则：按用户要求实施 AI 写入 MVP，并遵循 DSH 标准插件接口；先验证人工确认前提，不将模型或程序的应答误当真人授权。
+- 文件：新增 `scripts/probe-dsh-approval-provenance.mjs`、`scripts/probe-redis-write-mvp.mjs` 和 `docs/verification/ai-write-approval-contract-2026-11-11.md`，记录已安装 DSH 0.2.1-rc.5 审批服务、Web/ACP 接口与合成探针及隔离 Redis 事务、WATCH 前后变化和字段 TTL 探针；更新本说明。
+- 影响：审批探针仅使用合成会话和程序应答；Redis 探针只写项目自有隔离夹具且结束后停止并清理。不改变宿主策略或业务 Redis；写入功能仍未开放，真实 DSH 人工确认链路仍需验证。
+
 ## 2026-11-11：整理提交前的本地临时文件
 
 - 原因与原则：按用户要求提交并推送现有项目成果；保留本地测试包、日志、临时 profile 和预览，不将过程产物混入仓库。
