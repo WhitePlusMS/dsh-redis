@@ -5,7 +5,7 @@ import SessionStore from '@deepseek-ai/dsh-session'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { type ToolExecutionInput } from '@deepseek-ai/dsh-tools'
-import type { ApprovalService } from '@deepseek-ai/dsh-user-approval'
+import ApprovalService from '@deepseek-ai/dsh-user-approval'
 import { RedisConnections, type RedisWritableLink } from '../src/host/connection-service.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { RedisAiWriter } from '../src/host/ai-writer.ts'
@@ -16,7 +16,7 @@ const cleanups: Array<() => Promise<void>> = []
 type FixtureApproval = 'allowed-once' | 'rejected' | 'cancelled' | 'unavailable'
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
-async function fixture() {
+async function fixture(realApproval = false) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   let writes = 0, decision: 'allow' | 'deny' | 'ask' = 'allow', approval: FixtureApproval = 'allowed-once'
   let approvalGate: Promise<FixtureApproval> | undefined
@@ -32,8 +32,10 @@ async function fixture() {
   const target = { id: view.id, generation: view.generation, db: view.db }
   const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false), writer = new RedisAiWriter(connections)
   const ctx = new Context()
-  ctx.provide('approval', { request: ask } as unknown as ApprovalService)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
+  await ctx.plugin(SystemPrompt)
+  if (realApproval) await ctx.plugin(ApprovalService, { policy: 'ask' })
+  else ctx.provide('approval', { request: ask } as unknown as ApprovalService)
+  await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
   await ctx.plugin({ name: 'redis-write-test', inject: ['tools'], apply(scope: Context) { registerRedisWriteTools(scope, reader, writer) } })
   ctx.on('tools/pre-execute', (exec, next) => {
     if (exec.name !== 'redis_viewer_execute_write' || decision === 'allow') return next()
@@ -91,6 +93,21 @@ describe('DSH native Redis write tools', () => {
     f.setApproval('allowed-once')
     expect(json(await f.call('redis_viewer_execute_write', { proposal })).state).toBe('written-verified')
     expect(f.writes).toBe(1)
+  })
+
+  it('fails closed with the real DSH approval service when no answerer is installed', async () => {
+    const f = await fixture(true), outcomes: string[] = []
+    const execute = vi.spyOn(f.writer, 'execute')
+    f.ctx.on('session/event', (_session, event) => { if (event.type === 'approval/decided') outcomes.push(event.data.outcome) })
+    f.writer.enable('write-a', f.target)
+    const proposal = json(await f.call('redis_viewer_prepare_write', prepare)).proposal
+    f.setDecision('ask')
+    const result = await f.call('redis_viewer_execute_write', { proposal })
+    expect(result.isError).toBe(true)
+    expect(result.content.filter(block => block.type === 'text').map(block => block.text).join('')).toContain('no approval channel is available')
+    expect(outcomes).toEqual(['unavailable'])
+    expect(execute).not.toHaveBeenCalled()
+    expect(f.writes).toBe(0)
   })
 
   it('rejects forged parameters and proposals from an earlier turn', async () => {
