@@ -1,6 +1,6 @@
 # AI 写入 MVP：DSH 确认契约核查
 
-日期：2026-11-11。范围：项目安装的 DSH 0.2.1-rc.5 宿主包、已安装 Web 客户端包及可复现的进程内合成探针。没有调用真实 Redis，也没有把自动化模拟说成人工确认验收。
+日期：2026-11-11。范围：项目安装的 DSH 0.2.1-rc.5 宿主与 Web 客户端包、进程内合成探针、独立 DSH Web 通道实验及隔离 Redis 8.2.6 夹具。未连接业务 Redis，也没有把自动化模拟说成人工确认验收。
 
 ## 已核实
 
@@ -17,6 +17,14 @@
 在项目根目录运行 `node scripts/probe-dsh-approval-provenance.mjs`。该探针加载实际安装的 DSH ApprovalService，使用两个独立的合成会话与程序化应答者，比较返回结果及去除随机 ID 后的审计字段。两者均返回 `allowed-once`，`approval/decided` 的非 ID 字段只有 `outcome`。
 
 该探针是进程内合成验证，不是完整 DSH profile、浏览器 UI、真实模型或真人点击测试；不能据此声称标准 UI 无法使用。现阶段仍需证明：真实部署下有效确认入口的调用边界、所展示的完整提案、来源与 Host 单次消费如何绑定。单靠通用审批结果或现有 UI 操作回执都不足以完成该证明。
+
+## 隔离 DSH Web 通道实验
+
+使用本机 DSH `0.2.1-rc.5`，将 `DSH_HOME` 指向独立临时目录，基于官方 Web 模板创建 `write-probe` profile，通过 `--patch` 加载仅用于实验的临时 Host 插件。插件按官方 `ctx.tools.register(defineTool(...))` 注册工具，以 `ctx.approval.request` 展示固定的合成 Key、DB、前后值，并明确声明不可执行；未连接 Redis。为触发审批，实验插件通过 `ctx.agents.create()` 创建合成 Agent，并在测试会话中人为追加打开的 turn；没有调用模型。
+
+在该临时 Web 实例中，用自动化浏览器选择测试会话，观察到官方审批界面完整显示合成预览与“拒绝/允许一次”按钮；浏览器自动化点击“允许一次”后，Host 的实际工具结果为 `outcome: allowed-once`、`executable: false`。该点击来自程序，不是真人，因此是程序化 UI 往返证据，不是人工确认来源证明，也不是可执行 Redis 写入测试。
+
+测试会话界面同时显示 `session/not-found` 的历史加载错误；合成 Agent 和手动追加 turn 的构造不代表真实会话生命周期。不能把本实验作为插件已安装、完整产品流程、真实模型或人工验收通过。测试结束后关闭独立 DSH 进程，确认临时监听端口已释放；未改变日常 DSH profile。
 
 ## 隔离 Redis 基础探针
 
