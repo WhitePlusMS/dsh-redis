@@ -5,6 +5,13 @@ import { RedisTransport } from '../lib/host/redis-transport.js'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiWriter } from '../lib/host/ai-writer.js'
 import { RESP_TYPES } from 'redis'
+import { Context } from '@deepseek-ai/cordis'
+import SessionStore from '@deepseek-ai/dsh-session'
+import { SessionId } from '@deepseek-ai/dsh-session/types'
+import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
+import ToolRuntime from '@deepseek-ai/dsh-tools'
+import { RedisAiReader } from '../lib/host/ai-reader.js'
+import { registerRedisWriteTools } from '../lib/host/ai-write-tools.js'
 import { withRedisFixture } from './redis-fixture.mjs'
 
 const signal = new AbortController().signal
@@ -16,6 +23,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.sendCommand(['SET', 'fixture:coordinator', Buffer.from([0, 255])])
   await admin.hSet('fixture:coordinator-hash', 'field', 'old')
   await admin.set('fixture:preflight-race', 'old')
+  await admin.set('fixture:native-tool', 'old')
   await admin.hSet('fixture:fieldttl', 'field', 'old')
   await admin.hSet('fixture:race', { field: 'old', other: 'before' })
   assert.deepEqual(await admin.sendCommand(['HPEXPIRE', 'fixture:fieldttl', '120000', 'FIELDS', '1', 'field']), [1])
@@ -111,8 +119,34 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
         assert.equal(await admin.get('fixture:preflight-race'), 'new')
         assert.ok(await admin.pTTL('fixture:preflight-race') > 0)
       } finally { writer.dispose() }
+
+      // Real DSH ToolRuntime + Session events against this isolated Redis; this
+      // is still an in-process fixture, not a full installed Web profile.
+      const ctx = new Context(), toolWriter = new RedisAiWriter(connections)
+      const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false)
+      try {
+        await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
+        await ctx.plugin({ name: 'redis-write-fixture', inject: ['tools'], apply(scope) { registerRedisWriteTools(scope, reader, toolWriter) } })
+        const session = ctx.sessions.create(SessionId('fixture-session'))
+        const agent = { id: session.id, ctx, session }
+        session.append('turn/start', { turn: 1 })
+        toolWriter.enable('fixture-session', target)
+        let callId = 0
+        const call = (name, args) => ctx.tools.execute({ name, arguments: args, agent, signal, callId: 'fixture-tool-' + ++callId })
+        const prepared = await call('redis_viewer_prepare_write', { type: 'string', key: 'fixture:native-tool', value: 'new' })
+        assert.equal(prepared.isError, false)
+        const { proposal } = JSON.parse(prepared.content.map(block => block.type === 'text' ? block.text : '').join(''))
+        const deny = ctx.on('tools/pre-execute', (exec, next) => exec.name === 'redis_viewer_execute_write' ? Promise.resolve({ kind: 'deny', reason: 'fixture-deny' }) : next())
+        assert.equal((await call('redis_viewer_execute_write', { proposal })).isError, true)
+        assert.equal(await admin.get('fixture:native-tool'), 'old')
+        deny()
+        const executed = await call('redis_viewer_execute_write', { proposal })
+        assert.equal(executed.isError, false)
+        assert.equal(JSON.parse(executed.content.map(block => block.type === 'text' ? block.text : '').join('')).state, 'written-verified')
+        assert.equal(await admin.get('fixture:native-tool'), 'new')
+      } finally { await ctx.fiber.dispose(); toolWriter.dispose(); reader.dispose() }
     } finally { connections.dispose() }
   } finally { transport.close() }
 })
 assert.equal(fixture.stopped, true)
-console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, fixtureStopped: fixture.stopped, fixtureRemoved: fixture.fixtureRemoved ?? null, realDshIntegration: false }))
+console.log(JSON.stringify({ passed: true, redisVersion: fixture.redisVersion, fixtureStopped: fixture.stopped, fixtureRemoved: fixture.fixtureRemoved ?? null, nativeToolRuntime: true, installedDshProfile: false }))

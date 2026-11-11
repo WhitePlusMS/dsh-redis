@@ -8,6 +8,7 @@ import { ConnectionFailure, RedisConnections, type RedisLink } from '../src/host
 import type { ConnectionErrorCode, DatabaseTarget, UiAction } from '../src/domain.ts'
 import type { PreparedAiPage } from '../src/host/ai-page-store.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
+import { RedisAiWriter } from '../src/host/ai-writer.ts'
 import { registerRedisTools } from '../src/host/ai-tools.ts'
 import { registerRedisFormatTool, registerRedisRefreshTool } from '../src/host/ai-ui-tools.ts'
 import { RedisKeys } from '../src/host/key-reader.ts'
@@ -106,8 +107,10 @@ function content(result: Awaited<ReturnType<ToolRuntime['execute']>>): string {
 function remoteFixture(connections: RedisConnections, reader: RedisAiReader): RedisRemoteService {
   const remote = Object.create(RedisRemoteService.prototype) as RedisRemoteService
   const uiActions = new UiActionCoordinator()
+  const writer = new RedisAiWriter(connections)
   Reflect.set(remote, 'connections', connections); Reflect.set(remote, 'ai', reader); Reflect.set(remote, 'uiActions', uiActions)
-  cleanups.push(() => uiActions.dispose())
+  Reflect.set(remote, 'writer', writer)
+  cleanups.push(() => { writer.dispose(); uiActions.dispose() })
   return remote
 }
 

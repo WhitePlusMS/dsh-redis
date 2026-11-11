@@ -1,3 +1,12 @@
+## 2026-11-11：接入 DSH 原生写入工具
+
+- 新增 `src/host/ai-write-tools.ts`，沿用 `ctx.tools.register(defineTool(...))` 注册提案、执行及状态查询工具；通过 DSH 已提交的会话事件识别当前轮次，不接受模型填写会话或轮次。
+- `src/runtime.ts` 注册上述工具；写入仍默认关闭，客户端启用入口及独立 DSH profile 的完整验证尚未完成。
+- 新增 `tests/ai-write-tools.test.ts`，使用 DSH ToolRuntime 和 Session 事件检查默认关闭、提案一致性、宿主权限决策及跨会话和跨轮次边界。
+- 扩展 `scripts/smoke-redis-write-transaction.mjs`，在进程内使用实际 DSH ToolRuntime 和 Session 事件连接自有隔离 Redis；先检查宿主拒绝不写，再验证允许后的回执和独立客户端回读。该实验不等于独立 DSH Web profile 完整验收。
+- 更新 `tests/ai-tools.test.ts` 的远程服务测试替身，初始化新增的 Host 协调器，保持切库、断开和预算回归覆盖。
+- 检查：三套 TypeScript 检查、10 个相关测试文件共 176 项及进程内 ToolRuntime/隔离 Redis 测试通过，夹具已清理；规范和方案两项审查修复问题后复核通过。
+
 ## 2026-11-11：串接 Redis 写入内部流程
 
 - 新增 `src/host/ai-writer.ts`，将会话绑定的写入启用、完整前态采样、短期提案、受控事务与结果记录串联；调用方必须提供来自 DSH 的当前轮次校验。
