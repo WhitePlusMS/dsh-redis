@@ -1,25 +1,9 @@
-import type { DatabaseTarget } from '../domain.ts'
+import type { DatabaseTarget, RedisWriteIdentity, RedisWriteRecord } from '../domain.ts'
 import type { RedisWriteResult } from './redis-write-transaction.ts'
 
 const MAX_RECORDS = 128
 const MAX_SESSION_RECORDS = 16
 const RETENTION_MS = 10 * 60 * 1000
-
-export interface RedisWriteRecord {
-  readonly id: string
-  readonly target: DatabaseTarget
-  readonly identity: RedisWriteIdentity
-  readonly state: 'pending' | 'submitting' | RedisWriteResult
-  readonly startedAt: string
-  readonly updatedAt: string
-  readonly readbackAt: string | null
-}
-
-export interface RedisWriteIdentity {
-  readonly type: 'string' | 'hash'
-  readonly keyBase64: string
-  readonly fieldBase64: string | null
-}
 
 export interface RedisWriteRecordHandle {
   submitted(): void

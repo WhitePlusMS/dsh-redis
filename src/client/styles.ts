@@ -25,7 +25,9 @@ body[data-ds-dark-theme] .dsh-redis { --redis-error:#ffb4ab; --redis-accent:#23b
 .dsh-redis .redis-workspace-heading { display:flex; align-items:center; gap:8px; height:34px; padding:0 9px; flex-shrink:0; border-bottom:1px solid var(--dsw-alias-border-l2); position:relative; }
 .dsh-redis .redis-readonly { display:flex; align-items:center; color:var(--dsw-alias-label-secondary); }
 .dsh-redis .redis-plugin-info-toggle { margin-left:auto; }
-.dsh-redis .redis-plugin-info { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:6px 9px; border-bottom:1px solid var(--dsw-alias-border-l2); font-size:10px; color:var(--dsw-alias-label-secondary); flex-shrink:0; }
+.dsh-redis .redis-plugin-info { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding:6px 9px; border-bottom:1px solid var(--dsw-alias-border-l2); font-size:10px; color:var(--dsw-alias-label-secondary); flex-shrink:0; max-height:45%; overflow:auto; }
+.dsh-redis .redis-plugin-info > div { min-width:0; max-width:100%; }
+.dsh-redis .redis-plugin-info code { overflow-wrap:anywhere; word-break:break-all; }
 .dsh-redis .redis-connection-indicator { display:flex; align-items:center; gap:4px; }
 .dsh-redis .redis-chip.redis-environment { display:block; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .dsh-redis .redis-connection-indicator.redis-connected { color:var(--redis-accent); }

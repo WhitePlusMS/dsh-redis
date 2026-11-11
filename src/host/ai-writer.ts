@@ -1,6 +1,7 @@
 import type { DatabaseTarget } from '../domain.ts'
 import { RedisConnections } from './connection-service.ts'
-import { RedisWriteHistory, type RedisWriteRecord } from './write-history.ts'
+import { RedisWriteHistory } from './write-history.ts'
+import type { RedisWriteRecord } from '../domain.ts'
 import { RedisWriteProposals, type RedisWriteProposal } from './write-proposals.ts'
 import type { RedisReplaceRequest, RedisSampleRequest } from './redis-write-transaction.ts'
 

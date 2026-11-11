@@ -10,6 +10,7 @@ import { RedisConnections, type RedisWritableLink } from '../src/host/connection
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { RedisAiWriter } from '../src/host/ai-writer.ts'
 import { registerRedisWriteTools } from '../src/host/ai-write-tools.ts'
+import { RedisRemoteService } from '../src/remote-service.ts'
 
 const cleanups: Array<() => Promise<void>> = []
 type FixtureApproval = 'allowed-once' | 'rejected' | 'cancelled'
@@ -68,6 +69,11 @@ describe('DSH native Redis write tools', () => {
     const other = f.ctx.sessions.create(SessionId('write-b'))
     const foreign = { id: 'agent-b', ctx: f.ctx, session: other } as unknown as Agent
     expect(json(await f.call('redis_viewer_write_status', { id: proposal.id }, foreign)).state).toBe('unavailable')
+    const remote = Object.create(RedisRemoteService.prototype) as RedisRemoteService
+    Reflect.set(remote, 'writer', f.writer)
+    expect((await remote.writeLookup(foreign, { id: String(proposal.id) }, new AbortController().signal)).record).toBeNull()
+    const owner = { session: f.session } as unknown as Agent
+    expect((await remote.writeLookup(owner, { id: String(proposal.id) }, new AbortController().signal)).record?.state).toBe('written-verified')
   })
 
   it('honors DSH deny and ask decisions without a separate mandatory click', async () => {

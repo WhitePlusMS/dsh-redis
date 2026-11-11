@@ -7,6 +7,7 @@ import { RedisAiReader } from './host/ai-reader.ts'
 import { RedisAiWriter } from './host/ai-writer.ts'
 import type { AiBudgetResume, AiBudgetStatus, DatabasesReadRequest, DatabasesReadResult } from './domain.ts'
 import type { RedisWriteModeRequest, RedisWriteModeStatus } from './domain.ts'
+import type { RedisWriteLookupRequest, RedisWriteLookupResult } from './domain.ts'
 import type {} from '@deepseek-ai/dsh-session'
 import type {} from '@deepseek-ai/dsh-app-boot'
 import { ConnectionFailure, RedisConnections } from './host/connection-service.ts'
@@ -162,6 +163,10 @@ export class RedisRemoteService extends TypertRemoteService {
     if (request.enabled) this.writer.enable(agent.session.id, request.target)
     else this.writer.disable(agent.session.id)
     return this.writeModeStatus(agent, {}, signal)
+  }
+  async writeLookup(agent: Agent, request: RedisWriteLookupRequest, signal: AbortSignal): Promise<RedisWriteLookupResult> {
+    signal.throwIfAborted()
+    return { record: this.writer.status(agent.session.id, request.id) }
   }
   async listProfiles(_agent: Agent, _request: EmptyRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.list(signal) }
   /** Saved profiles contain no password; authentication failures require the local form. */

@@ -19,7 +19,7 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     import { UiPanePresence } from './src/client/ui-pane-presence.ts'
     import { installRedisStyles } from './src/client/styles.ts'
     const epoch = new SelectionEpoch(), panes = new UiPanePresence(), controller = new AbortController()
-    const budget = { stopped: false }, write = { enabled: false, fail: false, loseReply: false, hang: false }
+    const budget = { stopped: false }, write = { enabled: false, fail: false, loseReply: false, hang: false, lookupHang: false, record: null }
     const connection = { id: 'connection', generation: 1, db: 0, state: 'connected', error: null, target: { host: 'localhost', port: 6379, username: '', tls: false } }
     const budgetStatus = () => ({ callsUsed: budget.stopped ? 32 : 0, maxCalls: 32, bytesUsed: 0, maxBytes: 1048576, inFlight: 0, stopped: budget.stopped })
     const props = {
@@ -31,6 +31,7 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
       resumeAiBudget: async () => { budget.stopped = false; return { ok: true, value: { accepted: true, status: budgetStatus() } } },
       writeModeStatus: async () => write.fail ? ({ ok: false }) : ({ ok: true, value: { connection, enabled: write.enabled } }),
       setWriteMode: async request => { write.enabled = request.enabled; if (write.hang) return new Promise(() => {}); return write.loseReply ? ({ ok: false }) : ({ ok: true, value: { connection, enabled: write.enabled } }) },
+      writeLookup: async () => { if (write.lookupHang) return new Promise(() => {}); return { ok: true, value: { record: write.record } } },
       connectionStatus: async () => ({ ok: true, value: { id: null, generation: 0, db: 0, state: 'disconnected', error: null, target: null } }),
     }
     installRedisStyles(); window.fixture = { epoch, panes, budget, write, connection }
@@ -46,6 +47,28 @@ it.skipIf(browserPath === undefined)('releases and restores the pane on simulate
     expect(await page.getByText('budget.title').count()).toBe(0)
     expect(await page.getByText('budget.calls').count()).toBe(0)
     await page.getByRole('button', { name: 'ui.pluginInfo' }).click()
+    await page.getByLabel('write.lookup').fill('12345678-1234-1234-1234-123456789abc')
+    await page.getByRole('button', { name: 'write.query' }).click()
+    await expect.poll(() => page.getByText('write.unavailable').count()).toBe(1)
+    await page.evaluate(() => { const w = Reflect.get(window, 'fixture').write; w.record = { id: '12345678-1234-1234-1234-123456789abc', target: { id: 'connection', generation: 1, db: 0 }, identity: { type: 'hash', keyBase64: 'aw==', fieldBase64: '' }, state: 'unknown', startedAt: '2026-11-11T00:00:00.000Z', updatedAt: '2026-11-11T00:00:01.000Z', readbackAt: null } })
+    await page.getByRole('button', { name: 'write.query' }).click()
+    await expect.poll(() => page.getByText('write.state.unknown').count()).toBe(1)
+    expect(await page.getByText('"aw=="').count()).toBe(1)
+    expect(await page.getByText('""', { exact: true }).count()).toBe(1)
+    await page.setViewportSize({ width: 320, height: 600 })
+    await page.evaluate(() => { const w = Reflect.get(window, 'fixture').write; w.record.identity.keyBase64 = btoa('k'.repeat(4096)); w.record.identity.fieldBase64 = btoa('f'.repeat(4096)); const root = document.getElementById('root'); if (root === null) throw new Error('Missing root'); root.style.height = '550px' })
+    await page.getByRole('button', { name: 'write.query' }).click()
+    const info = page.locator('.redis-plugin-info')
+    await expect.poll(() => info.evaluate(node => node.scrollHeight > node.clientHeight)).toBe(true)
+    expect(await info.locator('code').nth(1).textContent()).toBe(JSON.stringify(Buffer.from('k'.repeat(4096)).toString('base64')))
+    expect(await info.locator('code').nth(2).textContent()).toBe(JSON.stringify(Buffer.from('f'.repeat(4096)).toString('base64')))
+    await page.setViewportSize({ width: 1280, height: 720 })
+    await page.evaluate(() => { Reflect.get(window, 'fixture').write.lookupHang = true })
+    await page.getByRole('button', { name: 'write.query' }).click()
+    await expect.poll(() => page.getByRole('button', { name: 'write.query' }).isEnabled(), { timeout: 7000 }).toBe(true)
+    await page.evaluate(() => { Reflect.get(window, 'fixture').write.lookupHang = false })
+    await page.getByRole('button', { name: 'write.query' }).click()
+    await expect.poll(() => page.getByText('write.state.unknown').count()).toBe(1)
     await page.getByRole('button', { name: 'write.enable' }).click()
     await page.getByRole('button', { name: 'write.disable' }).click()
     await expect.poll(() => page.getByRole('button', { name: 'write.enable' }).isEnabled()).toBe(true)

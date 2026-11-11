@@ -3869,3 +3869,13 @@
 - 修正 `src/client/RedisWorkspace.tsx`、`src/client/locales.ts`：连接选择变化、窗口恢复或定时读取时刷新写入状态；请求失败、窗口隐藏时显示状态未知，避免将不确定的授权状态误报为关闭。
 - 扩展 `tests/workspace-visibility-browser.test.ts`：模拟开关已生效但回包丢失、状态查询失败和数据库切换后的恢复。
 - 对 `src/client/RedisWorkspace.tsx` 的开关和状态请求增加有界超时，等待期间显示未知状态，防止无响应时长期保留旧授权状态；浏览器测试覆盖请求永久挂起及自动恢复。
+
+## AI 写入结果查询（2026-11-11）
+
+- 修改 `src/domain.ts`、`src/host/write-history.ts`、`src/host/ai-writer.ts`、`src/host/ai-write-tools.ts`、`src/remote-service.ts` 和 Typert 协议文件：将操作记录类型共享给客户端，新增按可信会话和操作 ID 只读查询的标准 DSH 接口，不暴露密码或修改前后的值。
+- 修改 `src/client/index.ts`、`src/client/RedisWorkspace.tsx` 和 `src/client/locales.ts`：提供操作 ID 查询和明确状态，说明记录保存在内存中，过期或重启后不可用于推断执行结果。
+- 修改 `tests/host-typert.test.ts`、`tests/ai-write-tools.test.ts` 和 `tests/workspace-visibility-browser.test.ts`，覆盖协议字段校验、跨会话隔离和记录不可用时的界面提示。
+- 修正 `src/client/RedisWorkspace.tsx` 和 `src/client/locales.ts`：查询请求超时可重试；结果显示完整的连接 ID、代次、Key 和字段 Base64，方便识别二进制及空字段；浏览器测试覆盖未知结果和查询挂起恢复。
+- 修改 `src/client/styles.ts`、`src/client/RedisWorkspace.tsx` 和浏览器回归：为信息区提供可聚焦的有限高度滚动，在窄屏上保留并换行显示最大长度的 Key/字段。
+- 补充浏览器测试根节点空值检查以满足 TypeScript 严格编译。
+- 调整浏览器回归断言顺序，分别在小字段和最大字段数据更新后检查对应结果。

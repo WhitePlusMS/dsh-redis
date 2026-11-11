@@ -5,6 +5,7 @@ import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, Selection
 import type { SessionId } from '@deepseek-ai/dsh-session/types'
 import type { AiBudgetResume, AiBudgetStatus } from './domain.ts'
 import type { RedisWriteModeRequest, RedisWriteModeStatus } from './domain.ts'
+import type { RedisWriteLookupRequest, RedisWriteLookupResult, RedisWriteRecord } from './domain.ts'
 import type { ConnectionRequest, ConnectionTarget, ConnectionView, ConnectionErrorCode } from './domain.ts'
 import { DSH_BASELINE, PROTOCOL_VERSION, type EmptyRequest, type RedisHostStatus } from './domain.ts'
 import { MAX_PROFILES, type ConnectionSettings, type SavedConnection, type SaveProfileRequest, type ProfileId, type ProfileCollection } from './domain.ts'
@@ -158,6 +159,23 @@ export const writeModeStatusSchema: TypertSchema<RedisWriteModeStatus> = { parse
   const connection = connectionViewSchema.parse(object.connection)
   if (object.enabled && (connection.state !== 'connected' || connection.id === null)) throw new TypeError('Redis RPC: invalid enabled connection')
   return { connection, enabled: object.enabled }
+} }
+
+export const writeLookupRequestSchema: TypertSchema<RedisWriteLookupRequest> = { parse(value) {
+  return { id: uiRequestId(objectAt(value, ['id']).id) }
+} }
+export const writeLookupResultSchema: TypertSchema<RedisWriteLookupResult> = { parse(value) {
+  const record = objectAt(value, ['record']).record
+  if (record === null) return { record: null }
+  const raw = objectAt(record, ['id', 'target', 'identity', 'state', 'startedAt', 'updatedAt', 'readbackAt'])
+  const identity = objectAt(raw.identity, ['type', 'keyBase64', 'fieldBase64'])
+  if (identity.type !== 'string' && identity.type !== 'hash') throw new TypeError('Redis RPC: invalid write identity')
+  const keyBase64 = byteStringAt(identity.keyBase64, 4096), fieldBase64 = identity.fieldBase64 === null ? null : byteStringAt(identity.fieldBase64, 4096)
+  if ((identity.type === 'string') !== (fieldBase64 === null)) throw new TypeError('Redis RPC: invalid write field')
+  const states: readonly RedisWriteRecord['state'][] = ['pending', 'submitting', 'not-executed', 'conflict', 'rejected', 'written-verified', 'written-unverified', 'written-mismatch', 'unknown']
+  if (typeof raw.state !== 'string' || !states.includes(raw.state as RedisWriteRecord['state'])) throw new TypeError('Redis RPC: invalid write state')
+  const timestamp = (input: unknown) => { const text = stringAt(input, 24); if (!Number.isFinite(Date.parse(text)) || new Date(text).toISOString() !== text) throw new TypeError('Redis RPC: invalid timestamp'); return text }
+  return { record: { id: uiRequestId(raw.id), target: databaseTargetSchema.parse(raw.target), identity: { type: identity.type, keyBase64, fieldBase64 }, state: raw.state as RedisWriteRecord['state'], startedAt: timestamp(raw.startedAt), updatedAt: timestamp(raw.updatedAt), readbackAt: raw.readbackAt === null ? null : timestamp(raw.readbackAt) } }
 } }
 
 /** Stream frames are parsed on the client too: rc.2 does not decode stream items. */
@@ -555,6 +573,7 @@ export const redisDescriptors = [
   createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', emptyRequestSchema, connectionViewSchema, sessionIdSchema),
   createRedisInvocation('writeModeStatus', 'EmptyRequest', 'RedisWriteModeStatus', emptyRequestSchema, writeModeStatusSchema, sessionIdSchema),
   createRedisInvocation('setWriteMode', 'RedisWriteModeRequest', 'RedisWriteModeStatus', writeModeRequestSchema, writeModeStatusSchema, sessionIdSchema),
+  createRedisInvocation('writeLookup', 'RedisWriteLookupRequest', 'RedisWriteLookupResult', writeLookupRequestSchema, writeLookupResultSchema, sessionIdSchema),
   createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema, sessionIdSchema),
   createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema, sessionIdSchema),

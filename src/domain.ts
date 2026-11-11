@@ -50,6 +50,18 @@ export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
 /** Write permission is scoped to the current session and exact connection. */
 export interface RedisWriteModeRequest { readonly target: DatabaseTarget; readonly enabled: boolean }
 export interface RedisWriteModeStatus { readonly connection: ConnectionView; readonly enabled: boolean }
+export interface RedisWriteIdentity { readonly type: 'string' | 'hash'; readonly keyBase64: string; readonly fieldBase64: string | null }
+export interface RedisWriteRecord {
+  readonly id: string
+  readonly target: DatabaseTarget
+  readonly identity: RedisWriteIdentity
+  readonly state: 'pending' | 'submitting' | 'not-executed' | 'conflict' | 'rejected' | 'written-verified' | 'written-unverified' | 'written-mismatch' | 'unknown'
+  readonly startedAt: string
+  readonly updatedAt: string
+  readonly readbackAt: string | null
+}
+export interface RedisWriteLookupRequest { readonly id: string }
+export interface RedisWriteLookupResult { readonly record: RedisWriteRecord | null }
 /** Current UI identity only; never cache cell values or credentials here. */
 export type RedisSelectionItem =
   | { readonly kind: 'hash'; readonly fieldBase64: string }

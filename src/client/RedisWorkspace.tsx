@@ -5,6 +5,7 @@ import type {} from '@deepseek-ai/dsh-client-ui-sidebar-right/client'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { AiBudgetResume, AiBudgetStatus, RedisHostStatus } from '../domain.ts'
 import type { RedisWriteModeRequest, RedisWriteModeStatus } from '../domain.ts'
+import type { RedisWriteLookupRequest, RedisWriteLookupResult } from '../domain.ts'
 import { ConnectionForm, type ConnectionActions } from './ConnectionForm.tsx'
 import { NS } from './locales.ts'
 import { RefreshVisibility } from './AutoRefresh.tsx'
@@ -19,6 +20,7 @@ export interface RedisWorkspaceInjected extends ConnectionActions {
   readonly resumeAiBudget: (signal: AbortSignal) => Promise<RemoteResult<AiBudgetResume>>
   readonly writeModeStatus: (signal: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
   readonly setWriteMode: (request: RedisWriteModeRequest, signal: AbortSignal) => Promise<RemoteResult<RedisWriteModeStatus>>
+  readonly writeLookup: (request: RedisWriteLookupRequest, signal: AbortSignal) => Promise<RemoteResult<RedisWriteLookupResult>>
   readonly registerVisiblePane: () => () => void
   readonly selectionEpoch: SelectionEpoch
   readonly retrySelection: () => void
@@ -61,7 +63,7 @@ export function RedisWorkspace(props: Props) {
   }, [props.registerVisiblePane, props.selectionEpoch, phase, tab.visible, tab.signal])
   return <section className="dsh-redis" aria-label={t('view.title')}>
     <header className="redis-workspace-heading"><h2>{t('view.title')}</h2><span className="redis-readonly" title={t('badge.readOnly')} role="img" aria-label={t('badge.readOnly')}><Icon name="lock" /></span><button type="button" className="redis-icon-button redis-plugin-info-toggle" title={t('ui.pluginInfo')} aria-label={t('ui.pluginInfo')} aria-expanded={infoOpen} onClick={() => setInfoOpen(value => !value)}><Icon name="info" /></button></header>
-    {infoOpen && <div className="redis-plugin-info"><span>{t('baseline')}</span><span>{t(phase === 'ready' ? 'status.ready' : phase === 'loading' ? 'status.loading' : 'status.error')}</span>{phase === 'ready' && <><AiBudgetRecovery key={props.sessionKey} {...props} /><AiWriteMode key={`write-${props.sessionKey}`} {...props} /></>}</div>}
+    {infoOpen && <div className="redis-plugin-info" tabIndex={0} aria-label={t('ui.pluginInfo')}><span>{t('baseline')}</span><span>{t(phase === 'ready' ? 'status.ready' : phase === 'loading' ? 'status.loading' : 'status.error')}</span>{phase === 'ready' && <><AiBudgetRecovery key={props.sessionKey} {...props} /><AiWriteMode key={`write-${props.sessionKey}`} {...props} /><AiWriteLookup key={`lookup-${props.sessionKey}`} {...props} /></>}</div>}
     {phase === 'ready' && selectionFailed && <div className="redis-plugin-info" role="status"><span>{t('selection.syncFailed')}</span><button type="button" onClick={props.retrySelection}>{t('selection.retry')}</button></div>}
     {phase === 'ready' ? <SelectionEpochContext.Provider value={props.selectionEpoch}><RefreshVisibility.Provider value={tab}><PreviewFormats key={props.sessionKey}><ConnectionForm {...props} /></PreviewFormats></RefreshVisibility.Provider></SelectionEpochContext.Provider> : <div className="redis-empty">
       <h2>{t('empty.title')}</h2><p>{t('empty.description')}</p>
@@ -69,6 +71,37 @@ export function RedisWorkspace(props: Props) {
     </div>}
     {phase !== 'ready' && <footer className={`redis-status${phase === 'error' ? ' redis-error' : ''}`} role="status" aria-live="polite">{t(phase === 'loading' ? 'status.loading' : 'status.error')}</footer>}
   </section>
+}
+
+/** Operation history is a bounded session-local lookup, not a durable audit log. */
+function AiWriteLookup(props: Props) {
+  const [id, setId] = useState(''), [result, setResult] = useState<RedisWriteLookupResult | null>(null)
+  const [pending, setPending] = useState(false), [error, setError] = useState(false)
+  const active = useRef<AbortController | null>(null), t = props.t
+  useEffect(() => () => { active.current?.abort(); active.current = null }, [])
+  async function lookup(): Promise<void> {
+    active.current?.abort()
+    const controller = new AbortController(); active.current = controller; setPending(true); setError(false); setResult(null)
+    const timeout = setTimeout(() => { if (active.current === controller) { active.current = null; controller.abort(); setPending(false); setError(true) } }, 5000)
+    controller.signal.addEventListener('abort', () => clearTimeout(timeout), { once: true })
+    try {
+      const response = await props.writeLookup({ id: id.trim() }, controller.signal)
+      if (!controller.signal.aborted && active.current === controller) { if (response.ok) setResult(response.value); else setError(true) }
+    } catch { if (!controller.signal.aborted && active.current === controller) setError(true) }
+    finally { clearTimeout(timeout); if (active.current === controller) { active.current = null; if (!controller.signal.aborted) setPending(false) } }
+  }
+  return <div>
+    <label>{t('write.lookup')} <input aria-label={t('write.lookup')} value={id} maxLength={36} onChange={event => { active.current?.abort(); active.current = null; setPending(false); setResult(null); setError(false); setId(event.target.value) }} /></label>{' '}
+    <button type="button" disabled={pending || !/^[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}$/u.test(id.trim())} onClick={() => { void lookup() }}>{t('write.query')}</button>
+    {result !== null && <div role="status">{result.record === null ? t('write.unavailable') : <>
+      <p>{t(`write.state.${result.record.state}`)} · DB {result.record.target.db} · {result.record.updatedAt}</p>
+      <p>{t('write.connectionId')}: <code>{result.record.target.id} / {result.record.target.generation}</code></p>
+      <p>{result.record.identity.type} · Key Base64: <code>{JSON.stringify(result.record.identity.keyBase64)}</code></p>
+      {result.record.identity.fieldBase64 !== null && <p>Field Base64: <code>{JSON.stringify(result.record.identity.fieldBase64)}</code></p>}
+    </>}</div>}
+    {error && <p role="alert">{t('write.lookupError')}</p>}
+    <p>{t('write.historyNote')}</p>
+  </div>
 }
 
 /** The server rechecks the exact connection before changing its write mode. */

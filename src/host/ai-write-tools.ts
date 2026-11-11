@@ -4,7 +4,7 @@ import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import type { RedisAiReader } from './ai-reader.ts'
 import type { RedisAiWriter } from './ai-writer.ts'
-import type { RedisWriteRecord } from './write-history.ts'
+import type { RedisWriteRecord } from '../domain.ts'
 
 const MAX_BASE64 = Math.ceil(4096 / 3) * 4
 const nullableString = { oneOf: [{ type: 'string' }, { type: 'null' }] } as const

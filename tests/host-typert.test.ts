@@ -75,7 +75,7 @@ describe('strict sidebar protocol', () => {
   })
   it('keeps matching endpoints and trusted Agent lookup without arbitrary command methods', () => {
     expect(redisDescriptors.map(value => value.id)).toEqual(redisHostDescriptors.map(value => value.id))
-    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'writeModeStatus', 'setWriteMode', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readActionPoint', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases', 'aiBudgetStatus', 'resumeAiBudget', 'openUiChannel'])
+    expect(redisDescriptors.map(value => value.method)).toEqual(['status', 'connect', 'disconnect', 'connectionStatus', 'writeModeStatus', 'setWriteMode', 'writeLookup', 'listProfiles', 'saveProfile', 'removeProfile', 'selectDatabase', 'scanKeys', 'readString', 'scanHash', 'readActionPoint', 'readList', 'scanSet', 'readZSet', 'readStream', 'readDatabases', 'aiBudgetStatus', 'resumeAiBudget', 'openUiChannel'])
     expect(redisDescriptors[0].parameters[0]).toMatchObject({ source: 'lookup', lookup: 'agent', wire: 'agentId' })
     expect(redisDescriptors[0].cancellation).toEqual({ parameter: 'signal' })
   })
@@ -91,6 +91,21 @@ it('uses strict Agent-scoped write mode requests on both protocol faces', () => 
     expect(request.create().parse({ target, enabled: true })).toEqual({ target, enabled: true })
     expect(() => request.create().parse({ target, enabled: true, sessionId: 'other' })).toThrow()
     expect(() => request.create().parse({ target, enabled: 'true' })).toThrow()
+  }
+})
+
+it('validates session-scoped write records without leaking values or credentials', () => {
+  const id = '12345678-1234-1234-1234-123456789abc'
+  const record = { id, target: { id: 'connection', generation: 1, db: 0 }, identity: { type: 'hash', keyBase64: 'aw==', fieldBase64: 'Zg==' }, state: 'written-verified', startedAt: '2026-11-11T00:00:00.000Z', updatedAt: '2026-11-11T00:00:01.000Z', readbackAt: '2026-11-11T00:00:01.000Z' }
+  for (const descriptors of [redisDescriptors, redisHostDescriptors]) {
+    const descriptor = descriptors.find(value => value.method === 'writeLookup'), input = descriptor?.parameters.find(value => value.name === 'request')?.codec, output = descriptor?.result
+    if (input?.mode !== 'strict' || output?.mode !== 'strict') throw new Error('Missing lookup codec')
+    expect(input.create().parse({ id })).toEqual({ id })
+    expect(() => input.create().parse({ id, sessionId: 'other' })).toThrow()
+    expect(output.create().parse({ record })).toEqual({ record })
+    expect(output.create().parse({ record: null })).toEqual({ record: null })
+    expect(() => output.create().parse({ record: { ...record, password: 'secret' } })).toThrow()
+    expect(() => output.create().parse({ record: { ...record, state: 'success' } })).toThrow()
   }
 })
 
