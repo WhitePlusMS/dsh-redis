@@ -24,6 +24,11 @@ export interface RedisWriteProposal extends RedisWriteDraft {
   readonly expiresAt: string
 }
 
+export interface ConsumedRedisProposal {
+  readonly proposal: RedisWriteProposal
+  isCurrent(): boolean
+}
+
 interface Entry {
   readonly proposal: RedisWriteProposal
   readonly turnId: string
@@ -103,6 +108,12 @@ export class RedisWriteProposals {
     return !this.disposed && enabled !== undefined && sameTarget(enabled, target)
   }
 
+  /** The token was captured before asynchronous preflight and cannot survive re-enabling. */
+  isCurrent(sessionId: string, turnId: string, token: symbol, target: DatabaseTarget): boolean {
+    const turn = this.turns.get(sessionId)
+    return this.isEnabled(sessionId, target) && turn?.id === turnId && turn.token === token
+  }
+
   /** Issuing another proposal invalidates the previous one in this session. */
   issue(sessionId: string, turnId: string, token: symbol, draft: RedisWriteDraft): RedisWriteProposal {
     if (!this.isEnabled(sessionId, draft.target)) throw new Error('Redis 写入未启用或连接已变化。')
@@ -120,7 +131,7 @@ export class RedisWriteProposals {
   }
 
   /** Consume synchronously after the DSH policy permits this exact call. */
-  consume(sessionId: string, turnId: string, requested: RedisWriteProposal): RedisWriteProposal | null {
+  consume(sessionId: string, turnId: string, requested: RedisWriteProposal): ConsumedRedisProposal | null {
     const entry = this.entries.get(sessionId)
     if (entry === undefined || entry.deadline <= performance.now()) {
       this.entries.delete(sessionId); this.schedule(); return null
@@ -128,7 +139,7 @@ export class RedisWriteProposals {
     const turn = this.turns.get(sessionId)
     if (entry.turnId !== turnId || turn?.id !== turnId || turn.token !== entry.token || !this.isEnabled(sessionId, entry.proposal.target) || !sameProposal(entry.proposal, requested)) return null
     this.entries.delete(sessionId); this.schedule()
-    return copy(entry.proposal)
+    return { proposal: copy(entry.proposal), isCurrent: () => performance.now() < entry.deadline && this.isCurrent(sessionId, turnId, entry.token, entry.proposal.target) }
   }
 
   private schedule(): void {

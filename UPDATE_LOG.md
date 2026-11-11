@@ -1,3 +1,13 @@
+## 2026-11-11：串接 Redis 写入内部流程
+
+- 新增 `src/host/ai-writer.ts`，将会话绑定的写入启用、完整前态采样、短期提案、受控事务与结果记录串联；调用方必须提供来自 DSH 的当前轮次校验。
+- `src/host/redis-write-transaction.ts` 与传输队列使用 WATCH 和空事务对前态采样进行一致性校验；`src/host/write-proposals.ts` 在消费后仍检查启用周期、轮次和原始单调过期时间。
+- `src/remote-service.ts` 将协调器纳入现有 Host 生命周期：连接替换、切库、断开或会话释放时撤销写入启用，插件卸载时释放记录。
+- 新增 `tests/ai-writer.test.ts` 并扩展现有专项测试，覆盖内部提案绑定、拒绝重复操作、启用周期及过期竞态。
+- 扩展 `scripts/smoke-redis-write-transaction.mjs`，在自有隔离 Redis 中贯通内部提案、事务和结果记录，覆盖二进制 String、Hash 字段独立客户端回读及采样期间值与 TTL 的并发变化。
+- 此内部协调器尚未注册模型工具或客户端写入开关，不代表用户端写入已开放；仍需完成 DSH 正式接入、隔离验收和使用说明。
+- 检查：三套 TypeScript 检查及 9 个文件共 111 项相关测试通过；自有 Redis 8.2.6 中内部二进制 String、Hash、真实采样竞争和事务竞争通过，实例已停止并清理。两项审查修复提案排队过期、采样一致性、提交后回读与异常回执清理后复审通过。
+
 ## 2026-11-11：传递 Redis 回读采样时间
 
 - `src/host/redis-write-transaction.ts` 在受 WATCH 保护的回读采样完成时记录时间，仅在无冲突的验证回执后向 Host 传递；`redis-transport.ts` 和 `connection-service.ts` 转发该时间，供结果记录使用。

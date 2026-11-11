@@ -1,7 +1,7 @@
 /** Standalone connection lifecycle adapted from Database's Redis open/close paths. */
 import { randomUUID } from 'node:crypto'
 import { RedisTransport, RedisTransportError, type RedisReadCommand } from './redis-transport.ts'
-import type { RedisReplaceRequest, RedisWriteResult } from './redis-write-transaction.ts'
+import type { RedisReplaceRequest, RedisSampleRequest, RedisWriteResult } from './redis-write-transaction.ts'
 import { RedisFrameError, RedisReplyError, type RedisArgument, type RedisReply } from './resp.ts'
 import type { ConnectionErrorCode, ConnectionRequest, ConnectionTarget, ConnectionView, DatabaseTarget, SavedConnection } from '../domain.ts'
 import { profileCollectionSchema } from '../typert.shared.ts'
@@ -15,7 +15,8 @@ export interface RedisLink {
 }
 /** A writable link has the fixed Host-only replace operation, not a command escape hatch. */
 export interface RedisWritableLink extends RedisLink {
-  replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult>
+  sampleExisting(request: RedisSampleRequest, signal: AbortSignal, guard: () => void): Promise<Buffer>
+  replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: (submitted: boolean) => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult>
 }
 export type RedisOpener = (settings: ConnectionRequest, signal: AbortSignal) => Promise<RedisLink>
 export type CandidateConnectionResult = { readonly state: 'connected' | 'changed'; readonly view: ConnectionView; readonly previousRelease: 'closed' | 'uncertain' } | { readonly state: 'failed'; readonly error: ConnectionErrorCode }
@@ -44,6 +45,7 @@ export const openRedis: RedisOpener = async (settings, signal) => {
   const link: RedisWritableLink = {
     close: () => { transport.close() },
     execute: (command, arguments_, requestSignal, beforeDispatch, deadline) => transport.execute(command, arguments_, requestSignal, beforeDispatch, deadline),
+    sampleExisting: (request, requestSignal, guard) => transport.sampleExisting(request, requestSignal, guard),
     replaceExisting: (request, requestSignal, guard, submitted, readback) => transport.replaceExisting(request, requestSignal, guard, submitted, readback),
     onFailure: listener => transport.onFailure(error => { listener(connectionErrorCode(error)) }),
   }
@@ -303,6 +305,24 @@ export class RedisConnections {
   }
 
   /** Keep the original result even if the connection changes after submission. */
+  async sampleExisting(sessionId: string, target: DatabaseTarget, request: RedisSampleRequest, signal: AbortSignal, validate: () => void): Promise<Buffer> {
+    signal.throwIfAborted()
+    const record = this.require(sessionId, target)
+    if (record.db !== target.db || !('sampleExisting' in record.link) || typeof record.link.sampleExisting !== 'function') throw new ConnectionFailure('stale')
+    const link = record.link as RedisWritableLink
+    const guard = () => {
+      signal.throwIfAborted()
+      const current = this.require(sessionId, target)
+      if (current !== record || current.db !== target.db) throw new ConnectionFailure('stale')
+      validate()
+    }
+    guard()
+    const result = await link.sampleExisting(request, signal, guard)
+    guard()
+    return result
+  }
+
+  /** Keep the original result even if the connection changes after submission. */
   async replaceExisting(sessionId: string, target: DatabaseTarget, request: RedisReplaceRequest, signal: AbortSignal, validate: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
     let wasSubmitted = false
     try {
@@ -310,12 +330,12 @@ export class RedisConnections {
       const record = this.require(sessionId, target)
       if (record.db !== target.db || !('replaceExisting' in record.link) || typeof record.link.replaceExisting !== 'function') return 'not-executed'
       const link = record.link as RedisWritableLink
-      const guard = () => {
+      const guard = (afterSubmission: boolean) => {
         const current = this.require(sessionId, target)
         if (current !== record || current.db !== target.db) throw new ConnectionFailure('stale')
-        validate()
+        if (!afterSubmission) validate()
       }
-      guard()
+      guard(false)
       return await link.replaceExisting(request, signal, guard, () => { submitted(); wasSubmitted = true }, readback)
     } catch { return wasSubmitted ? 'unknown' : 'not-executed' }
   }

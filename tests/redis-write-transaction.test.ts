@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runRedisReplace, type RedisReplaceRequest } from '../src/host/redis-write-transaction.ts'
+import { runRedisReplace, runRedisSample, type RedisReplaceRequest } from '../src/host/redis-write-transaction.ts'
 import { RedisReplyError, type RedisArgument, type RedisReply } from '../src/host/resp.ts'
 
 const input: RedisReplaceRequest = { type: 'string', key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }
@@ -32,6 +32,11 @@ function fixture(request: RedisReplaceRequest = input, failReadback = false) {
 }
 
 describe('fixed Redis write transaction', () => {
+  it('does not leak raw server errors from proposal sampling', async () => {
+    const sample = { type: 'string' as const, key: Buffer.from('key') }
+    await expect(runRedisSample(sample, async (_args, before) => { before(); throw new Error('private-server-secret') }, () => undefined, new AbortController().signal, () => undefined)).rejects.toThrow('前态采样失败')
+    try { await runRedisSample(sample, async () => { throw new Error('private-server-secret') }, () => undefined, new AbortController().signal, () => undefined) } catch (error) { expect(String(error)).not.toContain('private-server-secret') }
+  })
   it.each([input, { ...input, type: 'hash' as const, field: Buffer.from('field') }])('updates and reads back an existing $type target', async request => {
     const f = fixture(request)
     expect(await f.run()).toBe('written-verified')

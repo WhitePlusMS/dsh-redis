@@ -18,7 +18,7 @@ describe('write proposals', () => {
       expect(store.consume('a', 'turn', { ...proposal, afterBase64: 'b3RoZXI=' })).toBeNull()
       expect(store.consume('a', 'turn', { ...proposal, keyTtl: 'invalid' as 'none' })).toBeNull()
       expect(store.consume('a', 'turn', { ...proposal, target: { ...target, db: 1 } })).toBeNull()
-      expect(store.consume('a', 'turn', proposal)).toEqual(proposal)
+      expect(store.consume('a', 'turn', proposal)?.proposal).toEqual(proposal)
       expect(store.consume('a', 'turn', proposal)).toBeNull()
     } finally { store.dispose() }
   })
@@ -33,11 +33,11 @@ describe('write proposals', () => {
       const saved = structuredClone(issued)
       Reflect.set(original.target, 'db', 7)
       Reflect.set(issued.target, 'db', 8)
-      expect(store.consume('a', 'turn', saved)?.target.db).toBe(0)
+      expect(store.consume('a', 'turn', saved)?.proposal.target.db).toBe(0)
       const replaced = store.issue('a', 'turn', token, draft)
       const next = store.issue('a', 'turn', token, draft)
       expect(store.consume('a', 'turn', replaced)).toBeNull()
-      expect(store.consume('a', 'turn', next)?.target.db).toBe(0)
+      expect(store.consume('a', 'turn', next)?.proposal.target.db).toBe(0)
       const stale = store.issue('a', 'turn', token, draft)
       store.disable('a')
       expect(store.consume('a', 'turn', stale)).toBeNull()
@@ -77,7 +77,7 @@ describe('write proposals', () => {
       const hash = store.issue('a', 'turn-2', secondToken, { ...draft, type: 'hash', fieldTtl: 'none', fieldBase64: 'Zg==' })
       store.endTurn('a', 'turn-1')
       expect(store.consume('a', 'turn-2', { ...hash, fieldTtl: null })).toBeNull()
-      expect(store.consume('a', 'turn-2', hash)).toEqual(hash)
+      expect(store.consume('a', 'turn-2', hash)?.proposal).toEqual(hash)
     } finally { store.dispose() }
   })
 
@@ -107,7 +107,21 @@ describe('write proposals', () => {
       expect(newToken).not.toBe(oldToken)
       expect(() => store.issue('a', 'turn', oldToken, draft)).toThrow('轮次已结束')
       const current = store.issue('a', 'turn', newToken, draft)
-      expect(store.consume('a', 'turn', current)).toEqual(current)
+      expect(store.consume('a', 'turn', current)?.proposal).toEqual(current)
+    } finally { store.dispose() }
+  })
+
+  it('invalidates a consumed proposal at its original deadline', () => {
+    vi.useFakeTimers()
+    const store = new RedisWriteProposals()
+    try {
+      store.enable('a', target)
+      const token = store.beginTurn('a', 'turn')
+      const proposal = store.issue('a', 'turn', token, draft)
+      const consumed = store.consume('a', 'turn', proposal)
+      expect(consumed?.isCurrent()).toBe(true)
+      vi.advanceTimersByTime(60_000)
+      expect(consumed?.isCurrent()).toBe(false)
     } finally { store.dispose() }
   })
 })

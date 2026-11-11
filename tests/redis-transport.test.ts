@@ -49,6 +49,21 @@ async function withPeer(run: (transport: RedisTransport, commands: string[]) => 
 const SCAN_EMPTY = '*2\r\n$1\r\n0\r\n*0\r\n'
 
 describe('bounded Redis socket transport', () => {
+  it('closes the connection when a preview EXEC returns an invalid receipt', async () => {
+    const bulk = (text: string) => '$' + Buffer.byteLength(text) + '\r\n' + text + '\r\n'
+    await withPeer(async transport => {
+      await expect(transport.sampleExisting({ type: 'string', key: Buffer.from('key') }, signal(), () => undefined)).rejects.toThrow('回执异常')
+      await expect(transport.execute('SCAN', ['0'], signal(), () => undefined)).rejects.toMatchObject({ code: 'network' })
+    }, (socket, args) => {
+      const command = String(args[0])
+      if (command === 'INFO') socket.write(bulk('redis_version:8.2.6\r\n'))
+      else if (command === 'TYPE') socket.write('+string\r\n')
+      else if (command === 'PTTL') socket.write(':-1\r\n')
+      else if (command === 'STRLEN') socket.write(':3\r\n')
+      else if (command === 'GETRANGE') socket.write(bulk('old'))
+      else socket.write('+OK\r\n')
+    })
+  })
   it('cancels a queued transaction without dispatching it after the active read finishes', async () => {
     const firstSeen = deferred<Socket>()
     let reads = 0

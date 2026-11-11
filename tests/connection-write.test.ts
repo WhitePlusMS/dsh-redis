@@ -5,12 +5,13 @@ import type { ConnectionRequest } from '../src/domain.ts'
 const settings: ConnectionRequest = { host: 'fixture', port: 6379, username: '', password: '', tls: null }
 const request = { type: 'string' as const, key: Buffer.from('key'), before: Buffer.from('old'), after: Buffer.from('new') }
 const signal = () => new AbortController().signal
+const noSample = async () => { throw new Error('Unexpected sample') }
 
 describe('write connection ownership', () => {
   it('rejects foreign or changed targets and keeps a successful result on its original connection', async () => {
     let submissions = 0
-    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK',
-      async replaceExisting(_request, _signal, guard, submitted) { guard(); submitted(); return 'written-verified' },
+    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK', sampleExisting: noSample,
+      async replaceExisting(_request, _signal, guard, submitted) { guard(false); submitted(); return 'written-verified' },
     }
     const connections = new RedisConnections(async () => link)
     try {
@@ -30,8 +31,8 @@ describe('write connection ownership', () => {
   it('refuses a stale queued write before it can submit', async () => {
     let release!: () => void, entered!: () => void, submissions = 0
     const waiting = new Promise<void>(resolve => { release = resolve }), started = new Promise<void>(resolve => { entered = resolve })
-    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK',
-      async replaceExisting(_request, _signal, guard, submitted) { guard(); entered(); await waiting; guard(); submitted(); return 'unknown' },
+    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK', sampleExisting: noSample,
+      async replaceExisting(_request, _signal, guard, submitted) { guard(false); entered(); await waiting; guard(false); submitted(); return 'unknown' },
     }
     const connections = new RedisConnections(async () => link)
     try {
@@ -50,8 +51,8 @@ describe('write connection ownership', () => {
   it('does not convert an uncertain submitted write to not-executed after disconnect', async () => {
     let release!: () => void, entered!: () => void
     const waiting = new Promise<void>(resolve => { release = resolve }), started = new Promise<void>(resolve => { entered = resolve })
-    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK',
-      async replaceExisting(_request, _signal, guard, submitted) { guard(); submitted(); entered(); await waiting; throw new Error('receipt lost') },
+    const link: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK', sampleExisting: noSample,
+      async replaceExisting(_request, _signal, guard, submitted) { guard(false); submitted(); entered(); await waiting; throw new Error('receipt lost') },
     }
     const connections = new RedisConnections(async () => link)
     try {
@@ -69,16 +70,16 @@ describe('write connection ownership', () => {
   it.each([false, true])('keeps the correct old-connection result after reconnect, submitted=%s', async alreadySubmitted => {
     let release!: () => void, entered!: () => void, submissions = 0
     const waiting = new Promise<void>(resolve => { release = resolve }), started = new Promise<void>(resolve => { entered = resolve })
-    const old: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK',
+    const old: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK', sampleExisting: noSample,
       async replaceExisting(_request, _signal, guard, submitted) {
-        guard()
+        guard(false)
         if (alreadySubmitted) submitted()
         entered(); await waiting
-        if (!alreadySubmitted) { guard(); submitted() }
+        if (!alreadySubmitted) { guard(false); submitted() }
         return 'written-verified'
       },
     }
-    const replacement: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK',
+    const replacement: RedisWritableLink = { close: () => undefined, onFailure: () => () => undefined, execute: async () => 'OK', sampleExisting: noSample,
       async replaceExisting() { throw new Error('Replacement must not inherit old work') },
     }
     let opened = 0

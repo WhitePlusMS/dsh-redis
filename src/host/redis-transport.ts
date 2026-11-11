@@ -3,7 +3,7 @@ import { createConnection, isIP, type Socket } from 'node:net'
 import { connect as connectTls } from 'node:tls'
 import type { ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
-import { runRedisReplace, type RedisReplaceRequest, type RedisWriteResult } from './redis-write-transaction.ts'
+import { runRedisReplace, runRedisSample, type RedisReplaceRequest, type RedisSampleRequest, type RedisWriteResult } from './redis-write-transaction.ts'
 
 export type RedisReadCommand = 'DBSIZE' | 'CONFIG' | 'INFO' | 'MEMORY' | 'SLOWLOG' | 'XINFO' | 'CLIENT' | 'SELECT' | 'SCAN' | 'TYPE' | 'PTTL' | 'STRLEN' | 'GETRANGE' | 'HLEN' | 'HSCAN' | 'HGET' | 'LLEN' | 'LRANGE' | 'SCARD' | 'SSCAN' | 'SISMEMBER' | 'ZCARD' | 'ZRANGE' | 'ZSCAN' | 'ZSCORE' | 'XLEN' | 'XRANGE' | 'XREVRANGE' | 'GEOPOS' | 'GEODIST' | 'JSON.GET' | 'TS.RANGE'
 const READ_COMMANDS: ReadonlySet<string> = new Set<RedisReadCommand>(['DBSIZE', 'CONFIG', 'INFO', 'MEMORY', 'SLOWLOG', 'XINFO', 'CLIENT', 'SELECT', 'SCAN', 'TYPE', 'PTTL', 'STRLEN', 'GETRANGE', 'HLEN', 'HSCAN', 'HGET', 'LLEN', 'LRANGE', 'SCARD', 'SSCAN', 'SISMEMBER', 'ZCARD', 'ZRANGE', 'ZSCAN', 'ZSCORE', 'XLEN', 'XRANGE', 'XREVRANGE', 'GEOPOS', 'GEODIST', 'JSON.GET', 'TS.RANGE'])
@@ -185,8 +185,16 @@ export class RedisTransport {
     return this.enqueue(signal, deadline, () => this.frame(encoded, deadline, beforeDispatch))
   }
 
+  /** Preview keeps WATCH and its read-only validation in the same queue slot. */
+  sampleExisting(request: RedisSampleRequest, signal: AbortSignal, guard: () => void): Promise<Buffer> {
+    if (!Buffer.isBuffer(request.key) || request.key.length > 4096 || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096)) || (request.type !== 'string' && request.type !== 'hash')) return Promise.reject(new RedisFrameError('protocol'))
+    const snapshot: RedisSampleRequest = request.type === 'string' ? { type: 'string', key: Buffer.from(request.key) } : { type: 'hash', key: Buffer.from(request.key), field: Buffer.from(request.field) }
+    const deadline = Date.now() + READ_TIMEOUT
+    return this.enqueue(signal, deadline, () => runRedisSample(snapshot, (args, beforeDispatch) => this.frame(encodeCommand(args), deadline, beforeDispatch), () => this.fail(new RedisTransportError('network')), signal, guard))
+  }
+
   /** One Host-owned transaction occupies the queue until cleanup or readback settles. */
-  async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
+  async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: (submitted: boolean) => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
     if (!Buffer.isBuffer(request.key) || !Buffer.isBuffer(request.before) || !Buffer.isBuffer(request.after)
       || request.key.length > 4096 || request.before.length > 4096 || request.after.length > 4096
       || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096))
