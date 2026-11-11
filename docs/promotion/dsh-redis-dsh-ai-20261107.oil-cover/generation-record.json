@@ -1,0 +1,18 @@
+{
+  "mode": "agent-native",
+  "tool": "image_gen.imagegen",
+  "independentCalls": 3,
+  "portraitEnabled": false,
+  "localVisualPostProcessing": false,
+  "references": [
+    {"file": "../dsh-redis-dsh-ai-20261107.jpg", "original": "docs/screenshots/hash-workbench-dark.jpg", "role": "native interface with isolated fixture data"},
+    {"file": "frames/dsh-redis-icon.png", "original": "icon.svg", "role": "existing raster reference of project icon"},
+    {"file": "frames/layout-reference.png", "original": "user supplied reference", "role": "information hierarchy only"}
+  ],
+  "outputs": [
+    {"format": "3x4", "file": "../dsh-redis-dsh-ai-20261107_3x4.png", "base": "3x4.generated-base.png", "prompt": "cover_3x4.prompt.md", "width": 1086, "height": 1448, "sha256": "26ff9726364325981ac353ee787d4ff3b00e1e07fc2f54722b6f4b56c20c38e0", "toolFile": "exec-e4ecb421-ad3e-4237-a9f6-58d7e82274a3.png"},
+    {"format": "4x3", "file": "../dsh-redis-dsh-ai-20261107_4x3.png", "base": "4x3.generated-base.png", "prompt": "cover_4x3.prompt.md", "width": 1448, "height": 1086, "sha256": "735feaa572ed9e441959cd49dcf0cf8ce662efdfb5c52717fc7f987e188e2e91", "toolFile": "exec-2ffbbef3-fab5-460a-b189-046d1894e0c2.png"},
+    {"format": "16x9", "file": "../dsh-redis-dsh-ai-20261107_16x9.png", "base": "16x9.generated-base.png", "prompt": "cover_16x9.prompt.md", "width": 1672, "height": 941, "sha256": "a0ebfe0bb4b39c782cfd22eaf248c47bdff296e837e170503691d51f003e9415", "toolFile": "exec-780663cf-518a-479c-8482-053dc0a8a5df.png"}
+  ],
+  "note": "16:9 is approximate; images were copied unchanged from tool output. The reconstructed UI is promotional artwork, not a runtime screenshot. Redis writes remain planned."
+}

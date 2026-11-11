@@ -1,37 +1,45 @@
 <p align="center">
-  <img src="docs/screenshots/readme-header.gif" width="100%" alt="DSH Redis — 在 DeepSeek Harness 中只读查看 Redis">
+  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — 在 DeepSeek Harness 中只读查看 Redis">
 </p>
 
 # DSH Redis
 
-[English](README.md) | 简体中文 · [静态标题](docs/screenshots/readme-header.svg)
+[English](README.md) | 简体中文
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **WhitePlusMS** 开发的 **DeepSeek Harness（DSH）** 社区插件。当前开发版支持在对话中直接询问指定 Key、按明确条件查找或进行有界诊断；需要核对结果或解释当前选择时再使用侧栏。读取使用本对话所属的 Redis 连接。
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **DeepSeek Harness（DSH）** 的社区插件。在侧栏查看 Redis 数据，也可以在同一对话中读取指定 Key 或当前选择。工具使用该对话所属的 Redis 连接。
 
 **只读查看 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
 
-下方安装示例对应已发布的 **v0.1.0**，历史验证环境是 DSH Web `0.2.0-rc.2`。当前源码版本为 **0.1.1**，声明使用 DSH `0.2.1-rc.5`；本轮已按工具调用、返回及传递标准完成本地交付收尾，新增能力不代表已包含在旧版 Release 中。
+当前源码 **0.1.1** 适配 **DSH Web 0.2.1-rc.5**。按下方步骤构建安装；旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不包含当前新增能力。
 
 [安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
 
-![Hash 表格与同屏字段、值预览](docs/screenshots/hash-workbench-dark.jpg)
+[![Hash 表格与同屏字段、值预览](docs/screenshots/hash-workbench-dark.jpg)](docs/screenshots/hash-workbench-dark.jpg)
 
 *截图记录于 2026-10-19，宿主为 DSH Web `0.2.0-rc.2`，使用隔离测试数据。复用已验收的六类型查看器截图，不冒充本次文档修订重新执行的验收。[截图来源说明](docs/screenshots/README.md)。*
+
+- 浏览 String、Hash、List、Set、ZSet 和 Stream，选中集合中的一行即可在同屏查看详情。
+- 在对话中读取指定 Key、查找名称或筛选 Hash，也可以按需获取慢日志等诊断信息。
+- 当前只读，支持单机 Redis 和 TLS；工具结果进入 DSH 对话记录，并可能发送给配置的模型服务。
 
 ![手动连接 Redis，浏览 DB 和 Key，查看选中行，再在同一 DSH 对话里提问](docs/screenshots/readme-flow.svg)
 
 ## 安装与更新
 
-当前源码版本 `0.1.1` 适配 DSH Web `0.2.1-rc.5`。0.1.1 尚未发布 GitHub Release，可在 Host 上从本仓库源码构建并安装：
+当前源码版本 `0.1.1` 适配 DSH Web `0.2.1-rc.5`。2026-11-06 的交付记录显示该版本尚无 GitHub Release。以下步骤在 DSH Host 的 PowerShell 中从源码构建并安装；需要 Git、Node.js 和 pnpm，私有仓库需先获得访问权限：
 
 ```powershell
+git clone https://github.com/WhitePlusMS/dsh-redis.git
+cd dsh-redis
 pnpm install --frozen-lockfile
+New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
 $packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
 dsh plugin --profile web add $packageForInstall
+dsh plugin --profile web list dsh-redis
 ```
 
-打包命令会执行类型检查、构建和测试。profile 引用该归档期间请保留文件；需要时重启同一个 DSH profile。此前的 [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 面向 DSH 0.2.0-rc.2，不适用于 0.2.1-rc.5。[旧安装指南](docs/INSTALLATION.zh.md)描述的是该旧版。
+打包命令会执行类型检查、构建和测试。profile 引用该归档期间请保留文件；需要时重启同一个 DSH profile。此前的 [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 面向 DSH 0.2.0-rc.2，不适用于 0.2.1-rc.5。环境准备、界面安装、更新回退及清理见[完整安装指南](docs/INSTALLATION.zh.md)。
 
 ## 开始使用
 
@@ -40,7 +48,7 @@ dsh plugin --profile web add $packageForInstall
 3. 点击**连接**。新连接从 DB 0 开始，自动分批加载 Key；单独保存资料不会连接。
 4. 选择目标 DB、目录和 Key，点击集合中的行即可同屏查看详情；通过工具栏切换格式、查找或复制。
 5. 自动刷新默认关闭，间隔预选 5 秒，通过刷新控件开启。切换 Key/DB/会话、隐藏视图、取消或读取失败会停止；重新显示不会自行开启。
-6. 在开发版中可直接询问“`order:1001` 的 `status` 是什么？”，也可在选中字段后询问“解释当前选中的字段”。需要切 DB 时明确提出，侧栏会跟随 Host 的新 DB。
+6. 在当前版本中可直接询问“`order:1001` 的 `status` 是什么？”，也可在选中字段后询问“解释当前选中的字段”。需要切 DB 时明确提出，侧栏会跟随 Host 的新 DB。
 
 连接期间编辑或保存资料不会改变实际服务器。开发版支持明确要求 AI 连接唯一确定的已保存资料；需要密码时在本地连接表单填写。
 
@@ -80,7 +88,7 @@ dsh plugin --profile web add $packageForInstall
 
 ## 环境要求
 
-- **宿主：** 已发布 v0.1.0 历史验证环境为 DSH Web `0.2.0-rc.2`。当前开发源码在 `package.json` 声明 DSH `0.2.1-rc.5`，完整原生验收仍待完成。
+- **宿主：** DSH Web `0.2.1-rc.5`，与当前包声明的依赖版本一致。
 - **运行与构建：** Node.js `^22.19.0 || >=24.0.0`；实际使用 Node.js `22.22.1`、pnpm `11.22.0` 验证。
 - **Redis：** Host 能访问的单机服务器。已有 Redis `8.2.6` 六类型隔离验收及 Redis `8.10.0` 真实 Hash 验收，不声明完整的 Redis 版本兼容矩阵。
 - **对话：** DSH 已配置可用模型，并允许使用插件工具。侧栏查看不需要另配模型 API Key。
@@ -124,18 +132,6 @@ Key 列表最多缓存 5,000 个 Key 或 2 MiB 编码结果。每轮自动扫描
 
 原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
 
-## 后续规划
-
-以下候选未实施、未排期，当前版本继续只读。
-
-- [ ] 可选写入先支持 Hash 单字段新增、修改，再考虑单字段删除和整个 Key 删除。
-- [ ] 当前会话连接临时手动解锁，默认关闭；断开、重连、更换连接后关闭。开启开关不等于批准具体操作。
-- [ ] 每次变更先展示服务器、DB、Key、字段、修改前后及 TTL 影响。AI 提出操作，用户决定是否执行。
-- [ ] Host 强制校验对应单次操作的人工确认。AI 传入 `confirm: true` 不算批准；目标、DB、数据变化使旧确认失效。
-- [ ] 验证未解锁、未确认、取消、重复提交和目标/数据变化等情形，再确认原读取与会话隔离正常，才考虑发布。
-
-该候选不包含批量删除、清空 DB、任意命令和脚本执行。
-
 ## 卸载
 
 在 DSH 的**插件**页面卸载 **dsh-redis**；或按要求停止目标 profile 后执行：
@@ -164,7 +160,7 @@ dsh plugin --profile web remove dsh-redis
 
 - [安装、更新与卸载](docs/INSTALLATION.zh.md)
 - [English installation guide](docs/INSTALLATION.md)
-- [版本记录](CHANGELOG.md) · [问题反馈](https://github.com/WhitePlusMS/dsh-redis/issues)
+- [版本记录](CHANGELOG.md) · [问题反馈](https://github.com/WhitePlusMS/dsh-redis/issues) · [推广介绍](https://github.com/WhitePlusMS/dsh-redis/blob/main/PROMOTION.md)
 - [开发与维护说明](docs/DEVELOPMENT.md)
 - [截图来源说明](docs/screenshots/README.md)
 

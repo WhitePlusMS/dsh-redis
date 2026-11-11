@@ -1,0 +1,17 @@
+{
+  "mode": "agent-native",
+  "tool": "image_gen.imagegen",
+  "independentCalls": 3,
+  "portraitEnabled": false,
+  "localVisualPostProcessing": false,
+  "references": [
+    {"file": "../dsh-redis-chat-20261107.jpg", "original": "docs/screenshots/hash-workbench-dark.jpg", "role": "native interface with isolated fixture data"},
+    {"file": "frames/dsh-redis-icon.png", "original": "icon.svg", "role": "existing raster reference of project icon"}
+  ],
+  "outputs": [
+    {"format": "3x4", "file": "../dsh-redis-chat-20261107_3x4.png", "base": "3x4.generated-base.png", "prompt": "cover_3x4.prompt.md", "width": 1086, "height": 1448, "sha256": "36b029aa3e97328205f4b494240dc8f9d9e15abdb5447eccb078eb9da7345fc2", "toolFile": "exec-6cdb0506-0115-47a5-a980-e4ec91a4449d.png"},
+    {"format": "4x3", "file": "../dsh-redis-chat-20261107_4x3.png", "base": "4x3.generated-base.png", "prompt": "cover_4x3.prompt.md", "width": 1448, "height": 1086, "sha256": "ad9a11c4acf43b5a6bbbf239899bd1ed53138b47922e0283f4cbdb2328d68dd8", "toolFile": "exec-48832d82-ab96-43cf-ad79-a18ba5d625be.png"},
+    {"format": "16x9", "file": "../dsh-redis-chat-20261107_16x9.png", "base": "16x9.generated-base.png", "prompt": "cover_16x9.prompt.md", "width": 1672, "height": 941, "sha256": "8c061fc39113476b9f6f8716819e69aa854f93bd600ad971afbf578a4605c93d", "toolFile": "exec-fc78f064-963b-443e-9e29-21bb3147c4a7.png"}
+  ],
+  "note": "16:9 is approximate; images were copied unchanged from tool output. The rendered UI is promotional artwork, not a runtime screenshot."
+}

@@ -1,37 +1,45 @@
 <p align="center">
-  <img src="docs/screenshots/readme-header.gif" width="100%" alt="DSH Redis — read-only Redis browsing in DeepSeek Harness">
+  <img src="docs/screenshots/readme-header.svg" width="100%" alt="DSH Redis — read-only Redis browsing in DeepSeek Harness">
 </p>
 
 # DSH Redis
 
-English | [简体中文](README.zh.md) · [Static title](docs/screenshots/readme-header.svg)
+English | [简体中文](README.zh.md)
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) by **WhitePlusMS** is a community plugin for **DeepSeek Harness (DSH)**. In the current development tree, ask about a named Key directly, search an explicit pattern, or request bounded diagnostics in the conversation. The sidebar is available when you want to inspect a result or ask about a selection. Reads use the Redis connection owned by that conversation.
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) is a community plugin for **DeepSeek Harness (DSH)**. Browse Redis in the sidebar and read a named Key or the current selection from the same conversation. The tools use the Redis connection owned by that conversation.
 
 **Read-only · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
 
-The installation examples below describe the published **v0.1.0** package, verified historically with DSH Web `0.2.0-rc.2`. The current source declares **0.1.1** and DSH `0.2.1-rc.5`. This local delivery is closed under the tool invocation, result accuracy and result delivery criteria; its new features are not claimed to be in the older Release.
+Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. Build and install it with the steps below. The older v0.1.0 package targets DSH 0.2.0-rc.2 and does not include the current additions.
 
 [Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
 
-![Hash table with same-screen field and value previews](docs/screenshots/hash-workbench-dark.jpg)
+[![Hash table with same-screen field and value previews](docs/screenshots/hash-workbench-dark.jpg)](docs/screenshots/hash-workbench-dark.jpg)
 
 *Recorded on 2026-10-19 in DSH Web `0.2.0-rc.2`, using isolated fixture data. This is an existing six-type viewer capture, not a new acceptance run for this documentation revision. [Screenshot provenance](docs/screenshots/README.md).*
+
+- Browse String, Hash, List, Set, ZSet and Stream; select a collection row to inspect its details in the same view.
+- Read named Keys, search names or filter Hashes in the conversation, and request diagnostic information such as slow logs.
+- Read-only, for standalone Redis with TLS. Tool results enter DSH conversation history and may be sent to the configured model provider.
 
 ![Manually connect Redis, browse DB and Keys, inspect the selected row, then ask in the same DSH conversation](docs/screenshots/readme-flow.svg)
 
 ## Install and update
 
-Version `0.1.1` targets DSH Web `0.2.1-rc.5`. This version is available from the repository source; a 0.1.1 GitHub Release has not been published. On the Host, from this checkout:
+Version `0.1.1` targets DSH Web `0.2.1-rc.5`. The 2026-11-06 delivery record reports no 0.1.1 GitHub Release. Build and install from source in PowerShell on the DSH Host. Git, Node.js and pnpm are required; a private repository requires access:
 
 ```powershell
+git clone https://github.com/WhitePlusMS/dsh-redis.git
+cd dsh-redis
 pnpm install --frozen-lockfile
+New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
 $packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
 dsh plugin --profile web add $packageForInstall
+dsh plugin --profile web list dsh-redis
 ```
 
-The pack command runs type checking, build and tests. Keep the archive at that path while the profile references it, and restart the same DSH profile if needed. The earlier [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) targets DSH 0.2.0-rc.2; do not use it with 0.2.1-rc.5. The older [installation guide](docs/INSTALLATION.md) describes that earlier release.
+The pack command runs type checking, build and tests. Keep the archive at that path while the profile references it, and restart the same DSH profile if needed. The earlier [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) targets DSH 0.2.0-rc.2; do not use it with 0.2.1-rc.5. See the [installation guide](docs/INSTALLATION.md) for setup, UI installation, updates, rollback and cleanup.
 
 ## First use
 
@@ -40,9 +48,9 @@ The pack command runs type checking, build and tests. Keep the archive at that p
 3. Choose **Connect**. A new connection starts at DB 0 and loads Keys automatically in batches. Saving settings alone does not connect.
 4. Select the DB, folder and Key. Select a collection row to inspect it directly; change preview format, find or copy from its toolbar.
 5. Auto-refresh starts off, with a 5-second interval selected. Enable it with the refresh control. Key/DB/session changes, hiding the view, cancellation or a read failure stop it; showing the view again does not turn it back on automatically.
-6. In the development build, ask “What is the status field of `order:1001`?” directly, or ask “Explain the selected field” after selecting one. Ask explicitly to switch DB; the sidebar follows the Host's new DB.
+6. In the current version, ask “What is the status field of `order:1001`?” directly, or ask “Explain the selected field” after selecting one. Ask explicitly to switch DB; the sidebar follows the Host's new DB.
 
-Editing or saving a profile while connected does not change the active server. In the development build you can explicitly ask AI to connect a uniquely identified saved profile; passwords are entered through the local connection form.
+Editing or saving a profile while connected does not change the active server. In the current version you can explicitly ask AI to connect a uniquely identified saved profile; passwords are entered through the local connection form.
 
 ## Features
 
@@ -80,7 +88,7 @@ The compact Stream layout uses the same row-selection workflow:
 
 ## Requirements
 
-- **Host:** the published v0.1.0 was verified with DSH Web `0.2.0-rc.2`. The current development source declares DSH `0.2.1-rc.5` in `package.json`; full native acceptance remains pending.
+- **Host:** DSH Web `0.2.1-rc.5`, matching the declared peer dependencies.
 - **Runtime/build:** Node.js `^22.19.0 || >=24.0.0`; verified locally with Node.js `22.22.1` and pnpm `11.22.0`.
 - **Redis:** a standalone server reachable from the DSH Host. Existing evidence covers isolated Redis `8.2.6` for six types and live Redis `8.10.0` for Hash, rather than an exhaustive version matrix.
 - **Chat:** an available model configured in DSH and permission to use the plugin's tools. Sidebar browsing does not require a separate model API key.
@@ -124,18 +132,6 @@ The plugin is responsible for callable tools, accurate data and required metadat
 
 A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
 
-## Future work
-
-These candidates are not implemented or scheduled. The current version stays read-only.
-
-- [ ] Optional writes: start with adding/updating one Hash field; consider field deletion and whole-Key deletion later.
-- [ ] Temporary manual unlock for the current session connection, off by default and reset on disconnect/reconnect/replacement. Unlocking is not approval of an operation.
-- [ ] Preview each change's server, DB, Key, field, before/after content and TTL impact. AI proposes; the user chooses whether to execute.
-- [ ] Host-enforced, single-use human approval bound to that exact operation. An AI-supplied `confirm: true` is not approval; target, DB or data changes invalidate it.
-- [ ] Verify locked/unconfirmed/cancelled/repeated and changed-target/data cases, then confirm existing reads and session isolation before considering release.
-
-Bulk deletion, DB flushing, arbitrary commands and script execution are outside this candidate scope.
-
 ## Uninstall
 
 In DSH, uninstall **dsh-redis** from **Plugins**, or stop the target profile as required and run:
@@ -164,7 +160,7 @@ Check whether the profile still points to a moved/deleted development directory 
 
 - [Installation, update and uninstall](docs/INSTALLATION.md)
 - [中文安装、更新与卸载](docs/INSTALLATION.zh.md)
-- [Changelog](CHANGELOG.md) · [Repository issues](https://github.com/WhitePlusMS/dsh-redis/issues)
+- [Changelog](CHANGELOG.md) · [Repository issues](https://github.com/WhitePlusMS/dsh-redis/issues) · [Introduction](https://github.com/WhitePlusMS/dsh-redis/blob/main/PROMOTION.md)
 - [Development and maintenance (中文)](docs/DEVELOPMENT.md)
 - [Screenshot provenance](docs/screenshots/README.md)
 

@@ -1,25 +1,25 @@
-# 推广文案
+# DSH Redis 推广介绍
 
 ## 中文介绍
 
-DSH Redis 是 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 的社区插件，可以在原生右侧栏查看 Redis 数据，并让当前对话读取选中的内容。
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 [DeepSeek Harness（DSH）](https://github.com/deepseek-ai/deepseek-harness) 的社区插件。它把 Redis 查看放进 DSH 的侧栏，也提供对话工具，按需读取当前会话连接的数据。
 
-手动连接 Redis 后，左侧会分批加载当前 DB 的 Key，支持目录、列表和筛选。右侧可以查看 String、Hash、List、Set、ZSet、Stream。点击集合中的一行，字段或元素的详情会直接显示在同一视图里，也可以切换 Text、JSON、Hex、Base64，进行查找和复制。
+连接单机 Redis 后，我们可以浏览 DB 和 Key，查看 String、Hash、List、Set、ZSet 和 Stream。集合选中一行时，字段或元素的详情会显示在同一视图里；已读取的内容支持切换格式、查找和复制。
 
-需要进一步分析时，可以在同一个 DSH 对话里询问“解释当前选中的字段”或检索指定 Key。插件通过 DSH 原生工具接口读取本会话已连接的 Redis，不需要重新复制整段内容。用户明确要求切换 DB 时，侧栏会跟随更新。
+在同一个对话中，可以直接请求读取指定 Key 或字段，也可以围绕当前选择提问。工具还支持在明确范围内查找 Key、筛选 Hash，以及读取慢日志等诊断信息。查询结果会记录范围和必要的状态，方便核对；模型如何解释这些信息由模型决定。
 
-当前版本只读，支持单机直连和 TLS，适合已经在 DSH 中开发、调试，并需要检查 Redis 数据的个人开发者。已验证环境为 Windows + DSH Web `0.2.0-rc.2`。对话读取的结果会进入 DSH 历史，并可能发送给所配置的模型服务。安装和使用步骤见[中文 README](README.zh.md)及[安装指南](docs/INSTALLATION.zh.md)。
+当前插件只读，支持单机连接和 TLS。连接资料不保存密码，但工具返回的数据会进入 DSH 对话记录，并可能发送给该对话配置的模型服务。当前源码适配 DSH Web `0.2.1-rc.5`；安装步骤、功能范围和验证记录见[中文 README](README.zh.md)及[安装指南](docs/INSTALLATION.zh.md)。
 
 ## 简短介绍
 
-DSH Redis 把 Redis 查看放进 DSH 侧栏：支持六种基础类型、Key 筛选和同屏选行详情，还能让同一对话按需读取当前选择。当前只读，支持单机 Redis 与 TLS，已在 Windows + DSH Web `0.2.0-rc.2` 验证。
+DSH Redis 是一个只读的 DSH 社区插件：在侧栏查看 Redis 六种基础类型，在同一对话中读取指定 Key 或当前选择，也可以按范围查找、筛选和获取诊断信息。
 
 ## English introduction
 
-DSH Redis is a community plugin for [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness). It puts Redis browsing in the native right sidebar and lets the current conversation read the item selected there.
+[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) is a community plugin for [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness). It adds Redis browsing to the native sidebar and lets the current conversation read data through its own connection.
 
-After a manual connection, the sidebar loads Keys in batches and offers tree/list navigation and filtering. It supports String, Hash, List, Set, ZSet and Stream. Selecting a collection row opens its details in the same view, with Text, JSON, Hex and Base64 previews, find and copy controls.
+Connect to a standalone Redis server to browse databases and Keys, inspect String, Hash, List, Set, ZSet and Stream values, and view a selected collection row without leaving the current view. Already-read content can be formatted, searched and copied.
 
-In that same DSH conversation, ask about the selected field or search for a Key. The plugin's native DSH tools read through the connection already owned by the conversation. An explicitly requested DB change also updates the sidebar.
+In the same conversation, request a specific Key or field, or ask about the current selection. The tools also support bounded Key searches, Hash filtering and diagnostic information such as slow logs. Tool results carry their scope and relevant status; the model decides how to interpret them.
 
-The current version is read-only, with standalone Redis and TLS support. It is intended for developers who already work in DSH and need to inspect Redis data. The verified environment is Windows with DSH Web `0.2.0-rc.2`. Tool results enter DSH history and may be sent to its configured model provider. See the [English README](README.md) and [installation guide](docs/INSTALLATION.md).
+The plugin is read-only and supports standalone Redis with TLS. Saved connection profiles do not contain passwords. Tool results enter DSH conversation history and may be sent to the configured model provider. Current source targets DSH Web `0.2.1-rc.5`; see the [README](README.md) and [installation guide](docs/INSTALLATION.md) for setup, scope and verification.

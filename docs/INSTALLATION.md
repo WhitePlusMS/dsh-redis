@@ -2,46 +2,48 @@
 
 English | [简体中文](INSTALLATION.zh.md)
 
-This guide covers `v0.1.0` Release packages, the two supported installation interfaces, and local development packages. [WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) remains private; downloading its Release assets requires repository access.
-
-The Release instructions and verified environment below are historical and apply to `v0.1.0`. Current source is `0.1.1` and declares DSH `0.2.1-rc.5`. A local build from application source `622dce6` was installed through the CLI and loaded in that Web baseline on 2026-11-06; 137 installed files matched its archive. This does not establish a new Release, complete model/UI acceptance or a passing cross-plugin peers check. See the [installation evidence](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md). Do not assume that installing `v0.1.0` provides current development features.
+Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. The older v0.1.0 package targets DSH 0.2.0-rc.2 and should not be installed on the current Host.
 
 ## Supported target
 
-| Item | Historical v0.1.0 baseline |
-| --- | --- |
-| Host | DeepSeek Harness Web `0.2.0-rc.2` |
-| Verified platform | Windows, Node.js `22.22.1` |
-| Declared Node.js range | `^22.19.0 || >=24.0.0` |
-| Build tool | pnpm `11.22.0` |
-| Plugin package | `dsh-redis@0.1.0`, tag `v0.1.0` |
+- A configured DSH Web `0.2.1-rc.5`; use the profile and `DSH_HOME` serving your browser.
+- Node.js `^22.19.0 || >=24.0.0`, pnpm `11.22.0` and Git. Windows is the verified platform.
+- Redis reachable from the Host; dependency download access for building.
+- Examples use an existing `web` profile. Skip clone and cd if you already have the checkout.
 
-`0.2.0-rc.2` is a prerelease. It is the verified baseline, not a claim about the latest stable DSH release. Desktop, macOS and Linux installation have not been accepted for this plugin. The Web client declaration alone does not establish Desktop compatibility.
+## Prepare a built package
 
-Use the DSH profile that actually serves your browser. The examples below use an **existing `web` profile**. Use its original `DSH_HOME` environment and CLI installation; do not create a different home while expecting to update the running instance. The standalone npm CLI cannot manage the reserved `desktop` profile.
+Build the current version from source. Skip building if you already have a trusted built archive. This same-version SHA filename is a development checkpoint, not a replacement for release versions.
 
-## Obtain a versioned Release package
+In PowerShell, start in the directory where the checkout should be created. If you already have a checkout, enter it and skip `git clone` and `cd`:
 
-The maintainer prepares a checked commit, builds and runs `pnpm pack`, creates `v<version>`, then publishes a GitHub Release containing `dsh-redis-<version>.tgz` and `SHA256SUMS.txt`. Both the DSH interface and CLI install that same built package. [Maintainer release steps](DEVELOPMENT.md#8-版本化发布与安装入口).
+```powershell
+node --version
+pnpm --version
+dsh --version
+git clone https://github.com/WhitePlusMS/dsh-redis.git
+cd dsh-redis
+pnpm install --frozen-lockfile
+New-Item -ItemType Directory -Force .release | Out-Null
+pnpm pack --pack-destination .release
 
-Open the [v0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0), download both assets and compare the package SHA-256 with the checksum file. A source tag and GitHub's automatic **Source code** downloads are not the built package. The current Git tree does not contain `lib/`, and this project does not provide a Git-install `prepare` build.
-
-The fixed `v0.1.0` asset address is:
-
-```text
-https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
+$sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
+Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
+$packageForInstall
 ```
 
-While the repository is private, sign into GitHub with repository access to download the asset and place it on the DSH Host; install by its local absolute path. The Host's pnpm does not inherit a browser's login. Direct asset URLs are the normal route for a published public Release; any private-download authentication is Host-specific rather than automatically provided by DSH.
+`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.1`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
 
-Ordinary users do not need to clone or build the released package. Maintainers can use the [local build section](#prepare-a-built-package) for development.
+A SHA256 value calculated locally identifies the file you have. When an archive comes from someone else, compare it with a checksum received from that same trusted source; calculating a new checksum alone does not verify its origin.
 
 ## Install through the DSH interface
 
 1. In DSH, open **Plugins → Add plugin**.
-2. Enter the complete fixed-version Release `.tgz` URL when it is publicly downloadable. For a private Release, enter the absolute Host path of the downloaded archive. The source must identify a published built asset, not the repository page or Source code archive.
+2. Enter the absolute Host path printed as `$packageForInstall` above, or the path to a trusted built archive you already have. The source must be a built `.tgz`, not a repository page or Source code archive.
 3. Choose **Install**. For a local archive, DSH checks the source and installs it; a separate package/version preview is not shown in this verified flow.
-4. Choose **Enable now**, then open the installed plugin's details to confirm `dsh-redis`, `v0.1.0` and the running `ui-redis` component. Closing the success dialog without enabling leaves the new bundle disabled.
+4. Choose **Enable now**, then open the installed plugin's details to confirm `dsh-redis`, `0.1.1` and the running `ui-redis` component. Closing the success dialog without enabling leaves the new bundle disabled.
 5. Open a conversation and its right sidebar, then select **Redis**. Follow any DSH restart notice when the profile does not support live reload.
 
 The path is resolved on the **DSH Host machine**. A path on the browser's computer does not upload a file to a remote Host. Transfer the archive to that Host first when they are different machines.
@@ -50,17 +52,7 @@ DSH supports package specs, Git sources, tarballs and local paths. This project 
 
 ## Install through the CLI
 
-Run on the intended DSH Host with the existing `web` profile and original `DSH_HOME`. First choose **one** package source. For a published public Release:
-
-```powershell
-$packageForInstall = 'https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz'
-```
-
-For a private Release, sign in and download the same asset first, replace this example path with its actual location, then use:
-
-```powershell
-$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
-```
+In the same PowerShell session, use `$packageForInstall` generated above.
 
 Add the selected built package and check it:
 
@@ -96,7 +88,7 @@ The Host, rather than the browser, must be able to reach Redis. TLS certificate 
 The verified DSH version has no automatic update operation for this installed bundle. Use **uninstall, then install the new built archive**.
 
 1. Keep the old verified archive and checksum for rollback. Back up the target profile's `package.json`, `pnpm-lock.yaml`, `pnpm-workspace.yaml` when present, `cordis.yml` when present and `cordis.patch.yml` when present. Back up the Redis connection file described below if you use saved connections.
-2. Obtain the target version's Release archive and checksum. Use a new version/tag for released updates and keep old assets unchanged. For local development builds sharing a version, use a new SHA-named path.
+2. Build the target version's archive or obtain a trusted built archive and checksum. Use a new version/tag for released updates and keep old assets unchanged. For local development builds sharing a version, use a new SHA-named path.
 3. In **Plugins**, disable/unload DSH Redis and uninstall it. If DSH requires stopping the non-live-reload Host, close that profile using its normal shutdown procedure first.
 4. Install the new archive and enable the bundle. Restart the same profile when required, then refresh the browser.
 5. Manually connect again and verify the expected DB, Key list and value view. Check chat in that same conversation if you use the AI tools.
@@ -137,30 +129,6 @@ There is no Redis-specific model API key. Sidebar browsing uses the Redis connec
 
 Disabling or uninstalling the plugin does not delete Redis Keys or model-provider settings. Existing DSH conversation history is managed by DSH and is not removed by uninstalling this package.
 
-## Prepare a built package
-
-This section is for maintainers and local development. Users of an existing Release use its assets above. This same-version SHA filename is a development checkpoint, not a replacement for release versions.
-
-From the source checkout root, run in PowerShell:
-
-```powershell
-node --version
-pnpm --version
-dsh --version
-pnpm install --frozen-lockfile
-pnpm pack --pack-destination .release
-
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
-$sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
-Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
-$packageForInstall
-```
-
-`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.1`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
-
-A SHA256 value calculated locally identifies the file you have. When an archive comes from someone else, compare it with a checksum received from that same trusted source; calculating a new checksum alone does not verify its origin.
-
 ## Troubleshooting
 
 | Symptom | Check |
@@ -177,7 +145,7 @@ A SHA256 value calculated locally identifies the file you have. When an archive 
 
 ## References
 
-These are pinned to the verified DSH version, rather than an assertion that current upstream behaves identically:
+These are historical references pinned to DSH 0.2.0-rc.2, rather than an assertion that current upstream behaves identically:
 
 - [Official plugin publishing and installation guide](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md)
 - [Official plugin manager: installation, enablement and update limits](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md)

@@ -1,0 +1,17 @@
+{
+  "mode": "agent-native",
+  "tool": "image_gen.imagegen",
+  "independentCalls": 3,
+  "portraitEnabled": false,
+  "localVisualPostProcessing": false,
+  "references": [
+    {"file": "../dsh-redis-ai-20261107.jpg", "original": "docs/screenshots/hash-workbench-dark.jpg", "role": "native interface with isolated fixture data"},
+    {"file": "frames/dsh-redis-icon.png", "original": "icon.svg", "role": "existing raster reference of project icon"}
+  ],
+  "outputs": [
+    {"format": "3x4", "file": "../dsh-redis-ai-20261107_3x4.png", "base": "3x4.generated-base.png", "prompt": "cover_3x4.prompt.md", "width": 1086, "height": 1448, "sha256": "dc7b8bac0db4c19394f45ad5091fb933ec69cf48cbbc41619e42873b62354e6f", "toolFile": "exec-e28b8e03-b29e-4cd8-a98c-63b884d11a2c.png"},
+    {"format": "4x3", "file": "../dsh-redis-ai-20261107_4x3.png", "base": "4x3.generated-base.png", "prompt": "cover_4x3.prompt.md", "width": 1448, "height": 1086, "sha256": "37d2c02d964c794306fa0f7031009f291a9a0ff73154fd0aa81530cc0bb19b57", "toolFile": "exec-9b25e7c4-d8b7-4fc8-8141-b1ffd21c7384.png"},
+    {"format": "16x9", "file": "../dsh-redis-ai-20261107_16x9.png", "base": "16x9.generated-base.png", "prompt": "cover_16x9.prompt.md", "width": 1672, "height": 941, "sha256": "c3f592538c543be8ddfa47502c880426c8b97d784345c0a00226ec0e768dfd59", "toolFile": "exec-bf15bfb7-1853-4b2e-9f89-cb898593fad7.png"}
+  ],
+  "note": "16:9 is approximate; images were copied unchanged from tool output. The rendered UI is promotional artwork, not a runtime screenshot. AI write is planned and is not implemented."
+}

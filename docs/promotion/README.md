@@ -1,5 +1,40 @@
 # DSH Redis 推广素材
 
+## DSH 与 AI 读写封面
+
+以“给 DSH 加上 AI 读写 Redis”为主标题，保留“写入规划中”说明。封面借鉴用户参考图的信息层级，并根据项目 Hash 测试截图重新绘制界面；当前 Redis 数据写入尚未实现，画面不作为实机验收记录。
+
+| 3:4 竖版 | 4:3 横版主封面 | 横向伴随版 |
+| --- | --- | --- |
+| [![竖版封面](dsh-redis-dsh-ai-20261107_3x4.png)](dsh-redis-dsh-ai-20261107_3x4.png) | [![横版封面](dsh-redis-dsh-ai-20261107_4x3.png)](dsh-redis-dsh-ai-20261107_4x3.png) | [![宽屏封面](dsh-redis-dsh-ai-20261107_16x9.png)](dsh-redis-dsh-ai-20261107_16x9.png) |
+| 1086×1448，3:4 | 1448×1086，4:3 | 1672×941，近似 16:9 |
+
+[内容分析](dsh-redis-dsh-ai-20261107.oil-cover/analysis.md) · [封面方案](dsh-redis-dsh-ai-20261107.oil-cover/cover_plan.md) · [生成记录](dsh-redis-dsh-ai-20261107.oil-cover/generation-record.json)。
+
+## 前一版：AI 读写方向封面
+
+主标题突出“AI 读写 Redis”，同时明确标注“写入规划中”。当前插件已实现 AI 读取 Redis，数据写入尚未实现。封面依据现有测试截图和项目图标生成，界面为宣传重构，不是写入操作或实机验收记录。
+
+| 3:4 竖版 | 4:3 横版主封面 | 横向伴随版 |
+| --- | --- | --- |
+| [![竖版封面](dsh-redis-ai-20261107_3x4.png)](dsh-redis-ai-20261107_3x4.png) | [![横版封面](dsh-redis-ai-20261107_4x3.png)](dsh-redis-ai-20261107_4x3.png) | [![宽屏封面](dsh-redis-ai-20261107_16x9.png)](dsh-redis-ai-20261107_16x9.png) |
+| 1086×1448，3:4 | 1448×1086，4:3 | 1672×941，近似 16:9 |
+
+[内容分析](dsh-redis-ai-20261107.oil-cover/analysis.md) · [封面方案](dsh-redis-ai-20261107.oil-cover/cover_plan.md) · [生成记录](dsh-redis-ai-20261107.oil-cover/generation-record.json)。封面未使用头像，没有本地贴字或裁切。
+
+## 上一版：对话读取封面
+
+这组三张封面以项目原生 Hash 截图和项目图标为参考，突出 DSH 中的只读查看与对话读取。界面经图像生成工具重新绘制，用于推广，不是实机截图或新的验收记录。
+
+| 3:4 竖版 | 4:3 横版主封面 | 横向伴随版 |
+| --- | --- | --- |
+| [![竖版封面](dsh-redis-chat-20261107_3x4.png)](dsh-redis-chat-20261107_3x4.png) | [![横版封面](dsh-redis-chat-20261107_4x3.png)](dsh-redis-chat-20261107_4x3.png) | [![宽屏封面](dsh-redis-chat-20261107_16x9.png)](dsh-redis-chat-20261107_16x9.png) |
+| 1086×1448，3:4 | 1448×1086，4:3 | 1672×941，近似 16:9 |
+
+[内容分析](dsh-redis-chat-20261107.oil-cover/analysis.md) · [封面方案](dsh-redis-chat-20261107.oil-cover/cover_plan.md) · [生成记录](dsh-redis-chat-20261107.oil-cover/generation-record.json) · [推广介绍](../../PROMOTION.md)。封面未使用头像，未本地贴字、拼贴或裁切。
+
+## 原有封面
+
 三张封面均根据现有原生Hash界面和项目图标生成，用于产品介绍。图中数据来自隔离测试，界面为推广重构，不作为原生截图或运行验收证据。
 
 | 3:4 竖版 | 4:3 横版主封面 | 横向伴随版 |

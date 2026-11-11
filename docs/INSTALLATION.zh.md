@@ -2,46 +2,48 @@
 
 [English](INSTALLATION.md) | 简体中文
 
-本文说明 `v0.1.0` Release 成品包、界面/CLI 两种安装入口及本地开发包。[WhitePlusMS/dsh-redis](https://github.com/WhitePlusMS/dsh-redis) 保持私有，下载 Release 附件需要仓库访问权限。
-
-下方 Release 步骤和已验证环境属于 `v0.1.0` 的历史记录。当前源码版本为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`。2026-11-06 应用源码 `622dce6` 的本地包已通过 CLI 安装并在该 Web 环境加载，137 个安装文件与归档一致；这不代表新 Release 发布、完整模型/界面验收或跨插件 peers 检查通过，详见[安装证据](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/verification/intent-and-rejection-2026-11-06.md)。安装 `v0.1.0` 不代表包含当前开发功能。
+当前源码版本 **0.1.1**，适配 **DSH Web 0.2.1-rc.5**。旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不适用于当前宿主。
 
 ## 适用环境
 
-| 项目 | v0.1.0 历史基线 |
-| --- | --- |
-| 宿主 | DeepSeek Harness Web `0.2.0-rc.2` |
-| 实际验证的平台 | Windows、Node.js `22.22.1` |
-| 声明的 Node.js 范围 | `^22.19.0 || >=24.0.0` |
-| 构建工具 | pnpm `11.22.0` |
-| 插件包 | `dsh-redis@0.1.0`，tag 为 `v0.1.0` |
+- 已配置 DSH Web `0.2.1-rc.5`；沿用服务当前浏览器的 profile 和 `DSH_HOME`。
+- Node.js `^22.19.0 || >=24.0.0`、pnpm `11.22.0`、Git。已验证平台为 Windows。
+- Host 能访问 Redis，构建环境能下载依赖。
+- 下文使用已有 `web` profile；已有源码目录时跳过 clone 和 cd。
 
-`0.2.0-rc.2` 是预发布版本；这里记录实际验证的基线，不把它称为最新稳定版。本插件尚未完成 Desktop、macOS、Linux 安装验收，不能仅凭 Web Client 声明推断 Desktop 可用。
+## 准备成品包
 
-先确认浏览器正在使用哪个 DSH profile。下列命令以**已经存在的 `web` profile** 为例，沿用它原来的 `DSH_HOME` 和 CLI 安装位置。另建一个 home 并不能更新当前运行的实例。独立 npm CLI 也不能管理保留给桌面端的 `desktop` profile。
+当前版本从源码构建；已有可信成品包时可跳过构建。同版本 SHA 文件名用于本地开发检查点，不替代正式发布版本。
 
-## 获取固定版本的 Release 成品包
+在希望存放源码的目录打开 PowerShell 并执行；如果已经有源码，请进入现有仓库，跳过 `git clone` 和 `cd`：
 
-维护者先核对提交、构建并执行 `pnpm pack`，创建 `v<version>` 标签，再发布包含 `dsh-redis-<version>.tgz` 和 `SHA256SUMS.txt` 的 GitHub Release。DSH 界面和 CLI 两种入口安装同一个成品包，完整[发布步骤](DEVELOPMENT.md#8-版本化发布与安装入口)由维护者执行。
+```powershell
+node --version
+pnpm --version
+dsh --version
+git clone https://github.com/WhitePlusMS/dsh-redis.git
+cd dsh-redis
+pnpm install --frozen-lockfile
+New-Item -ItemType Directory -Force .release | Out-Null
+pnpm pack --pack-destination .release
 
-打开 [v0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0)，下载这两个附件，并将包的 SHA-256 与校验文件核对。源码 tag 与 GitHub 自动生成的 **Source code** 下载不是构建成品；当前源码 Git 树不包含 `lib/`，项目也没有提供 Git 安装用的 `prepare` 构建。
-
-`v0.1.0` 的固定附件地址为：
-
-```text
-https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
+$sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
+Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
+$packageForInstall
 ```
 
-仓库保持私有时，先登录有访问权限的 GitHub 账号下载附件，把文件放到 DSH Host，再按本地绝对路径安装；Host 的 pnpm 不会继承浏览器登录。已发布的公开 Release 可以直接使用完整附件 URL，私有下载授权则取决于 Host，DSH 不会自动补入浏览器身份。
+`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.1` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
 
-普通用户使用已经构建的发布包，无需克隆或构建源码。维护者开发时可按[本地构建部分](#准备成品包)生成。
+本地计算 SHA256 可以标识手里的文件；接收别人交付的包时，还应与该可信来源提供的校验值核对。自行算出一个新值本身不能证明文件来源。
 
 ## 从 DSH 界面安装
 
 1. 打开 DSH 的**插件 → 添加插件**。
-2. 已发布且公开可下载时，粘贴完整的固定版本 Release `.tgz` URL。私有 Release 则填写已下载附件在 Host 上的绝对路径。来源应指向已发布的成品附件，不是仓库页面或 Source code 源码归档。
+2. 填写上一步构建得到的 `$packageForInstall` 所显示的 Host 绝对路径；如果使用可信来源提供的成品包，也可填写该包路径。来源必须是构建后的 `.tgz`，不是仓库页面或 Source code 源码归档。
 3. 点击**安装**。本地归档会先检查来源，再执行安装；本次验证的流程没有独立的包名、版本预览页。
-4. 完成后选择**立即启用**，再在已安装插件的详情核对 `dsh-redis`、`v0.1.0` 和 `ui-redis` 运行状态。直接关闭成功窗口会让新组合包保持关闭。
+4. 完成后选择**立即启用**，再在已安装插件的详情核对 `dsh-redis`、`0.1.1` 和 `ui-redis` 运行状态。直接关闭成功窗口会让新组合包保持关闭。
 5. 打开一个对话，在右侧栏选择 **Redis**。profile 不支持热重载时，按 DSH 的提示重启原 Host。
 
 本地路径由 **DSH Host 所在电脑**解析。浏览器和 Host 分处两台电脑时，填写浏览器电脑上的路径不会上传文件，应先把包传到 Host。
@@ -50,17 +52,7 @@ DSH 支持包名、Git、tarball 和本地路径。本项目采用 Release 成�
 
 ## 从 CLI 安装
 
-在目标 DSH Host 上，沿用现有 `web` profile 和原来的 `DSH_HOME`。先选择**一种**安装来源。已有公开可下载的 Release 时：
-
-```powershell
-$packageForInstall = 'https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.0.tgz'
-```
-
-私有 Release 则先登录下载同一个附件，将示例路径替换为文件的实际位置，再使用：
-
-```powershell
-$packageForInstall = (Resolve-Path -LiteralPath 'C:\dsh-plugins\dsh-redis-0.1.0.tgz').Path
-```
+在同一个 PowerShell 窗口使用上方生成的 `$packageForInstall`。
 
 添加所选成品包并核对安装版本：
 
@@ -96,7 +88,7 @@ Redis 的 Host 条目是 `ui-redis`，由 `dsh-redis` 组合包提供。pnpm 能
 当前验证的 DSH 版本没有这个已安装组合包的自动更新操作，采用**卸载旧包，再安装新成品包**。
 
 1. 保留旧包及校验值，方便回退。备份目标 profile 的 `package.json`、`pnpm-lock.yaml`，以及实际存在的 `pnpm-workspace.yaml`、`cordis.yml`、`cordis.patch.yml`；使用已保存资料时，也备份下文的 Redis 连接文件。
-2. 取得目标版本的 Release 成品包与校验文件。已发布更新使用新版本、新 tag，保留旧附件不变；仅本地开发中同版本的不同构建使用新的 SHA 文件名。
+2. 构建目标版本的成品包，或取得可信来源提供的成品包与校验文件。已发布更新使用新版本、新 tag，保留旧附件不变；本地同版本的不同构建使用新的 SHA 文件名。
 3. 在**插件**中关闭、卸载 DSH Redis。没有热重载时，按 DSH 要求先通过原来的正常方式停止该 profile 的 Host。
 4. 安装新包，启用组合包；需要时重启同一个 profile，再刷新浏览器。
 5. 重新手动连接，核对 DB、Key 列表与值预览。使用 AI 工具时，再在同一个对话中检查读取。
@@ -137,30 +129,6 @@ dsh plugin --profile web list dsh-redis
 
 停用、卸载不会删除 Redis Key 或模型服务配置。已有对话记录由 DSH 管理，卸载本插件不会清除历史工具结果。
 
-## 准备成品包
-
-本节用于维护者和本地开发；普通用户使用上面的 Release 附件。同版本 SHA 文件名用于本地开发检查点，不替代正式发布版本。
-
-从包含 `package.json` 的源码根目录，在 PowerShell 执行：
-
-```powershell
-node --version
-pnpm --version
-dsh --version
-pnpm install --frozen-lockfile
-pnpm pack --pack-destination .release
-
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
-$sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
-Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
-$packageForInstall
-```
-
-`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.1` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
-
-本地计算 SHA256 可以标识手里的文件；接收别人交付的包时，还应与该可信来源提供的校验值核对。自行算出一个新值本身不能证明文件来源。
-
 ## 常见问题
 
 | 现象 | 检查方法 |
@@ -177,7 +145,7 @@ $packageForInstall
 
 ## 依据
 
-下列官方资料固定在已验证的 DSH 版本，不据此断言最新上游行为完全相同：
+下列官方资料是旧版 DSH 0.2.0-rc.2 的历史参考，不据此断言最新上游行为完全相同：
 
 - [官方插件发布与安装说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/docs/user/develop/basic/publish.zh.md)
 - [官方插件管理器：安装、启用与更新限制](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.0-rc.2/packages/client/ui-plugin-manager/README.zh.md)
