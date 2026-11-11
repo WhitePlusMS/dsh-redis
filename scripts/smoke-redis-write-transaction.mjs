@@ -2,6 +2,7 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { RedisTransport } from '../lib/host/redis-transport.js'
+import { RedisConnections } from '../lib/host/connection-service.js'
 import { withRedisFixture } from './redis-fixture.mjs'
 
 const signal = new AbortController().signal
@@ -9,6 +10,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.set('fixture:string', 'old')
   await admin.hSet('fixture:hash', { field: 'old', other: 'keep' })
   await admin.set('fixture:ttl', 'old', { PX: 120000 })
+  await admin.set('fixture:session', 'old')
   await admin.hSet('fixture:fieldttl', 'field', 'old')
   await admin.hSet('fixture:race', { field: 'old', other: 'before' })
   assert.deepEqual(await admin.sendCommand(['HPEXPIRE', 'fixture:fieldttl', '120000', 'FIELDS', '1', 'field']), [1])
@@ -53,6 +55,15 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.equal(await admin.hGet('fixture:race', 'other'), 'changed')
     assert.equal(await transport.execute('TYPE', [Buffer.from('fixture:race')], signal, () => undefined), 'hash')
     assert.equal(submitted, 3)
+    const connections = new RedisConnections()
+    try {
+      const view = await connections.connect('fixture-session', settings, signal)
+      assert.equal(view.state, 'connected')
+      const target = { id: view.id, generation: view.generation, db: view.db }
+      assert.equal(await connections.replaceExisting('other-session', target, value('fixture:session'), signal, () => undefined, () => { throw new Error('Foreign session submitted') }), 'not-executed')
+      assert.equal(await connections.replaceExisting('fixture-session', target, value('fixture:session'), signal, () => undefined, () => undefined), 'written-verified')
+      assert.equal(await admin.get('fixture:session'), 'new')
+    } finally { connections.dispose() }
   } finally { transport.close() }
 })
 assert.equal(fixture.stopped, true)

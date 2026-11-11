@@ -1,6 +1,7 @@
 /** Standalone connection lifecycle adapted from Database's Redis open/close paths. */
 import { randomUUID } from 'node:crypto'
 import { RedisTransport, RedisTransportError, type RedisReadCommand } from './redis-transport.ts'
+import type { RedisReplaceRequest, RedisWriteResult } from './redis-write-transaction.ts'
 import { RedisFrameError, RedisReplyError, type RedisArgument, type RedisReply } from './resp.ts'
 import type { ConnectionErrorCode, ConnectionRequest, ConnectionTarget, ConnectionView, DatabaseTarget, SavedConnection } from '../domain.ts'
 import { profileCollectionSchema } from '../typert.shared.ts'
@@ -11,6 +12,10 @@ export interface RedisLink {
   close(): void
   execute(command: RedisReadCommand, arguments_: readonly RedisArgument[], signal: AbortSignal, beforeDispatch: () => void, deadline?: number): Promise<RedisReply>
   onFailure(listener: (code: ConnectionErrorCode) => void): () => void
+}
+/** A writable link has the fixed Host-only replace operation, not a command escape hatch. */
+export interface RedisWritableLink extends RedisLink {
+  replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: () => void, submitted: () => void): Promise<RedisWriteResult>
 }
 export type RedisOpener = (settings: ConnectionRequest, signal: AbortSignal) => Promise<RedisLink>
 export type CandidateConnectionResult = { readonly state: 'connected' | 'changed'; readonly view: ConnectionView; readonly previousRelease: 'closed' | 'uncertain' } | { readonly state: 'failed'; readonly error: ConnectionErrorCode }
@@ -36,11 +41,13 @@ export function connectionErrorCode(error: unknown): ConnectionErrorCode {
 /** Authentication, TLS and bounded replies share one owned socket; no reconnect. */
 export const openRedis: RedisOpener = async (settings, signal) => {
   const transport = await RedisTransport.open(settings, signal)
-  return {
+  const link: RedisWritableLink = {
     close: () => { transport.close() },
     execute: (command, arguments_, requestSignal, beforeDispatch, deadline) => transport.execute(command, arguments_, requestSignal, beforeDispatch, deadline),
+    replaceExisting: (request, requestSignal, guard, submitted) => transport.replaceExisting(request, requestSignal, guard, submitted),
     onFailure: listener => transport.onFailure(error => { listener(connectionErrorCode(error)) }),
   }
+  return link
 }
 
 interface ConnectionResources {
@@ -293,6 +300,24 @@ export class RedisConnections {
       if (!signal.aborted && error instanceof RedisReplyError) { guard(); throw error }
       throw new ConnectionFailure(signal.aborted ? 'cancelled' : connectionErrorCode(error))
     }
+  }
+
+  /** Keep the original result even if the connection changes after submission. */
+  async replaceExisting(sessionId: string, target: DatabaseTarget, request: RedisReplaceRequest, signal: AbortSignal, validate: () => void, submitted: () => void): Promise<RedisWriteResult> {
+    let wasSubmitted = false
+    try {
+      signal.throwIfAborted()
+      const record = this.require(sessionId, target)
+      if (record.db !== target.db || !('replaceExisting' in record.link) || typeof record.link.replaceExisting !== 'function') return 'not-executed'
+      const link = record.link as RedisWritableLink
+      const guard = () => {
+        const current = this.require(sessionId, target)
+        if (current !== record || current.db !== target.db) throw new ConnectionFailure('stale')
+        validate()
+      }
+      guard()
+      return await link.replaceExisting(request, signal, guard, () => { submitted(); wasSubmitted = true })
+    } catch { return wasSubmitted ? 'unknown' : 'not-executed' }
   }
 
   async selectDatabase(sessionId: string, target: DatabaseTarget, signal: AbortSignal, onInvalidate: () => void = () => undefined): Promise<ConnectionView> {
