@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import RemoteAccess from '@deepseek-ai/dsh-api-remote-access'
 import { ownerPeer } from './gateway-fixture.ts'
 import { Context, symbols } from '@deepseek-ai/cordis'
@@ -90,10 +92,10 @@ it('locates a precise ordered Stream field through the real tool and Host handsh
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || revision === current) })
   const ctx = new Context(), abort = new AbortController(), input = uplink()
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'stream-locate-fixture', inject: ['tools'], apply: (scope: Context) => { registerRedisLocateTool(scope, reader, actions); registerRedisTools(scope, reader) } })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (name: string, args: unknown) => ctx.tools.execute({ callId: 'stream-locate' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent, signal: abort.signal })
+  const call = (name: string, args: unknown) => executeTool(ctx.tools, { callId: 'stream-locate' as string, name, arguments: args, agent, signal: abort.signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   const connection = await connections.connect('a', { host: 'fixture', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing connection')

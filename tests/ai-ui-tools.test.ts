@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -9,10 +11,10 @@ import { UiActionCoordinator } from '../src/host/ui-action-coordinator.ts'
 
 it('reports only a matching current-session acknowledgement as visible', async () => {
   const ctx = new Context(), actions = new UiActionCoordinator<UiAction>()
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-ui-test', inject: ['tools'], apply: (scope: Context) => registerRedisUiTools(scope, actions) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (args: unknown) => ctx.tools.execute({ callId: 'ui-test' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_show', arguments: args, agent, signal: new AbortController().signal })
+  const call = (args: unknown) => executeTool(ctx.tools, { callId: 'ui-test' as string, name: 'redis_viewer_show', arguments: args, agent, signal: new AbortController().signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   try {
     expect(content(await call({}))).toContain('no_receiver')

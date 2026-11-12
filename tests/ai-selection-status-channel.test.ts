@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -30,10 +32,10 @@ it('hides an unconfirmed action selection after stream loss and restores status 
     return revision
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || current === revision) })
   const ctx = new Context(), abort = new AbortController()
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'selection-status-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisTools(scope, reader) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (name: string) => ctx.tools.execute({ callId: 'status-fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: {}, agent, signal: abort.signal })
+  const call = (name: string) => executeTool(ctx.tools, { callId: 'status-fixture' as string, name, arguments: {}, agent, signal: abort.signal })
   const resultJson = (result: Awaited<ReturnType<typeof call>>) => JSON.parse(result.content.filter(item => item.type === 'text').map(item => item.text).join('')) as unknown
   const connection = await connections.connect('a', { host: 'fixture', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing fixture connection')

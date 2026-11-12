@@ -10,7 +10,7 @@
 
 **侧栏查看 · AI 读写 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
 
-当前源码 **0.1.1** 适配 **DSH Web 0.2.1-rc.5**。按下方步骤构建安装；旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不包含当前新增能力。
+当前源码 **0.1.2** 适配 **DSH Web 0.2.2-rc.1**。按下方步骤构建安装；旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不包含当前新增能力。
 
 [安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
 
@@ -27,7 +27,11 @@
 
 ## 安装与更新
 
-当前源码版本 `0.1.1` 适配 DSH Web `0.2.1-rc.5`。2026-11-06 的交付记录显示该版本尚无 GitHub Release。以下步骤在 DSH Host 的 PowerShell 中从源码构建并安装；需要 Git、Node.js 和 pnpm，私有仓库需先获得访问权限：
+使用有权限的 GitHub 账号从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 `dsh-redis-0.1.2.tgz` 和 `SHA256SUMS.txt`，核对校验值后，将安装包放到 DSH Host，用 `dsh plugin --profile web add <安装包绝对路径>` 安装。浏览器登录状态不会自动传给 Host 安装器。
+
+也可以从源码构建：
+
+当前源码版本 `0.1.2` 适配 DSH Web `0.2.2-rc.1`。以下步骤在 DSH Host 的 PowerShell 中从源码构建并安装；需要 Git、Node.js 24.9 及以上版本和 pnpm，私有仓库需先获得访问权限：
 
 ```powershell
 git clone https://github.com/WhitePlusMS/dsh-redis.git
@@ -35,12 +39,12 @@ cd dsh-redis
 pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
-$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
+$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.2.tgz').Path
 dsh plugin --profile web add $packageForInstall
 dsh plugin --profile web list dsh-redis
 ```
 
-打包命令会执行类型检查、构建和测试。profile 引用该归档期间请保留文件；需要时重启同一个 DSH profile。此前的 [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 面向 DSH 0.2.0-rc.2，不适用于 0.2.1-rc.5。环境准备、界面安装、更新回退及清理见[完整安装指南](docs/INSTALLATION.zh.md)。
+打包命令会执行类型检查、构建和测试。profile 引用该归档期间请保留文件；需要时重启同一个 DSH profile。此前的 [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) 面向 DSH 0.2.0-rc.2，不适用于 0.2.2-rc.1。环境准备、界面安装、更新回退及清理见[完整安装指南](docs/INSTALLATION.zh.md)。
 
 ## 开始使用
 
@@ -91,8 +95,8 @@ dsh plugin --profile web list dsh-redis
 
 ## 环境要求
 
-- **宿主：** DSH Web `0.2.1-rc.5`，与当前包声明的依赖版本一致。
-- **运行与构建：** Node.js `^22.19.0 || >=24.0.0`；实际使用 Node.js `22.22.1`、pnpm `11.22.0` 验证。
+- **宿主：** DSH Web `0.2.2-rc.1`，与当前包声明的依赖版本一致。
+- **运行与构建：** Node.js `>=24.9.0`；实际使用 Node.js `24.22.1`、pnpm `11.22.0` 验证。
 - **Redis：** Host 能访问的单机服务器。已有 Redis `8.2.6` 六类型隔离验收及 Redis `8.10.0` 真实 Hash 验收，不声明完整的 Redis 版本兼容矩阵。
 - **对话：** DSH 已配置可用模型，并允许使用插件工具。侧栏查看不需要另配模型 API Key。
 
@@ -131,11 +135,13 @@ AI 写入 MVP 要求 Redis 7.4 或以上，目标 Key 和 Hash 字段均不得�
 
 ## 验证与已知问题
 
-AI 写入已在隔离 Redis 8.2.6 和独立安装的 DSH Web profile 中验证，并由独立 Redis 客户端回读；真实 DSH 网页中的开关与 Agent 工具写入已在同一测试会话贯通，测试适配器收到了提案和结果。真实模型对话写入尚未验收。[验证记录](docs/verification/ai-write-mvp-2026-11-11.md)。
+DSH 0.2.2-rc.1 已在隔离环境验证 Web 侧栏和 Redis 读取；确定性模型测试适配器通过 DSH Agent 执行 String、Hash 写入，并由独立客户端回读。该测试不代表真实大模型对话验收。[验证记录](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md)。
 
-2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。本轮按工具职责边界收尾，未发布新 Release；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
+AI 写入已在隔离 Redis 8.2.6 和独立安装的 DSH Web profile 中验证，并由独立 Redis 客户端回读；真实 DSH 网页中的开关与 Agent 工具写入已在同一测试会话贯通，测试适配器收到了提案和结果。[测试适配器记录](docs/verification/ai-write-mvp-2026-11-11.md)描述了上述测试。之后在 DSH 0.2.1-rc.5 上通过真实 bzkj-LLM 写入隔离 String 并由独立客户端回读；该结果在 [0.2.2 验证记录](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md)中单独说明。
 
-插件负责工具可调用、返回数据及必要元信息准确，并将结果正确交给模型。模型收到正确结果后的解释、推断、措辞和 think 格式不作为插件缺陷或交付阻塞；工具自身的数据、权限、分页、错误处理及传递问题仍需修复。真实后台/丢回执等未测组合保留为覆盖限制；整个 profile 的跨插件 peers 检查不声明通过。本次文档更新不替换已安装归档。
+2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。该次按工具职责边界收尾；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
+
+插件负责工具可调用、返回数据及必要元信息准确，并将结果正确交给模型。模型收到正确结果后的解释、推断、措辞和 think 格式不作为插件缺陷或交付阻塞；工具自身的数据、权限、分页、错误处理及传递问题仍需修复。真实后台/丢回执等未测组合保留为覆盖限制；整个 profile 的跨插件 peers 检查不声明通过。更新文档不会替换已安装归档。
 
 原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
 

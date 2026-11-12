@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { describe, expect, it, vi } from 'vitest'
 import { z } from 'zod'
 import { Context } from '@deepseek-ai/cordis'
@@ -249,14 +251,14 @@ describe('AI Stream message continuation', () => {
     const rows = Array.from({ length: 50 }, (_item, i) => message(`${i + 1}-0`, [Buffer.from('f'), Buffer.from('x'.repeat(1500))]))
     const f = await setup(async () => rows, 50n), ctx = new Context()
     try {
-      await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+      await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
       await ctx.plugin({ name: 'stream-ai-test', inject: ['tools'], apply: (scope: Context) => { registerRedisTools(scope, f.reader) } })
       const agent = { id: 'agent-a', ctx, session: { id: 'a' } } as unknown as Agent
       let cursor: string | null = null, callId = 0
       const ids: string[] = []
       do {
         const args = cursor === null ? { key: 'stream', count: 100 } : { key: 'stream', count: 100, cursor }
-        const reply = await ctx.tools.execute({ callId: ('stream-' + ++callId) as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_value', arguments: args, agent, signal: new AbortController().signal })
+        const reply = await executeTool(ctx.tools, { callId: ('stream-' + ++callId) as string, name: 'redis_viewer_value', arguments: args, agent, signal: new AbortController().signal })
         expect(reply.isError).toBeFalsy()
         const text = reply.content.filter(block => block.type === 'text').map(block => block.text).join('')
         expect(Buffer.byteLength(text)).toBeLessThanOrEqual(64 * 1024)

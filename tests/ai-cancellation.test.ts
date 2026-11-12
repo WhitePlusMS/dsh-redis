@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime, { defineTool } from '@deepseek-ai/dsh-tools'
@@ -15,7 +17,7 @@ it.each(['return', 'throw'] as const)('reports cancellation after the operation 
   let started!: () => void
   const ready = new Promise<void>(resolve => { started = resolve })
   try {
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
     ctx.tools.register(defineTool({
       name: 'fixture_cancel', description: 'Synthetic cancellation only', parameters: {},
       output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] },
@@ -28,7 +30,7 @@ it.each(['return', 'throw'] as const)('reports cancellation after the operation 
         return { state: 'failed', error: 'cancelled' }
       }),
     }))
-    const pending = ctx.tools.execute({ callId: 'fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'fixture_cancel', arguments: {}, signal: controller.signal })
+    const pending = executeTool(ctx.tools, { callId: 'fixture' as string, name: 'fixture_cancel', arguments: {}, signal: controller.signal })
     await ready
     controller.abort({ kind: 'user', detail: 'private-fixture-reason' })
     const result = await pending

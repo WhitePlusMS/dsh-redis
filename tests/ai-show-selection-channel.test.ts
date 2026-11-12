@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -26,7 +28,7 @@ it('confirms showing the pane even when mounting it invalidates and republishes 
   const publish = vi.fn(() => { actions.invalidateSession('a'); return { accepted: true } })
   const host = openUiActionChannel(actions, 'a', abort.signal, uplink, publish)
   const stream = { send: (frame: UiChannelInput) => { queue.push(frame); notify() }, end: () => undefined, dispose: () => { ended = true; notify() }, [Symbol.asyncIterator]: () => host }
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'show-selection-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisUiTools(scope, actions) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
   const client = consumeUiActions(async () => stream, abort.signal, async (request, signal) => {
@@ -43,7 +45,7 @@ it('confirms showing the pane even when mounting it invalidates and republishes 
   }, epoch)
   try {
     await vi.waitFor(() => expect(observed.some(frame => 'kind' in frame && frame.kind === 'selection')).toBe(true))
-    const result = await ctx.tools.execute({ callId: 'show-selection' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_show', arguments: {}, agent, signal: abort.signal })
+    const result = await executeTool(ctx.tools, { callId: 'show-selection' as string, name: 'redis_viewer_show', arguments: {}, agent, signal: abort.signal })
     const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
     expect(panes.count('a')).toBe(1)
     expect(publish).toHaveBeenCalledOnce()

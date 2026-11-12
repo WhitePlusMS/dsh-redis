@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -19,11 +21,11 @@ it('uses bounded profile storage through the DSH tool and handles an interrupted
   const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const actions = new UiActionCoordinator<UiAction>()
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-match-test', inject: ['tools'], apply: (scope: Context) => registerRedisMatchTools(scope, reader, presets, actions) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
   let index = 0
-  const call = (name: string, args: unknown, signal = new AbortController().signal, toolAgent: Agent | null = agent) => ctx.tools.execute({ callId: ('match-' + ++index) as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, ...(toolAgent === null ? {} : { agent: toolAgent }), signal })
+  const call = (name: string, args: unknown, signal = new AbortController().signal, toolAgent: Agent | null = agent) => executeTool(ctx.tools, { callId: ('match-' + ++index) as string, name, arguments: args, ...(toolAgent === null ? {} : { agent: toolAgent }), signal })
   const content = (value: Awaited<ReturnType<typeof call>>) => value.content.filter(block => block.type === 'text').map(block => block.text).join('')
   try {
     expect(JSON.parse(content(await call('redis_viewer_match_presets', {})))).toMatchObject({ presets: [], nextCursor: null, snapshot: false })

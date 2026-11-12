@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { existsSync } from 'node:fs'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -32,7 +34,7 @@ it.skipIf(browserPath === undefined).each(['field', 'focus', 'folder', 'locate',
   const notify = () => { const fn = wake; wake = undefined; fn?.() }
   const uplink: AsyncIterable<UiChannelInput> = { async *[Symbol.asyncIterator]() { while (!ended) { const value = input.shift(); if (value !== undefined) { yield value; continue } await new Promise<void>(resolve => { wake = resolve; if (ended || input.length > 0) notify() }) } } }
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-locate-browser-test', inject: ['tools'], apply: (scope: Context) => registerRedisLocateTool(scope, reader, actions) })
   const connection = await connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing connection')
@@ -104,7 +106,7 @@ it.skipIf(browserPath === undefined).each(['field', 'focus', 'folder', 'locate',
       await page.waitForTimeout(250)
       await page.mouse.move(box.x + box.width - 8, box.y + box.height * 0.65, { steps: 6 })
       expect(await list.evaluate(element => element.scrollTop)).toBeGreaterThan(0)
-      const blocked = await ctx.tools.execute({ callId: 'locate-native-drag' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
+      const blocked = await executeTool(ctx.tools, { callId: 'locate-native-drag' as string, name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
       expect(blocked.content.filter(item => item.type === 'text').map(item => item.text).join('')).toContain('"outcome":"stale"')
       expect(commands).toEqual([])
       await page.mouse.up()
@@ -122,7 +124,7 @@ it.skipIf(browserPath === undefined).each(['field', 'focus', 'folder', 'locate',
         await vi.waitFor(() => expect(actions.selectionRevision('a')).not.toBeNull(), { timeout: 5000 })
       }
       await begin(); await page.waitForTimeout(250)
-      const blocked = await ctx.tools.execute({ callId: 'locate-drag' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
+      const blocked = await executeTool(ctx.tools, { callId: 'locate-drag' as string, name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
       expect(blocked.content.filter(item => item.type === 'text').map(item => item.text).join('')).toContain('"outcome":"stale"')
       expect(commands).toEqual([])
       await finish('pointerup')
@@ -148,13 +150,13 @@ it.skipIf(browserPath === undefined).each(['field', 'focus', 'folder', 'locate',
       await vi.waitFor(() => expect(actions.selectionRevision('a')).toBeNull(), { timeout: 5000 })
       await page.waitForTimeout(80)
       await page.mouse.wheel(0, 60)
-      const blocked = await ctx.tools.execute({ callId: 'locate-wheel' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
+      const blocked = await executeTool(ctx.tools, { callId: 'locate-wheel' as string, name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
       expect(blocked.content.filter(item => item.type === 'text').map(item => item.text).join('')).toContain('"outcome":"stale"')
       expect(commands).toEqual([])
       await vi.waitFor(() => expect(actions.selectionRevision('a')).not.toBeNull(), { timeout: 5000 })
       return
     }
-    const result = ctx.tools.execute({ callId: 'locate-inflight' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
+    const result = executeTool(ctx.tools, { callId: 'locate-inflight' as string, name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: abort.signal })
     await reading
     if (interaction === 'field') await page.locator('[data-row-identity="ZmllbGQ="]').click()
     if (interaction === 'focus') await page.getByRole('button', { name: 'content.focus' }).click()

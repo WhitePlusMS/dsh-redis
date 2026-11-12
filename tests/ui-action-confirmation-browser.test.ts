@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import RemoteAccess from '@deepseek-ai/dsh-api-remote-access'
 import { ownerPeer } from './gateway-fixture.ts'
 import { existsSync } from 'node:fs'
@@ -48,7 +50,7 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     if (outcome !== 'applied' || !current()) throw new Error('Selection changed')
     return revision
   }, (session, revision) => { const current = coordinator.selectionRevision(session); return current !== null && (revision === null || current === revision) })
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'ui-gateway-tools', inject: ['tools'], apply: (scope: Context) => { registerRedisRefreshTool(scope, reader, coordinator); registerRedisFormatTool(scope, reader, coordinator) } })
   const connection = await connections.connect('a', { host: 'fixture', port: 6379, username: '', password: '', tls: null }, hostAbort.signal)
   if (connection.id === null) throw new Error('Missing synthetic connection')
@@ -129,7 +131,7 @@ it.skipIf(browserPath === undefined).each(['delivered', 'lost', 'lost-publish-ac
     const readsBefore = await page.evaluate(() => Reflect.get(window, 'fixture').reads())
     const refreshing = mode.startsWith('refresh'), formatting = mode.startsWith('format')
     const action: UiAction = refreshing ? { kind: 'refresh', target, keyBase64: 'bGlzdA==' } : { kind: 'selectListIndex', keyBase64: 'bGlzdA==', index: '2' }
-    const result = refreshing || formatting ? ctx.tools.execute({ callId: 'ui-tool-fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: refreshing ? 'redis_viewer_refresh' : 'redis_viewer_format', arguments: refreshing ? {} : { format: mode === 'format-invalid' ? 'json' : 'hex' }, agent, signal: new AbortController().signal }).then(response => {
+    const result = refreshing || formatting ? executeTool(ctx.tools, { callId: 'ui-tool-fixture' as string, name: refreshing ? 'redis_viewer_refresh' : 'redis_viewer_format', arguments: refreshing ? {} : { format: mode === 'format-invalid' ? 'json' : 'hex' }, agent, signal: new AbortController().signal }).then(response => {
       const text = response.content.filter(block => block.type === 'text').map(block => block.text).join('')
       if (response.isError) throw new Error(text)
       const parsed = JSON.parse(text) as { outcome: string; message: string }

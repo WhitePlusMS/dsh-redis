@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -19,10 +21,10 @@ it('lists bounded profile summaries through the real tool without connection set
   const ctx = new Context(), signal = new AbortController().signal
   const log = vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   const fiber = await ctx.plugin({ name: 'redis-profile-test', inject: ['tools'], apply: (scope: Context) => registerRedisProfileTools(scope, reader, snapshots, (_agent, requestSignal) => store.list(requestSignal)) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (args: unknown, requestSignal = signal, toolAgent: Agent | null = agent) => ctx.tools.execute({ callId: 'profile-test' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_profiles', arguments: args, ...(toolAgent === null ? {} : { agent: toolAgent }), signal: requestSignal })
+  const call = (args: unknown, requestSignal = signal, toolAgent: Agent | null = agent) => executeTool(ctx.tools, { callId: 'profile-test' as string, name: 'redis_viewer_profiles', arguments: args, ...(toolAgent === null ? {} : { agent: toolAgent }), signal: requestSignal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   try {
     expect(JSON.parse(content(await call({})))).toMatchObject({ profiles: [], total: 0, nextOffset: null, snapshot: false })
@@ -72,11 +74,11 @@ it('rolls back staged tokens when a tool call is cancelled before budget commit'
   if (first === null) throw new Error('Missing fixture token')
   const cancelled = new AbortController(), prepare = snapshots.prepare.bind(snapshots)
   vi.spyOn(snapshots, 'prepare').mockImplementation((session, profiles) => { const staged = prepare(session, profiles); queueMicrotask(() => cancelled.abort()); return staged })
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-profile-stage-cancel-test', inject: ['tools'], apply: (scope: Context) => registerRedisProfileTools(scope, reader, snapshots, async () => ({ profiles: [profile], selectedId: null })) })
   try {
     const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-    const result = await ctx.tools.execute({ callId: 'stage-cancel' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_profiles', arguments: {}, agent, signal: cancelled.signal })
+    const result = await executeTool(ctx.tools, { callId: 'stage-cancel' as string, name: 'redis_viewer_profiles', arguments: {}, agent, signal: cancelled.signal })
     expect(result.isError).toBe(true)
     expect(snapshots.resolve('a', profile.id, first)).toEqual(profile)
     expect(reader.budgetStatus('a')).toMatchObject({ bytesUsed: 0, inFlight: 0 })
@@ -88,11 +90,11 @@ it('returns an explicit null token when the shared capacity is exhausted', async
   const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const profile = { id: 'fixture', name: 'Fixture', settings: { host: 'private-host.example', port: 6379, username: '', tls: null } }
   for (let session = 0; session < 5; session++) for (let index = 0; index < 50; index++) expect(snapshots.issue(`s${session}`, { ...profile, id: `p${index}` })).not.toBeNull()
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-profile-capacity-test', inject: ['tools'], apply: (scope: Context) => registerRedisProfileTools(scope, reader, snapshots, async () => ({ profiles: [profile], selectedId: null })) })
   try {
     const agent = { id: 'overflow', ctx, session: { id: 'overflow' } } as unknown as Agent
-    const result = await ctx.tools.execute({ callId: 'capacity' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_profiles', arguments: {}, agent, signal: new AbortController().signal })
+    const result = await executeTool(ctx.tools, { callId: 'capacity' as string, name: 'redis_viewer_profiles', arguments: {}, agent, signal: new AbortController().signal })
     const text = result.content.filter(item => item.type === 'text').map(item => item.text).join('')
     expect(JSON.parse(text)).toMatchObject({ profiles: [{ id: 'fixture', snapshotToken: null }] })
     expect(text).not.toContain('private-host.example')
@@ -104,7 +106,7 @@ it('discards a cancelled profile read without charging another session', async (
   const snapshots = new RedisProfileSnapshots()
   const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const ctx = new Context()
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   let release!: () => void, started!: () => void
   const waiting = new Promise<void>(resolve => { release = resolve })
   const observed = new Promise<void>(resolve => { started = resolve })
@@ -113,7 +115,7 @@ it('discards a cancelled profile read without charging another session', async (
     return { profiles: [], selectedId: null }
   }) })
   const agent = (id: string) => ({ id, ctx, session: { id } }) as unknown as Agent
-  const call = (id: string, signal: AbortSignal) => ctx.tools.execute({ callId: ('profile-' + id) as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_profiles', arguments: {}, agent: agent(id), signal })
+  const call = (id: string, signal: AbortSignal) => executeTool(ctx.tools, { callId: ('profile-' + id) as string, name: 'redis_viewer_profiles', arguments: {}, agent: agent(id), signal })
   const cancelled = new AbortController()
   try {
     const first = call('a', cancelled.signal)

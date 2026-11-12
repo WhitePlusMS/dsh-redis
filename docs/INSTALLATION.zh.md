@@ -2,16 +2,18 @@
 
 [English](INSTALLATION.md) | 简体中文
 
-当前源码版本 **0.1.1**，适配 **DSH Web 0.2.1-rc.5**。旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不适用于当前宿主。
+当前源码版本 **0.1.2**，适配 **DSH Web 0.2.2-rc.1**。旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不适用于当前宿主。
 
 ## 适用环境
 
-- 已配置 DSH Web `0.2.1-rc.5`；沿用服务当前浏览器的 profile 和 `DSH_HOME`。
-- Node.js `^22.19.0 || >=24.0.0`、pnpm `11.22.0`、Git。已验证平台为 Windows。
+- 已配置 DSH Web `0.2.2-rc.1`；沿用服务当前浏览器的 profile 和 `DSH_HOME`。
+- Node.js `>=24.9.0`、pnpm `11.22.0`、Git。已验证平台为 Windows。
 - Host 能访问 Redis，构建环境能下载依赖。
 - 下文使用已有 `web` profile；已有源码目录时跳过 clone 和 cd。
 
 ## 准备成品包
+
+使用有权限的账号从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 dsh-redis-0.1.2.tgz 和 SHA256SUMS.txt，核对安装包 SHA-256 后放到 DSH Host，将 $packageForInstall 设置为该包的绝对路径，再按下方步骤安装。仓库为私有，Host 安装器不会继承浏览器的 GitHub 登录状态。
 
 当前版本从源码构建；已有可信成品包时可跳过构建。同版本 SHA 文件名用于本地开发检查点，不替代正式发布版本。
 
@@ -27,14 +29,14 @@ pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
 
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.2.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.2-{0}.tgz" -f $sha256)
 Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
 $packageForInstall
 ```
 
-`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.1` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
+`pnpm pack` 会执行 `prepack`：严格类型检查、全新构建和单元回归，不要跳过这个钩子。SHA 文件名用于区分同为 `0.1.2` 的不同开发包；复制改名不会改变包的内容。只要 profile 的依赖清单和锁文件仍引用这个本地包，就保留它所在的路径。
 
 本地计算 SHA256 可以标识手里的文件；接收别人交付的包时，还应与该可信来源提供的校验值核对。自行算出一个新值本身不能证明文件来源。
 
@@ -43,7 +45,7 @@ $packageForInstall
 1. 打开 DSH 的**插件 → 添加插件**。
 2. 填写上一步构建得到的 `$packageForInstall` 所显示的 Host 绝对路径；如果使用可信来源提供的成品包，也可填写该包路径。来源必须是构建后的 `.tgz`，不是仓库页面或 Source code 源码归档。
 3. 点击**安装**。本地归档会先检查来源，再执行安装；本次验证的流程没有独立的包名、版本预览页。
-4. 完成后选择**立即启用**，再在已安装插件的详情核对 `dsh-redis`、`0.1.1` 和 `ui-redis` 运行状态。直接关闭成功窗口会让新组合包保持关闭。
+4. 完成后选择**立即启用**，再在已安装插件的详情核对 `dsh-redis`、`0.1.2` 和 `ui-redis` 运行状态。直接关闭成功窗口会让新组合包保持关闭。
 5. 打开一个对话，在右侧栏选择 **Redis**。profile 不支持热重载时，按 DSH 的提示重启原 Host。
 
 本地路径由 **DSH Host 所在电脑**解析。浏览器和 Host 分处两台电脑时，填写浏览器电脑上的路径不会上传文件，应先把包传到 Host。
@@ -138,7 +140,7 @@ dsh plugin --profile web list dsh-redis
 | Source code 归档没有可加载入口 | 使用构建后的 `.tgz`；当前源码 Git 树不含 `lib/` |
 | `cannot resolve profile bundle "dsh-redis"` | 在同一 profile 移除已失效的开发来源，再添加核对过的成品包；单独 `install` 会复用旧来源 |
 | 安装后没有 Redis 入口 | 目标 profile、组合包开关、Host 重载或重启、浏览器刷新及 Host 诊断 |
-| DSH 提示版本不兼容 | 核对包声明的 DSH 版本：v0.1.0 历史证据使用 `0.2.0-rc.2`，当前 0.1.1 源码声明 `0.2.1-rc.5`；不要强制豁免或让当前包降回旧基线 |
+| DSH 提示版本不兼容 | 核对包声明的 DSH 版本：v0.1.0 历史证据使用 `0.2.0-rc.2`，当前 0.1.2 源码声明 `0.2.2-rc.1`；不要强制豁免或让当前包降回旧基线 |
 | 无法连接 | Host 到 Redis 的网络、端口、ACL、TLS、CA，以及实际返回的错误 |
 | 换对话后看不到连接 | 回到手动连接的对话；网络连接按会话隔离 |
 | 加载数量小于 DB 总数 | MATCH 筛选和有上限的扫描可能只返回部分结果，先查看加载状态，再刷新或缩小筛选范围 |

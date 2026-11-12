@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -253,13 +255,13 @@ describe('AI Hash page continuation', () => {
     const fields = Array.from({ length: 100 }, (_item, i) => [Buffer.from('field-' + i), Buffer.from('x'.repeat(900))]).flat()
     const f = await setup(async () => page('0', fields), 100n), ctx = new Context()
     try {
-      await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+      await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
       await ctx.plugin({ name: 'hash-ai-test', inject: ['tools'], apply: (scope: Context) => { registerRedisTools(scope, f.reader) } })
       const agent = { id: 'agent-a', ctx, session: { id: 'a' } } as unknown as Agent
       const found: string[] = []
       let cursor: string | null = null, callId = 0
       do {
-        const reply = await ctx.tools.execute({ callId: ('hash-' + ++callId) as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_value', arguments: cursor === null ? { key: 'hash' } : { key: 'hash', cursor }, agent, signal: new AbortController().signal })
+        const reply = await executeTool(ctx.tools, { callId: ('hash-' + ++callId) as string, name: 'redis_viewer_value', arguments: cursor === null ? { key: 'hash' } : { key: 'hash', cursor }, agent, signal: new AbortController().signal })
         expect(reply.isError).toBeFalsy()
         const text = reply.content.filter(block => block.type === 'text').map(block => block.text).join('')
         expect(Buffer.byteLength(text)).toBeLessThanOrEqual(64 * 1024)

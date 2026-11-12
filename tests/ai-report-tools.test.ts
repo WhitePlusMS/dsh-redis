@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -22,11 +24,11 @@ it('saves only an explicitly selected same-session overview sample with no crede
   const connections = new RedisConnections(async () => link), reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const samples = reader.reportSamples, reports = new RedisReports(directory), ctx = new Context()
   const connection = await connections.connect('a', { host: '127.0.0.1', port: 6379, username: 'not-in-report', password: 'not-in-report', tls: null }, new AbortController().signal)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-report-test', inject: ['tools'], apply: (scope: Context) => { registerRedisTools(scope, reader); registerRedisReportTools(scope, reader, reports) } })
   const agent = (id: string) => ({ id, ctx, session: { id } }) as unknown as Agent
   let index = 0
-  const call = (name: string, args: unknown, id = 'a', signal = new AbortController().signal) => ctx.tools.execute({ callId: ('report-' + ++index) as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent: agent(id), signal })
+  const call = (name: string, args: unknown, id = 'a', signal = new AbortController().signal) => executeTool(ctx.tools, { callId: ('report-' + ++index) as string, name, arguments: args, agent: agent(id), signal })
   const content = (value: Awaited<ReturnType<typeof call>>) => value.content.filter(block => block.type === 'text').map(block => block.text).join('')
   try {
     const prepared = await call('redis_viewer_overview', { section: 'memory' })

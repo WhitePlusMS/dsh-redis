@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { afterEach, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -41,7 +43,7 @@ async function fixture(approval: 'allowed-once' | 'rejected' = 'allowed-once') {
   await connections.connect('answer-a', settings, new AbortController().signal)
   const ctx = new Context()
   ctx.provide('approval', { request: async () => approval } as unknown as ApprovalService)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(SessionStore)
   const fiber = await ctx.plugin({ name: 'redis-answer-test', inject: ['tools'], apply(scope: Context) { registerRedisTools(scope, reader); registerRedisAnswerTool(scope, reader) } })
   const session = ctx.sessions.create(SessionId('answer-a'))
   const agent = { id: 'agent-a', ctx, session } as unknown as Agent
@@ -50,7 +52,7 @@ async function fixture(approval: 'allowed-once' | 'rejected' = 'allowed-once') {
   const call = async (name: string, args: unknown, signal = new AbortController().signal) => {
     const callId = ToolCallId('answer-call-' + ++step)
     session.append('tool/call', { turn, step, callId, name, arguments: JSON.stringify(args) })
-    const result = await ctx.tools.execute({ callId, name, arguments: args, agent, signal })
+    const result = await executeTool(ctx.tools, { callId, name, arguments: args, agent, signal })
     session.append('tool/result', { turn, step, message: createToolResultMessage({ callId, content: result.content, isError: result.isError }) }, { surfaceOp: 'append' })
     return { ...result, callId }
   }
@@ -89,7 +91,7 @@ it('keeps failed answers open and rejects model-supplied data and historical or 
   expect((await f.call('redis_viewer_answer', {})).isError).toBe(true)
   const other = f.ctx.sessions.create(SessionId('answer-b'))
   other.append('turn/start', { turn: 1 })
-  const result = await f.ctx.tools.execute({ callId: ToolCallId('foreign'), name: 'redis_viewer_answer', arguments: {}, agent: { id: 'b', ctx: f.ctx, session: other } as unknown as Agent, signal: new AbortController().signal })
+  const result = await executeTool(f.ctx.tools, { callId: ToolCallId('foreign'), name: 'redis_viewer_answer', arguments: {}, agent: { id: 'b', ctx: f.ctx, session: other } as unknown as Agent, signal: new AbortController().signal })
   expect(result.isError).toBe(true); expect(result).not.toHaveProperty('concludesTurn')
 })
 

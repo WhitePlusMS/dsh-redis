@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -89,18 +91,18 @@ async function fixture(select?: RedisLink['execute'], scan?: RedisLink['execute'
   const ctx = new Context()
   // Synthetic approvals isolate reader tests; denial/race cases have their own suite.
   ctx.provide('approval', { request: async () => 'allowed-once' } as unknown as ApprovalService)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   const fiber = await ctx.plugin({ name: 'redis-ai-test', inject: ['tools'], apply: (scope: Context) => { registerRedisTools(scope, reader) } })
   const agent = { id: 'agent-a', ctx, session: { id: 'a' } } as unknown as Agent
   let calls = 0
-  const call = (name: string, args: unknown, options: { readonly agent?: Agent | null; readonly signal?: AbortSignal } = {}) => ctx.tools.execute({
-    callId: ('redis-' + ++calls) as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args,
+  const call = (name: string, args: unknown, options: { readonly agent?: Agent | null; readonly signal?: AbortSignal } = {}) => executeTool(ctx.tools, {
+    callId: ('redis-' + ++calls) as string, name, arguments: args,
     ...(options.agent === null ? {} : { agent: options.agent ?? agent }), signal: options.signal ?? new AbortController().signal,
   })
   cleanups.push(async () => { actions.dispose(); reader.dispose(); connections.dispose(); await ctx.fiber.dispose() })
   return { ctx, fiber, reader, connections, target, commands, open, call, agent, actions }
 }
-function content(result: Awaited<ReturnType<ToolRuntime['execute']>>): string {
+function content(result: Awaited<ReturnType<typeof executeTool>>): string {
   return result.content.filter(block => block.type === 'text').map(block => block.text).join('\n')
 }
 /** Prototype fixtures must initialize the same Host state used by connection methods. */

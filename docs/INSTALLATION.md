@@ -2,16 +2,18 @@
 
 English | [简体中文](INSTALLATION.zh.md)
 
-Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. The older v0.1.0 package targets DSH 0.2.0-rc.2 and should not be installed on the current Host.
+Current source **0.1.2** targets **DSH Web 0.2.2-rc.1**. The older v0.1.0 package targets DSH 0.2.0-rc.2 and should not be installed on the current Host.
 
 ## Supported target
 
-- A configured DSH Web `0.2.1-rc.5`; use the profile and `DSH_HOME` serving your browser.
-- Node.js `^22.19.0 || >=24.0.0`, pnpm `11.22.0` and Git. Windows is the verified platform.
+- A configured DSH Web `0.2.2-rc.1`; use the profile and `DSH_HOME` serving your browser.
+- Node.js `>=24.9.0`, pnpm `11.22.0` and Git. Windows is the verified platform.
 - Redis reachable from the Host; dependency download access for building.
 - Examples use an existing `web` profile. Skip clone and cd if you already have the checkout.
 
 ## Prepare a built package
+
+Download dsh-redis-0.1.2.tgz and SHA256SUMS.txt from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) with an authorized account, compare the archive's SHA-256 to the checksum file, and place it on the DSH Host. Set $packageForInstall to its absolute path before following the installation steps below. The repository is private; the Host installer cannot use the browser's GitHub login.
 
 Build the current version from source. Skip building if you already have a trusted built archive. This same-version SHA filename is a development checkpoint, not a replacement for release versions.
 
@@ -27,14 +29,14 @@ pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
 
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.2.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.1-{0}.tgz" -f $sha256)
+$packageForInstall = Join-Path (Split-Path -Parent $packagePath) ("dsh-redis-0.1.2-{0}.tgz" -f $sha256)
 Copy-Item -LiteralPath $packagePath -Destination $packageForInstall
 $packageForInstall
 ```
 
-`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.1`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
+`pnpm pack` invokes `prepack`: strict type checking, a fresh build and the unit regression suite. Do not skip that hook. The SHA-named copy distinguishes different development builds sharing version `0.1.2`; changing its filename does not change the archive content. Keep the archive in place while it is referenced by the profile's dependency manifest and lockfile.
 
 A SHA256 value calculated locally identifies the file you have. When an archive comes from someone else, compare it with a checksum received from that same trusted source; calculating a new checksum alone does not verify its origin.
 
@@ -43,7 +45,7 @@ A SHA256 value calculated locally identifies the file you have. When an archive 
 1. In DSH, open **Plugins → Add plugin**.
 2. Enter the absolute Host path printed as `$packageForInstall` above, or the path to a trusted built archive you already have. The source must be a built `.tgz`, not a repository page or Source code archive.
 3. Choose **Install**. For a local archive, DSH checks the source and installs it; a separate package/version preview is not shown in this verified flow.
-4. Choose **Enable now**, then open the installed plugin's details to confirm `dsh-redis`, `0.1.1` and the running `ui-redis` component. Closing the success dialog without enabling leaves the new bundle disabled.
+4. Choose **Enable now**, then open the installed plugin's details to confirm `dsh-redis`, `0.1.2` and the running `ui-redis` component. Closing the success dialog without enabling leaves the new bundle disabled.
 5. Open a conversation and its right sidebar, then select **Redis**. Follow any DSH restart notice when the profile does not support live reload.
 
 The path is resolved on the **DSH Host machine**. A path on the browser's computer does not upload a file to a remote Host. Transfer the archive to that Host first when they are different machines.
@@ -138,7 +140,7 @@ Disabling or uninstalling the plugin does not delete Redis Keys or model-provide
 | Source code archive has no loadable entry | Use the built `.tgz`; the current source Git tree omits `lib/` |
 | `cannot resolve profile bundle "dsh-redis"` | Replace a moved/deleted development source in the same profile: remove, then add the verified built package; a plain `install` reuses the old source |
 | Package installed, no Redis entry | Target profile, bundle enable switch, Host reload/restart, browser refresh and Host diagnostics |
-| DSH rejects compatibility | Match the package to its declared DSH version: historical v0.1.0 evidence uses `0.2.0-rc.2`, current 0.1.1 source declares `0.2.1-rc.5`. Do not force a version exemption or downgrade the current build to the old baseline |
+| DSH rejects compatibility | Match the package to its declared DSH version: historical v0.1.0 evidence uses `0.2.0-rc.2`, current 0.1.2 source declares `0.2.2-rc.1`. Do not force a version exemption or downgrade the current build to the old baseline |
 | Connection fails | Host-to-Redis reachability, port, ACL credentials, TLS and CA; inspect the actual returned error |
 | Connection appears elsewhere | Open the conversation where you manually connected; network connections are session-specific |
 | Keys stop loading below the total | MATCH filters and bounded scanning can produce a partial result; inspect the progress state before refreshing or narrowing the search |

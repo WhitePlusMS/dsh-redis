@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { existsSync } from 'node:fs'
 import { Context, symbols } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
@@ -33,7 +35,7 @@ it.skipIf(browserPath === undefined)('keeps the tool and visible ZSet score atta
   } }
   const connections = new RedisConnections(async () => link), ctx = new Context(), abort = new AbortController()
   ctx.provide('profileContext', { name: 'fixture', dir: '.', patchPath: '', installAnchor: '', cwd: '.', home: '.', startedBundles: [], overlays: [], telemetryDisabledEnv: undefined })
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(RedisRemoteService)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(RedisRemoteService)
   const proxy = ctx.get('redisViewer') as unknown as RedisRemoteService & { [symbols.original]?: RedisRemoteService }, service = proxy[symbols.original] ?? proxy
   Reflect.set(service, 'connections', connections)
   const actions = service.uiActions
@@ -97,7 +99,7 @@ it.skipIf(browserPath === undefined)('keeps the tool and visible ZSet score atta
     await page.locator('[data-row-identity="b2xk"]').click({ timeout: 5000 })
     await expect.poll(() => actions.selectionRevision('a'), { timeout: 5000 }).not.toBeNull()
     expect(reader.status('a')).toMatchObject({ currentSelection: { selection: { keyBase64: 'enNldA==' } } })
-    const result = await ctx.tools.execute({ callId: 'zset-two-samples' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_zset_member', arguments: { memberBase64: 'AP8=' }, agent, signal: abort.signal })
+    const result = await executeTool(ctx.tools, { callId: 'zset-two-samples' as string, name: 'redis_viewer_locate_zset_member', arguments: { memberBase64: 'AP8=' }, agent, signal: abort.signal })
     expect(result.isError).toBeFalsy()
     const value = JSON.parse(result.content.filter(item => item.type === 'text').map(item => item.text).join('')) as { outcome: string; score: string; sampledAt: string }
     expect(value).toMatchObject({ outcome: 'applied', score: '1.2345678901234567e+20', sampleNote: expect.stringContaining('面板单独再次采样') })

@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -100,10 +102,10 @@ it('commits a binary Set member only through the Host action handshake', async (
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || current === revision) })
   const ctx = new Context(), abort = new AbortController(), input = uplink()
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'set-locate-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisLocateTool(scope, reader, actions) })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (args: unknown) => ctx.tools.execute({ callId: 'set-locate' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_set_member', arguments: args, agent, signal: abort.signal })
+  const call = (args: unknown) => executeTool(ctx.tools, { callId: 'set-locate' as string, name: 'redis_viewer_locate_set_member', arguments: args, agent, signal: abort.signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   const connection = await connections.connect('a', settings, abort.signal)
   if (connection.id === null) throw new Error('Missing fixture connection')

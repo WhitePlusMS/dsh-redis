@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -42,10 +44,10 @@ it.each([
     const target = { id: view.id, generation: view.generation, db: 0 }
     const item: RedisSelectionItem = kind === 'list' ? { kind, index: '0' } : { kind, id: '1-0', fieldIndex: 0, fieldBase64: 'Zg==' }
     reader.setSelection('fixture', { target, selection: { keyBase64: 'aw==', item } })
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
     await ctx.plugin({ name: 'selected-race-fixture', inject: ['tools'], apply: (scope: Context) => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture' } } as unknown as Agent
-    const pending = ctx.tools.execute({ callId: 'selection-race' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_value', arguments: {}, agent, signal })
+    const pending = executeTool(ctx.tools, { callId: 'selection-race' as string, name: 'redis_viewer_value', arguments: {}, agent, signal })
     await started
     const dispatched = [...commands]
     if (change === 'revision') revision += 1

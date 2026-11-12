@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { existsSync } from 'node:fs'
 import { mkdtemp, realpath, rm } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
@@ -26,7 +28,7 @@ it.skipIf(browserPath === undefined).each(['applied', 'user-first'] as const)('c
   const connections = new RedisConnections(async () => link)
   const reader = new RedisAiReader(connections, session => coordinator.invalidateSession(session), async () => 0, () => true)
   const presets = new RedisMatchPresets(directory), preset = await presets.save({ name: 'fixture', pattern: 'fixture:order:*' }, hostAbort.signal)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'match-stream-test', inject: ['tools'], apply: (scope: Context) => registerRedisMatchTools(scope, reader, presets, coordinator) })
   const connection = await connections.connect('a', { host: 'fixture', port: 6379, username: '', password: '', tls: null }, hostAbort.signal)
   if (connection.id === null) throw new Error('Missing synthetic connection')
@@ -75,7 +77,7 @@ it.skipIf(browserPath === undefined).each(['applied', 'user-first'] as const)('c
     await expect.poll(() => coordinator.selectionRevision('a'), { timeout: 5000 }).not.toBeNull()
     await page.waitForSelector('[data-key-load-phase="complete"]')
     const agent = { id: 'fixture-agent', ctx, session: { id: 'a' } } as unknown as Agent
-    const result = ctx.tools.execute({ callId: 'match-stream' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_apply_match_preset', arguments: { id: preset.id }, agent, signal: new AbortController().signal }).then(response => {
+    const result = executeTool(ctx.tools, { callId: 'match-stream' as string, name: 'redis_viewer_apply_match_preset', arguments: { id: preset.id }, agent, signal: new AbortController().signal }).then(response => {
       const body = response.content.filter(block => block.type === 'text').map(block => block.text).join('')
       if (response.isError) throw new Error(body)
       return JSON.parse(body) as { outcome: string }

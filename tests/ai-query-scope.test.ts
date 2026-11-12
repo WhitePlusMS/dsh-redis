@@ -1,8 +1,10 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime, { type ToolExecutionInput } from '@deepseek-ai/dsh-tools'
+import ToolRuntime from '@deepseek-ai/dsh-tools'
 import type { ApprovalOutcome, ApprovalRequest, ApprovalService } from '@deepseek-ai/dsh-user-approval'
 import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
@@ -34,19 +36,19 @@ async function fixture(answer: ((request: ApprovalRequest) => Promise<ApprovalOu
   await reconnect()
   const ctx = new Context(), ask = vi.fn(answer ?? (async () => 'unavailable' as const))
   if (answer !== null) ctx.provide('approval', { request: ask } as unknown as ApprovalService)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   const fiber = await ctx.plugin({ name: 'scope-test', inject: ['tools'], apply: (scope: Context) => registerRedisTools(scope, reader) })
   const agent = (session: string) => ({ id: 'agent-' + session, ctx, session: { id: session } }) as unknown as Agent
   let count = 0
-  const call = (name: string, args: unknown, options: { session?: string; signal?: AbortSignal; callId?: string } = {}) => ctx.tools.execute({
+  const call = (name: string, args: unknown, options: { session?: string; signal?: AbortSignal; callId?: string } = {}) => executeTool(ctx.tools, {
     name, arguments: args, agent: agent(options.session ?? 'a'),
     signal: options.signal ?? new AbortController().signal,
-    callId: (options.callId ?? 'scope-' + ++count) as ToolExecutionInput['callId'],
+    callId: (options.callId ?? 'scope-' + ++count) as string,
   })
   cleanups.push(async () => { await ctx.fiber.dispose(); reader.dispose(); connections.dispose() })
   return { ctx, fiber, reader, connections, commands, ask, call, reconnect }
 }
-function page(result: Awaited<ReturnType<ToolRuntime['execute']>>) {
+function page(result: Awaited<ReturnType<typeof executeTool>>) {
   expect(result.isError).toBe(false)
   const raw: unknown = JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
   if (raw === null || typeof raw !== 'object' || !('cursor' in raw) || !(raw.cursor === null || typeof raw.cursor === 'string')) throw new Error('Missing page cursor')

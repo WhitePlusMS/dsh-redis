@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -51,11 +53,11 @@ it('locates exact text and binary keys only after the checked UI commit', async 
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || current === revision) })
   const ctx = new Context(), abort = new AbortController(), input = uplink()
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-locate-test', inject: ['tools'], apply: (scope: Context) => { registerRedisLocateTool(scope, reader, actions); registerRedisTools(scope, reader) } })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (args: unknown) => ctx.tools.execute({ callId: 'locate-test' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: args, agent, signal: abort.signal })
-  const value = () => ctx.tools.execute({ callId: 'value-test' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_value', arguments: {}, agent, signal: abort.signal })
+  const call = (args: unknown) => executeTool(ctx.tools, { callId: 'locate-test' as string, name: 'redis_viewer_locate_key', arguments: args, agent, signal: abort.signal })
+  const value = () => executeTool(ctx.tools, { callId: 'value-test' as string, name: 'redis_viewer_value', arguments: {}, agent, signal: abort.signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   const connection = await connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing connection')
@@ -126,7 +128,7 @@ it.each(['cancel', 'reconnect'] as const)('never dispatches a stale target when 
   const reader = new RedisAiReader(connections, session => actions.invalidateSession(session), async () => 0, () => true)
   const ctx = new Context(), operation = new AbortController(), receiver = vi.fn(async () => { throw new Error('A stale action was dispatched') })
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-locate-interrupt-test', inject: ['tools'], apply: (scope: Context) => registerRedisLocateTool(scope, reader, actions) })
   const signal = new AbortController().signal, settings = { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }
   await connections.connect('a', settings, signal)
@@ -134,7 +136,7 @@ it.each(['cancel', 'reconnect'] as const)('never dispatches a stale target when 
   actions.setSelectionState('a', receiver, 1, true)
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
   try {
-    const result = ctx.tools.execute({ callId: 'locate-interrupt' as Parameters<typeof ctx.tools.execute>[0]['callId'], name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: operation.signal })
+    const result = executeTool(ctx.tools, { callId: 'locate-interrupt' as string, name: 'redis_viewer_locate_key', arguments: { key: 'candidate' }, agent, signal: operation.signal })
     await reading
     if (mode === 'cancel') operation.abort()
     else await connections.connect('a', settings, signal)
@@ -170,10 +172,10 @@ it('locates an exact Hash field through the tool and Host stream without exposin
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || current === revision) })
   const ctx = new Context(), abort = new AbortController(), input = uplink()
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'redis-hash-field-locate-test', inject: ['tools'], apply: (scope: Context) => { registerRedisLocateTool(scope, reader, actions); registerRedisTools(scope, reader) } })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (name: string, args: unknown) => ctx.tools.execute({ callId: 'hash-field-test' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent, signal: abort.signal })
+  const call = (name: string, args: unknown) => executeTool(ctx.tools, { callId: 'hash-field-test' as string, name, arguments: args, agent, signal: abort.signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   const connection = await connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing connection')

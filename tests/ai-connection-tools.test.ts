@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context, symbols } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -19,7 +21,7 @@ it('connects only an unchanged, current-session profile and keeps the old connec
   const ctx = new Context(), snapshots = new RedisProfileSnapshots(), profiles = new RedisProfiles(directory)
   const signal = new AbortController().signal
   ctx.provide('profileContext', { name: 'fixture', dir: directory, patchPath: '', installAnchor: '', cwd: '.', home: '.', startedBundles: [], overlays: [], telemetryDisabledEnv: undefined })
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(RedisRemoteService)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(RedisRemoteService)
   const proxy = ctx.get('redisViewer') as unknown as RedisRemoteService & { [symbols.original]?: RedisRemoteService }
   const service = proxy[symbols.original] ?? proxy
   const connections = Reflect.get(service, 'connections') as RedisConnections
@@ -44,7 +46,7 @@ it('connects only an unchanged, current-session profile and keeps the old connec
     registerRedisConnectionTools(scope, service.ai, snapshots, (agent, profile, s, current) => service.connectSavedProfile(agent, profile, s, current), (agent, target, s) => service.disconnect(agent, target, s))
   } })
   const agent = (id: string) => ({ id, ctx, session: { id } }) as unknown as Agent
-  const call = (name: string, args: unknown, session = 'a') => ctx.tools.execute({ callId: 'fixture' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent: agent(session), signal })
+  const call = (name: string, args: unknown, session = 'a') => executeTool(ctx.tools, { callId: 'fixture' as string, name, arguments: args, agent: agent(session), signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(block => block.type === 'text').map(block => block.text).join('')
   const list = async () => JSON.parse(content(await call('redis_viewer_profiles', {}))) as { profiles: Array<{ id: string; snapshotToken: string }> }
   try {

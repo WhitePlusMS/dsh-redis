@@ -10,7 +10,7 @@ English | [简体中文](README.zh.md)
 
 **Sidebar browsing · AI reads and writes · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
 
-Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. Build and install it with the steps below. The older v0.1.0 package targets DSH 0.2.0-rc.2 and does not include the current additions.
+Current source **0.1.2** targets **DSH Web 0.2.2-rc.1**. Build and install it with the steps below. The older v0.1.0 package targets DSH 0.2.0-rc.2 and does not include the current additions.
 
 [Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
 
@@ -27,7 +27,11 @@ Current source **0.1.1** targets **DSH Web 0.2.1-rc.5**. Build and install it wi
 
 ## Install and update
 
-Version `0.1.1` targets DSH Web `0.2.1-rc.5`. The 2026-11-06 delivery record reports no 0.1.1 GitHub Release. Build and install from source in PowerShell on the DSH Host. Git, Node.js and pnpm are required; a private repository requires access:
+Download `dsh-redis-0.1.2.tgz` and `SHA256SUMS.txt` from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) using an authorized GitHub account. Verify the checksum, place the archive on the DSH Host, and run `dsh plugin --profile web add <archive-path>`. The browser login is not shared with the Host installer.
+
+Alternatively, build the same version from source:
+
+Version `0.1.2` targets DSH Web `0.2.2-rc.1`. Build and install from source in PowerShell on the DSH Host. Git, Node.js 24.9 or later and pnpm are required; a private repository requires access:
 
 ```powershell
 git clone https://github.com/WhitePlusMS/dsh-redis.git
@@ -35,12 +39,12 @@ cd dsh-redis
 pnpm install --frozen-lockfile
 New-Item -ItemType Directory -Force .release | Out-Null
 pnpm pack --pack-destination .release
-$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.1.tgz').Path
+$packageForInstall = (Resolve-Path -LiteralPath '.release/dsh-redis-0.1.2.tgz').Path
 dsh plugin --profile web add $packageForInstall
 dsh plugin --profile web list dsh-redis
 ```
 
-The pack command runs type checking, build and tests. Keep the archive at that path while the profile references it, and restart the same DSH profile if needed. The earlier [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) targets DSH 0.2.0-rc.2; do not use it with 0.2.1-rc.5. See the [installation guide](docs/INSTALLATION.md) for setup, UI installation, updates, rollback and cleanup.
+The pack command runs type checking, build and tests. Keep the archive at that path while the profile references it, and restart the same DSH profile if needed. The earlier [0.1.0 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.0) targets DSH 0.2.0-rc.2; do not use it with 0.2.2-rc.1. See the [installation guide](docs/INSTALLATION.md) for setup, UI installation, updates, rollback and cleanup.
 
 ## First use
 
@@ -69,7 +73,7 @@ Editing or saving a profile while connected does not change the active server. I
 | Previews | Text, JSON, Hex and Base64, find, JSON folding and copying currently read content |
 | Refresh | Manual refresh and optional 1/5/10/30-second refresh; selected content and view state are preserved when still present |
 | DSH integration | Native sidebar, expanded workbench, light/dark theme, English/Chinese, Lucide action icons |
-| Conversation | Native DSH tools for explicit Key reads, bounded search and filtering; the development build also has diagnostic, connection and optional UI actions |
+| Conversation | Native DSH tools for explicit Key reads, bounded search and filtering; it also has diagnostic, connection and optional UI actions |
 | AI writes | Off by default; controlled replacement of an existing String or Hash field, with precondition, concurrency and readback checks |
 
 | Type | View |
@@ -91,8 +95,8 @@ The compact Stream layout uses the same row-selection workflow:
 
 ## Requirements
 
-- **Host:** DSH Web `0.2.1-rc.5`, matching the declared peer dependencies.
-- **Runtime/build:** Node.js `^22.19.0 || >=24.0.0`; verified locally with Node.js `22.22.1` and pnpm `11.22.0`.
+- **Host:** DSH Web `0.2.2-rc.1`, matching the declared peer dependencies.
+- **Runtime/build:** Node.js `>=24.9.0`; verified locally with Node.js `24.22.1` and pnpm `11.22.0`.
 - **Redis:** a standalone server reachable from the DSH Host. Existing evidence covers isolated Redis `8.2.6` for six types and live Redis `8.10.0` for Hash, rather than an exhaustive version matrix.
 - **Chat:** an available model configured in DSH and permission to use the plugin's tools. Sidebar browsing does not require a separate model API key.
 
@@ -107,7 +111,7 @@ Desktop, macOS and Linux operation have not been verified. The declared Node.js 
 | `redis_viewer_value` | Read a named Key or, with no Key argument, the current sidebar selection |
 | `redis_viewer_select_db` | Switch this conversation's DB when explicitly requested and synchronize the sidebar |
 
-The development build also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI read guide](docs/AI_READ_USAGE.md) for read-tool parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
+The plugin also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI read guide](docs/AI_READ_USAGE.md) for read-tool parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
 
 An initial Key-name search or Hash filter requires DSH's native scope confirmation, showing the server, DB and query conditions. Continuation pages retain the same scope; direct reads of a known Key do not require this scan confirmation. Denial or cancellation stops the query. `SCAN MATCH` can still traverse the current DB's entire keyspace and does not produce a consistent snapshot.
 
@@ -127,15 +131,17 @@ The Key list caches at most 5,000 Keys or 2 MiB of encoded results. Each automat
 
 The AI write MVP requires Redis 7.4 or later and no TTL on the target Key or Hash field. Key, field, old value and new value are each limited to 4,096 bytes. It replaces one complete value on an existing target; it cannot create or delete targets, perform bulk writes or change TTLs. Proposals expire after at most five minutes, or earlier when the turn ends, connection changes or writes are disabled; the target and old value are checked again before execution. Checks do not establish business intent or prevent later changes by other clients. Operation records are temporarily kept in Host memory. If the result is unknown, do not retry automatically; inspect the current target first.
 
-Not included: a free-form command console, direct RDB/AOF loading, snapshots, dedicated special-type views, charts, URI import, profile import/export, Cluster, Sentinel, built-in SSH tunnels or client-certificate authentication. Diagnostics in the development build are bounded samples, not a full server snapshot. JSON in a normal String can still be formatted.
+Not included: a free-form command console, direct RDB/AOF loading, snapshots, dedicated special-type views, charts, URI import, profile import/export, Cluster, Sentinel, built-in SSH tunnels or client-certificate authentication. Diagnostics are bounded samples, not a full server snapshot. JSON in a normal String can still be formatted.
 
 ## Verification and known issue
 
-AI writes have been exercised with isolated Redis 8.2.6 and an independently installed DSH Web profile, with readback from an independent Redis client. In one test session, the actual DSH Web switch enabled an Agent tool write, and a controlled test adapter received the proposal and result. A real-model conversation write remains unverified. [Verification record](docs/verification/ai-write-mvp-2026-11-11.md).
+For DSH 0.2.2-rc.1, the isolated Web sidebar and Redis read passed; a deterministic model adapter exercised String and Hash writes through the DSH Agent and confirmed them with an independent client. This is not a real-model conversation test. [Verification record](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md).
+
+AI writes have been exercised with isolated Redis 8.2.6 and an independently installed DSH Web profile, with readback from an independent Redis client. In one test session, the actual DSH Web switch enabled an Agent tool write, and a controlled test adapter received the proposal and result. The [controlled-adapter record](docs/verification/ai-write-mvp-2026-11-11.md) describes that test. A real bzkj-LLM conversation later wrote an isolated String and an independent client verified it on DSH 0.2.1-rc.5; this is noted separately in the [0.2.2 validation record](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md).
 
 On 2026-11-06, application source `69c63d8` passed strict type checks, build and **84 test files / 698 tests** during packaging; 143 files in the daily installation matched the archive. Native DSH runs covered query/diagnostic result delivery, reads on the original connection after candidate authentication failed, and two filter batches with cumulative counts. This local delivery is closed within the plugin's tool responsibilities; no new Release was published. See [delivery status](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md) and [tool acceptance criteria](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md) for evidence and coverage limits.
 
-The plugin is responsible for callable tools, accurate data and required metadata, and correct delivery of results to the model. Interpretation, inference, wording and think formatting after correct results arrive are not plugin defects or delivery blockers. Tool data, permissions, paging, error handling and delivery defects remain in scope. Untested background-page and lost-receipt combinations remain coverage limits; the profile-wide peers check is not claimed to pass. This documentation update does not replace the installed archive.
+The plugin is responsible for callable tools, accurate data and required metadata, and correct delivery of results to the model. Interpretation, inference, wording and think formatting after correct results arrive are not plugin defects or delivery blockers. Tool data, permissions, paging, error handling and delivery defects remain in scope. Untested background-page and lost-receipt combinations remain coverage limits; the profile-wide peers check is not claimed to pass. Updating documentation does not replace an installed archive.
 
 A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
 

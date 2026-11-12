@@ -1,3 +1,5 @@
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { executeTool } from './tool-test-utils.ts'
 import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -47,10 +49,10 @@ it('commits an exact List index through the registered tool and rejects a forged
   }, (session, revision) => { const current = actions.selectionRevision(session); return current !== null && (revision === null || current === revision) })
   const ctx = new Context(), abort = new AbortController(), input = uplink()
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
-  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+  await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'list-locate-fixture', inject: ['tools'], apply: (scope: Context) => { registerRedisLocateTool(scope, reader, actions); registerRedisTools(scope, reader) } })
   const agent = { id: 'a', ctx, session: { id: 'a' } } as unknown as Agent
-  const call = (name: string, args: unknown) => ctx.tools.execute({ callId: 'list-locate' as Parameters<typeof ctx.tools.execute>[0]['callId'], name, arguments: args, agent, signal: abort.signal })
+  const call = (name: string, args: unknown) => executeTool(ctx.tools, { callId: 'list-locate' as string, name, arguments: args, agent, signal: abort.signal })
   const content = (result: Awaited<ReturnType<typeof call>>) => result.content.filter(item => item.type === 'text').map(item => item.text).join('')
   const connection = await connections.connect('a', { host: '127.0.0.1', port: 6379, username: '', password: '', tls: null }, abort.signal)
   if (connection.id === null) throw new Error('Missing fixture connection')

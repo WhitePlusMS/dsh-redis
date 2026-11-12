@@ -2,19 +2,19 @@
 
 [English README](../README.md) · [中文 README](../README.zh.md) · [安装、更新与卸载](INSTALLATION.zh.md) · [CHANGELOG](../CHANGELOG.md)
 
-本说明保留 `v0.1.0` 的历史发布流程；当前只读 AI 范围与验收状态以源码和项目任务清单为准。当前开发源码为 `0.1.1`，声明使用 DSH `0.2.1-rc.5`，不把旧发布版的验收归于当前构建。
+本说明保留 `v0.1.0` 的历史发布流程；当前 AI 读写范围与验收状态以源码和项目任务清单为准。当前开发源码为 `0.1.2`，声明使用 DSH `0.2.2-rc.1`，不把旧发布版的验收归于当前构建。
 
 ## 1. 版本与环境
 
 | 项目 | 声明或实际状态 |
 | --- | --- |
-| 插件包 | 当前源码 `dsh-redis@0.1.1`；历史 Release 为 `v0.1.0` |
-| 宿主、DSH SDK | 当前依赖声明 `0.2.1-rc.5`；当前构建的完整原生验收待完成 |
+| 插件包 | 当前源码 `dsh-redis@0.1.2`；历史 Release 为 `v0.1.0` |
+| 宿主、DSH SDK | 当前依赖声明 `0.2.2-rc.1`；当前构建的完整原生验收待完成 |
 | 官方参考源码 | 以下旧发布流程引用 `dsh-v0.2.0-rc.2` / `639ed015`，不作为当前 SDK 行为的证明 |
-| Node.js | 声明 `^22.19.0 || >=24.0.0`；实际验证 `22.22.1` |
+| Node.js | 声明 `>=24.9.0`；DSH 0.2.2-rc.1 需要 Node 24.9 或以上版本 |
 | pnpm | `11.22.0`，由 `packageManager` 固定 |
 | React | `18.3.1`，peer/dev 一致 |
-| Cordis | peer `~4.0.5`，dev `4.0.5` |
+| Cordis | peer `~4.1.0`，dev `4.1.0` |
 | 已验收载体 | Windows 上的 DSH Web；Desktop、其他系统待独立验收 |
 
 当前没有把“最新上游”“最新稳定版”当作已验证基线。升级宿主时应另开小目标，核对官方版本、Host/Client/工具接口、全部 peer/dev 依赖和真实运行结果，再同时修改环境说明。
@@ -57,8 +57,8 @@ flowchart LR
   Transport -->|node:net 或 node:tls| Redis[单机 Redis]
 ```
 
-- 这是 DSH 原生插件，未实现 MCP server。当前注册 33 个工具，包含读取、最终回答、筛选、诊断、连接、本地资料与界面动作，完整目录见 [AI_READ_USAGE.md](AI_READ_USAGE.md)；不另开 MCP 端口，也不要求用户添加 MCP 配置。
-- 当前开发版 RPC 协议版本为 `15`，包含 `20` 个方法；已发布 v0.1.0 的协议版本为 `2`。Host、shared 和 Client 的 schema 必须一致；错误版本应暴露问题，不加静默兼容层。
+- 这是 DSH 原生插件，未实现 MCP server。当前注册的工具包含读取、最终回答、筛选、诊断、连接、本地资料、界面动作与受控写入，完整目录见 [AI_READ_USAGE.md](AI_READ_USAGE.md)；不另开 MCP 端口，也不要求用户添加 MCP 配置。
+- 当前 RPC 协议版本为 `16`，包含 `23` 个方法（包括 UI 流）；已发布 v0.1.0 的协议版本为 `2`。Host、shared 和 Client 的 schema 必须一致；错误版本应暴露问题，不加静默兼容层。
 - 正式 Redis 访问由项目的 `RedisTransport` 通过 `node:net`/`node:tls` 和有预算的 RESP2 解析完成。`redis` npm 依赖用于测试/辅助脚本，不应据依赖名把正式读取链路描述成 node-redis。
 - 工具会话身份来自 DSH 的 `exec.agent.session.id`，不能让模型传入另一个 session 来选连接。未连接时明确拒绝，不替用户选服务器或自动重连。
 - 经 `RedisAiReader.withBudget` 的工具共用会话级额度：每个额度周期最多准入 32 次、累计返回 1 MiB JSON，单次最多 64 KiB；每次准入前预留完整单次上限。准入后的失败或取消仍计次；扫描确认在准入前被拒绝时不计次。不是每条消息重新计数，切库和重连也不重置。耗尽后打开侧栏“插件信息”，待在途请求结束再手动“继续读取”；该动作重置额度，会话释放则清除记录。仅打开面板的 `redis_viewer_show` 不经过此预算。
@@ -74,7 +74,7 @@ flowchart LR
 
 1. 修改前完整阅读相关文件，先解释原因，尽量复用现有模块，保持单一职责、严格 TypeScript 与最简实现。不增加旧协议或旧代码兼容。
 2. Redis 命令、DSH 接口等关键契约以真实源码或固定版本官方文档为依据。TLS 保持证书校验；不增加跳过校验的快捷开关。
-3. 不提供命令字符串入口、任意脚本或 Redis 写入。`SELECT` 只改变本连接的 DB 上下文；写入及其逐次人工审批仍是未排期候选，已实现的扫描范围确认不授权写入。
+3. 不提供命令字符串入口或任意脚本。`SELECT` 只改变本连接的 DB 上下文；AI 写入默认关闭，开启后仅支持既有 String 值或 Hash 字段的受控替换，遵循 DSH 工具权限；扫描范围确认不授权写入。
 4. 游标推进、取消、超时和返回预算沿用现有边界，不靠多开连接规避同一会话语义。`scanComplete` 与值是否完整分开表达，不能把前缀称为完整内容。
 5. 刷新按上次读取完成后再等待间隔执行，不重叠读取；保持可复用预览状态。隐藏、换目标、取消和错误后停止，不自动重新开启。
 6. 更新当前文档时保留历史证据的时间边界。旧12类型、旧测试数量和先前失败报告不改写为当前成功；新结果在当前说明中引用或补独立报告。
@@ -134,7 +134,7 @@ pnpm build
 
 ```powershell
 pnpm pack --pack-destination .release
-$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.1.tgz').Path
+$packagePath = (Resolve-Path -LiteralPath '.release\dsh-redis-0.1.2.tgz').Path
 $sha256 = (Get-FileHash -LiteralPath $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
 $assetName = Split-Path -Leaf $packagePath
 $checksumLine = "{0}  {1}" -f $sha256, $assetName
@@ -154,7 +154,7 @@ Get-Content -LiteralPath '.release\SHA256SUMS.txt'
 4. 在新的、没有模型凭据的独立 `DSH_HOME` 中测试 CLI 安装、列包、配置组合、卸载和重新安装。测试连接资料保留时只使用空资料文件，不连接 Redis；这种检查不需要启动 Host 服务。
 5. 不改日常 profile。若用户另行要求安装，再按安装指南备份并更新，单独核对安装后的文件与实际界面。
 
-单独开发包同为 `0.1.1` 时，按[安装指南](INSTALLATION.zh.md#准备成品包)生成 SHA 唯一文件名，避免复用旧路径；不要删除 profile 仍引用的本地 tgz。
+单独开发包同为 `0.1.2` 时，按[安装指南](INSTALLATION.zh.md#准备成品包)生成 SHA 唯一文件名，避免复用旧路径；不要删除 profile 仍引用的本地 tgz。
 
 ## 8. 版本化发布与安装入口
 
@@ -199,7 +199,7 @@ https://github.com/WhitePlusMS/dsh-redis/releases/download/v0.1.0/dsh-redis-0.1.
 
 公开Release来源为完整附件URL；私有Release先登录下载，再用Host文件绝对路径。两者的包内容、版本和校验值一致；构建源码仅用于维护和开发。具体更新、回退、卸载与连接资料保留见安装指南。
 
-写入、解锁和逐次人工审批规划继续保留在双语README，本轮不实现。
+AI 写入开关和能力限制见双语 README；写入执行遵循 DSH 原生工具权限设置。
 
 ## 9. 官方依据和许可
 

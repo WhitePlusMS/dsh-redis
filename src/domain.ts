@@ -1,5 +1,5 @@
 /** Declared SDK baseline, not a runtime version probe. */
-export const DSH_BASELINE = '0.2.1-rc.5' as const
+export const DSH_BASELINE = '0.2.2-rc.1' as const
 export const PROTOCOL_VERSION = 16 as const
 export type EmptyRequest = Record<string, never>
 
