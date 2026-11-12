@@ -69,6 +69,18 @@ describe('Host write coordination', () => {
     } finally { f.close() }
   })
 
+  it('allows a delayed same-turn proposal within five minutes', async () => {
+    vi.useFakeTimers()
+    const f = await setup()
+    try {
+      f.writer.enable('a', f.target)
+      const proposal = await f.writer.prepare('a', f.target, '1', () => true, input, signal())
+      vi.advanceTimersByTime(2 * 60_000)
+      expect((await f.writer.execute('a', '1', () => true, proposal, signal())).state).toBe('written-verified')
+      expect(f.submissions).toBe(1)
+    } finally { f.close() }
+  })
+
   it('rejects unsupported versions and field expiration before issuing a proposal', async () => {
     const f = await setup()
     try {
@@ -109,7 +121,7 @@ describe('Host write coordination', () => {
       f.setWritePause(async () => { entered(); await waiting })
       const pending = f.writer.execute('a', '1', () => true, proposal, signal())
       await started
-      vi.advanceTimersByTime(60_000)
+      vi.advanceTimersByTime(5 * 60_000)
       release()
       expect((await pending).state).toBe('not-executed')
       expect(f.submissions).toBe(0)
@@ -129,7 +141,7 @@ describe('Host write coordination', () => {
       f.setAfterSubmitPause(async () => { entered(); await waiting })
       const pending = f.writer.execute('a', '1', () => current, proposal, signal())
       await started
-      current = false; f.writer.endTurn('a', '1'); vi.advanceTimersByTime(60_000)
+      current = false; f.writer.endTurn('a', '1'); vi.advanceTimersByTime(5 * 60_000)
       release()
       expect((await pending).state).toBe('written-verified')
       expect(f.submissions).toBe(1)

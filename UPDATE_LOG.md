@@ -3913,3 +3913,12 @@
 
 - 更新 `tests/ai-write-tools.test.ts`：在原生工具执行管线中模拟询问服务返回不可用，验证 ToolRuntime 拒绝调用且不写入；不代表已完成真实 ApprovalService 无应答者的端到端验收。
 - 同文件补充真实 DSH ApprovalService 且不注册应答者的测试：使用合成 Session 和受控 RedisLink，验证审批事件结果为 unavailable、拒绝原因明确，且插件写入执行体未被调用。
+
+## 日常 DSH Web 插件更新（2026-11-12）
+
+- 原因：用户要求将最新 Redis AI 读写插件更新到当前 DSH，并进行实际读写验证。
+- 在更新前备份 `C:/Users/admin/.dsh/profiles/web` 的 `package.json`、锁文件及 Cordis 配置；保留旧插件归档以便回退。
+- 从当前源码执行 `pnpm pack`：类型检查与完整回归通过（90 个测试文件、742 项）；生成的开发归档 SHA-256 为 `d3781483ece30e97733cd6922b369cbc59e41436ef14b0b573b94af9b1ac8581`。
+- 按 DSH 插件管理命令在同一个 `web` profile 移除旧版并添加新归档；确认 `ui-redis` 在组合配置中，Git Graph、OPC UA 依赖未改变。真实模型与隔离 Redis 测试待完成。
+- 实际模型测试中，`bzkj-LLM` 已读到隔离 String 并生成正确写入提案，但超过提案的 60 秒有效期仍未请求执行；独立客户端回读确认测试值未变。
+- 将 `src/host/write-proposals.ts` 的提案有效期由 60 秒调整为 5 分钟，以容纳模型工具调用间较长等待；继续限定会话、轮次、连接、单次消费及写前值检查。更新 `tests/write-proposals.test.ts`、`tests/ai-writer.test.ts` 的超时边界和延迟执行覆盖，并同步中英文 README。

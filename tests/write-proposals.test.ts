@@ -54,7 +54,7 @@ describe('write proposals', () => {
       store.enable('a', target)
       const token = store.beginTurn('a', 'turn')
       const proposal = store.issue('a', 'turn', token, draft)
-      vi.advanceTimersByTime(60_000)
+      vi.advanceTimersByTime(5 * 60_000)
       expect(store.consume('a', 'turn', proposal)).toBeNull()
       expect(vi.getTimerCount()).toBe(0)
       store.issue('a', 'turn', token, draft)
@@ -120,7 +120,7 @@ describe('write proposals', () => {
       const proposal = store.issue('a', 'turn', token, draft)
       const consumed = store.consume('a', 'turn', proposal)
       expect(consumed?.isCurrent()).toBe(true)
-      vi.advanceTimersByTime(60_000)
+      vi.advanceTimersByTime(5 * 60_000)
       expect(consumed?.isCurrent()).toBe(false)
     } finally { store.dispose() }
   })

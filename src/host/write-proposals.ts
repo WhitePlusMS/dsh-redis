@@ -3,7 +3,7 @@ import type { DatabaseTarget } from '../domain.ts'
 
 const MAX_SESSIONS = 64
 const MAX_BYTES = 4096
-const LIFETIME_MS = 60_000
+const LIFETIME_MS = 5 * 60_000
 
 /** Canonical bytes and connection identity returned by the Host's preflight. */
 export interface RedisWriteDraft {
