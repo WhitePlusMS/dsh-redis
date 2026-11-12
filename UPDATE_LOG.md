@@ -3950,3 +3950,4 @@
 - 已发布私有 GitHub Release v0.1.2，tag 指向提交 e6146d0bccbd64decafeb1833e7cf22162e865b6；上传 dsh-redis-0.1.2.tgz 和 SHA256SUMS.txt 后从 GitHub 回下载并逐文件校验，归档 SHA-256 为 9196382d07a0db59805f73129c19585ac10e021615698308280d64b133fd9b74。
 - 按用户要求复核所有 README：中英文主 README、安装指南和截图来源说明已核对；更新 PROMOTION.md 的中英文介绍为当前受控 AI 读写及 DSH 0.2.2-rc.1，更新 docs/promotion/README.md 说明旧封面中的“写入规划中”仅是制作时状态，保留素材本身。
 - 补查 Git 跟踪文件后，为 .scratch/redis-viewer/README.md 标注 2026-10-16 的历史基线并链接现行中文 README；修正 docs/screenshots/README.md 关于当前共用静态 SVG、GIF 为备选素材的说明。两项为发布后源码文档修订，不改已发布 v0.1.2 成品。
+- 发布后按用户此前授权更新日常 DSH web profile：先备份 profile 配置，再使用 GitHub 回下载且校验一致的 0.1.2 成品执行 DSH 插件安装。安装元数据声明 0.2.2-rc.1，128 个 lib 文件与发布包完全一致，其他插件依赖和 cordis / workspace 配置保持不变；dump-config 含 ui-redis。安装命令当时提示 Git Graph 0.6.1 和 OPC UA 0.2.6 声明旧 DSH 版本，本次未改变或豁免它们；随后复核发现 Git Graph 已独立更新为 0.6.2 / DSH 0.2.2-rc.1，OPC UA 当时仍为 0.2.6 / 0.2.1-rc.5。系统 PATH 的 node 命令为 22.22.1；当前 dsh 启动脚本使用独立 Node 24.22.1 和 DSH 0.2.2-rc.1，全局旧 DSH 安装仍保留。
