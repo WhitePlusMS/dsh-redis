@@ -3922,3 +3922,10 @@
 - 按 DSH 插件管理命令在同一个 `web` profile 移除旧版并添加新归档；确认 `ui-redis` 在组合配置中，Git Graph、OPC UA 依赖未改变。真实模型与隔离 Redis 测试待完成。
 - 实际模型测试中，`bzkj-LLM` 已读到隔离 String 并生成正确写入提案，但超过提案的 60 秒有效期仍未请求执行；独立客户端回读确认测试值未变。
 - 将 `src/host/write-proposals.ts` 的提案有效期由 60 秒调整为 5 分钟，以容纳模型工具调用间较长等待；继续限定会话、轮次、连接、单次消费及写前值检查。更新 `tests/write-proposals.test.ts`、`tests/ai-writer.test.ts` 的超时边界和延迟执行覆盖，并同步中英文 README。
+
+## 日常 DSH 插件更新与真实 AI 读写验证（2026-11-12）
+
+- 原因与原则：将当前 AI 写入版本安装到日常 DSH Web profile，使用独立合成数据核对真实模型、插件与 Redis 的调用链，保持改动和测试范围最小。
+- 安装：基于提交 `049bbd3` 执行 `pnpm pack`，三套类型检查及完整回归 90 个文件、743 项通过；归档 SHA-256 为 `17c78fb7192a5e1995abec3094e970cab68698a18d685ab12ba2de9b79831d14`。通过 DSH 官方插件命令更新 `web` profile 的 `dsh-redis`，确认插件配置存在且安装的提案代码与构建结果一致；其他插件保持原有配置。
+- 实测：DSH 0.2.1-rc.5 使用已有 `bzkj-LLM`，连接本机独立 Redis 8.2.6 测试实例，开启该连接的 AI 写入；真实模型调用状态、提案、执行和读取工具，将 DB 0 中一个已有 String 的 `before-string` 替换为 `after-string`，执行结果为 `written-verified`，读取工具返回完整新值。通过独立 Redis 客户端再次回读，新值为 `after-string`，另一测试 Hash 仍为 `before-hash`。
+- 影响与边界：仅操作自建隔离 Redis 的合成数据；测试会话将可用工具限制在验收所需范围，未使用业务 Redis。此次真实模型写入验证覆盖已有 String 单目标替换，不能代表 Hash 写入、各种权限模式或生产并发场景均已在同一真实模型下验收。此前的 Hash 与并发验证见对应专项记录；测试 Redis 和本次启动的 DSH 服务均已停止，夹具已清理。
