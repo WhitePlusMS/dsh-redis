@@ -3947,3 +3947,6 @@
 - 修正 README 安装命令的代码格式，确保占位路径在 GitHub 中可见。
 - 发布包核对：完整 prepack 已通过 90 文件 / 743 项；其后仅修正文档措辞与 README 命令格式并重新归档（未重复执行钩子）。最终 0.1.2 包的 128 个 lib 文件与实测安装包逐字节一致，随包文档与源码一致，SHA-256 为 9196382d07a0db59805f73129c19585ac10e021615698308280d64b133fd9b74。
 - 最终复核去除开发指南中过时的工具数量，补充受控写入工具类别。
+- 已发布私有 GitHub Release v0.1.2，tag 指向提交 e6146d0bccbd64decafeb1833e7cf22162e865b6；上传 dsh-redis-0.1.2.tgz 和 SHA256SUMS.txt 后从 GitHub 回下载并逐文件校验，归档 SHA-256 为 9196382d07a0db59805f73129c19585ac10e021615698308280d64b133fd9b74。
+- 按用户要求复核所有 README：中英文主 README、安装指南和截图来源说明已核对；更新 PROMOTION.md 的中英文介绍为当前受控 AI 读写及 DSH 0.2.2-rc.1，更新 docs/promotion/README.md 说明旧封面中的“写入规划中”仅是制作时状态，保留素材本身。
+- 补查 Git 跟踪文件后，为 .scratch/redis-viewer/README.md 标注 2026-10-16 的历史基线并链接现行中文 README；修正 docs/screenshots/README.md 关于当前共用静态 SVG、GIF 为备选素材的说明。两项为发布后源码文档修订，不改已发布 v0.1.2 成品。

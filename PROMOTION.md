@@ -8,11 +8,13 @@
 
 在同一个对话中，可以直接请求读取指定 Key 或字段，也可以围绕当前选择提问。工具还支持在明确范围内查找 Key、筛选 Hash，以及读取慢日志等诊断信息。查询结果会记录范围和必要的状态，方便核对；模型如何解释这些信息由模型决定。
 
-当前插件只读，支持单机连接和 TLS。连接资料不保存密码，但工具返回的数据会进入 DSH 对话记录，并可能发送给该对话配置的模型服务。当前源码适配 DSH Web `0.2.1-rc.5`；安装步骤、功能范围和验证记录见[中文 README](README.zh.md)及[安装指南](docs/INSTALLATION.zh.md)。
+需要修改数据时，可以为当前连接开启 AI 写入，替换已有 String 值或 Hash 字段。写入默认关闭，执行遵循 DSH 工具权限设置，并在写入前检查旧值、在执行后返回结果。
+
+插件支持单机 Redis 和 TLS。连接资料不保存密码，但工具参数和结果会进入 DSH 对话记录，并可能发送给该对话配置的模型服务。当前版本适配 DSH Web `0.2.2-rc.1`；安装步骤、功能范围和验证记录见[中文 README](README.zh.md)及[安装指南](docs/INSTALLATION.zh.md)。
 
 ## 简短介绍
 
-DSH Redis 是一个只读的 DSH 社区插件：在侧栏查看 Redis 六种基础类型，在同一对话中读取指定 Key 或当前选择，也可以按范围查找、筛选和获取诊断信息。
+DSH Redis 是一个 DSH 社区插件：在侧栏查看 Redis 六种基础类型，在对话中读取数据、按范围查找和获取诊断信息，并可按需开启受控的 AI 写入。
 
 ## English introduction
 
@@ -22,4 +24,6 @@ Connect to a standalone Redis server to browse databases and Keys, inspect Strin
 
 In the same conversation, request a specific Key or field, or ask about the current selection. The tools also support bounded Key searches, Hash filtering and diagnostic information such as slow logs. Tool results carry their scope and relevant status; the model decides how to interpret them.
 
-The plugin is read-only and supports standalone Redis with TLS. Saved connection profiles do not contain passwords. Tool results enter DSH conversation history and may be sent to the configured model provider. Current source targets DSH Web `0.2.1-rc.5`; see the [README](README.md) and [installation guide](docs/INSTALLATION.md) for setup, scope and verification.
+When a change is needed, enable AI writes for the current connection to replace an existing String value or Hash field. Writes are off by default, follow DSH tool permissions, check the previous value before execution and return the outcome.
+
+The plugin supports standalone Redis with TLS. Saved connection profiles do not contain passwords. Tool arguments and results enter DSH conversation history and may be sent to the configured model provider. The current version targets DSH Web `0.2.2-rc.1`; see the [README](README.md) and [installation guide](docs/INSTALLATION.md) for setup, scope and verification.

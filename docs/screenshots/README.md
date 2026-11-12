@@ -23,6 +23,6 @@ The originals are under `docs/verification/artifacts/slim-2026-10-19/` in the so
 
 [readme-header.gif](readme-header.gif) is a 1200 × 280 title animation based on the layout approach of the maintainer's GitGraph README. It uses this project's existing cylinder paths and cyan/purple/orange navigation palette. The DB, folder and Key highlights appear in sequence, hold still, then fade; the name and purpose remain visible. It illustrates browsing order, not live server activity or a product screen recording.
 
-[readme-header.svg](readme-header.svg) is the static fallback. [readme-header-motion.svg](readme-header-motion.svg) and its [motion spec](readme-header-motion.json) preserve the editable source: 30 source frames per second, a 5-second loop and a 2.3-second fully settled hold. The 150 source frames may merge into fewer encoded GIF frames; timings are retained.
+[readme-header.svg](readme-header.svg) is the static header used by both READMEs; the GIF remains an alternative asset. [readme-header-motion.svg](readme-header-motion.svg) and its [motion spec](readme-header-motion.json) preserve the editable source: 30 source frames per second, a 5-second loop and a 2.3-second fully settled hold. The 150 source frames may merge into fewer encoded GIF frames; timings are retained.
 
-这是 README 顶部的轻量标题示意，复用现有数据库图标路径和青紫橘导航配色；不是原生截图，也不代表实际 Redis 活动。两种语言共用同一 GIF，并保留静态 SVG 入口，操作说明、真实截图和版本要求仍在正文中。维护源文件时同步重新导出 GIF；不要把 SVG 自身当成 GitHub 可播放的动画。
+这是 README 顶部的轻量标题示意，复用现有数据库图标路径和青紫橘导航配色；不是原生截图，也不代表实际 Redis 活动。两种语言的 README 目前共用静态 SVG，GIF 保留为备选素材；操作说明、真实截图和版本要求仍在正文中。维护动画源文件时同步重新导出 GIF；不要把 SVG 自身当成 GitHub 可播放的动画。
