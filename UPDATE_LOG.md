@@ -3951,3 +3951,16 @@
 - 按用户要求复核所有 README：中英文主 README、安装指南和截图来源说明已核对；更新 PROMOTION.md 的中英文介绍为当前受控 AI 读写及 DSH 0.2.2-rc.1，更新 docs/promotion/README.md 说明旧封面中的“写入规划中”仅是制作时状态，保留素材本身。
 - 补查 Git 跟踪文件后，为 .scratch/redis-viewer/README.md 标注 2026-10-16 的历史基线并链接现行中文 README；修正 docs/screenshots/README.md 关于当前共用静态 SVG、GIF 为备选素材的说明。两项为发布后源码文档修订，不改已发布 v0.1.2 成品。
 - 发布后按用户此前授权更新日常 DSH web profile：先备份 profile 配置，再使用 GitHub 回下载且校验一致的 0.1.2 成品执行 DSH 插件安装。安装元数据声明 0.2.2-rc.1，128 个 lib 文件与发布包完全一致，其他插件依赖和 cordis / workspace 配置保持不变；dump-config 含 ui-redis。安装命令当时提示 Git Graph 0.6.1 和 OPC UA 0.2.6 声明旧 DSH 版本，本次未改变或豁免它们；随后复核发现 Git Graph 已独立更新为 0.6.2 / DSH 0.2.2-rc.1，OPC UA 当时仍为 0.2.6 / 0.2.1-rc.5。系统 PATH 的 node 命令为 22.22.1；当前 dsh 启动脚本使用独立 Node 24.22.1 和 DSH 0.2.2-rc.1，全局旧 DSH 安装仍保留。
+
+## 2026-11-13 架构优化
+
+- `src/client/collection-point.ts` 负责集合定位的目标校验、候选展示、Host 确认及取消回滚。Hash、List、Set、ZSet、Stream 视图各自保留真实行身份及选中逻辑。Hash 定位被拒绝时恢复原有滚动与自动分页条件，Stream 仍等待两张表都可见。
+- `src/client/row-cache.ts` 统一集合行的去重、替换与 UTF-8 字节预算。Hash、ZSet、Stream 适配原有行身份，Stream 字段顺序和重复字段保留。
+- `src/typert.shared.ts` 和 `src/typert.host.ts` 将 23 个 Remote 端点、严格校验和双向流收拢到同一来源。用锁定版 Typert 生成器在临时目录生成并调用单次与双向流 codec。普通 Host 请求、结果和流消息接收额外字段，客户端的显式 strict 输入会拒绝。保留已有严格解析器和 DSH Zod 适配。
+- `src/remote-service.ts` 和 `src/host/ai-reader.ts` 统一连接替换与切库的状态清理，AI 和侧栏切库都撤销旧目标的写入开关、UI 动作与游标。仅实际进入目标切换时清理，保留已有结果记录和会话额度。
+- `src/host/ai-page-store.ts`、`ai-page-coordinator.ts`、`ai-reader.ts`、`ai-hash-filter.ts` 和 `ai-report-samples.ts` 区分内部页状态与对外投影，只有成功并提交的候选页会替换旧游标。
+- `src/host/ai-query-scope.ts` 合并重叠的宿主询问和首批扫描范围确认，保留宿主策略理由、真实调用令牌和连接检查。使用 DSH 真实审批服务覆盖单次确认、替换目标、取消与缺少应答者。
+- `scripts/build.mjs` 使用 TypeScript 项目编译替代手写 Host 导入图，保留声明路径规范化与浏览器 ModuleLoader 注册。 `src/redis-result.ts` 供 `ai-answer.ts` 和 `tool-evidence.ts` 共用有 UTF-8 字节限制的结果解析，`tsconfig.client.json` 纳入共享模块。
+- `package.json` 与 `pnpm-lock.yaml` 将 `redis@6.2.1` 移至开发依赖。核对其解码器配置及官方队列说明后，生产侧继续用有前置字节、节点、深度限制的 RESP 传输。两份 Redis 冒烟脚本更新为 DSH 原生批量工具执行入口。
+- 更新中英文 README、开发说明和 AI 使用说明。扩展既有测试夹具和回归覆盖，包含浏览器打包、定位拒绝、实际审批、分页状态和非 ASCII 结果预算。
+- 验证通过三套 TypeScript 检查、Host/Client 构建、90 个测试文件共 748 项。隔离 Redis 8.2.6 六类型读取及原生工具 String、Hash 写入、独立回读通过，夹具已停止。规范与方案审查完成。打包后用 DSH CLI 安装到独立 Web profile，组合配置包含 `ui-redis`，130 个安装产物的 SHA-256 与本地构建一致。浏览器回归使用 DSH Gateway 与隔离测试页面，独立 profile 验证到安装和组合配置。

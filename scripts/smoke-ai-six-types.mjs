@@ -3,6 +3,8 @@ import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -31,14 +33,19 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const ctx = new Context()
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
     await ctx.plugin({ name: 'redis-six-types-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     let index = 0
+    const call = async (name, args) => {
+      const batch = await ctx.tools.execute({ calls: [{ type: 'tool-call', id: ToolCallId('fixture-' + ++index), name, arguments: JSON.stringify(args) }], agent, signal })
+      assert.equal(batch.results.length, 1)
+      return batch.results[0].result
+    }
     const commandCount = async name => Number(new RegExp('^cmdstat_' + name + ':calls=(\\d+)', 'mu').exec(await admin.info('commandstats'))?.[1] ?? 0)
     const valueCommands = ['getrange', 'hget', 'hscan'], beforeMetadata = await Promise.all(valueCommands.map(commandCount))
     for (const [key, type] of [[keys.string, 'string'], [keys.hash, 'hash']]) {
-      const reply = await ctx.tools.execute({ callId: 'metadata-' + type, name: 'redis_viewer_key_metadata', arguments: { key }, agent, signal })
+      const reply = await call('redis_viewer_key_metadata', { key })
       assert.equal(reply.isError, false)
       const text = reply.content.filter(block => block.type === 'text').map(block => block.text).join(''), metadata = JSON.parse(text)
       assert.equal(metadata.state, 'value'); assert.equal(metadata.type, type); assert(!text.includes('synthetic-string')); assert(!text.includes('synthetic-ready'))
@@ -47,10 +54,10 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     }
     assert.deepEqual(await Promise.all(valueCommands.map(commandCount)), beforeMetadata)
     const readsBefore = await commandCount('getrange')
-    const invalid = await ctx.tools.execute({ callId: 'invalid-range', name: 'redis_viewer_value', arguments: { key: keys.string, match: '*' }, agent, signal })
+    const invalid = await call('redis_viewer_value', { key: keys.string, match: '*' })
     assert.equal(invalid.isError, true); assert.equal(await commandCount('getrange'), readsBefore)
     const read = async arguments_ => {
-      const result = await ctx.tools.execute({ callId: 'fixture-' + ++index, name: 'redis_viewer_value', arguments: arguments_, agent, signal })
+      const result = await call('redis_viewer_value', arguments_)
       assert.equal(result.isError, false)
       const value = JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
       assert.equal(value.readOnly, true); assert.equal(value.source, 'explicit')

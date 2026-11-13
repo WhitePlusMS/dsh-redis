@@ -24,41 +24,37 @@ export class AiPageCoordinator<T extends Slot> {
     const index: 0 | 1 = cursor === null ? (state.current === 0 ? 1 : 0) : state.current === 1 ? 1 : 0
     const owner = {}, current = state, slot = this.slots[index]
     current.busy = owner
-    const active = () => { if (this.sessions.get(sessionId) !== current || current.busy !== owner) throw new ConnectionFailure('stale') }
+    const active = () => this.sessions.get(sessionId) === current && current.busy === owner
+    const release = (discard: boolean) => {
+      if (!active()) return
+      if (discard && cursor === null) slot.disposeSession(sessionId)
+      current.busy = null
+      if (current.current === null && current.revision === 0n) this.sessions.delete(sessionId)
+    }
     try {
       const page = await fetch(slot)
-      const value = page.result !== null && typeof page.result === 'object' && !Array.isArray(page.result) ? page.result.value : null
-      const isPage = value !== null && typeof value === 'object' && !Array.isArray(value) && value.state === 'page'
       let finished = false
-      return { result: page.result,
+      return { result: page.result, isPage: page.isPage,
         commit: () => {
-          if (finished) throw new ConnectionFailure('stale')
-          active(); page.commit()
-          if (cursor === null && isPage) {
+          if (finished || !active()) throw new ConnectionFailure('stale')
+          page.commit()
+          if (cursor === null && page.isPage) {
             const previous = current.current
             current.current = index
             if (previous !== null) this.slots[previous].disposeSession(sessionId)
-          } else if (cursor === null) slot.disposeSession(sessionId)
-          if (isPage) current.revision = ++this.revision
-          finished = true; current.busy = null
-          if (current.current === null && current.revision === 0n) this.sessions.delete(sessionId)
+          }
+          if (page.isPage) current.revision = ++this.revision
+          finished = true
+          release(!page.isPage)
         },
         rollback: () => {
           if (finished) return
           page.rollback()
-          if (this.sessions.get(sessionId) === current && current.busy === owner) {
-            if (cursor === null) slot.disposeSession(sessionId)
-            current.busy = null
-            if (current.current === null && current.revision === 0n) this.sessions.delete(sessionId)
-          }
+          release(true)
         },
       }
     } catch (error) {
-      if (this.sessions.get(sessionId) === current && current.busy === owner) {
-        if (cursor === null) slot.disposeSession(sessionId)
-        current.busy = null
-        if (current.current === null && current.revision === 0n) this.sessions.delete(sessionId)
-      }
+      release(true)
       throw error
     }
   }

@@ -69,7 +69,7 @@ export class RedisAiHashFilter {
         scanComplete: data.state === 'page' && cursor === null, sampledAt: data.sampledAt, readStartedAt, readFinishedAt: new Date().toISOString(),
         coverage: '本批候选；跨批可能重复，SCAN 与逐项读取不是同一时刻的快照。' })
       if (Buffer.byteLength(JSON.stringify(result)) > MAX_AI_RESULT_BYTES) throw new Error('筛选结果超过单次预算，请缩小范围。')
-      return { result, commit: page.commit, rollback: page.rollback }
+      return { ...page, result }
     } catch (error) { page.rollback(); throw error }
   }
 

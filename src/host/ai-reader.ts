@@ -15,7 +15,7 @@ import { projectStreamGroups } from './stream-groups.ts'
 import { projectClients } from './client-list.ts'
 import { MAX_AI_RESULT_BYTES, RedisAiBudget } from './ai-budget.ts'
 import { RedisAiKeyPages } from './ai-key-pages.ts'
-import { AiPageStore, type PreparedAiPage } from './ai-page-store.ts'
+import { AiPageStore, type PreparedAiPage, type PreparedAiResult } from './ai-page-store.ts'
 import { AiPageCoordinator } from './ai-page-coordinator.ts'
 import { RedisAiHashPages, isAiHashCursor } from './ai-hash-pages.ts'
 import { RedisAiSetPages, isAiSetCursor } from './ai-set-pages.ts'
@@ -117,7 +117,7 @@ export class RedisAiReader {
   private readonly streamPages: AiPageCoordinator<RedisAiStreamPages>
   private readonly timeSeriesPages = new AiPageStore<TimeSeriesPage, TimeSeriesSample>('ts:')
   private readonly selections = new Map<string, { readonly target: DatabaseTarget; readonly selection: RedisSelection; readonly sampledAt: string }>()
-  constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean) {
+  constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean, private readonly onDatabaseChange: (sessionId: string) => void = sessionId => this.clearTarget(sessionId)) {
     this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections, false)
     this.keyPages = new RedisAiKeyPages(connections, this.keys)
     this.hashFilter = new RedisAiHashFilter(connections)
@@ -127,11 +127,11 @@ export class RedisAiReader {
     this.streams = new RedisStreams(connections, true); this.streamPages = new AiPageCoordinator([new RedisAiStreamPages(connections, this.streams), new RedisAiStreamPages(connections, new RedisStreams(connections, true))])
   }
   /** All registered tools share a budget tied to the trusted DSH session. */
-  async withBudget(sessionId: string, signal: AbortSignal, operation: (stage: (page: PreparedAiPage) => void) => AiJson | Promise<AiJson>): Promise<AiJson> {
+  async withBudget(sessionId: string, signal: AbortSignal, operation: (stage: (page: PreparedAiResult) => void) => AiJson | Promise<AiJson>): Promise<AiJson> {
     const admission = this.budget.begin(sessionId)
     if (!admission.ok) throw new Error(admission.reason === 'busy' ? '当前对话有读取正在执行，请等待后重试。' : '当前对话的 AI 读取预算已用完。请打开 Redis 侧栏右上角的“插件信息”；如读取正在结束，请刷新状态，然后点击“继续读取”。')
     let finished = false, committed = false
-    const staged: { page?: PreparedAiPage } = {}
+    const staged: { page?: PreparedAiResult } = {}
     try {
       signal.throwIfAborted()
       const result = await operation(page => { staged.page = page })
@@ -258,7 +258,7 @@ export class RedisAiReader {
     }
     return { accepted: true }
   }
-  async scan(sessionId: string, args: { readonly match: string; readonly cursor?: string }, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
+  async scan(sessionId: string, args: { readonly match: string; readonly cursor?: string }, signal: AbortSignal, stage?: (page: PreparedAiResult) => void): Promise<AiJson> {
     signal.throwIfAborted()
     if (typeof args.match !== 'string') throw new Error('请明确提供 Redis MATCH 查询范围；只有用户要求查看整个当前数据库时才使用 *。')
     validateMatch(args.match)
@@ -270,7 +270,7 @@ export class RedisAiReader {
     return page.result
   }
   /** Filter one bounded batch without returning unrelated Hash values to the model. */
-  async filterHash(sessionId: string, args: { readonly match: string; readonly field: string; readonly equals: string; readonly cursor?: string }, signal: AbortSignal, stage: (page: PreparedAiPage) => void): Promise<AiJson> {
+  async filterHash(sessionId: string, args: { readonly match: string; readonly field: string; readonly equals: string; readonly cursor?: string }, signal: AbortSignal, stage: (page: PreparedAiResult) => void): Promise<AiJson> {
     signal.throwIfAborted()
     const target = this.target(sessionId)
     validateMatch(args.match)
@@ -681,12 +681,12 @@ export class RedisAiReader {
   async selectDatabase(sessionId: string, db: number, signal: AbortSignal): Promise<AiJson> {
     signal.throwIfAborted()
     const previous = this.target(sessionId), target = databaseTargetSchema.parse({ ...previous, db })
-    const connection = await this.connections.selectDatabase(sessionId, target, signal, () => this.clearTarget(sessionId))
+    const connection = await this.connections.selectDatabase(sessionId, target, signal, () => this.onDatabaseChange(sessionId))
     // Never let an older switch clear a replacement connection's selection.
     if (!this.connections.isCurrentView(sessionId, connection)) throw new Error('连接或数据库已变化，请重新检查当前状态。')
     return this.project(sessionId, { readOnly: true, connection, errorMessage: explain(connection.error), requestedDb: db, sampledAt: new Date().toISOString() })
   }
-  async read(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void): Promise<AiJson> {
+  async read(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiResult) => void): Promise<AiJson> {
     if ((args.field !== undefined || args.fieldBase64 !== undefined) && (args.member !== undefined || args.memberBase64 !== undefined)) throw new Error('字段和成员身份不能同时指定。')
     if (args.field !== undefined || args.fieldBase64 !== undefined) return this.readExplicitHashField(sessionId, args, signal)
     if (args.member !== undefined || args.memberBase64 !== undefined) return this.readExplicitMember(sessionId, args, signal)
@@ -700,7 +700,7 @@ export class RedisAiReader {
       if (!allowFailed || !this.connections.isFailedTarget(sessionId, selected.target)) this.connections.assertTarget(sessionId, selected.target)
     }
     validate()
-    let prepared: PreparedAiPage | undefined
+    let prepared: PreparedAiResult | undefined
     try {
       const result = await this.readValue(sessionId, args, signal, page => { prepared = page }, validate)
       const value = typeof result === 'object' && result !== null && !Array.isArray(result) ? result.value : null
@@ -753,7 +753,7 @@ export class RedisAiReader {
     this.connections.assertReadResult(sessionId, target, sample.error)
     return this.project(sessionId, { readOnly: true, connection: this.connections.status(sessionId), source: 'explicit', key, member, errorMessage: sample.state === 'selection-missing' ? '采样时指定的成员不存在。' : explainValue(sample.error, sample), value: { ...sample, cell: sample.cell === null ? null : aiValue(sample.cell) } })
   }
-  private async readValue(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiPage) => void, validateSelection?: (allowFailed?: boolean) => void): Promise<AiJson> {
+  private async readValue(sessionId: string, args: AiValueRequest, signal: AbortSignal, stage?: (page: PreparedAiResult) => void, validateSelection?: (allowFailed?: boolean) => void): Promise<AiJson> {
     signal.throwIfAborted()
     if (args.match !== undefined) validateMatch(args.match)
     const target = this.target(sessionId)

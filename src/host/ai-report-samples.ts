@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { z } from 'zod'
 import { MAX_AI_RESULT_BYTES } from './ai-budget.ts'
-import type { PreparedAiPage } from './ai-page-store.ts'
+import type { PreparedAiResult } from './ai-page-store.ts'
 
 export const overviewFields = {
   server: ['redis_version', 'uptime_in_seconds'],
@@ -46,7 +46,7 @@ function project(kind: ReportKind, input: AiJson): ReportSample {
 export class RedisReportSamples {
   private readonly sessions = new Map<string, Map<string, ReportSample>>()
 
-  prepare(session: string, kind: ReportKind, input: AiJson, signal: AbortSignal): PreparedAiPage {
+  prepare(session: string, kind: ReportKind, input: AiJson, signal: AbortSignal): PreparedAiResult {
     const original = z.record(z.string(), z.json()).parse(input), sample = project(kind, input), id = randomUUID()
     const result = { ...original, reportSampleId: id }
     // A nearly full diagnostic result remains readable; it simply cannot be saved as a report.

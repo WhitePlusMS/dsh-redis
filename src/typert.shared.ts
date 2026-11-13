@@ -45,7 +45,7 @@ const sessionIdSchema: TypertSchema<SessionId> = { parse(value) {
 } }
 
 /** Adapted from Git Graph: strict, Agent-scoped direct invocation with cancellation. */
-export function createRedisInvocation(method: string, inputSymbol: string, resultSymbol: string, input: TypertSchema, result: TypertSchema, session: TypertSchema): InvocationDescriptor {
+function createRedisInvocation(method: string, inputSymbol: string, resultSymbol: string, input: TypertSchema, result: TypertSchema, session: TypertSchema): InvocationDescriptor {
   return {
     id: `${TYPERT_PACKAGE}#redisViewer/${method}`, service: 'redisViewer', namespace: 'redisViewer', method,
     invocation: { kind: 'direct' }, cancellation: { parameter: 'signal' },
@@ -239,7 +239,7 @@ export const uiChannelMessageSchema: TypertSchema<UiChannelMessage> = { parse(va
 } }
 
 /** One scoped stream carries Host actions down and their acknowledgements up. */
-export function createRedisUiStreamInvocation(input: TypertSchema, output: TypertSchema, ack: TypertSchema, session: TypertSchema): InvocationDescriptor {
+function createRedisUiStreamInvocation(input: TypertSchema, output: TypertSchema, ack: TypertSchema, session: TypertSchema): InvocationDescriptor {
   return { ...createRedisInvocation('openUiChannel', 'EmptyRequest', 'UiChannelMessage', input, output, session), mode: 'stream',
     uplink: { codec: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#UiChannelInput`, create: () => ack } } }
 }
@@ -566,28 +566,36 @@ export const aiBudgetResumeSchema: TypertSchema<AiBudgetResume> = { parse(value)
   return { accepted: raw.accepted, status: aiBudgetStatusSchema.parse(raw.status) }
 } }
 
-export const redisDescriptors = [
-  createRedisInvocation('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema, sessionIdSchema),
-  createRedisInvocation('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema, sessionIdSchema),
-  createRedisInvocation('disconnect', 'ConnectionTarget', 'ConnectionView', connectionTargetSchema, connectionViewSchema, sessionIdSchema),
-  createRedisInvocation('connectionStatus', 'EmptyRequest', 'ConnectionView', emptyRequestSchema, connectionViewSchema, sessionIdSchema),
-  createRedisInvocation('writeModeStatus', 'EmptyRequest', 'RedisWriteModeStatus', emptyRequestSchema, writeModeStatusSchema, sessionIdSchema),
-  createRedisInvocation('setWriteMode', 'RedisWriteModeRequest', 'RedisWriteModeStatus', writeModeRequestSchema, writeModeStatusSchema, sessionIdSchema),
-  createRedisInvocation('writeLookup', 'RedisWriteLookupRequest', 'RedisWriteLookupResult', writeLookupRequestSchema, writeLookupResultSchema, sessionIdSchema),
-  createRedisInvocation('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema, sessionIdSchema),
-  createRedisInvocation('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema, sessionIdSchema),
-  createRedisInvocation('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema, sessionIdSchema),
-  createRedisInvocation('selectDatabase', 'DatabaseTarget', 'ConnectionView', databaseTargetSchema, connectionViewSchema, sessionIdSchema),
-  createRedisInvocation('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scanKeysRequestSchema, scanKeysResultSchema, sessionIdSchema),
-  createRedisInvocation('readString', 'StringReadRequest', 'StringReadResult', stringReadRequestSchema, stringReadResultSchema, sessionIdSchema),
-  createRedisInvocation('scanHash', 'ScanHashRequest', 'ScanHashResult', scanHashRequestSchema, scanHashResultSchema, sessionIdSchema),
-  createRedisInvocation('readActionPoint', 'ActionPointReadRequest', 'ActionPointReadResult', actionPointReadRequestSchema, actionPointReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readList', 'ListReadRequest', 'ListReadResult', listReadRequestSchema, listReadResultSchema, sessionIdSchema),
-  createRedisInvocation('scanSet', 'ScanSetRequest', 'ScanSetResult', scanSetRequestSchema, scanSetResultSchema, sessionIdSchema),
-  createRedisInvocation('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetReadRequestSchema, zsetReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readStream', 'StreamReadRequest', 'StreamReadResult', streamReadRequestSchema, streamReadResultSchema, sessionIdSchema),
-  createRedisInvocation('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema, sessionIdSchema),
-  createRedisInvocation('aiBudgetStatus', 'EmptyRequest', 'AiBudgetStatus', emptyRequestSchema, aiBudgetStatusSchema, sessionIdSchema),
-  createRedisInvocation('resumeAiBudget', 'EmptyRequest', 'AiBudgetResume', emptyRequestSchema, aiBudgetResumeSchema, sessionIdSchema),
-  createRedisUiStreamInvocation(emptyRequestSchema, uiChannelMessageSchema, uiChannelInputSchema, sessionIdSchema),
-] as const
+/** The Client uses the parsers directly; the Host adapts them to the registry's Zod codecs. */
+export function createRedisDescriptors(adapt: (schema: TypertSchema) => TypertSchema) {
+  const session = adapt(sessionIdSchema)
+  const direct = (method: string, inputSymbol: string, resultSymbol: string, input: TypertSchema, result: TypertSchema) =>
+    createRedisInvocation(method, inputSymbol, resultSymbol, adapt(input), adapt(result), session)
+  return [
+    direct('status', 'EmptyRequest', 'RedisHostStatus', emptyRequestSchema, statusSchema),
+    direct('connect', 'ConnectionRequest', 'ConnectionView', connectionRequestSchema, connectionViewSchema),
+    direct('disconnect', 'ConnectionTarget', 'ConnectionView', connectionTargetSchema, connectionViewSchema),
+    direct('connectionStatus', 'EmptyRequest', 'ConnectionView', emptyRequestSchema, connectionViewSchema),
+    direct('writeModeStatus', 'EmptyRequest', 'RedisWriteModeStatus', emptyRequestSchema, writeModeStatusSchema),
+    direct('setWriteMode', 'RedisWriteModeRequest', 'RedisWriteModeStatus', writeModeRequestSchema, writeModeStatusSchema),
+    direct('writeLookup', 'RedisWriteLookupRequest', 'RedisWriteLookupResult', writeLookupRequestSchema, writeLookupResultSchema),
+    direct('listProfiles', 'EmptyRequest', 'ProfileCollection', emptyRequestSchema, profileCollectionSchema),
+    direct('saveProfile', 'SaveProfileRequest', 'ProfileCollection', saveProfileSchema, profileCollectionSchema),
+    direct('removeProfile', 'ProfileId', 'ProfileCollection', profileIdSchema, profileCollectionSchema),
+    direct('selectDatabase', 'DatabaseTarget', 'ConnectionView', databaseTargetSchema, connectionViewSchema),
+    direct('scanKeys', 'ScanKeysRequest', 'ScanKeysResult', scanKeysRequestSchema, scanKeysResultSchema),
+    direct('readString', 'StringReadRequest', 'StringReadResult', stringReadRequestSchema, stringReadResultSchema),
+    direct('scanHash', 'ScanHashRequest', 'ScanHashResult', scanHashRequestSchema, scanHashResultSchema),
+    direct('readActionPoint', 'ActionPointReadRequest', 'ActionPointReadResult', actionPointReadRequestSchema, actionPointReadResultSchema),
+    direct('readList', 'ListReadRequest', 'ListReadResult', listReadRequestSchema, listReadResultSchema),
+    direct('scanSet', 'ScanSetRequest', 'ScanSetResult', scanSetRequestSchema, scanSetResultSchema),
+    direct('readZSet', 'ZSetReadRequest', 'ZSetReadResult', zsetReadRequestSchema, zsetReadResultSchema),
+    direct('readStream', 'StreamReadRequest', 'StreamReadResult', streamReadRequestSchema, streamReadResultSchema),
+    direct('readDatabases', 'DatabasesReadRequest', 'DatabasesReadResult', databasesReadRequestSchema, databasesReadResultSchema),
+    direct('aiBudgetStatus', 'EmptyRequest', 'AiBudgetStatus', emptyRequestSchema, aiBudgetStatusSchema),
+    direct('resumeAiBudget', 'EmptyRequest', 'AiBudgetResume', emptyRequestSchema, aiBudgetResumeSchema),
+    createRedisUiStreamInvocation(adapt(emptyRequestSchema), adapt(uiChannelMessageSchema), adapt(uiChannelInputSchema), session),
+  ] as const
+}
+
+export const redisDescriptors = createRedisDescriptors(schema => schema)

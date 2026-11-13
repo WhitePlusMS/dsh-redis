@@ -5,7 +5,10 @@ import { Context } from '@deepseek-ai/cordis'
 import type { Agent } from '@deepseek-ai/dsh-agent'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
-import type { ApprovalOutcome, ApprovalRequest, ApprovalService } from '@deepseek-ai/dsh-user-approval'
+import ApprovalService, { type ApprovalOutcome, type ApprovalRequest } from '@deepseek-ai/dsh-user-approval'
+import SessionStore from '@deepseek-ai/dsh-session'
+import { SessionId } from '@deepseek-ai/dsh-session/types'
+import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import { RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { registerRedisTools } from '../src/host/ai-tools.ts'
@@ -14,7 +17,7 @@ const cleanups: Array<() => Promise<void>> = []
 afterEach(async () => { for (const cleanup of cleanups.splice(0).reverse()) await cleanup(); vi.restoreAllMocks() })
 
 /** Real tool pipeline and readers, with synthetic transport and a controlled answerer. */
-async function fixture(answer: ((request: ApprovalRequest) => Promise<ApprovalOutcome>) | null = async () => 'allowed-once') {
+async function fixture(answer: ((request: ApprovalRequest) => Promise<ApprovalOutcome>) | null = async () => 'allowed-once', nativeApproval = false) {
   vi.spyOn(console, 'info').mockImplementation(() => undefined)
   const commands: string[] = []
   const link: RedisLink = {
@@ -35,10 +38,19 @@ async function fixture(answer: ((request: ApprovalRequest) => Promise<ApprovalOu
   const reconnect = (session = 'a') => connections.connect(session, settings, new AbortController().signal)
   await reconnect()
   const ctx = new Context(), ask = vi.fn(answer ?? (async () => 'unavailable' as const))
-  if (answer !== null) ctx.provide('approval', { request: ask } as unknown as ApprovalService)
+  if (nativeApproval) {
+    await ctx.plugin(SessionProjectionRegistry)
+    await ctx.plugin(ApprovalService, { policy: 'ask' })
+    await ctx.plugin(SessionStore)
+    if (answer !== null) ctx.on('approval/request', request => ask(request))
+  } else if (answer !== null) ctx.provide('approval', { request: ask } as unknown as ApprovalService)
   await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   const fiber = await ctx.plugin({ name: 'scope-test', inject: ['tools'], apply: (scope: Context) => registerRedisTools(scope, reader) })
-  const agent = (session: string) => ({ id: 'agent-' + session, ctx, session: { id: session } }) as unknown as Agent
+  const agent = (session: string) => {
+    const record = nativeApproval ? ctx.sessions.create(SessionId(session)) : null
+    record?.append('turn/start', { turn: 1 })
+    return { id: 'agent-' + session, ctx, session: record ?? { id: session } } as unknown as Agent
+  }
   let count = 0
   const call = (name: string, args: unknown, options: { session?: string; signal?: AbortSignal; callId?: string } = {}) => executeTool(ctx.tools, {
     name, arguments: args, agent: agent(options.session ?? 'a'),
@@ -181,10 +193,35 @@ describe('Redis first-query scope confirmation', () => {
     expect(f.commands).toEqual([]); deny()
     const otherAsk = f.ctx.on('tools/pre-execute', async () => ({ kind: 'ask', reason: 'other-policy' }))
     expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBe(false)
-    expect(f.ask).toHaveBeenCalledTimes(2); otherAsk()
+    expect(f.ask).toHaveBeenCalledTimes(1)
+    expect(f.ask.mock.calls[0]?.[0]).toMatchObject({ reason: 'other-policy', displayReason: { zh: expect.stringContaining('"match":"*"') } })
+    expect(f.ask.mock.calls[0]?.[0].displayReason?.en).toContain('other-policy')
+    otherAsk()
     f.ask.mockClear()
     for (let i = 0; i < 2; i++) expect((await f.call('redis_viewer_keys', { match: '*' }, { callId: 'same' })).isError).toBe(false)
     expect(f.ask).toHaveBeenCalledTimes(2)
+  })
+
+  it.each(['granted', 'replaced', 'cancelled', 'unavailable'] as const)('uses one native DSH approval when %s', async outcome => {
+    const approval = pendingAnswer(), f = await fixture(outcome === 'unavailable' ? null : approval.answer, true)
+    f.ctx.on('tools/pre-execute', async () => ({ kind: 'ask', reason: 'fixture-policy', displayReason: { en: 'Host policy', zh: '宿主策略' } }))
+    const decisions: string[] = []
+    f.ctx.on('session/event', (_session, event) => { if (event.type === 'approval/decided') decisions.push(event.data.outcome) })
+    const controller = new AbortController()
+    const pending = f.call('redis_viewer_keys', { match: 'order:*' }, { signal: controller.signal })
+    if (outcome !== 'unavailable') {
+      await vi.waitFor(() => expect(f.ask).toHaveBeenCalledTimes(1))
+      expect(f.commands).toEqual([])
+      const request = f.ask.mock.calls[0]?.[0]
+      expect(request?.displayReason?.zh).toContain('宿主策略')
+      expect(request?.displayReason?.zh).toContain('"match":"order:*"')
+      if (outcome === 'replaced') await f.reconnect()
+      if (outcome === 'cancelled') controller.abort()
+      else approval.release('allowed-once')
+    }
+    expect((await pending).isError).toBe(outcome !== 'granted')
+    expect(f.commands).toEqual(outcome === 'granted' ? ['SCAN'] : [])
+    expect(decisions).toEqual([outcome === 'unavailable' ? 'unavailable' : outcome === 'cancelled' ? 'cancelled' : 'allowed-once'])
   })
 
   it('refuses the body if an earlier policy skips the confirmation middleware', async () => {

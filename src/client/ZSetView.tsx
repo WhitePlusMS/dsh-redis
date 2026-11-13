@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useBrowsingFormat } from './PreviewFormats.tsx'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
@@ -14,13 +14,15 @@ import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 import { useCurrentItem, useSelectionAction } from './CurrentSelection.tsx'
 import { SelectionEpochContext } from './SelectionEpochContext.ts'
+import { readCollectionPoint, useCollectionPoint, type CollectionPoint } from './collection-point.ts'
 import { RefreshVisibility } from './AutoRefresh.tsx'
-import type { KeyActionResult, ZSetActionHandler, ZSetActionRequest } from './ui-pane-presence.ts'
+import type { ZSetActionHandler, ZSetActionRequest } from './ui-pane-presence.ts'
 
 export interface ZSetActions { readonly readZSet: (request: ZSetReadRequest, signal: AbortSignal) => Promise<RemoteResult<ZSetReadResult>>; readonly readActionPoint: (request: ActionPointReadRequest, signal: AbortSignal) => Promise<RemoteResult<ActionPointReadResult>>; readonly registerZSetHandler: (handler: ZSetActionHandler) => () => void }
 type Props = ZSetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 type LocatedMember = ZSetEntry & { readonly sampledAt: string }
-interface PendingMember { readonly request: ZSetActionRequest; readonly signal: AbortSignal; readonly row: LocatedMember; readonly previousPaused: boolean; readonly previousGuard: boolean; readonly resolve: (result: KeyActionResult) => void; resolved: boolean; userScrolled: boolean; userInteracted: boolean; previousTop: number | null; abort: () => void; accepted: () => void; rejected: () => void }
+interface PendingMemberData { readonly request: ZSetActionRequest; readonly signal: AbortSignal; readonly row: LocatedMember; readonly previousPaused: boolean; readonly previousGuard: boolean; previousTop: number | null }
+type PendingMember = PendingMemberData & CollectionPoint
 
 /** Each mode owns its pagination. A ZSCAN token is never a rank offset. */
 export function ZSetView(props: Props) {
@@ -35,9 +37,8 @@ export function ZSetView(props: Props) {
   const [point, setPoint] = useState<LocatedMember | null>(null), [candidate, setCandidate] = useState<PendingMember | null>(null)
   const [pagingPaused, setPagingPaused] = useState(false), [pagingGuard, setPagingGuard] = useState(false)
   const [restoreScroll, setRestoreScroll] = useState<{ readonly top: number } | undefined>()
-  const pending = useRef<PendingMember | null>(null), latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
-  const pointer = useRef(false), mounted = useRef(false), deferredReject = useRef<{ readonly action: PendingMember; readonly finish: () => void } | null>(null), pointerTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (pointerTimer.current !== undefined) clearTimeout(pointerTimer.current); deferredReject.current = null } }, [])
+  const locate = useCollectionPoint<PendingMemberData>()
+  const latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
   latest.current = { ...latest.current, visibility, publication, pagingPaused, pagingGuard }
   const scanSignal = useRef<{ readonly signal: AbortSignal; readonly replace: boolean } | null>(null)
   const scanState = useCollectionScan<ZSetCache, ZSetReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([mode, range, pattern]), empty: emptyZSetCache,
@@ -67,36 +68,24 @@ export function ZSetView(props: Props) {
   useLayoutEffect(() => {
     if (epoch === null || publication === null || visibility?.visible === false || visibility?.signal.aborted) return
     const handler: ZSetActionHandler = async (request, signal) => {
-      const sameTarget = request.target !== null && request.target.id === props.target.id && request.target.generation === props.target.generation && request.target.db === props.target.db && request.action.keyBase64 === props.selected.base64
-      if (!sameTarget || latest.current.busy || pending.current !== null || signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || document.visibilityState !== 'visible') return 'stale'
-      let response: RemoteResult<ActionPointReadResult>
-      try { response = await props.readActionPoint({ requestId: request.requestId }, signal) } catch { return signal.aborted ? 'stale' : 'failed' }
-      if (signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || latest.current.visibility?.visible === false || latest.current.visibility?.signal.aborted || document.visibilityState !== 'visible') return 'stale'
-      if (!response.ok || response.value.state !== 'value' || response.value.score === null) return 'failed'
-      return new Promise(resolve => {
-        const action: PendingMember = { request, signal, row: { member: request.action.member, score: response.value.score as string, rank: null, sampledAt: response.value.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, resolve, resolved: false, userScrolled: false, userInteracted: false, previousTop: null, abort: () => undefined, accepted: () => undefined, rejected: () => undefined }
-        const retire = () => { signal.removeEventListener('abort', action.abort); if (pending.current === action) pending.current = null; latest.current.publication?.release(request.requestId) }
-        action.rejected = () => {
-          retire()
-          const finish = () => { if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) } if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop }); setCandidate(current => current === action ? null : current) }
-          if (pointer.current) { action.userInteracted = true; deferredReject.current = { action, finish } } else finish()
-          if (!action.resolved) { action.resolved = true; resolve('stale') }
-        }
-        action.accepted = () => { retire(); setPoint(action.row); setSelected(action.row.member.base64); setCandidate(current => current === action ? null : current) }
-        action.abort = action.rejected
-        pending.current = action; latest.current.publication?.hold(request.requestId); setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action)
-        signal.addEventListener('abort', action.abort, { once: true })
-        if (signal.aborted) action.abort()
-      })
+      if (latest.current.busy || locate.current() !== null) return 'stale'
+      const response = await readCollectionPoint(request, signal, epoch, props.target, props.selected.base64, props.readActionPoint,
+        () => latest.current.visibility?.visible !== false && latest.current.visibility?.signal.aborted !== true)
+      if (typeof response === 'string') return response
+      if (response.score === null) return 'failed'
+      const clearCandidate = (action: PendingMember) => setCandidate(current => current === action ? null : current)
+      return locate.begin({ request, signal, row: { member: request.action.member, score: response.score, rank: null, sampledAt: response.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, previousTop: null }, publication,
+        action => { setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action) },
+        action => { setPoint(action.row); setSelected(action.row.member.base64); clearCandidate(action) },
+        action => {
+          if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) }
+          if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop })
+          clearCandidate(action)
+        })
     }
     const unregister = props.registerZSetHandler(handler)
-    return () => { unregister(); pending.current?.abort() }
+    return () => { unregister(); locate.abort() }
   }, [props.registerZSetHandler, props.readActionPoint, props.target.id, props.target.generation, props.target.db, props.selected.base64, epoch, visibility?.visible, visibility?.signal, publication === null])
-  function pointerInteraction(active: boolean): void {
-    pointer.current = active
-    if (active || !mounted.current || deferredReject.current === null) return
-    pointerTimer.current = setTimeout(() => { pointerTimer.current = undefined; if (!pointer.current) { const deferred = deferredReject.current; deferredReject.current = null; deferred?.finish() } }, 0)
-  }
   function clearPoint(): void { epoch?.userSelect(); setSelected(null); setPoint(null); setPagingPaused(false); setPagingGuard(false) }
   const columns: readonly CollectionColumn<ZSetEntry>[] = [
     ...(mode === 'range' ? [{ id: 'rank', title: t('zset.rank'), render: (entry: ZSetEntry) => entry.rank }] : []),
@@ -130,7 +119,7 @@ export function ZSetView(props: Props) {
     </>}
     <div className="redis-collection-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('zset.loaded')} · ${t('zset.total')}`}><b data-loaded-zset>{cache.rows.length}</b>{mode === 'range' && range.offset === '0' ? ' / ' : ' · ' + t('zset.total') + ' '}{result?.metadata?.length ?? '—'}</span>{mode === 'range' && <span title={t('zset.start')}>#<b data-zset-start>{range.offset}</b></span>}{mode === 'scan' && pattern !== '*' && <button type="button" className="redis-chip" title={t('set.pattern')} onClick={() => setOptionsOpen(true)}>{pattern}</button>}</div>
     <div className="redis-collection-body">
-      <CollectionTable rows={rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'zset.empty')} selection={{ id: shown?.member.base64 ?? null, disabled: entry => candidate?.row.member.base64 === entry.member.base64, onSelect: entry => { setPoint(current => current?.member.base64 === entry.member.base64 ? current : null); setSelected(entry.member.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.member.base64, remember: top => { candidate.previousTop ??= top }, ready: () => { if (pending.current !== candidate || candidate.resolved) return; if (candidate.signal.aborted || Date.now() >= candidate.request.expiresAt || !epoch?.current(candidate.request.selectionRevision) || document.visibilityState !== 'visible') { candidate.abort(); return } candidate.resolved = true; candidate.resolve({ kind: 'commitZSetMember', accepted: candidate.accepted, rejected: candidate.rejected }) } }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={() => { const action = pending.current ?? deferredReject.current?.action; if (action !== undefined && action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
+      <CollectionTable rows={rows} identity={entry => entry.member.base64} columns={columns} label={t('zset.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'zset.empty')} selection={{ id: shown?.member.base64 ?? null, disabled: entry => candidate?.row.member.base64 === entry.member.base64, onSelect: entry => { setPoint(current => current?.member.base64 === entry.member.base64 ? current : null); setSelected(entry.member.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.member.base64, remember: top => { candidate.previousTop ??= top }, ready: () => locate.reveal(candidate, 'commitZSetMember', epoch) }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={locate.pointerInteraction} onUserScroll={() => { const action = locate.current(); if (action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       {pagingGuard && cursor !== null && !cache.limited && error === null && <button type="button" disabled={busy || candidate !== null} onClick={() => { epoch?.userSelect(); setPagingPaused(false); setPagingGuard(false); void scanState.scan(true) }}>{t('keys.more')}</button>}
       <section className="redis-collection-preview" aria-label={t('set.member')}>
         {shown !== undefined && window !== null ? <BytePreview key={shown.member.base64} heading={{ label: t('set.member'), description: `${shown.member.byteLength} ${t('keys.bytes')} · ${t('zset.score')}: ${shown.score}` }} value={window} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}

@@ -215,6 +215,7 @@ it.skipIf(browserPath === undefined)('commits only a visible point field, restor
     await page.locator('input[name="hashSearch"]').fill('')
     await page.locator('[data-row-identity="ZjI5"]').click()
     await page.waitForFunction(() => Reflect.get(window, 'fixture').epoch.snapshot().synchronized, undefined, { timeout: 5000 })
+    expect(await page.getByRole('button', { name: 'keys.more' }).count()).toBe(0)
     const previousScroll = await page.locator('.redis-collection-table').evaluate(element => element.scrollTop)
     await page.evaluate(() => Reflect.set(window, 'previousFocus', document.activeElement))
     const restore = '12345678-1234-1234-1234-123456789ac5'
@@ -224,6 +225,7 @@ it.skipIf(browserPath === undefined)('commits only a visible point field, restor
     await page.evaluate(value => Reflect.get(window, 'fixture').push({ kind: 'selectionResult', requestId: value, accepted: false }), restore)
     await page.waitForFunction(() => Reflect.get(window, 'fixture').epoch.snapshot().synchronized, undefined, { timeout: 5000 })
     expect(await page.locator('.redis-collection-table').evaluate(element => element.scrollTop)).toBe(previousScroll)
+    expect(await page.getByRole('button', { name: 'keys.more' }).count()).toBe(0)
     expect(await page.evaluate(() => document.activeElement === Reflect.get(window, 'previousFocus'))).toBe(true)
     await page.addStyleTag({ content: '.redis-collection-table::-webkit-scrollbar{width:16px}.redis-collection-table::-webkit-scrollbar-thumb{background:black}' })
     const dragId = '12345678-1234-1234-1234-123456789ac6'

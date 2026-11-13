@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ActionPointReadRequest, ActionPointReadResult, DatabaseTarget, RedisKey, ScanSetRequest, ScanSetResult } from '../domain.ts'
@@ -14,8 +14,9 @@ import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 import { useCurrentItem, useSelectionAction } from './CurrentSelection.tsx'
 import { SelectionEpochContext } from './SelectionEpochContext.ts'
+import { readCollectionPoint, useCollectionPoint, type CollectionPoint } from './collection-point.ts'
 import { RefreshVisibility } from './AutoRefresh.tsx'
-import type { KeyActionResult, SetActionHandler, SetActionRequest } from './ui-pane-presence.ts'
+import type { SetActionHandler, SetActionRequest } from './ui-pane-presence.ts'
 
 export interface SetActions {
   readonly scanSet: (request: ScanSetRequest, signal: AbortSignal) => Promise<RemoteResult<ScanSetResult>>
@@ -24,7 +25,8 @@ export interface SetActions {
 }
 type Props = SetActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 type LocatedMember = RedisKey & { readonly sampledAt: string }
-interface PendingMember { readonly request: SetActionRequest; readonly signal: AbortSignal; readonly row: LocatedMember; readonly previousPaused: boolean; readonly previousGuard: boolean; readonly resolve: (result: KeyActionResult) => void; resolved: boolean; userScrolled: boolean; userInteracted: boolean; previousTop: number | null; abort: () => void; accepted: () => void; rejected: () => void }
+interface PendingMemberData { readonly request: SetActionRequest; readonly signal: AbortSignal; readonly row: LocatedMember; readonly previousPaused: boolean; readonly previousGuard: boolean; previousTop: number | null }
+type PendingMember = PendingMemberData & CollectionPoint
 
 /** Set members share complete byte identities and the existing bounded identity cache. */
 export function SetView(props: Props) {
@@ -37,9 +39,8 @@ export function SetView(props: Props) {
   const [point, setPoint] = useState<LocatedMember | null>(null), [candidate, setCandidate] = useState<PendingMember | null>(null)
   const [pagingPaused, setPagingPaused] = useState(false), [pagingGuard, setPagingGuard] = useState(false)
   const [restoreScroll, setRestoreScroll] = useState<{ readonly top: number } | undefined>()
-  const pending = useRef<PendingMember | null>(null), latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
-  const pointer = useRef(false), mounted = useRef(false), deferredReject = useRef<{ readonly action: PendingMember; readonly finish: () => void } | null>(null), pointerTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (pointerTimer.current !== undefined) clearTimeout(pointerTimer.current); deferredReject.current = null } }, [])
+  const locate = useCollectionPoint<PendingMemberData>()
+  const latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
   latest.current = { ...latest.current, visibility, publication, pagingPaused, pagingGuard }
   const scanSignal = useRef<{ readonly signal: AbortSignal; readonly replace: boolean } | null>(null)
   const scanState = useCollectionScan<KeyCache, ScanSetResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: pattern, empty: emptyKeyCache,
@@ -68,37 +69,23 @@ export function SetView(props: Props) {
   useLayoutEffect(() => {
     if (epoch === null || publication === null || visibility?.visible === false || visibility?.signal.aborted) return
     const handler: SetActionHandler = async (request, signal) => {
-      const sameTarget = request.target !== null && request.target.id === props.target.id && request.target.generation === props.target.generation && request.target.db === props.target.db && request.action.keyBase64 === props.selected.base64
-      if (!sameTarget || latest.current.busy || pending.current !== null || signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || document.visibilityState !== 'visible') return 'stale'
-      let response: RemoteResult<ActionPointReadResult>
-      try { response = await props.readActionPoint({ requestId: request.requestId }, signal) } catch { return signal.aborted ? 'stale' : 'failed' }
-      if (signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || latest.current.visibility?.visible === false || latest.current.visibility?.signal.aborted || document.visibilityState !== 'visible') return 'stale'
-      if (!response.ok || response.value.state !== 'value') return 'failed'
-      return new Promise(resolve => {
-        const action: PendingMember = { request, signal, row: { ...request.action.member, sampledAt: response.value.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, resolve, resolved: false, userScrolled: false, userInteracted: false, previousTop: null, abort: () => undefined, accepted: () => undefined, rejected: () => undefined }
-        const retire = () => { signal.removeEventListener('abort', action.abort); if (pending.current === action) pending.current = null; latest.current.publication?.release(request.requestId) }
-        action.rejected = () => {
-          retire()
-          const finish = () => { if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) } if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop }); setCandidate(current => current === action ? null : current) }
-          // Preserve the pressed row until its click follows pointerup.
-          if (pointer.current) { action.userInteracted = true; deferredReject.current = { action, finish } } else finish()
-          if (!action.resolved) { action.resolved = true; resolve('stale') }
-        }
-        action.accepted = () => { retire(); setPoint(action.row); setSelected(action.row.base64); setCandidate(current => current === action ? null : current) }
-        action.abort = action.rejected
-        pending.current = action; latest.current.publication?.hold(request.requestId); setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action)
-        signal.addEventListener('abort', action.abort, { once: true })
-        if (signal.aborted) action.abort()
-      })
+      if (latest.current.busy || locate.current() !== null) return 'stale'
+      const response = await readCollectionPoint(request, signal, epoch, props.target, props.selected.base64, props.readActionPoint,
+        () => latest.current.visibility?.visible !== false && latest.current.visibility?.signal.aborted !== true)
+      if (typeof response === 'string') return response
+      const clearCandidate = (action: PendingMember) => setCandidate(current => current === action ? null : current)
+      return locate.begin({ request, signal, row: { ...request.action.member, sampledAt: response.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, previousTop: null }, publication,
+        action => { setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action) },
+        action => { setPoint(action.row); setSelected(action.row.base64); clearCandidate(action) },
+        action => {
+          if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) }
+          if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop })
+          clearCandidate(action)
+        })
     }
     const unregister = props.registerSetHandler(handler)
-    return () => { unregister(); pending.current?.abort() }
+    return () => { unregister(); locate.abort() }
   }, [props.registerSetHandler, props.readActionPoint, props.target.id, props.target.generation, props.target.db, props.selected.base64, epoch, visibility?.visible, visibility?.signal, publication === null])
-  function pointerInteraction(active: boolean): void {
-    pointer.current = active
-    if (active || !mounted.current || deferredReject.current === null) return
-    pointerTimer.current = setTimeout(() => { pointerTimer.current = undefined; if (!pointer.current) { const deferred = deferredReject.current; deferredReject.current = null; deferred?.finish() } }, 0)
-  }
   function applyPattern(value: string): void {
     epoch?.userSelect(); setSelected(null); setPoint(null); setPagingPaused(false); setPagingGuard(false); setOptionsOpen(false)
     if (value === pattern) void scanState.scan(false)
@@ -127,7 +114,7 @@ export function SetView(props: Props) {
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     <div className="redis-collection-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('set.loaded')} / ${t('set.total')}`}><b data-loaded-members>{cache.keys.length}</b>{pattern === '*' ? ' / ' : ' · ' + t('set.total') + ' '}{result?.metadata?.length ?? '—'}</span>{pattern !== '*' && <span className="redis-filter-chip"><button type="button" title={t('set.pattern')} onClick={() => setOptionsOpen(true)}><Icon name="filter" /><span>{pattern}</span></button><button type="button" className="redis-icon-button" title={t('read.clearFilter')} aria-label={t('read.clearFilter')} onClick={() => { setDraft('*'); applyPattern('*') }}><Icon name="close" /></button></span>}</div>
     <div className="redis-collection-body">
-      <CollectionTable rows={rows} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'set.empty')} selection={{ id: shown?.base64 ?? null, disabled: value => candidate?.row.base64 === value.base64, onSelect: value => { setPoint(current => current?.base64 === value.base64 ? current : null); setSelected(value.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.base64, remember: top => { candidate.previousTop ??= top }, ready: () => { if (pending.current !== candidate || candidate.resolved) return; if (candidate.signal.aborted || Date.now() >= candidate.request.expiresAt || !epoch?.current(candidate.request.selectionRevision) || document.visibilityState !== 'visible') { candidate.abort(); return } candidate.resolved = true; candidate.resolve({ kind: 'commitSetMember', accepted: candidate.accepted, rejected: candidate.rejected }) } }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={() => { const action = pending.current ?? deferredReject.current?.action; if (action !== undefined && action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
+      <CollectionTable rows={rows} identity={value => value.base64} columns={columns} label={t('set.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'set.empty')} selection={{ id: shown?.base64 ?? null, disabled: value => candidate?.row.base64 === value.base64, onSelect: value => { setPoint(current => current?.base64 === value.base64 ? current : null); setSelected(value.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.base64, remember: top => { candidate.previousTop ??= top }, ready: () => locate.reveal(candidate, 'commitSetMember', epoch) }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={locate.pointerInteraction} onUserScroll={() => { const action = locate.current(); if (action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       {pagingGuard && cursor !== null && !cache.limited && error === null && <button type="button" disabled={busy || candidate !== null} onClick={() => { epoch?.userSelect(); setPagingPaused(false); setPagingGuard(false); void scanState.scan(true) }}>{t('keys.more')}</button>}
       <section className="redis-collection-preview" aria-label={t('set.member')}>
         {shown !== undefined && window !== null ? <BytePreview key={shown.base64} heading={{ label: t('set.member'), description: `${shown.byteLength} ${t('keys.bytes')}` }} value={window} t={t} format={format} onFormatChange={setFormat} onActionFormatChange={setActionFormat} actionTarget /> : <><strong>{t('set.member')}</strong><p>{t(selected === null ? 'collection.selectRow' : 'collection.selectionAbsent')}</p></>}

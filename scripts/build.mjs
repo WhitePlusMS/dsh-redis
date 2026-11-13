@@ -6,7 +6,7 @@
 
 import { createRequire } from 'node:module'
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
-import { dirname, relative, resolve, sep } from 'node:path'
+import { dirname, relative, resolve } from 'node:path'
 import { build } from 'esbuild'
 
 const require = createRequire(import.meta.url)
@@ -15,107 +15,32 @@ const ts = require('typescript')
 const ROOT = resolve(import.meta.dirname, '..')
 const SRC = resolve(ROOT, 'src')
 const LIB = resolve(ROOT, 'lib')
-const HOST_ENTRY = resolve(SRC, 'index.ts')
-const HOST_CONTRACT_ENTRY = resolve(SRC, 'typert.host.ts')
-const CLIENT_CONTRACT_ENTRY = resolve(SRC, 'typert.remote-client.ts')
 const CLIENT_ENTRY = resolve(SRC, 'client', 'index.ts')
 const CLIENT_ID = 'dsh-redis'
 
-const REL_IMPORT = /(?:import|export)\s+(?:[^'";]*?\s+from\s+)?['"](\.[^'"]+)['"]/g
-
-function sourceCandidates(file, specifier) {
-  const base = specifier.replace(/\.(?:js|jsx|ts|tsx)$/u, '')
-  const stem = resolve(dirname(file), base)
-  return [stem + '.ts', stem + '.tsx']
-}
-
-function resolveLocal(file, specifier) {
-  for (const candidate of sourceCandidates(file, specifier)) {
-    try {
-      readFileSync(candidate)
-      return candidate
-    } catch {
-      // Continue with the next TypeScript extension.
-    }
-  }
-  return undefined
-}
-
-function localImports(file) {
-  const source = readFileSync(file, 'utf8')
-  const imports = []
-  const regex = new RegExp(REL_IMPORT.source, 'g')
-  let match
-  while ((match = regex.exec(source)) !== null) {
-    const specifier = match[1]
-    if (specifier === undefined) continue
-    const target = resolveLocal(file, specifier)
-    if (target !== undefined) imports.push({ specifier, target })
-  }
-  return imports
-}
-
-function collect(entry) {
-  const files = []
-  const seen = new Set()
-  const visit = file => {
-    if (seen.has(file)) return
-    seen.add(file)
-    files.push(file)
-    for (const { target } of localImports(file)) visit(target)
-  }
-  visit(entry)
-  return files
-}
-
-function transpile(source, file, moduleKind) {
-  const output = ts.transpileModule(source, {
-    fileName: file,
-    compilerOptions: {
-      target: ts.ScriptTarget.ES2022,
-      module: moduleKind,
-      jsx: ts.JsxEmit.ReactJSX,
-      esModuleInterop: true,
-      isolatedModules: true,
-    },
-  }).outputText
-  return output.replace(/(['"])(\.[^'"\n]+?)\.(?:ts|tsx)\1/g, '$1$2.js$1')
-}
-
-function declaration(source, file) {
-  return ts.transpileDeclaration(source, {
-    fileName: file,
-    compilerOptions: {
-      target: ts.ScriptTarget.ES2022,
-      module: ts.ModuleKind.NodeNext,
-      moduleResolution: ts.ModuleResolutionKind.NodeNext,
-      jsx: ts.JsxEmit.ReactJSX,
-      isolatedDeclarations: false,
-    },
-  }).outputText.replace(/(['"])(\.[^'"\n]+?)\.(?:ts|tsx)\1/g, '$1$2.js$1')
-}
-
-function outputPath(file, extension) {
-  const rel = relative(SRC, file).split(sep).join('/')
-  return resolve(LIB, rel.replace(/\.(?:ts|tsx)$/u, extension))
+// TypeScript rewrites runtime imports. Its declarations still use source
+// suffixes, so normalize emitted module specifiers before packaging.
+function normalizeDeclaration(text) {
+  return text.replace(/((?:\bfrom\s+|\bimport\s*(?:\(\s*)?)(['"])\.\.?\/[^'"\n]+?)\.tsx?\2/g, '$1.js$2')
 }
 
 function buildHost() {
-  for (const entry of [HOST_ENTRY, HOST_CONTRACT_ENTRY, CLIENT_CONTRACT_ENTRY]) {
-    for (const file of collect(entry)) {
-      const source = readFileSync(file, 'utf8')
-      const output = transpile(source, file, ts.ModuleKind.ESNext)
-      const target = outputPath(file, '.js')
-      mkdirSync(dirname(target), { recursive: true })
-      writeFileSync(target, output)
-      const dts = declaration(source, file)
-      if (dts.length > 0) {
-        const declarationPath = outputPath(file, '.d.ts')
-        mkdirSync(dirname(declarationPath), { recursive: true })
-        writeFileSync(declarationPath, dts)
-      }
-    }
-  }
+  const diagnostics = []
+  const config = ts.getParsedCommandLineOfConfigFile(resolve(ROOT, 'tsconfig.host.json'), {
+    noEmit: false, composite: false, declaration: true, noEmitOnError: true,
+    rewriteRelativeImportExtensions: true, rootDir: SRC, outDir: LIB,
+  }, { ...ts.sys, onUnRecoverableConfigFileDiagnostic: diagnostic => diagnostics.push(diagnostic) })
+  if (config !== undefined && config.errors.length === 0 && diagnostics.length === 0) {
+    const program = ts.createProgram(config.fileNames, config.options)
+    const output = program.emit(undefined, (file, content, bom) => {
+      ts.sys.writeFile(file, file.endsWith('.d.ts') ? normalizeDeclaration(content) : content, bom)
+    })
+    diagnostics.push(...output.diagnostics)
+    if (!output.emitSkipped) return
+  } else if (config !== undefined) diagnostics.push(...config.errors)
+  throw new Error(ts.formatDiagnosticsWithColorAndContext(diagnostics, {
+    getCanonicalFileName: file => file, getCurrentDirectory: () => ROOT, getNewLine: () => '\n',
+  }))
 }
 
 function indent(text, spaces) {
@@ -149,7 +74,11 @@ async function buildClient() {
   const target = resolve(LIB, 'client.js')
   mkdirSync(dirname(target), { recursive: true })
   writeFileSync(target, output)
-  const dts = declaration(readFileSync(CLIENT_ENTRY, 'utf8'), CLIENT_ENTRY)
+  const { outputText } = ts.transpileDeclaration(readFileSync(CLIENT_ENTRY, 'utf8'), {
+    fileName: CLIENT_ENTRY,
+    compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.NodeNext, jsx: ts.JsxEmit.ReactJSX },
+  })
+  const dts = normalizeDeclaration(outputText)
   if (dts.length > 0) {
     const declarationPath = resolve(LIB, 'client', 'index.d.ts')
     mkdirSync(dirname(declarationPath), { recursive: true })

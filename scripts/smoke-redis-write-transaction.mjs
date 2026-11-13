@@ -10,6 +10,8 @@ import SessionStore from '@deepseek-ai/dsh-session'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
 import ToolRuntime from '@deepseek-ai/dsh-tools'
+import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
+import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
 import { registerRedisWriteTools } from '../lib/host/ai-write-tools.js'
 import { withRedisFixture } from './redis-fixture.mjs'
@@ -125,14 +127,18 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       const ctx = new Context(), toolWriter = new RedisAiWriter(connections)
       const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false)
       try {
-        await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(SessionStore)
+        await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(SessionStore)
         await ctx.plugin({ name: 'redis-write-fixture', inject: ['tools'], apply(scope) { registerRedisWriteTools(scope, reader, toolWriter) } })
         const session = ctx.sessions.create(SessionId('fixture-session'))
         const agent = { id: session.id, ctx, session }
         session.append('turn/start', { turn: 1 })
         toolWriter.enable('fixture-session', target)
         let callId = 0
-        const call = (name, args) => ctx.tools.execute({ name, arguments: args, agent, signal, callId: 'fixture-tool-' + ++callId })
+        const call = async (name, args) => {
+          const batch = await ctx.tools.execute({ calls: [{ type: 'tool-call', id: ToolCallId('fixture-tool-' + ++callId), name, arguments: JSON.stringify(args) }], agent, signal })
+          assert.equal(batch.results.length, 1)
+          return batch.results[0].result
+        }
         const prepared = await call('redis_viewer_prepare_write', { type: 'string', key: 'fixture:native-tool', value: 'new' })
         assert.equal(prepared.isError, false)
         const { proposal } = JSON.parse(prepared.content.map(block => block.type === 'text' ? block.text : '').join(''))

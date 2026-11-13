@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import type { ActionPointReadRequest, ActionPointReadResult, DatabaseTarget, HashEntry, PreviewFormat, RedisKey, ScanHashRequest, ScanHashResult } from '../domain.ts'
@@ -15,8 +15,9 @@ import { previewValue } from './value-preview.ts'
 import { Icon } from './Icon.tsx'
 import { useCurrentItem, useSelectionAction } from './CurrentSelection.tsx'
 import { SelectionEpochContext } from './SelectionEpochContext.ts'
+import { readCollectionPoint, useCollectionPoint, type CollectionPoint } from './collection-point.ts'
 import { RefreshVisibility } from './AutoRefresh.tsx'
-import type { HashActionHandler, HashActionRequest, KeyActionResult } from './ui-pane-presence.ts'
+import type { HashActionHandler, HashActionRequest } from './ui-pane-presence.ts'
 
 export interface HashActions {
   readonly scanHash: (request: ScanHashRequest, signal: AbortSignal) => Promise<RemoteResult<ScanHashResult>>
@@ -25,7 +26,8 @@ export interface HashActions {
 }
 type Props = HashActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 type LocatedField = HashEntry & { readonly sampledAt: string }
-interface PendingField { readonly request: HashActionRequest; readonly signal: AbortSignal; readonly row: LocatedField; readonly previousPaused: boolean; readonly resolve: (result: KeyActionResult) => void; resolved: boolean; userScrolled: boolean; userInteracted: boolean; previousTop: number | null; abort: () => void; accepted: () => void; rejected: () => void }
+interface PendingFieldData { readonly request: HashActionRequest; readonly signal: AbortSignal; readonly row: LocatedField; readonly previousPaused: boolean; readonly previousGuard: boolean; previousTop: number | null }
+type PendingField = PendingFieldData & CollectionPoint
 
 const fieldWindow = (row: HashEntry) => ({ base64: row.field.base64, prefix: '', suffix: '', offset: '0', complete: true })
 
@@ -42,10 +44,9 @@ export function HashView(props: Props) {
   const [point, setPoint] = useState<LocatedField | null>(null), [candidate, setCandidate] = useState<PendingField | null>(null), [pagingPaused, setPagingPaused] = useState(false)
   const [pagingGuard, setPagingGuard] = useState(false)
   const [restoreScroll, setRestoreScroll] = useState<{ readonly top: number } | undefined>()
-  const pending = useRef<PendingField | null>(null), latest = useRef({ visibility, publication, pagingPaused, busy: false })
-  const pointer = useRef(false), mounted = useRef(false), deferredReject = useRef<{ readonly action: PendingField; readonly finish: () => void } | null>(null), pointerTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (pointerTimer.current !== undefined) clearTimeout(pointerTimer.current); deferredReject.current = null } }, [])
-  latest.current = { ...latest.current, visibility, publication, pagingPaused }
+  const locate = useCollectionPoint<PendingFieldData>()
+  const latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
+  latest.current = { ...latest.current, visibility, publication, pagingPaused, pagingGuard }
   const scanSignal = useRef<{ readonly signal: AbortSignal; readonly replace: boolean } | null>(null)
   const [fieldFormat, setFieldFormat] = useState<PreviewFormat>('text')
   const [format, setFormat, setActionFormat] = useBrowsingFormat('hash')
@@ -84,39 +85,25 @@ export function HashView(props: Props) {
   useLayoutEffect(() => {
     if (epoch === null || publication === null || visibility?.visible === false || visibility?.signal.aborted) return
     const handler: HashActionHandler = async (request, signal) => {
-      const sameTarget = request.target !== null && request.target.id === props.target.id && request.target.generation === props.target.generation && request.target.db === props.target.db && request.action.keyBase64 === props.selected.base64
-      if (!sameTarget || latest.current.busy || pending.current !== null || signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || document.visibilityState !== 'visible') return 'stale'
-      let response: RemoteResult<ActionPointReadResult>
-      try { response = await props.readActionPoint({ requestId: request.requestId }, signal) } catch { return signal.aborted ? 'stale' : 'failed' }
-      if (signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || latest.current.visibility?.visible === false || latest.current.visibility?.signal.aborted || document.visibilityState !== 'visible') return 'stale'
-      if (!response.ok || response.value.state !== 'value' || response.value.cell === null) return 'failed'
-      return new Promise(resolve => {
-        const action: PendingField = { request, signal, row: { field: request.action.field, value: response.value.cell!, sampledAt: response.value.sampledAt }, previousPaused: latest.current.pagingPaused, resolve, resolved: false, userScrolled: false, userInteracted: false, previousTop: null, abort: () => undefined, accepted: () => undefined, rejected: () => undefined }
-        const retire = () => { signal.removeEventListener('abort', action.abort); if (pending.current === action) pending.current = null; latest.current.publication?.release(request.requestId) }
-        action.rejected = () => {
-          retire()
-          const finish = () => { if (!action.userScrolled) setPagingPaused(action.previousPaused); if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop }); setCandidate(current => current === action ? null : current) }
-          // Keep the pressed row in place until click has followed pointerup.
-          if (pointer.current) { action.userInteracted = true; deferredReject.current = { action, finish } } else finish()
-          if (!action.resolved) { action.resolved = true; resolve('stale') }
-        }
-        action.accepted = () => { retire(); setPoint(action.row); setSelectedField(action.row.field.base64); setCandidate(current => current === action ? null : current) }
-        action.abort = action.rejected
-        pending.current = action; latest.current.publication?.hold(request.requestId); setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action)
-        signal.addEventListener('abort', action.abort, { once: true })
-        if (signal.aborted) action.abort()
-      })
+      if (latest.current.busy || locate.current() !== null) return 'stale'
+      const response = await readCollectionPoint(request, signal, epoch, props.target, props.selected.base64, props.readActionPoint,
+        () => latest.current.visibility?.visible !== false && latest.current.visibility?.signal.aborted !== true)
+      if (typeof response === 'string') return response
+      if (response.cell === null) return 'failed'
+      const clearCandidate = (action: PendingField) => setCandidate(current => current === action ? null : current)
+      return locate.begin({ request, signal, row: { field: request.action.field, value: response.cell, sampledAt: response.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, previousTop: null }, publication,
+        action => { setRestoreScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action) },
+        action => { setPoint(action.row); setSelectedField(action.row.field.base64); clearCandidate(action) },
+        action => {
+          if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) }
+          if (!action.userScrolled && !action.userInteracted && action.previousTop !== null) setRestoreScroll({ top: action.previousTop })
+          clearCandidate(action)
+        })
     }
     const unregister = props.registerHashHandler(handler)
-    return () => { unregister(); pending.current?.abort() }
+    return () => { unregister(); locate.abort() }
   }, [props.registerHashHandler, props.readActionPoint, props.target.id, props.target.generation, props.target.db, props.selected.base64, epoch, visibility?.visible, visibility?.signal, publication === null])
   function refresh(): void { void scanState.scan(false) }
-  function pointerInteraction(active: boolean): void {
-    pointer.current = active
-    if (active || !mounted.current || deferredReject.current === null) return
-    // Native click follows pointerup in the same event sequence; don't remove its target first.
-    pointerTimer.current = setTimeout(() => { pointerTimer.current = undefined; if (!pointer.current) { const deferred = deferredReject.current; deferredReject.current = null; deferred?.finish() } }, 0)
-  }
   function applyPattern(value: string): void {
     epoch?.userSelect()
     setSelectedField(null); setPoint(null); setSearch(''); setFilterOpen(false)
@@ -154,7 +141,7 @@ export function HashView(props: Props) {
     {error !== null && <p role="alert" className="redis-error">{t(`connection.error.${error}`)}</p>}
     <div className="redis-hash-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('hash.loaded')}: ${cache.rows.length} · ${t('hash.total')}: ${result?.metadata?.length ?? t('workbench.unknown')}`}><b data-loaded-fields>{cache.rows.length}</b>{pattern === '*' ? ' / ' : ' · ' + t('hash.total') + ' '}{result?.metadata?.length ?? '—'}</span>{searching && <span className="redis-chip" title={t('hash.localSearch')}>{t('read.local')} {filtered.length}</span>}{pattern !== '*' && <span className="redis-filter-chip"><button type="button" title={t('hash.pattern')} onClick={() => setFilterOpen(true)}><Icon name="filter" /><span>{pattern}</span></button><button type="button" className="redis-icon-button" title={t('read.clearFilter')} aria-label={t('read.clearFilter')} onClick={() => { setDraft('*'); applyPattern('*') }}><Icon name="close" /></button></span>}</div>
     <div className="redis-hash-body">
-      <CollectionTable rows={rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} emptyMessage={empty} selection={{ id: shown?.field.base64 ?? null, disabled: row => candidate?.row.field.base64 === row.field.base64, onSelect: row => { setPoint(current => current?.field.base64 === row.field.base64 ? current : null); setSelectedField(row.field.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.field.base64, remember: top => { candidate.previousTop ??= top }, ready: () => { if (pending.current !== candidate || candidate.resolved) return; if (candidate.signal.aborted || Date.now() >= candidate.request.expiresAt || !epoch?.current(candidate.request.selectionRevision) || document.visibilityState !== 'visible') { candidate.abort(); return } candidate.resolved = true; candidate.resolve({ kind: 'commitHashField', accepted: candidate.accepted, rejected: candidate.rejected }) } }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={() => { const action = pending.current ?? deferredReject.current?.action; if (action !== undefined && action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || searching || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
+      <CollectionTable rows={rows} identity={row => row.field.base64} columns={columns} label={t('hash.title')} loading={busy} emptyMessage={empty} selection={{ id: shown?.field.base64 ?? null, disabled: row => candidate?.row.field.base64 === row.field.base64, onSelect: row => { setPoint(current => current?.field.base64 === row.field.base64 ? current : null); setSelectedField(row.field.base64) } }} reveal={candidate === null ? undefined : { id: candidate.row.field.base64, remember: top => { candidate.previousTop ??= top }, ready: () => locate.reveal(candidate, 'commitHashField', epoch) }} restoreScroll={candidate === null ? restoreScroll : undefined} onPointerInteraction={locate.pointerInteraction} onUserScroll={() => { const action = locate.current(); if (action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }} onEnd={pagingPaused || pagingGuard || searching || cursor === null || cache.limited || error !== null ? undefined : () => scanState.scan(true)} />
       {pagingGuard && cursor !== null && !cache.limited && error === null && <button type="button" disabled={busy || candidate !== null} onClick={() => { epoch?.userSelect(); setPagingPaused(false); setPagingGuard(false); void scanState.scan(true) }}>{t('keys.more')}</button>}
       <section className="redis-hash-preview redis-hash-field" aria-label={t('hash.field')}>
         {windows !== null && shown !== undefined ? <BytePreview key={shown.field.base64} heading={{ label: t('hash.field'), description: `${shown.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <><strong>{t('hash.field')}</strong><p>{t(selectedField === null ? 'hash.selectRow' : 'collection.selectionAbsent')}</p></>}

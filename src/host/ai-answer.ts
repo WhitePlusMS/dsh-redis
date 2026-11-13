@@ -7,6 +7,7 @@ import { evidenceTools } from '../redis-read-tools.ts'
 import { describeRedisResult, summarizeRedisFilters } from '../redis-answer.ts'
 import { connectionViewSchema } from '../typert.shared.ts'
 import type { ConnectionView } from '../domain.ts'
+import { parseResultRecord, resultFits } from '../redis-result.ts'
 
 interface ReadRecord { readonly tool: string; readonly connection: ConnectionView; readonly inputCursor: string | null | undefined; result?: Record<string, unknown> }
 interface TurnReads { readonly turn: number; readonly calls: Map<string, ReadRecord>; omittedCalls: number }
@@ -53,16 +54,17 @@ export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): vo
     failed('读取未取得可用的结构化结果，请查看对应调用记录。')
     if (message.content.length !== 1 || message.content[0]?.type !== 'text') return
     const text = message.content[0].text
-    if (Buffer.byteLength(text) > MAX_AI_RESULT_BYTES) return
-    if (message.isError) { failed(text); return }
-    try {
-      const value: unknown = JSON.parse(text)
-      if (typeof value !== 'object' || value === null || Array.isArray(value)) return
-      if ('readOnly' in value && value.readOnly === true) entry.result = value as Record<string, unknown>
-      // UI tools return receipts rather than read envelopes. Keep the exact
-      // receipt and dispatch connection; never turn it into a value sample.
-      else if (uiReceiptTools.has(entry.tool) && 'outcome' in value && typeof value.outcome === 'string' && 'message' in value && typeof value.message === 'string') entry.result = { readOnly: true, connection: entry.connection, kind: 'ui-receipt', receipt: value }
-    } catch { /* Failed or foreign outputs are never promoted into evidence. */ }
+    if (message.isError) {
+      if (resultFits(text, MAX_AI_RESULT_BYTES)) failed(text)
+      return
+    }
+    const value = parseResultRecord(text, MAX_AI_RESULT_BYTES)
+    if (value === null) return
+    if (value.readOnly === true) entry.result = value
+    // Keep the exact UI receipt and dispatch connection for summarization.
+    else if (uiReceiptTools.has(entry.tool) && typeof value.outcome === 'string' && typeof value.message === 'string') {
+      entry.result = { readOnly: true, connection: entry.connection, kind: 'ui-receipt', receipt: value }
+    }
   }
   ctx.on('session/event', (session, event) => observe(session.id, event))
   ctx.on('session/disposed', session => { sessions.delete(session.id) })

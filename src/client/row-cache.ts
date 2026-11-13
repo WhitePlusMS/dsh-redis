@@ -7,7 +7,8 @@ export const emptyRowCache = <Row>(): RowCache<Row> => ({ rows: [], bytes: 0, li
  */
 export function appendRows<Row>(previous: RowCache<Row>, incoming: readonly Row[], identity: (row: Row) => string): RowCache<Row> {
   const rows = new Map(previous.rows.map(row => [identity(row), row]))
-  const size = (row: Row): number => new TextEncoder().encode(JSON.stringify(row)).length
+  const encoder = new TextEncoder()
+  const size = (row: Row): number => encoder.encode(JSON.stringify(row)).length
   let bytes = previous.bytes
   for (const row of incoming) {
     const id = identity(row), old = rows.get(id), next = bytes - (old === undefined ? 0 : size(old)) + size(row)

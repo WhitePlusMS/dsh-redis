@@ -16,7 +16,8 @@ interface State<P> {
   nextCursor: string | null
   delivered: boolean
 }
-export interface PreparedAiPage { readonly result: AiJson; commit(): void; rollback(): void }
+export interface PreparedAiResult { readonly result: AiJson; commit(): void; rollback(): void }
+export interface PreparedAiPage extends PreparedAiResult { readonly isPage: boolean }
 interface Request<P extends Page, Row> {
   readonly sessionId: string
   readonly binding: string
@@ -59,12 +60,11 @@ export class AiPageStore<P extends Page, Row> {
         active()
         // A successful lower-level page already advanced its token. Retain it
         // before observing late cancellation so the input token can be retried.
-        if (page.state === 'page') {
-          request.validate(page.error)
-          current.page = page; current.offset = 0; current.nextCursor = page.cursor
-        }
-        signal.throwIfAborted(); request.validate(page.error)
+        const isPage = page.state === 'page'
+        if (!isPage) signal.throwIfAborted()
+        request.validate(page.error)
         current.page = page; current.offset = 0; current.nextCursor = page.cursor
+        signal.throwIfAborted()
       }
       const page = current.page, rows = request.rows(page)
       const token = this.prefix + randomUUID(), remaining = rows.length - current.offset
@@ -85,7 +85,7 @@ export class AiPageStore<P extends Page, Row> {
       const end = current.offset + low, next = end < rows.length || current.nextCursor !== null ? token : null
       const result = z.json().parse(output(low, next))
       let finished = false
-      return { result,
+      return { result, isPage: page.state === 'page',
         commit: () => {
           if (finished) throw new ConnectionFailure('stale')
           signal.throwIfAborted(); active(); request.validate(page.error)

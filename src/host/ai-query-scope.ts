@@ -46,6 +46,7 @@ export function registerRedisQueryScope(ctx: Context, reader: RedisAiReader): (e
     const decision = await next()
     if (decision.kind === 'deny' || decision.kind === 'cancel') return decision
     signal.throwIfAborted()
+    let gate = decision
     if (args.cursor === undefined) {
       const approval = ctx.get('approval')
       if (approval === undefined) return { kind: 'deny', reason: '无法确认 Redis 查询范围，请在可交互的 DSH 对话中重试。' }
@@ -57,18 +58,30 @@ export function registerRedisQueryScope(ctx: Context, reader: RedisAiReader): (e
       const conditions = JSON.stringify(filter === null ? { match: args.match } : { match: filter.match, field: filter.field, equals: filter.equals })
       const en = `Confirm Redis query scope: ${endpoint}\n${conditions}\nSCAN may traverse the entire current DB keyspace. This authorizes this query and its matching continuation pages within the existing read budget; it is not a snapshot.`
       const zh = `确认 Redis 查询范围：${endpoint}\n${conditions}\nSCAN 可能遍历当前 DB 的整个键空间。本次确认适用于该查询及条件不变的续页，仍受现有读取预算限制；结果不是快照。`
-      const outcome = await approval.request({ agent, toolName: exec.name, callId: exec.callId, reason: 'Confirm Redis query scope', displayReason: { en, zh }, signal })
-      if (outcome === 'cancelled') return { kind: 'cancel' }
-      // Rejection can come from a user or policy. Preserve it as a decision,
-      // rather than suggesting the same query merely needs another prompt.
-      if (outcome === 'rejected') return { kind: 'deny', reason: 'Redis 查询已被拒绝；未开始扫描。停止本次查询；仅在用户主动重新发起查询时再处理，不要重复请求确认或换工具绕过。' }
-      if (outcome !== 'allowed-once') return { kind: 'deny', reason: 'Redis 查询确认服务不可用；未开始扫描。请检查 DSH 的交互确认通道，不要自动重试或改用其他工具。' }
+      if (decision.kind === 'ask') {
+        // The native DSH prompt enforces the host decision and query scope together.
+        const previous = decision.displayReason
+        const fallback = previous?.en ?? decision.reason
+        const include = (policy: string | undefined, scope: string) => policy === undefined ? scope : policy + '\n\n' + scope
+        const displayReason = { en: include(fallback, en), zh: include(previous?.zh ?? fallback, zh) }
+        for (const [locale, policy] of Object.entries(previous ?? {})) {
+          if (locale !== 'en' && locale !== 'zh') Object.assign(displayReason, { [locale]: include(policy, en) })
+        }
+        gate = { ...decision, displayReason }
+      } else {
+        const outcome = await approval.request({ agent, toolName: exec.name, callId: exec.callId, reason: 'Confirm Redis query scope', displayReason: { en, zh }, signal })
+        if (outcome === 'cancelled') return { kind: 'cancel' }
+        // Rejection can come from a user or policy. Preserve it as a decision,
+        // rather than suggesting the same query merely needs another prompt.
+        if (outcome === 'rejected') return { kind: 'deny', reason: 'Redis 查询已被拒绝；未开始扫描。停止本次查询；仅在用户主动重新发起查询时再处理，不要重复请求确认或换工具绕过。' }
+        if (outcome !== 'allowed-once') return { kind: 'deny', reason: 'Redis 查询确认服务不可用；未开始扫描。请检查 DSH 的交互确认通道，不要自动重试或改用其他工具。' }
+      }
     }
     signal.throwIfAborted()
     if (!reader.isCurrentTarget(agent.session.id, target)) return { kind: 'deny', reason: 'Redis 连接或 DB 已变化，请重新确认查询范围。' }
     admitted.set(exec.token, target)
-    // Preserve another policy's ask: this confirmation cannot override it.
-    return decision
+    // The body still checks target identity after DSH resolves its prompt.
+    return gate
   })
   return exec => {
     exec.signal.throwIfAborted()

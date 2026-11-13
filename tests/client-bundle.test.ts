@@ -39,7 +39,7 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   const addListener = vi.spyOn(document, 'addEventListener'), removeListener = vi.spyOn(document, 'removeEventListener')
   runInNewContext(readFileSync(new URL('../lib/client.js', import.meta.url), 'utf8'), {
     window: { __ModuleLoader__: { load: (value: BundleRegistration) => { registration = value } } }, document,
-    console: { info: vi.fn() },
+    TextEncoder, console: { info: vi.fn() },
   })
   if (registration === undefined) throw new Error('Bundle did not register')
   expect(registration.id).toBe('dsh-redis')

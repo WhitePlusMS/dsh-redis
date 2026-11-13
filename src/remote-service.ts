@@ -47,7 +47,7 @@ export class RedisRemoteService extends TypertRemoteService {
     const outcome = await this.uiActions.dispatch(sessionId, { kind: 'confirmSelection' }, target, revision, current, signal, 3000)
     if (outcome !== 'applied' || !current()) throw new Error('侧栏选择已变化或界面不可用，请重新选择后重试。')
     return revision
-  }, (sessionId, revision) => { const current = this.uiActions.selectionRevision(sessionId); return current !== null && (revision === null || current === revision) })
+  }, (sessionId, revision) => { const current = this.uiActions.selectionRevision(sessionId); return current !== null && (revision === null || current === revision) }, sessionId => this.resetTarget(sessionId))
   private readonly databases = new RedisDatabases(this.connections)
   private readonly keys = new RedisKeys(this.connections)
   private readonly strings = new RedisStrings(this.connections)
@@ -56,12 +56,22 @@ export class RedisRemoteService extends TypertRemoteService {
   private readonly sets = new RedisSets(this.connections)
   private readonly zsets = new RedisZSets(this.connections)
   private readonly streams = new RedisStreams(this.connections)
+  private readonly scanReaders = [this.keys, this.hashes, this.sets, this.zsets, this.streams]
   private readonly profiles: RedisProfiles
   constructor(ctx: Context) {
     super(ctx, 'redisViewer')
     this.profiles = new RedisProfiles(ctx.profileContext.dir)
-    ctx.effect(() => () => { this.writer.dispose(); this.uiActions.dispose(); this.ai.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.streams.dispose(); this.connections.dispose(); }, 'redis connections')
-    ctx.on('session/disposed', session => { this.writer.disable(session.id); this.uiActions.disposeSession(session.id); this.ai.disposeSession(session.id); this.keys.disposeSession(session.id); this.hashes.disposeSession(session.id); this.sets.disposeSession(session.id); this.zsets.disposeSession(session.id); this.streams.disposeSession(session.id); this.connections.disposeSession(session.id); })
+    ctx.effect(() => () => { this.writer.dispose(); this.uiActions.dispose(); this.ai.dispose(); for (const reader of this.scanReaders) reader.dispose(); this.connections.dispose(); }, 'redis connections')
+    ctx.on('session/disposed', session => { this.writer.disable(session.id); this.uiActions.disposeSession(session.id); this.ai.disposeSession(session.id); this.disposeScans(session.id); this.connections.disposeSession(session.id); })
+  }
+  private disposeScans(sessionId: string): void {
+    for (const reader of this.scanReaders) reader.disposeSession(sessionId)
+  }
+  /** Every target exchange retires writes, selection and all old cursors together. */
+  private resetTarget(sessionId: string): void {
+    this.writer.disable(sessionId)
+    this.ai.clearTarget(sessionId)
+    this.disposeScans(sessionId)
   }
   /** The Gateway supplies both the trusted Agent and this stream's uplink. */
   async *openUiChannel(agent: Agent, _request: EmptyRequest, signal: AbortSignal): RemoteStream<UiChannelMessage, UiChannelInput> {
@@ -72,26 +82,18 @@ export class RedisRemoteService extends TypertRemoteService {
   }
   async connect(agent: Agent, request: ConnectionRequest, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
-    this.writer.disable(agent.session.id)
-    this.uiActions.invalidateSession(agent.session.id)
-    this.ai.clearTarget(agent.session.id)
-    this.keys.disposeSession(agent.session.id)
-    this.hashes.disposeSession(agent.session.id)
-    this.sets.disposeSession(agent.session.id)
-    this.zsets.disposeSession(agent.session.id)
-    this.streams.disposeSession(agent.session.id)
+    this.resetTarget(agent.session.id)
     return this.connections.connect(agent.session.id, request, signal)
   }
   async disconnect(agent: Agent, request: ConnectionTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
     const view = this.connections.disconnect(agent.session.id, request)
-    if (view.state === 'disconnected') { this.writer.disable(agent.session.id); this.uiActions.invalidateSession(agent.session.id); this.ai.clearTarget(agent.session.id); this.keys.disposeSession(agent.session.id); this.hashes.disposeSession(agent.session.id); this.sets.disposeSession(agent.session.id); this.zsets.disposeSession(agent.session.id); this.streams.disposeSession(agent.session.id) }
+    if (view.state === 'disconnected') this.resetTarget(agent.session.id)
     return view
   }
   async selectDatabase(agent: Agent, request: DatabaseTarget, signal: AbortSignal): Promise<ConnectionView> {
     signal.throwIfAborted()
-    this.uiActions.invalidateSession(agent.session.id)
-    const view = await this.connections.selectDatabase(agent.session.id, request, signal, () => { this.writer.disable(agent.session.id); this.ai.clearTarget(agent.session.id) })
+    const view = await this.connections.selectDatabase(agent.session.id, request, signal, () => this.resetTarget(agent.session.id))
     // An obsolete response must not clear selection state for a newer connection.
     if (!this.connections.isCurrentView(agent.session.id, view)) return { ...this.connections.status(agent.session.id), error: 'stale' }
     return view
@@ -174,9 +176,7 @@ export class RedisRemoteService extends TypertRemoteService {
     const sessionId = agent.session.id
     return this.connections.connectProfileCandidate(sessionId, profile, '', signal, this.profiles, () => {
       if (!isCurrent()) throw new ConnectionFailure('stale')
-      this.writer.disable(sessionId)
-      this.uiActions.invalidateSession(sessionId); this.ai.clearTarget(sessionId)
-      this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.streams.disposeSession(sessionId)
+      this.resetTarget(sessionId)
     })
   }
   async saveProfile(_agent: Agent, request: SaveProfileRequest, signal: AbortSignal): Promise<ProfileCollection> { return this.profiles.save(request, signal) }

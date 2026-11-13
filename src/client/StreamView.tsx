@@ -1,4 +1,4 @@
-import { useContext, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useContext, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import type { TranslateNS } from '@deepseek-ai/dsh-client-ui-slots'
 import type { RemoteResult } from '@deepseek-ai/dsh-typert-protocol'
 import { MAX_STREAM_MESSAGES, type ActionPointReadRequest, type ActionPointReadResult, type DatabaseTarget, type PreviewFormat, type RedisKey, type StreamField, type StreamMessage, type StreamReadRequest, type StreamReadResult } from '../domain.ts'
@@ -14,14 +14,16 @@ import { PresentKeyMetadata } from './KeyPresentation.tsx'
 import { ReadActions, QueryToggle, ScanProgress } from './ReadControls.tsx'
 import { useCurrentItem, useSelectionAction } from './CurrentSelection.tsx'
 import { SelectionEpochContext } from './SelectionEpochContext.ts'
+import { readCollectionPoint, useCollectionPoint, type CollectionPoint } from './collection-point.ts'
 import { RefreshVisibility } from './AutoRefresh.tsx'
-import type { KeyActionResult, StreamActionHandler, StreamActionRequest } from './ui-pane-presence.ts'
+import type { StreamActionHandler, StreamActionRequest } from './ui-pane-presence.ts'
 
 export interface StreamActions { readonly readStream: (request: StreamReadRequest, signal: AbortSignal) => Promise<RemoteResult<StreamReadResult>>; readonly readActionPoint: (request: ActionPointReadRequest, signal: AbortSignal) => Promise<RemoteResult<ActionPointReadResult>>; readonly registerStreamHandler: (handler: StreamActionHandler) => () => void }
 type Props = StreamActions & { readonly target: DatabaseTarget; readonly selected: RedisKey; readonly t: TranslateNS<typeof NS> }
 type FieldRow = StreamField & { readonly index: number }
 type LocatedMessage = StreamMessage & { readonly sampledAt: string }
-interface PendingField { readonly request: StreamActionRequest; readonly signal: AbortSignal; readonly message: LocatedMessage; readonly previousPaused: boolean; readonly previousGuard: boolean; readonly resolve: (result: KeyActionResult) => void; resolved: boolean; messageVisible: boolean; fieldVisible: boolean; userScrolled: boolean; userInteracted: boolean; previousMessageTop: number | null; previousFieldTop: number | null; abort: () => void; accepted: () => void; rejected: () => void }
+interface PendingFieldData { readonly request: StreamActionRequest; readonly signal: AbortSignal; readonly message: LocatedMessage; readonly previousPaused: boolean; readonly previousGuard: boolean; messageVisible: boolean; fieldVisible: boolean; previousMessageTop: number | null; previousFieldTop: number | null }
+type PendingField = PendingFieldData & CollectionPoint
 
 /** Messages, ordered field pairs and both byte previews remain visible together.
  * Message ID + occurrence identifies a preview, including repeated field names.
@@ -39,9 +41,8 @@ export function StreamView(props: Props) {
   const [point, setPoint] = useState<LocatedMessage | null>(null), [candidate, setCandidate] = useState<PendingField | null>(null)
   const [pagingPaused, setPagingPaused] = useState(false), [pagingGuard, setPagingGuard] = useState(false)
   const [restoreMessageScroll, setRestoreMessageScroll] = useState<{ readonly top: number } | undefined>(), [restoreFieldScroll, setRestoreFieldScroll] = useState<{ readonly top: number } | undefined>()
-  const pending = useRef<PendingField | null>(null), latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
-  const pointer = useRef(false), mounted = useRef(false), deferredReject = useRef<{ readonly action: PendingField; readonly finish: () => void } | null>(null), pointerTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
-  useEffect(() => { mounted.current = true; return () => { mounted.current = false; if (pointerTimer.current !== undefined) clearTimeout(pointerTimer.current); deferredReject.current = null } }, [])
+  const locate = useCollectionPoint<PendingFieldData>()
+  const latest = useRef({ visibility, publication, pagingPaused, pagingGuard, busy: false })
   latest.current = { ...latest.current, visibility, publication, pagingPaused, pagingGuard }
   const scanSignal = useRef<{ readonly signal: AbortSignal; readonly replace: boolean } | null>(null)
   const page = useCollectionScan<StreamCache, StreamReadResult>({ target: props.target, keyBase64: props.selected.base64, queryKey: JSON.stringify([direction, range]), empty: emptyStreamCache,
@@ -70,45 +71,34 @@ export function StreamView(props: Props) {
   useLayoutEffect(() => {
     if (epoch === null || publication === null || visibility?.visible === false || visibility?.signal.aborted) return
     const handler: StreamActionHandler = async (request, signal) => {
-      const sameTarget = request.target !== null && request.target.id === props.target.id && request.target.generation === props.target.generation && request.target.db === props.target.db && request.action.keyBase64 === props.selected.base64
-      if (!sameTarget || latest.current.busy || pending.current !== null || signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || document.visibilityState !== 'visible') return 'stale'
-      let response: RemoteResult<ActionPointReadResult>
-      try { response = await props.readActionPoint({ requestId: request.requestId }, signal) } catch { return signal.aborted ? 'stale' : 'failed' }
-      if (signal.aborted || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || latest.current.visibility?.visible === false || latest.current.visibility?.signal.aborted || document.visibilityState !== 'visible') return 'stale'
-      if (!response.ok || response.value.state !== 'value' || response.value.cell === null || response.value.streamMessage === null) return 'failed'
-      const item = response.value.streamMessage, field = item.fields[request.action.fieldIndex]
-      if (item.id !== request.action.id || field === undefined || field.field.base64 !== request.action.fieldBase64 || JSON.stringify(field.value) !== JSON.stringify(response.value.cell)) return 'failed'
-      return new Promise(resolve => {
-        const action: PendingField = { request, signal, message: { ...item, sampledAt: response.value.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, resolve, resolved: false, messageVisible: false, fieldVisible: false, userScrolled: false, userInteracted: false, previousMessageTop: null, previousFieldTop: null, abort: () => undefined, accepted: () => undefined, rejected: () => undefined }
-        const retire = () => { signal.removeEventListener('abort', action.abort); if (pending.current === action) pending.current = null; latest.current.publication?.release(request.requestId) }
-        action.rejected = () => {
-          retire()
-          const finish = () => { if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) } if (!action.userScrolled && !action.userInteracted) { if (action.previousMessageTop !== null) setRestoreMessageScroll({ top: action.previousMessageTop }); if (action.previousFieldTop !== null) setRestoreFieldScroll({ top: action.previousFieldTop }) } setCandidate(current => current === action ? null : current) }
-          if (pointer.current) { action.userInteracted = true; deferredReject.current = { action, finish } } else finish()
-          if (!action.resolved) { action.resolved = true; resolve('stale') }
-        }
-        action.accepted = () => { retire(); setPoint(action.message); setSelected(action.message.id); setPairIndex(action.request.action.fieldIndex); setCandidate(current => current === action ? null : current) }
-        action.abort = action.rejected
-        pending.current = action; latest.current.publication?.hold(request.requestId); setRestoreMessageScroll(undefined); setRestoreFieldScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action)
-        signal.addEventListener('abort', action.abort, { once: true })
-        if (signal.aborted) action.abort()
-      })
+      if (latest.current.busy || locate.current() !== null) return 'stale'
+      const response = await readCollectionPoint(request, signal, epoch, props.target, props.selected.base64, props.readActionPoint,
+        () => latest.current.visibility?.visible !== false && latest.current.visibility?.signal.aborted !== true)
+      if (typeof response === 'string') return response
+      if (response.cell === null || response.streamMessage === null) return 'failed'
+      const item = response.streamMessage, field = item.fields[request.action.fieldIndex]
+      if (item.id !== request.action.id || field === undefined || field.field.base64 !== request.action.fieldBase64 || JSON.stringify(field.value) !== JSON.stringify(response.cell)) return 'failed'
+      const clearCandidate = (action: PendingField) => setCandidate(current => current === action ? null : current)
+      return locate.begin({ request, signal, message: { ...item, sampledAt: response.sampledAt }, previousPaused: latest.current.pagingPaused, previousGuard: latest.current.pagingGuard, messageVisible: false, fieldVisible: false, previousMessageTop: null, previousFieldTop: null }, publication,
+        action => { setRestoreMessageScroll(undefined); setRestoreFieldScroll(undefined); setPagingPaused(true); setPagingGuard(true); setCandidate(action) },
+        action => { setPoint(action.message); setSelected(action.message.id); setPairIndex(action.request.action.fieldIndex); clearCandidate(action) },
+        action => {
+          if (!action.userScrolled) { setPagingPaused(action.previousPaused); setPagingGuard(action.previousGuard) }
+          if (!action.userScrolled && !action.userInteracted) {
+            if (action.previousMessageTop !== null) setRestoreMessageScroll({ top: action.previousMessageTop })
+            if (action.previousFieldTop !== null) setRestoreFieldScroll({ top: action.previousFieldTop })
+          }
+          clearCandidate(action)
+        })
     }
     const unregister = props.registerStreamHandler(handler)
-    return () => { unregister(); pending.current?.abort() }
+    return () => { unregister(); locate.abort() }
   }, [props.registerStreamHandler, props.readActionPoint, props.target.id, props.target.generation, props.target.db, props.selected.base64, epoch, visibility?.visible, visibility?.signal, publication === null])
-  function pointerInteraction(active: boolean): void {
-    pointer.current = active
-    if (active || !mounted.current || deferredReject.current === null) return
-    pointerTimer.current = setTimeout(() => { pointerTimer.current = undefined; if (!pointer.current) { const deferred = deferredReject.current; deferredReject.current = null; deferred?.finish() } }, 0)
-  }
-  function userScroll(): void { const action = pending.current ?? deferredReject.current?.action; if (action !== undefined && action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }
+  function userScroll(): void { const action = locate.current(); if (action !== null) action.userScrolled = true; setPagingGuard(false); setPagingPaused(false) }
   function ready(action: PendingField, table: 'message' | 'field'): void {
-    if (pending.current !== action || action.resolved) return
-    if (action.signal.aborted || Date.now() >= action.request.expiresAt || !epoch?.current(action.request.selectionRevision) || document.visibilityState !== 'visible') { action.abort(); return }
     if (table === 'message') action.messageVisible = true
     else action.fieldVisible = true
-    if (action.messageVisible && action.fieldVisible) { action.resolved = true; action.resolve({ kind: 'commitStreamField', accepted: action.accepted, rejected: action.rejected }) }
+    if (action.messageVisible && action.fieldVisible) locate.reveal(action, 'commitStreamField', epoch)
   }
   function clearPoint(): void { epoch?.userSelect(); setSelected(null); setPairIndex(0); setPoint(null); setPagingPaused(false); setPagingGuard(false) }
   function refresh(): void { epoch?.userSelect(); void page.scan(false) }
@@ -152,11 +142,11 @@ export function StreamView(props: Props) {
     </>}
     <div className="redis-collection-summary"><ScanProgress t={t} busy={busy} progress={progress} /><span title={`${t('stream.loaded')} · ${t('stream.total')}`}><b data-loaded-messages>{cache.messages.length}</b>{range.start === '-' && range.end === '+' ? ' / ' : ' · ' + t('stream.total') + ' '}{result?.metadata?.length ?? '—'}</span>{(range.start !== '-' || range.end !== '+') && <button type="button" className="redis-chip" title={t('stream.bounds')} onClick={() => setOptionsOpen(true)}>{range.start} … {range.end}</button>}</div>
     <div className="redis-collection-body redis-stream-body">
-      <CollectionTable rows={messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'stream.empty')} selection={{ id: shown?.id ?? null, disabled: item => candidate?.message.id === item.id, onSelect: item => { setPoint(current => current?.id === item.id ? current : null); setSelected(item.id); setPairIndex(0) } }} reveal={candidate === null ? undefined : { id: candidate.message.id, remember: top => { candidate.previousMessageTop ??= top }, ready: () => ready(candidate, 'message') }} restoreScroll={candidate === null ? restoreMessageScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={userScroll} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
+      <CollectionTable rows={messages} identity={item => item.id} columns={columns} label={t('stream.title')} loading={busy} emptyMessage={t(busy ? 'connection.busy' : 'stream.empty')} selection={{ id: shown?.id ?? null, disabled: item => candidate?.message.id === item.id, onSelect: item => { setPoint(current => current?.id === item.id ? current : null); setSelected(item.id); setPairIndex(0) } }} reveal={candidate === null ? undefined : { id: candidate.message.id, remember: top => { candidate.previousMessageTop ??= top }, ready: () => ready(candidate, 'message') }} restoreScroll={candidate === null ? restoreMessageScroll : undefined} onPointerInteraction={locate.pointerInteraction} onUserScroll={userScroll} onEnd={pagingPaused || pagingGuard || cursor === null || cache.limited || error !== null ? undefined : () => page.scan(true)} />
       {pagingGuard && cursor !== null && !cache.limited && error === null && <button type="button" disabled={busy || candidate !== null} onClick={() => { epoch?.userSelect(); setPagingPaused(false); setPagingGuard(false); void page.scan(true) }}>{t('keys.more')}</button>}
       <section className="redis-stream-pairs" aria-label={t('stream.fields')}>
         <strong>{shown === undefined ? t('stream.fields') : `${t('stream.id')} ${shown.id}`}</strong>
-        <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(shown === undefined ? selected === null ? 'stream.selectMessage' : 'collection.selectionAbsent' : 'stream.noFields')} selection={{ id: shownPair === undefined ? null : String(shownIndex), disabled: row => candidate !== null && row.index === candidate.request.action.fieldIndex, onSelect: row => { if (candidate !== null) { setPoint(candidate.message); setSelected(candidate.message.id) } setPairIndex(row.index) } }} reveal={candidate === null ? undefined : { id: String(candidate.request.action.fieldIndex), remember: top => { candidate.previousFieldTop ??= top }, ready: () => ready(candidate, 'field') }} restoreScroll={candidate === null ? restoreFieldScroll : undefined} onPointerInteraction={pointerInteraction} onUserScroll={userScroll} />
+        <CollectionTable rows={rows} identity={row => String(row.index)} columns={fields} label={t('stream.fields')} emptyMessage={t(shown === undefined ? selected === null ? 'stream.selectMessage' : 'collection.selectionAbsent' : 'stream.noFields')} selection={{ id: shownPair === undefined ? null : String(shownIndex), disabled: row => candidate !== null && row.index === candidate.request.action.fieldIndex, onSelect: row => { if (candidate !== null) { setPoint(candidate.message); setSelected(candidate.message.id) } setPairIndex(row.index) } }} reveal={candidate === null ? undefined : { id: String(candidate.request.action.fieldIndex), remember: top => { candidate.previousFieldTop ??= top }, ready: () => ready(candidate, 'field') }} restoreScroll={candidate === null ? restoreFieldScroll : undefined} onPointerInteraction={locate.pointerInteraction} onUserScroll={userScroll} />
       </section>
       <section className="redis-collection-preview redis-stream-field" aria-label={t('hash.field')}>
         {shownPair !== undefined && shown !== undefined && windows !== null ? <BytePreview key={`${shown.id}:${shownIndex}`} heading={{ label: t('hash.field'), description: `#${shownIndex} · ${shownPair.field.byteLength} ${t('keys.bytes')}` }} value={windows.field} t={t} format={fieldFormat} onFormatChange={setFieldFormat} /> : <strong>{t('hash.field')}</strong>}

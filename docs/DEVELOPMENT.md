@@ -8,8 +8,8 @@
 
 | 项目 | 声明或实际状态 |
 | --- | --- |
-| 插件包 | 当前源码 `dsh-redis@0.1.2`；历史 Release 为 `v0.1.0` |
-| 宿主、DSH SDK | 当前依赖声明 `0.2.2-rc.1`；当前构建的完整原生验收待完成 |
+| 插件包 | 当前源码与已发布版本均为 `dsh-redis@0.1.2`。发布后的源码调整见 [UPDATE_LOG](../UPDATE_LOG.md) |
+| 宿主、DSH SDK | 固定为 `0.2.2-rc.1`，已发布包的宿主验证见 [DSH 0.2.2-rc.1 安装与工具验证](verification/dsh-0.2.2-rc.1-2026-11-12.md) |
 | 官方参考源码 | 以下旧发布流程引用 `dsh-v0.2.0-rc.2` / `639ed015`，不作为当前 SDK 行为的证明 |
 | Node.js | 声明 `>=24.9.0`；DSH 0.2.2-rc.1 需要 Node 24.9 或以上版本 |
 | pnpm | `11.22.0`，由 `packageManager` 固定 |
@@ -19,7 +19,7 @@
 
 当前没有把“最新上游”“最新稳定版”当作已验证基线。升级宿主时应另开小目标，核对官方版本、Host/Client/工具接口、全部 peer/dev 依赖和真实运行结果，再同时修改环境说明。
 
-DSH 的共享服务放在 `peerDependencies`，开发时在 `devDependencies` 使用匹配版本；不要把另一份 DSH/React 服务打入客户端，造成不同实例持有不同上下文。本轮不改版本、依赖或锁文件。
+DSH 的共享服务放在 `peerDependencies`，开发时在 `devDependencies` 使用匹配版本；不要把另一份 DSH/React 服务打入客户端，造成不同实例持有不同上下文。Redis 开发夹具使用 `redis` 开发依赖。
 
 ## 2. 目录和职责
 
@@ -58,13 +58,13 @@ flowchart LR
 ```
 
 - 这是 DSH 原生插件，未实现 MCP server。当前注册的工具包含读取、最终回答、筛选、诊断、连接、本地资料、界面动作与受控写入，完整目录见 [AI_READ_USAGE.md](AI_READ_USAGE.md)；不另开 MCP 端口，也不要求用户添加 MCP 配置。
-- 当前 RPC 协议版本为 `16`，包含 `23` 个方法（包括 UI 流）；已发布 v0.1.0 的协议版本为 `2`。Host、shared 和 Client 的 schema 必须一致；错误版本应暴露问题，不加静默兼容层。
-- 正式 Redis 访问由项目的 `RedisTransport` 通过 `node:net`/`node:tls` 和有预算的 RESP2 解析完成。`redis` npm 依赖用于测试/辅助脚本，不应据依赖名把正式读取链路描述成 node-redis。
+- 当前 RPC 协议版本为 `16`，包含 `23` 个方法（包括 UI 流）；已发布 v0.1.0 的协议版本为 `2`。Host 和 Client 从 `typert.shared.ts` 创建同一组端点与严格解析器，Host 用 Zod 接入 DSH 注册表。生成器 `0.2.2-rc.1` 的普通 Host 参数会接收并剥离额外字段，Redis RPC 继续显式拒绝这些字段。[DSH Typert 生成器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/typert/generator/README.md)
+- 正式 Redis 访问由项目的 `RedisTransport` 通过 `node:net`/`node:tls` 和有预算的 RESP2 解析完成。`redis` npm 包用于测试和辅助脚本。生产传输在解码前限制响应大小和结构深度，按顺序执行命令，保留事务回读和提交结果不明的语义。
 - 工具会话身份来自 DSH 的 `exec.agent.session.id`，不能让模型传入另一个 session 来选连接。未连接时明确拒绝，不替用户选服务器或自动重连。
 - 经 `RedisAiReader.withBudget` 的工具共用会话级额度：每个额度周期最多准入 32 次、累计返回 1 MiB JSON，单次最多 64 KiB；每次准入前预留完整单次上限。准入后的失败或取消仍计次；扫描确认在准入前被拒绝时不计次。不是每条消息重新计数，切库和重连也不重置。耗尽后打开侧栏“插件信息”，待在途请求结束再手动“继续读取”；该动作重置额度，会话释放则清除记录。仅打开面板的 `redis_viewer_show` 不经过此预算。
-- 名称搜索和 Hash 筛选的首批在 DSH `tools/pre-execute` 中确认范围，绑定会话与当前连接/DB；续页由既有游标校验条件。拒绝或取消不扫描，确认不可用单独报错。已知对象的直接读取不要求扫描范围确认，其他 DSH 策略仍可独立限制工具。
+- 名称搜索和 Hash 筛选的首批在 DSH `tools/pre-execute` 中确认范围，绑定会话与当前连接/DB。宿主同时要求询问时，DSH 在同一条提示中显示宿主理由和查询范围。续页由既有游标校验条件。拒绝或取消不扫描，确认不可用单独报错。已知对象的直接读取不要求扫描范围确认，其他 DSH 策略仍可独立限制工具。
 - Client 通过 `tool.call.toolview` 呈现 16 个状态/读取工具的记录和答案证据工具，并在 `conversation.chat.turnTail` 展示本轮证据。证据订阅正式 `session/event`，使用当前轮次、连接代次和 DB 的已完成记录，不使用弃用的会话同步查询接口；最多保留 32 个读取记录，输出最多 64 KiB。它不重新查询 Redis，不校验或改写模型自由文本，也不调用 `concludeTurn()`：卡片准备完成不代表用户的解释性问题已回答，须保留后续原生 assistant 步骤。
-- UI 与 AI 有各自的游标状态，复用同一真实连接。连接替换、断开、会话和插件释放时，一并清理对应 reader、游标与选择。
+- UI 与 AI 有各自的游标状态，复用同一真实连接。连接替换、断开、切换 DB、会话和插件释放时，一并清理对应 reader、游标、选择和写入开关。
 - Client 只同步选中的原始 Key/字段/成员/下标/Stream 字段序号标识，约 60 ms 合并快速选择并串行发送；工具调用时重读值，不把展示文本当二进制身份。
 - 显式切 DB 复用已有连接和目标代次保护。侧栏可见时约每秒核对 Host 内存状态，变化才应用；状态同步不读取 Redis 值，不开启内容自动刷新。
 
@@ -99,7 +99,7 @@ pnpm check
 pnpm build
 ```
 
-`build` 并不等于完整类型检查。`scripts/build.mjs` 只清理项目所属 `lib/`，生成 Host ESM、声明文件、RPC 导出和浏览器 `lib/client.js`；Client 以 ModuleLoader 包装、外置共享 React，并内联 Lucide 与客户端代码。样式由 `installRedisStyles` 注入，当前没有独立 `index.css`。
+`scripts/build.mjs` 使用 TypeScript 编译器按 Host 项目配置生成 ESM、声明文件和 RPC 导出，使用 esbuild 生成浏览器 `lib/client.js`。Client 以 ModuleLoader 包装、外置共享 React，并内联 Lucide 与客户端代码。全量检查还包含 Client 与测试的 TypeScript 检查。样式由 `installRedisStyles` 注入，当前没有独立 `index.css`。
 
 不要直接改 `lib/`。源码改动后先做类型检查，再做与改动相关的回归；完整检查通过后，不因文档措辞微调重复执行全套测试。
 

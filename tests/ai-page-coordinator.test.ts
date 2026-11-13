@@ -6,7 +6,7 @@ function fixture() {
   const slots = [{ disposeSession: vi.fn(), dispose: vi.fn() }, { disposeSession: vi.fn(), dispose: vi.fn() }] as const
   return { slots, coordinator: new AiPageCoordinator(slots) }
 }
-function page(state = 'page'): PreparedAiPage { return { result: { value: { state } }, commit: vi.fn(), rollback: vi.fn() } }
+function page(state = 'page'): PreparedAiPage { return { result: { state }, isPage: state === 'page', commit: vi.fn(), rollback: vi.fn() } }
 
 describe('AI page candidate coordination', () => {
   it('preserves the old slot on candidate failure and promotes only on commit', async () => {

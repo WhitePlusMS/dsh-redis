@@ -8,7 +8,7 @@ import ToolRuntime from '@deepseek-ai/dsh-tools'
 import type { ApprovalService } from '@deepseek-ai/dsh-user-approval'
 import { ConnectionFailure, RedisConnections, type RedisLink } from '../src/host/connection-service.ts'
 import type { ConnectionErrorCode, DatabaseTarget, UiAction } from '../src/domain.ts'
-import type { PreparedAiPage } from '../src/host/ai-page-store.ts'
+import type { PreparedAiResult } from '../src/host/ai-page-store.ts'
 import { RedisAiReader } from '../src/host/ai-reader.ts'
 import { RedisAiWriter } from '../src/host/ai-writer.ts'
 import { registerRedisTools } from '../src/host/ai-tools.ts'
@@ -112,6 +112,7 @@ function remoteFixture(connections: RedisConnections, reader: RedisAiReader): Re
   const writer = new RedisAiWriter(connections)
   Reflect.set(remote, 'connections', connections); Reflect.set(remote, 'ai', reader); Reflect.set(remote, 'uiActions', uiActions)
   Reflect.set(remote, 'writer', writer)
+  Reflect.set(remote, 'scanReaders', [])
   cleanups.push(() => { writer.dispose(); uiActions.dispose() })
   return remote
 }
@@ -625,13 +626,13 @@ describe('official Redis model tools', () => {
     let revision = 1
     const f = await fixture(undefined, undefined, { confirm: async (_session, _target, expected) => expected ?? revision, current: (_session, expected) => expected === revision })
     f.reader.setSelection('a', { target: f.target, selection: { keyBase64: Buffer.from('hash').toString('base64'), item: null } })
-    const pages: PreparedAiPage[] = []
+    const pages: PreparedAiResult[] = []
     await f.reader.read('a', {}, new AbortController().signal, page => { pages.push(page) })
     expect(pages).toHaveLength(1)
     revision += 1
     expect(() => pages[0]?.commit()).toThrow('侧栏选择已变化')
     pages[0]?.rollback()
-    const retry: PreparedAiPage[] = []
+    const retry: PreparedAiResult[] = []
     await f.reader.read('a', {}, new AbortController().signal, page => { retry.push(page) })
     expect(retry).toHaveLength(1)
     expect(() => retry[0]?.commit()).not.toThrow()
@@ -775,7 +776,6 @@ describe('official Redis model tools', () => {
   it('shares the limit across tools and keeps it across DB changes until the user resumes', async () => {
     const f = await fixture(), signal = new AbortController().signal
     const remote = remoteFixture(f.connections, f.reader)
-    for (const key of ['keys', 'hashes', 'sets', 'zsets', 'streams']) Reflect.set(remote, key, { disposeSession: () => undefined })
     expect((await f.call('redis_viewer_status', {})).isError).toBeFalsy()
     expect((await f.call('redis_viewer_keys', { match: '*' })).isError).toBeFalsy()
     expect((await f.call('redis_viewer_value', { key: 'plain' })).isError).toBeFalsy()

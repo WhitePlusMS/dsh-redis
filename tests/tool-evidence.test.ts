@@ -1,6 +1,12 @@
 import { expect, it } from 'vitest'
 import { redisEvidence } from '../src/client/tool-evidence.ts'
 
+it('rejects oversized recorded UTF-8 before projecting evidence', () => {
+  const text = JSON.stringify({ readOnly: true, value: '界'.repeat(45_000) })
+  expect(text.length).toBeLessThan(128 * 1024)
+  expect(redisEvidence('redis_viewer_value', text)).toBeNull()
+})
+
 it('keeps exact TTL and integer strings from the recorded result without historical inference', () => {
   const evidence = redisEvidence('redis_viewer_key_metadata', JSON.stringify({ readOnly: true, connection: { id: 'fixture', generation: 3, db: 1 }, key: { label: '"fixture:key"' }, state: 'value', type: 'string', ttlMs: '-1', sampledAt: '2026-11-05T00:00:00.000Z' }))
   expect(evidence?.rows).toContainEqual({ label: 'ttlMs', value: '-1' })

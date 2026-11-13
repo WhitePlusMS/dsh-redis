@@ -1,3 +1,5 @@
+import { parseResultRecord, resultRecord as record } from '../redis-result.ts'
+
 /** Recorded tool results only: no live selection, network reads or model prose. */
 
 export type EvidenceNote = 'ttl' | 'scan' | 'memory' | 'explicit' | 'selected' | 'snapshot'
@@ -10,19 +12,13 @@ export interface RedisEvidence {
   readonly raw: string
 }
 
-function record(value: unknown): Record<string, unknown> | null {
-  return typeof value === 'object' && value !== null && !Array.isArray(value) ? value as Record<string, unknown> : null
-}
 function scalar(value: unknown): string | null {
   return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : null
 }
 
 /** Do not infer values from call arguments, another call or the current sidebar. */
 export function redisEvidence(tool: string, text: string): RedisEvidence | null {
-  if (text.length > 131072) return null
-  let parsed: unknown
-  try { parsed = JSON.parse(text) } catch { return null }
-  const data = record(parsed)
+  const data = parseResultRecord(text, 128 * 1024)
   if (data === null || data.readOnly !== true) return null
   const rows: EvidenceRow[] = [], values: EvidenceRow[] = [], details: EvidenceRow[] = [], notes: EvidenceNote[] = []
   const add = (label: string, value: unknown) => { const rendered = scalar(value); if (rendered !== null) rows.push({ label, value: rendered }) }
