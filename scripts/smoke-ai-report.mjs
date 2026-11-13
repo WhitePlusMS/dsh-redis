@@ -1,10 +1,9 @@
 /** Exercise local overview reports with the owned Redis fixture, not the user's server. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { mkdtemp, readFile, realpath, rm } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
 import { RedisReports, registerRedisReportTools } from '../lib/host/ai-report-tools.js'
@@ -23,12 +22,12 @@ try {
       await admin.sendCommand(['XGROUP', 'CREATE', 'fixture:stream', 'synthetic-group', '0', 'MKSTREAM'])
       const before = await admin.sendCommand(['GET', 'fixture:report'])
       assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-      await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+      await installNativeTools(ctx)
       await ctx.plugin({ name: 'redis-report-fixture', inject: ['tools'], apply: scope => { registerRedisTools(scope, reader); registerRedisReportTools(scope, reader, reports) } })
       const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
       let index = 0
       const call = async (name, args) => {
-        const result = await ctx.tools.execute({ callId: 'report-' + ++index, name, arguments: args, agent, signal })
+        const result = await executeTool(ctx.tools, { callId: 'report-' + ++index, name, arguments: args, agent, signal })
         assert.equal(result.isError, false)
         return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
       }

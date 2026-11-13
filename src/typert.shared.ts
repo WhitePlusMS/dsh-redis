@@ -1,4 +1,4 @@
-import { MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
+import { MAX_REDIS_WRITE_BYTES, MAX_DATABASE_ENTRIES, type DatabasesReadRequest, type DatabasesReadResult, type DatabaseCatalog } from './domain.ts'
 import type { InvocationDescriptor, TypertSchema } from '@deepseek-ai/dsh-typert-protocol'
 import type { UiAction, UiActionAck, UiChannelInput, UiChannelMessage } from './domain.ts'
 import type { RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from './domain.ts'
@@ -54,9 +54,8 @@ function createRedisInvocation(method: string, inputSymbol: string, resultSymbol
       { name: 'agent', wire: 'agentId', source: 'lookup', lookup: 'agent', codec: { mode: 'strict', typeSymbol: '@deepseek-ai/dsh-session/types#SessionId', create: () => session } },
       { name: 'request', wire: 'request', source: 'json', codec: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${inputSymbol}`, create: () => input } },
     ],
-    // rc.2 uses create on the Host, but only decode at the browser wire boundary.
-    // Keep one schema for both sides, before any result reaches UI state/cache.
-    result: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${resultSymbol}`, create: () => result, decode: value => result.parse(value) },
+    // The Gateway encodes the Host result and the Client Remote decodes it.
+    result: { mode: 'strict', typeSymbol: `${TYPERT_PACKAGE}#${resultSymbol}`, create: () => result, encode: value => result.parse(value), decode: value => result.parse(value) },
   }
 }
 
@@ -106,7 +105,19 @@ export const connectionViewSchema: TypertSchema<ConnectionView> = { parse(value)
   const object = objectAt(value, ['id', 'generation', 'db', 'state', 'error', 'target'])
   const state = object.state
   if (state !== 'connecting' && state !== 'connected' && state !== 'disconnected' && state !== 'error') throw new TypeError('Redis RPC: invalid state')
-  return { id: object.id === null ? null : stringAt(object.id, 128), generation: integerAt(object.generation, 0, Number.MAX_SAFE_INTEGER), db: integerAt(object.db, 0, 65535), state, error: errorAt(object.error), target: object.target === null ? null : publicTarget(object.target) }
+  const id = object.id === null ? null : stringAt(object.id, 128)
+  const generation = integerAt(object.generation, 0, Number.MAX_SAFE_INTEGER), db = integerAt(object.db, 0, 65535)
+  const error = errorAt(object.error), target = object.target === null ? null : publicTarget(object.target)
+  // An untouched session has no target. A closed socket can retain the last
+  // target, and SELECT refusals can leave the original DB connected.
+  if (id === null ? target !== null || generation !== 0 || db !== 0 || state !== 'disconnected' : id.length === 0 || target === null || generation === 0) {
+    throw new TypeError('Redis RPC: inconsistent connection identity')
+  }
+  // Stale and cancelled invocations can overlay the current connection view.
+  if (state === 'error' ? error === null : error !== null && error !== 'stale' && error !== 'cancelled' && !(state === 'connected' && (error === 'database' || error === 'permission'))) {
+    throw new TypeError('Redis RPC: inconsistent connection error')
+  }
+  return { id, generation, db, state, error, target }
 } }
 
 function profileIdentity(value: unknown): string {
@@ -170,7 +181,7 @@ export const writeLookupResultSchema: TypertSchema<RedisWriteLookupResult> = { p
   const raw = objectAt(record, ['id', 'target', 'identity', 'state', 'startedAt', 'updatedAt', 'readbackAt'])
   const identity = objectAt(raw.identity, ['type', 'keyBase64', 'fieldBase64'])
   if (identity.type !== 'string' && identity.type !== 'hash') throw new TypeError('Redis RPC: invalid write identity')
-  const keyBase64 = byteStringAt(identity.keyBase64, 4096), fieldBase64 = identity.fieldBase64 === null ? null : byteStringAt(identity.fieldBase64, 4096)
+  const keyBase64 = byteStringAt(identity.keyBase64, MAX_REDIS_WRITE_BYTES), fieldBase64 = identity.fieldBase64 === null ? null : byteStringAt(identity.fieldBase64, MAX_REDIS_WRITE_BYTES)
   if ((identity.type === 'string') !== (fieldBase64 === null)) throw new TypeError('Redis RPC: invalid write field')
   const states: readonly RedisWriteRecord['state'][] = ['pending', 'submitting', 'not-executed', 'conflict', 'rejected', 'written-verified', 'written-unverified', 'written-mismatch', 'unknown']
   if (typeof raw.state !== 'string' || !states.includes(raw.state as RedisWriteRecord['state'])) throw new TypeError('Redis RPC: invalid write state')

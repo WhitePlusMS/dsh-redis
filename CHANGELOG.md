@@ -4,6 +4,11 @@ User-facing changes for DSH Redis. [English README](README.md) · [中文 README
 
 ## [Unreleased]
 
+- Preserve AI read cursors when DSH blocks, cancels or replaces a staged result. Validate connection state at the Host and Client RPC boundaries.
+- Require DSH scope confirmation before AI applies a saved MATCH preset. Document the full proposal fields retained in DSH session history.
+- 修复 DSH 拦截、取消或替换 AI 读取结果时提前推进游标的问题，收紧 Host 和 Client 的连接状态校验。
+- AI 应用 MATCH 预设前增加 DSH 范围确认，并说明 DSH 会话历史中可能保留的完整写入提案字段。
+
 ## [0.1.2] — 2026-11-12
 
 - Target DSH Web 0.2.2-rc.1 and Node.js 24.9 or later; update Cordis, SDK dependencies and the native tool-executor test fixtures.

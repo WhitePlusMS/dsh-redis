@@ -1,9 +1,8 @@
 /** Compare registered bounded reads with a real isolated RedisTimeSeries module. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -30,12 +29,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
     assert.equal((await connections.connect('denied-session', { ...settings, username, password }, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-timeseries-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     let index = 0
     const read = async (args, session = 'fixture-session') => {
       const agent = { id: 'fixture-agent', ctx, session: { id: session } }
-      const reply = await ctx.tools.execute({ callId: 'fixture-' + ++index, name: 'redis_viewer_timeseries', arguments: args, agent, signal })
+      const reply = await executeTool(ctx.tools, { callId: 'fixture-' + ++index, name: 'redis_viewer_timeseries', arguments: args, agent, signal })
       assert.equal(reply.isError, false)
       const text = reply.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert(!text.includes(password)); return JSON.parse(text)

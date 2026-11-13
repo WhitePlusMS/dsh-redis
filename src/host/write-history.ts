@@ -1,3 +1,4 @@
+import { decodeWriteBytes } from './write-bytes.ts'
 import type { DatabaseTarget, RedisWriteIdentity, RedisWriteRecord } from '../domain.ts'
 import type { RedisWriteResult } from './redis-write-transaction.ts'
 
@@ -20,11 +21,6 @@ function copy(record: RedisWriteRecord): RedisWriteRecord {
   return { ...record, target: { ...record.target }, identity: { ...record.identity } }
 }
 
-function validBytes(text: string): boolean {
-  if (text.length > Math.ceil(4096 / 3) * 4) return false
-  const bytes = Buffer.from(text, 'base64')
-  return bytes.length <= 4096 && bytes.toString('base64') === text
-}
 
 /** Bounded Host memory only: no credentials, old values or new values are stored. */
 export class RedisWriteHistory {
@@ -34,7 +30,7 @@ export class RedisWriteHistory {
 
   start(sessionId: string, id: string, target: DatabaseTarget, identity: RedisWriteIdentity): RedisWriteRecordHandle {
     if (this.disposed || sessionId.length === 0 || sessionId.length > 256 || !/^[0-9a-f-]{36}$/u.test(id)) throw new Error('Redis 操作记录身份无效。')
-    if (!validBytes(identity.keyBase64) || (identity.type === 'string' ? identity.fieldBase64 !== null : identity.type !== 'hash' || identity.fieldBase64 === null || !validBytes(identity.fieldBase64))) throw new Error('Redis 操作目标无效。')
+    if (decodeWriteBytes(identity.keyBase64) === null || (identity.type === 'string' ? identity.fieldBase64 !== null : identity.type !== 'hash' || identity.fieldBase64 === null || decodeWriteBytes(identity.fieldBase64) === null)) throw new Error('Redis 操作目标无效。')
     this.prune()
     if (this.entries.has(id) || this.entries.size >= MAX_RECORDS || [...this.entries.values()].filter(entry => entry.sessionId === sessionId).length >= MAX_SESSION_RECORDS) throw new Error('Redis 操作记录已存在或达到容量上限。')
     const now = new Date().toISOString()

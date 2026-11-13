@@ -1,4 +1,5 @@
 /** Run the built Host transport against the owned, password-protected Redis fixture. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { RedisTransport } from '../lib/host/redis-transport.js'
@@ -7,13 +8,12 @@ import { RedisAiWriter } from '../lib/host/ai-writer.js'
 import { RESP_TYPES } from 'redis'
 import { Context } from '@deepseek-ai/cordis'
 import SessionStore from '@deepseek-ai/dsh-session'
+import AgentRegistry from '@deepseek-ai/dsh-agent'
+import SessionProjectionRegistry from '@deepseek-ai/dsh-session-projection'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
 import { registerRedisWriteTools } from '../lib/host/ai-write-tools.js'
+import { MAX_REDIS_WRITE_BYTES } from '../lib/domain.js'
 import { withRedisFixture } from './redis-fixture.mjs'
 
 const signal = new AbortController().signal
@@ -24,6 +24,8 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   await admin.set('fixture:session', 'old')
   await admin.sendCommand(['SET', 'fixture:coordinator', Buffer.from([0, 255])])
   await admin.hSet('fixture:coordinator-hash', 'field', 'old')
+  await admin.set('fixture:empty', '')
+  await admin.hSet('fixture:empty-hash', 'field', '')
   await admin.set('fixture:preflight-race', 'old')
   await admin.set('fixture:native-tool', 'old')
   await admin.hSet('fixture:fieldttl', 'field', 'old')
@@ -99,6 +101,22 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
         assert.equal(await admin.hGet('fixture:coordinator-hash', 'field'), 'new')
         assert.equal(writer.status('other-session', hashProposal.id), null)
 
+        for (const type of ['string', 'hash']) {
+          const key = type === 'string' ? 'fixture:empty' : 'fixture:empty-hash'
+          const input = { type, keyBase64: Buffer.from(key).toString('base64'), fieldBase64: type === 'hash' ? 'ZmllbGQ=' : null }
+          const bounded = Buffer.alloc(MAX_REDIS_WRITE_BYTES, 120).toString('base64')
+          const oversize = Buffer.alloc(MAX_REDIS_WRITE_BYTES + 1, 120).toString('base64')
+          await assert.rejects(writer.prepare('fixture-session', target, 'turn-1', () => true, { ...input, afterBase64: oversize }, signal))
+          const propose = afterBase64 => writer.prepare('fixture-session', target, 'turn-1', () => true, { ...input, afterBase64 }, signal)
+          const filled = await propose(bounded)
+          assert.equal(filled.beforeBase64, '')
+          assert.equal((await writer.execute('fixture-session', 'turn-1', () => true, filled, signal)).state, 'written-verified')
+          const emptied = await propose('')
+          assert.equal(emptied.beforeBase64, bounded)
+          assert.equal((await writer.execute('fixture-session', 'turn-1', () => true, emptied, signal)).state, 'written-verified')
+          assert.equal(await (type === 'string' ? admin.get(key) : admin.hGet(key, 'field')), '')
+        }
+
         // Change both value and TTL after the preflight PTTL reply; WATCH must
         // reject instead of constructing a mixed-time proposal.
         let checks = 0, changed = false
@@ -127,17 +145,15 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       const ctx = new Context(), toolWriter = new RedisAiWriter(connections)
       const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false)
       try {
-        await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(SessionStore)
-        await ctx.plugin({ name: 'redis-write-fixture', inject: ['tools'], apply(scope) { registerRedisWriteTools(scope, reader, toolWriter) } })
+        await installNativeTools(ctx); await ctx.plugin(SessionProjectionRegistry); await ctx.plugin(AgentRegistry); await ctx.plugin(SessionStore)
+        await ctx.plugin({ name: 'redis-write-fixture', inject: ['tools', 'agents'], apply(scope) { registerRedisWriteTools(scope, reader, toolWriter) } })
         const session = ctx.sessions.create(SessionId('fixture-session'))
         const agent = { id: session.id, ctx, session }
         session.append('turn/start', { turn: 1 })
         toolWriter.enable('fixture-session', target)
         let callId = 0
         const call = async (name, args) => {
-          const batch = await ctx.tools.execute({ calls: [{ type: 'tool-call', id: ToolCallId('fixture-tool-' + ++callId), name, arguments: JSON.stringify(args) }], agent, signal })
-          assert.equal(batch.results.length, 1)
-          return batch.results[0].result
+          return executeTool(ctx.tools, { callId: 'fixture-tool-' + ++callId, name, arguments: args, agent, signal, log: { turn: 1, step: 1 } })
         }
         const prepared = await call('redis_viewer_prepare_write', { type: 'string', key: 'fixture:native-tool', value: 'new' })
         assert.equal(prepared.isError, false)
@@ -150,6 +166,13 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
         assert.equal(executed.isError, false)
         assert.equal(JSON.parse(executed.content.map(block => block.type === 'text' ? block.text : '').join('')).state, 'written-verified')
         assert.equal(await admin.get('fixture:native-tool'), 'new')
+        const events = session.snapshotEvents()
+        const argumentsText = JSON.stringify(events.filter(event => event.type === 'tool/call'))
+        const resultText = JSON.stringify(events.filter(event => event.type === 'tool/result'))
+        for (const bytes of [proposal.keyBase64, proposal.beforeBase64, proposal.afterBase64]) {
+          assert.ok(argumentsText.includes(bytes), 'Execute arguments persist the proposal bytes')
+          assert.ok(resultText.includes(bytes), 'Prepare result persists the proposal bytes')
+        }
       } finally { await ctx.fiber.dispose(); toolWriter.dispose(); reader.dispose() }
     } finally { connections.dispose() }
   } finally { transport.close() }

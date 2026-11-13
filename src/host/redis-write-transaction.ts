@@ -1,3 +1,4 @@
+import { MAX_REDIS_WRITE_BYTES } from '../domain.ts'
 import { RedisReplyError, type RedisArgument, type RedisReply } from './resp.ts'
 
 export type RedisReplaceRequest =
@@ -11,26 +12,54 @@ export type RedisWriteResult = 'not-executed' | 'conflict' | 'rejected' | 'writt
 type Send = (args: readonly RedisArgument[], beforeDispatch: () => void) => Promise<RedisReply>
 class RedisSampleError extends Error {}
 
+type TransactionPhase = 'none' | 'watch' | 'multi' | 'uncertain'
+type Command = (args: readonly RedisArgument[]) => Promise<RedisReply>
+
+async function supportsWrite(command: Command): Promise<boolean> {
+  const info = await command(['INFO', 'server'])
+  const version = Buffer.isBuffer(info) ? /^redis_version:(\d+)\.(\d+)\.(\d+)(?:\D|$)/mu.exec(info.toString('utf8')) : null
+  return version !== null && (Number(version[1]) > 7 || Number(version[1]) === 7 && Number(version[2]) >= 4)
+}
+
+/** Every observation checks the same persistent target before reading bytes. */
+async function persistentTarget(request: RedisSampleRequest, command: Command): Promise<'ready' | 'key' | 'field'> {
+  if (await command(['TYPE', request.key]) !== request.type || await command(['PTTL', request.key]) !== -1n) return 'key'
+  if (request.type === 'hash') {
+    const ttl = await command(['HPTTL', request.key, 'FIELDS', '1', request.field])
+    if (!Array.isArray(ttl) || ttl.length !== 1 || ttl[0] !== -1n) return 'field'
+  }
+  return 'ready'
+}
+
+function readBytes(request: RedisSampleRequest, length: number, command: Command): Promise<RedisReply> {
+  return request.type === 'string' ? command(['GETRANGE', request.key, '0', String(length)]) : command(['HGET', request.key, request.field])
+}
+
+/** Cleanup runs even after caller cancellation; an uncertain socket is retired. */
+async function cleanTransaction(state: TransactionPhase, send: Send, close: () => void): Promise<void> {
+  if (state === 'none') return
+  if (state === 'watch' || state === 'multi') {
+    try { if (await send([state === 'watch' ? 'UNWATCH' : 'DISCARD'], () => undefined) === 'OK') return } catch { /* retire below */ }
+  }
+  try { close() } catch { /* preserve the operation's outcome */ }
+}
+
 /** Sample the full target under WATCH and reject any concurrent change. */
 export async function runRedisSample(request: RedisSampleRequest, send: Send, close: () => void, signal: AbortSignal, guard: () => void): Promise<Buffer> {
-  let state: 'none' | 'watch' | 'multi' | 'uncertain' = 'none'
-  const phase = (): 'none' | 'watch' | 'multi' | 'uncertain' => state
+  let state: TransactionPhase = 'none'
+  const phase = (): TransactionPhase => state
   const check = () => { signal.throwIfAborted(); guard() }
   const command = (args: readonly RedisArgument[]) => send(args, check)
   try {
-    const info = await command(['INFO', 'server'])
-    const version = Buffer.isBuffer(info) ? /^redis_version:(\d+)\.(\d+)\.(\d+)(?:\D|$)/mu.exec(info.toString('utf8')) : null
-    if (version === null || Number(version[1]) < 7 || (Number(version[1]) === 7 && Number(version[2]) < 4)) throw new RedisSampleError('Redis 版本不支持写入前态检查。')
+    if (!await supportsWrite(command)) throw new RedisSampleError('Redis 版本不支持写入前态检查。')
     state = 'watch'
     if (await command(['WATCH', request.key]) !== 'OK') throw new RedisSampleError('Redis 前态监听失败。')
-    if (await command(['TYPE', request.key]) !== request.type || await command(['PTTL', request.key]) !== -1n) throw new RedisSampleError('Redis 目标不存在、类型不匹配或有过期时间。')
-    if (request.type === 'hash') {
-      const ttl = await command(['HPTTL', request.key, 'FIELDS', '1', request.field])
-      if (!Array.isArray(ttl) || ttl.length !== 1 || ttl[0] !== -1n) throw new RedisSampleError('Redis 字段不存在或有过期时间。')
-    }
+    const target = await persistentTarget(request, command)
+    if (target === 'key') throw new RedisSampleError('Redis 目标不存在、类型不匹配或有过期时间。')
+    if (target === 'field') throw new RedisSampleError('Redis 字段不存在或有过期时间。')
     const length = request.type === 'string' ? await command(['STRLEN', request.key]) : await command(['HSTRLEN', request.key, request.field])
-    if (typeof length !== 'bigint' || length < 0n || length > 4096n) throw new RedisSampleError('Redis 前态值超过限制或不可用。')
-    const value = request.type === 'string' ? await command(['GETRANGE', request.key, '0', String(length)]) : await command(['HGET', request.key, request.field])
+    if (typeof length !== 'bigint' || length < 0n || length > BigInt(MAX_REDIS_WRITE_BYTES)) throw new RedisSampleError('Redis 前态值超过限制或不可用。')
+    const value = await readBytes(request, Number(length), command)
     if (!Buffer.isBuffer(value) || value.length !== Number(length)) throw new RedisSampleError('Redis 前态值不完整或已变化。')
     state = 'multi'
     if (await command(['MULTI']) !== 'OK') throw new RedisSampleError('Redis 前态验证失败。')
@@ -43,48 +72,28 @@ export async function runRedisSample(request: RedisSampleRequest, send: Send, cl
   } catch (error) {
     if (error instanceof RedisSampleError) throw error
     throw new RedisSampleError('Redis 前态采样失败，请检查连接、权限和当前目标。')
-  } finally {
-    if (state === 'watch' || state === 'multi') {
-      try {
-        const result = await send([state === 'watch' ? 'UNWATCH' : 'DISCARD'], () => undefined)
-        if (result !== 'OK') close()
-      } catch { try { close() } catch { /* The original error remains authoritative. */ } }
-    } else if (phase() === 'uncertain') {
-      try { close() } catch { /* The original error remains authoritative. */ }
-    }
-  }
+  } finally { await cleanTransaction(phase(), send, close) }
 }
 
 /** Fixed single-target transaction; caller owns the connection for the entire operation. */
 export async function runRedisReplace(request: RedisReplaceRequest, send: Send, close: () => void, signal: AbortSignal, guard: (submitted: boolean) => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
-  let state: 'none' | 'watch' | 'multi' | 'uncertain' = 'none'
+  let state: TransactionPhase = 'none'
   let wasSubmitted = false
   let written = false
-  const phase = (): 'none' | 'watch' | 'multi' | 'uncertain' => state
-  const closeSafely = () => { try { close() } catch { /* Never replace the write outcome. */ } }
+  const phase = (): TransactionPhase => state
   const check = () => {
     if (!wasSubmitted) signal.throwIfAborted()
     guard(wasSubmitted)
   }
   const command = (args: readonly RedisArgument[]) => send(args, check)
   const matches = async (expected: Buffer): Promise<boolean> => {
-    const type = await command(['TYPE', request.key])
-    if (type !== request.type || await command(['PTTL', request.key]) !== -1n) return false
-    if (request.type === 'hash') {
-      const ttl = await command(['HPTTL', request.key, 'FIELDS', '1', request.field])
-      if (!Array.isArray(ttl) || ttl.length !== 1 || ttl[0] !== -1n) return false
-      const value = await command(['HGET', request.key, request.field])
-      return Buffer.isBuffer(value) && value.equals(expected)
-    }
-    if (await command(['STRLEN', request.key]) !== BigInt(expected.length)) return false
-    const value = await command(['GETRANGE', request.key, '0', String(expected.length)])
+    if (await persistentTarget(request, command) !== 'ready') return false
+    if (request.type === 'string' && await command(['STRLEN', request.key]) !== BigInt(expected.length)) return false
+    const value = await readBytes(request, expected.length, command)
     return Buffer.isBuffer(value) && value.equals(expected)
   }
   try {
-    const info = await command(['INFO', 'server'])
-    if (!Buffer.isBuffer(info)) return 'not-executed'
-    const version = /^redis_version:(\d+)\.(\d+)\.(\d+)(?:\D|$)/mu.exec(info.toString('utf8'))
-    if (version === null || Number(version[1]) < 7 || (Number(version[1]) === 7 && Number(version[2]) < 4)) return 'not-executed'
+    if (!await supportsWrite(command)) return 'not-executed'
     // Mark uncertain state before dispatch: a lost response must close or unwatch.
     state = 'watch'
     if (await command(['WATCH', request.key]) !== 'OK') return 'not-executed'
@@ -129,17 +138,5 @@ export async function runRedisReplace(request: RedisReplaceRequest, send: Send, 
   } catch {
     if (wasSubmitted) return written ? 'written-unverified' : 'unknown'
     return 'not-executed'
-  } finally {
-    if (state === 'watch' || state === 'multi') {
-      // Cleanup must not use the caller's cancelled signal. If it cannot be
-      // established, discard the socket rather than return it to the read pool.
-      try {
-        const result = await send([state === 'watch' ? 'UNWATCH' : 'DISCARD'], () => undefined)
-        if (result !== 'OK') closeSafely()
-      } catch { closeSafely() }
-    } else if (phase() === 'uncertain') {
-      // An unanswered or malformed EXEC may leave transaction state uncertain.
-      closeSafely()
-    }
-  }
+  } finally { await cleanTransaction(phase(), send, close) }
 }

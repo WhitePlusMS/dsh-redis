@@ -196,3 +196,16 @@ describe('strict connection protocol', () => {
     }
   })
 })
+
+it('rejects contradictory connection identities on both Typert faces', () => {
+  const invalid = { state: 'connected', id: null, target: null, generation: 0, db: 0, error: 'auth' }
+  const selectDenied = { state: 'connected', id: 'fixture', target: { host: 'fixture', port: 6379, username: '', tls: false }, generation: 2, db: 0, error: 'permission' }
+  for (const descriptors of [redisHostDescriptors, redisDescriptors]) {
+    const result = descriptors.find(value => value.method === 'connect')?.result
+    if (result?.mode !== 'strict') throw new Error('Expected strict connection result')
+    expect(() => result.create().parse(invalid)).toThrow('inconsistent connection identity')
+    expect(() => result.decode?.(invalid)).toThrow('inconsistent connection identity')
+    expect(result.create().parse(selectDenied)).toEqual(selectDenied)
+    expect(result.create().parse({ ...invalid, state: 'disconnected', error: 'stale' })).toMatchObject({ state: 'disconnected' })
+  }
+})

@@ -1,9 +1,8 @@
 /** Verify tool-driven DB changes and session isolation on an owned Redis. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -26,12 +25,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   try {
     for (const session of ['a', 'b']) assert.equal((await connections.connect(session, settings, signal)).state, 'connected')
     assert.equal((await connections.connect('restricted', { ...settings, username, password }, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-database-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     let index = 0
     const call = async (session, name, arguments_) => {
       const agent = { id: 'fixture-agent-' + session, ctx, session: { id: session } }
-      const result = await ctx.tools.execute({ callId: 'fixture-' + ++index, name, arguments: arguments_, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-' + ++index, name, arguments: arguments_, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert(!text.includes(password)); assert(!text.includes('NOPERM'))

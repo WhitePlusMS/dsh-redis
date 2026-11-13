@@ -1,10 +1,7 @@
 /** Verify named-Key tool reads against an exclusively owned Redis fixture. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
-import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
-import { ToolCallId } from '@deepseek-ai/dsh-llm'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -33,14 +30,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const ctx = new Context()
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-six-types-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     let index = 0
     const call = async (name, args) => {
-      const batch = await ctx.tools.execute({ calls: [{ type: 'tool-call', id: ToolCallId('fixture-' + ++index), name, arguments: JSON.stringify(args) }], agent, signal })
-      assert.equal(batch.results.length, 1)
-      return batch.results[0].result
+      return executeTool(ctx.tools, { callId: 'fixture-' + ++index, name, arguments: args, agent, signal })
     }
     const commandCount = async name => Number(new RegExp('^cmdstat_' + name + ':calls=(\\d+)', 'mu').exec(await admin.info('commandstats'))?.[1] ?? 0)
     const valueCommands = ['getrange', 'hget', 'hscan'], beforeMetadata = await Promise.all(valueCommands.map(commandCount))

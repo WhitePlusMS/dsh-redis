@@ -5,7 +5,6 @@ import type { RedisAiReader } from './ai-reader.ts'
 import { MAX_AI_RESULT_BYTES, MAX_AI_SESSION_CALLS } from './ai-budget.ts'
 import { evidenceTools } from '../redis-read-tools.ts'
 import { describeRedisResult, summarizeRedisFilters } from '../redis-answer.ts'
-import { connectionViewSchema } from '../typert.shared.ts'
 import type { ConnectionView } from '../domain.ts'
 import { parseResultRecord, resultFits } from '../redis-result.ts'
 
@@ -20,11 +19,7 @@ const uiReceiptTools = new Set(['redis_viewer_show', 'redis_viewer_refresh', 're
 export function registerRedisAnswerTool(ctx: Context, reader: RedisAiReader): void {
   const sessions = new Map<string, TurnReads>()
   const readable = new Set<string>([...evidenceTools, ...uiReceiptTools])
-  const currentConnection = (sessionId: string) => {
-    const status = reader.status(sessionId)
-    if (status === null || typeof status !== 'object' || Array.isArray(status)) throw new Error('Redis 状态无效。')
-    return connectionViewSchema.parse(status.connection)
-  }
+  const currentConnection = (sessionId: string) => reader.connectionSnapshot(sessionId)
   const observe = (sessionId: string, event: SessionEvent) => {
     if (event.type === 'turn/start') {
       sessions.set(sessionId, { turn: event.data.turn, calls: new Map(), omittedCalls: 0 }); return

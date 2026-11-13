@@ -1,8 +1,7 @@
 /** Exercise saved-profile exchange through DSH tools and an owned Redis. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context, symbols } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { mkdir, mkdtemp, realpath, rm } from 'node:fs/promises'
 import { basename, dirname, join, resolve } from 'node:path'
 import { RESP_TYPES } from 'redis'
@@ -25,7 +24,7 @@ try {
     const before = await buffers.sendCommand(['DUMP', 'fixture:key'])
     const ctx = new Context(), snapshots = new RedisProfileSnapshots(), profiles = new RedisProfiles(directory)
     ctx.provide('profileContext', { name: 'fixture', dir: directory, patchPath: '', installAnchor: '', cwd: '.', home: '.', startedBundles: [], overlays: [], telemetryDisabledEnv: undefined })
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(RedisRemoteService)
+    await installNativeTools(ctx); await ctx.plugin(RedisRemoteService)
     const proxy = ctx.get('redisViewer'), service = proxy[symbols.original] ?? proxy
     const agent = { id: 'fixture-session', ctx, session: { id: 'fixture-session' } }
     try {
@@ -39,7 +38,7 @@ try {
         registerRedisConnectionTools(scope, service.ai, snapshots, (owner, profile, s, current) => service.connectSavedProfile(owner, profile, s, current), (owner, target, s) => service.disconnect(owner, target, s))
       } })
       const call = async (name, arguments_) => {
-        const result = await ctx.tools.execute({ callId: 'fixture-call', name, arguments: arguments_, agent, signal })
+        const result = await executeTool(ctx.tools, { callId: 'fixture-call', name, arguments: arguments_, agent, signal })
         assert.equal(result.isError, false)
         return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
       }

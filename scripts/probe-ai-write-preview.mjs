@@ -1,8 +1,8 @@
 /** Run `node scripts/build.mjs` first. Fixture setup writes synthetic data; the preview tool does not write. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime, { defineTool } from '@deepseek-ai/dsh-tools'
+import { defineTool } from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -28,8 +28,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   try {
     const view = await connections.connect('preview-session', settings, signal)
     assert.equal(view.state, 'connected')
-    await ctx.plugin(SystemPrompt)
-    await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-preview-experiment', inject: ['tools'], apply(scope) {
       scope.tools.register(defineTool({
         name: 'redis_preview_experiment',
@@ -65,7 +64,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
       }))
     } })
     const agent = { id: 'preview-agent', ctx, session: { id: 'preview-session' } }
-    const call = (args, agentValue = agent) => ctx.tools.execute({ name: 'redis_preview_experiment', arguments: args, ...(agentValue === null ? {} : { agent: agentValue }), callId: 'preview-call', signal })
+    const call = (args, agentValue = agent) => executeTool(ctx.tools, { name: 'redis_preview_experiment', arguments: args, ...(agentValue === null ? {} : { agent: agentValue }), callId: 'preview-call', signal })
     const valueOf = result => JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
     const string = await call({ key: stringKey, value: '新值' })
     assert.equal(string.isError, false)

@@ -17,6 +17,7 @@ export function registerRedisProfileTools(ctx: Context, reader: RedisAiReader, s
     description: '仅在用户要求查看已有 Redis 连接资料时列出名称、分组、唯一 ID 和同一对话内有效的短期 snapshotToken。令牌有效期最多五分钟，同一资料重新列出后旧令牌失效；为 null 表示容量不足，稍后重试。每页最多 10 条，不返回连接设置中的地址、用户名、证书或凭据；名称和分组按用户保存的内容返回。不会连接 Redis。每页重新读取资料，翻页期间资料可能变化，不能把各页当作同一时刻的快照。',
     parameters: { offset: { type: 'integer', description: '从 0 开始的资料位置；续页使用上次返回的 nextOffset。' } },
     output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] },
+    finalizeContent: reader.finalizeDelivery,
     async execute(args, exec) {
       exec.signal.throwIfAborted()
       const agent = exec.agent
@@ -37,7 +38,7 @@ export function registerRedisProfileTools(ctx: Context, reader: RedisAiReader, s
           staged = true
           return result
         } finally { if (!staged) prepared.rollback() }
-      })
+      }, exec)
     },
   }))
 }

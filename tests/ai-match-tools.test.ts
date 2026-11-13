@@ -38,6 +38,9 @@ it('uses bounded profile storage through the DSH tool and handles an interrupted
     const target = { id: 'fixture', generation: 1, db: 0 }
     vi.spyOn(reader, 'currentTarget').mockReturnValue(target)
     vi.spyOn(reader, 'isCurrentTarget').mockReturnValue(true)
+    vi.spyOn(reader, 'connectionSnapshot').mockReturnValue({ ...target, state: 'connected', target: { host: 'fixture', port: 6379, username: '', tls: false }, error: null })
+    const ask = vi.fn(async (): Promise<'allowed-once' | 'rejected'> => 'allowed-once')
+    ctx.provide('approval', { request: ask } as unknown as import('@deepseek-ai/dsh-user-approval').ApprovalService)
     expect(JSON.parse(content(await call('redis_viewer_apply_match_preset', { id: preset.id })))).toMatchObject({ outcome: 'stale' })
     const receive = async (request: UiActionRequest<UiAction>) => {
       expect(request.action).toEqual({ kind: 'applyMatch', target, pattern: 'fixture:order:*' })
@@ -46,6 +49,9 @@ it('uses bounded profile storage through the DSH tool and handles an interrupted
     }
     const unregister = actions.register('a', receive)
     actions.setSelectionState('a', receive, 5, true)
+    ask.mockResolvedValueOnce('rejected')
+    expect((await call('redis_viewer_apply_match_preset', { id: preset.id })).isError).toBe(true)
+    expect(actions.selectionRevision('a')).toBe(5)
     expect(JSON.parse(content(await call('redis_viewer_apply_match_preset', { id: preset.id })))).toMatchObject({ outcome: 'applied', preset: { name: 'Synthetic orders', pattern: 'fixture:order:*' } })
     expect(JSON.parse(content(await call('redis_viewer_apply_match_preset', { id: '0'.repeat(64) })))).toMatchObject({ outcome: 'missing' })
     unregister()

@@ -1,9 +1,8 @@
 /** Exercise real ACL denials through the registered tools on an owned fixture. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { randomUUID } from 'node:crypto'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -28,12 +27,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   ctx.provide('approval', { request: async () => 'allowed-once' })
   try {
     assert.equal((await connections.connect('fixture-session', { ...settings, username, password }, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-permission-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     let index = 0
     const call = async (name, arguments_) => {
-      const result = await ctx.tools.execute({ callId: 'fixture-' + ++index, name, arguments: arguments_, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-' + ++index, name, arguments: arguments_, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert(!text.includes(password)); assert(!text.includes('NOPERM')); assert(!text.includes('synthetic-denied'))

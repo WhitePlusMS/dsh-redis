@@ -2,7 +2,7 @@
 
 本说明适用于当前 `0.1.2` 版本及 DSH `0.2.2-rc.1`，不表示旧版 `v0.1.0` Release 已包含这些能力。接入方式为 DSH 原生插件工具，不是 Redis MCP Server；本文主要说明读取、连接/切库、界面动作及本地资料保存。默认关闭的 AI 写入功能及边界见 [README](../README.zh.md#数据与边界)。实现路径、Typert RPC 与 MCP 的区别见[源码仓库中的 AI 读取架构说明](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/AI_READ_ARCHITECTURE.md)。
 
-写入使用 `redis_viewer_prepare_write` 生成完整提案、`redis_viewer_execute_write` 按 DSH 权限执行、`redis_viewer_write_status` 查询当前会话的临时操作记录。须先在侧栏插件信息中开启 AI 写入；当前仅支持已有 String 或已有 Hash 字段的完整值替换。
+写入使用 `redis_viewer_prepare_write` 生成完整提案、`redis_viewer_execute_write` 按 DSH 权限执行、`redis_viewer_write_status` 查询当前会话的临时操作记录。须先在侧栏插件信息中开启 AI 写入。当前支持已有 String 或已有 Hash 字段的完整值替换。完整提案会出现在准备工具结果和执行工具入参中，DSH 会话历史可以保留其中的 Key、可选字段、原值和新值的 Base64。
 
 ## 使用顺序
 
@@ -38,7 +38,7 @@
 
 普通查询保持当前DB。没有连接或没有有效选择时，工具会返回对应错误，不能猜测其他服务器或旧选择。切库之后，侧栏跟随Host的实际DB；旧选择与旧自动刷新随代次失效。
 
-名称搜索和 Hash 条件筛选首次执行前会显示 DSH 原生范围确认，列出服务器、DB、MATCH 及筛选条件。若宿主策略也要求询问，同一条提示会显示宿主理由。接受后可在现有读取预算内续读同一查询；条件改变、重新发起首批查询或连接变化时须重新确认。拒绝、取消或缺少可用确认界面时不开始扫描。确认不占 Redis 查询超时；等待期间切库或重连会使原请求失效。已知 Key 的直接读取无需这项扫描确认。
+名称搜索和 Hash 条件筛选首次执行前会显示 DSH 原生范围确认，列出服务器、DB、MATCH 及筛选条件。AI 应用已保存的 MATCH 预设时也会先确认，显示预设和实际 MATCH。若宿主策略也要求询问，同一条提示会显示宿主理由。接受后可在现有读取预算内续读同一查询；条件改变、重新发起首批查询或连接变化时须重新确认。拒绝、取消或缺少可用确认界面时不开始扫描。确认不占 Redis 查询超时；等待期间切库或重连会使原请求失效。已知 Key 的直接读取无需这项扫描确认。
 
 拒绝后停止本次查询，不自动重复提问或换工具绕过；“确认服务不可用”应检查 DSH 交互通道，不能当成已获同意。普通读取仍受 DSH 会话工具策略限制。
 
@@ -96,7 +96,7 @@
 | `redis_viewer_locate_set_member` | `member` 或 `memberBase64` 中一个 | 定位当前已选 Set 的成员，通过 SISMEMBER 定点采样并等待界面确认，不扫描成员 |
 | `redis_viewer_refresh` | 无 | 用户明确要求时读取当前唯一可见面板选中 Key 的当前查看范围并更新预览；只有本次读取完成渲染且同一选择重新同步后才报告 `applied`，不自动开启周期刷新。工具回执不返回读到的值，不等于没有读取值。`disconnected` 指界面动作通道，不能据此判断 Redis 连接状态；失败或回执丢失不能证明读取未发生或命令已撤回 |
 | `redis_viewer_format` | 必填 `format`：`text`、`json`、`hex` 或 `base64` | 用户明确要求时切换当前可见值预览；成功须确认对应格式已渲染。无效或不完整 JSON 返回失败，字段名预览不会随值格式动作改变 |
-| `redis_viewer_match_presets` / `redis_viewer_save_match_preset` / `redis_viewer_apply_match_preset` | 列出预设；保存时提供名称和 MATCH；应用时提供已列出的 `id` | 预设存于本地 profile；仅用户明确要求时保存或应用。应用会清除当前 Key 选择、设置界面筛选并启动扫描；`applied` 不表示扫描已经完成 |
+| `redis_viewer_match_presets` / `redis_viewer_save_match_preset` / `redis_viewer_apply_match_preset` | 列出预设；保存时提供名称和 MATCH；应用时提供已列出的 `id` | 预设存于本地 profile，仅用户明确要求时保存或应用。通过范围确认后，应用会清除当前 Key 选择、设置界面筛选并启动扫描。`applied` 表示侧栏确认已应用，扫描进度以面板为准 |
 | `redis_viewer_save_diagnostic_report` | 保存时提供同一会话诊断结果中的 `reportSampleId` | 明确要求时将已有采样保存到 DSH profile 的 `data/dsh-redis/reports`，不会重新读取 Redis。支持概况、慢日志、客户端、Key 内存、String 比较及消费组；Key 和组名以 SHA-256 身份记录，慢日志报告不含命令名称或参数。不接收自由文本、路径或 Redis 值；只在会话内暂存最近 16 项，保存中断时检查目录。结果过大时可能不提供报告标识 |
 | `redis_viewer_select_db` | 必填整数`db` | 同一连接的实际切库结果；仅明确要求切库时使用 |
 

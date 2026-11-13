@@ -2,7 +2,7 @@ import * as NativeToolExecutor from '@deepseek-ai/dsh-tool-executor-native'
 import { executeTool } from './tool-test-utils.ts'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { Context } from '@deepseek-ai/cordis'
-import type { Agent } from '@deepseek-ai/dsh-agent'
+import AgentRegistry, { type Agent } from '@deepseek-ai/dsh-agent'
 import SessionStore from '@deepseek-ai/dsh-session'
 import { SessionId } from '@deepseek-ai/dsh-session/types'
 import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
@@ -36,10 +36,10 @@ async function fixture(realApproval = false) {
   const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false), writer = new RedisAiWriter(connections)
   const ctx = new Context()
   await ctx.plugin(SystemPrompt)
-  if (realApproval) { await ctx.plugin(SessionProjectionRegistry); await ctx.plugin(ApprovalService, { policy: 'ask' }) }
+  await ctx.plugin(SessionProjectionRegistry); await ctx.plugin(AgentRegistry)
+  if (realApproval) { await ctx.plugin(ApprovalService, { policy: 'ask' }) }
   else ctx.provide('approval', { request: ask } as unknown as ApprovalService)
   await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor); await ctx.plugin(SessionStore)
-  await ctx.plugin({ name: 'redis-write-test', inject: ['tools'], apply(scope: Context) { registerRedisWriteTools(scope, reader, writer) } })
   ctx.on('tools/pre-execute', (exec, next) => {
     if (exec.name !== 'redis_viewer_execute_write' || decision === 'allow') return next()
     return Promise.resolve(decision === 'deny' ? { kind: 'deny' as const, reason: 'fixture-denial' } : { kind: 'ask' as const, reason: 'fixture-ask' })
@@ -48,13 +48,14 @@ async function fixture(realApproval = false) {
   const agent = { id: 'agent-a', ctx, session } as unknown as Agent
   let turn = 1, callId = 0
   session.append('turn/start', { turn })
+  await ctx.plugin({ name: 'redis-write-test', inject: ['tools', 'agents'], apply(scope: Context) { registerRedisWriteTools(scope, reader, writer) } })
   const call = (name: string, args: unknown, caller: Agent = agent) => executeTool(ctx.tools, { name, arguments: args, agent: caller, signal: new AbortController().signal, callId: ('write-' + ++callId) as string })
   const nextTurn = () => { session.append('turn/end', { turn, reason: { kind: 'completed' } }); session.append('turn/start', { turn: ++turn }) }
   cleanups.push(async () => { await ctx.fiber.dispose(); writer.dispose(); reader.dispose(); connections.dispose() })
   return { ctx, writer, target, session, call, nextTurn, ask, get writes() { return writes }, setDecision(value: typeof decision) { decision = value }, setApproval(value: FixtureApproval) { approval = value }, setApprovalGate(value: Promise<FixtureApproval>) { approvalGate = value } }
 }
 function json(result: Awaited<ReturnType<typeof executeTool>>): Record<string, unknown> {
-  expect(result.isError).toBe(false)
+  expect(result.isError, JSON.stringify(result.content)).toBe(false)
   return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join('')) as Record<string, unknown>
 }
 const prepare = { type: 'string', key: 'key', value: 'new' }

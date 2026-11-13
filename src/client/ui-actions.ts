@@ -1,3 +1,4 @@
+import { selectionForAction } from '../ui-action-selection.ts'
 import type { RemoteStreamHandle } from '@deepseek-ai/dsh-typert-protocol'
 import type { SetSelectionRequest, UiAction, UiActionRequest, UiChannelInput, UiChannelMessage } from '../domain.ts'
 import { uiChannelMessageSchema } from '../typert.shared.ts'
@@ -58,11 +59,11 @@ export async function consumeUiActions(open: (signal: AbortSignal) => Promise<Re
       }).then(outcome => {
         if (outcome === undefined || closed || signal.aborted || current.controller.signal.aborted || active !== current) return
         if (typeof outcome !== 'string') {
-          if ((request.action.kind !== 'selectKey' && request.action.kind !== 'selectHashField' && request.action.kind !== 'selectListIndex' && request.action.kind !== 'selectSetMember' && request.action.kind !== 'selectZSetMember' && request.action.kind !== 'selectStreamField') || request.target === null || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || request.selectionRevision === Number.MAX_SAFE_INTEGER) {
+          const selection = selectionForAction(request.action)
+          if (selection === null || request.target === null || Date.now() >= request.expiresAt || !epoch.current(request.selectionRevision) || request.selectionRevision === Number.MAX_SAFE_INTEGER) {
             active = null; outcome.rejected(); send({ requestId: request.requestId, target: request.target, selectionRevision: request.selectionRevision, outcome: 'stale' }); return
           }
           active = null
-          const selection = request.action.kind === 'selectKey' ? { keyBase64: request.action.key.base64, item: null } : request.action.kind === 'selectHashField' ? { keyBase64: request.action.keyBase64, item: { kind: 'hash' as const, fieldBase64: request.action.field.base64 } } : request.action.kind === 'selectListIndex' ? { keyBase64: request.action.keyBase64, item: { kind: 'list' as const, index: request.action.index } } : request.action.kind === 'selectStreamField' ? { keyBase64: request.action.keyBase64, item: { kind: 'stream' as const, id: request.action.id, fieldIndex: request.action.fieldIndex, fieldBase64: request.action.fieldBase64 } } : { keyBase64: request.action.keyBase64, item: { kind: request.action.kind === 'selectSetMember' ? 'set' as const : 'zset' as const, memberBase64: request.action.member.base64 } }
           if (!send({ kind: 'commitSelection', requestId: request.requestId, revision: request.selectionRevision, nextRevision: request.selectionRevision + 1 })) { outcome.rejected(); return }
           skipSelection = true
           let revision: number

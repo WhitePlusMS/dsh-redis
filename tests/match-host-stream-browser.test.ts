@@ -28,6 +28,7 @@ it.skipIf(browserPath === undefined).each(['applied', 'user-first'] as const)('c
   const connections = new RedisConnections(async () => link)
   const reader = new RedisAiReader(connections, session => coordinator.invalidateSession(session), async () => 0, () => true)
   const presets = new RedisMatchPresets(directory), preset = await presets.save({ name: 'fixture', pattern: 'fixture:order:*' }, hostAbort.signal)
+  ctx.provide('approval', { request: async () => 'allowed-once' } as unknown as import('@deepseek-ai/dsh-user-approval').ApprovalService)
   await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime); await ctx.plugin(NativeToolExecutor)
   await ctx.plugin({ name: 'match-stream-test', inject: ['tools'], apply: (scope: Context) => registerRedisMatchTools(scope, reader, presets, coordinator) })
   const connection = await connections.connect('a', { host: 'fixture', port: 6379, username: '', password: '', tls: null }, hostAbort.signal)

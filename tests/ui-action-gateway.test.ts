@@ -7,8 +7,31 @@ import type { Agent } from '@deepseek-ai/dsh-agent'
 import { expect, it, vi } from 'vitest'
 import type { UiActionAck, UiChannelInput } from '../src/domain.ts'
 import { RedisRemoteService } from '../src/remote-service.ts'
+import { RedisConnections } from '../src/host/connection-service.ts'
 import { TYPERT } from '../src/typert.host.ts'
 import { uiChannelMessageSchema } from '../src/typert.shared.ts'
+
+it('rejects inconsistent connection results at the real Host Gateway encoder', async () => {
+  const ctx = new Context()
+  ctx.provide('profileContext', { name: 'fixture', dir: '.', patchPath: '', installAnchor: '', cwd: '.', home: '.', startedBundles: [], overlays: [], telemetryDisabledEnv: undefined })
+  await ctx.plugin(Registry); await ctx.plugin(RemoteAccess); await ctx.plugin(Gateway, {}); await ctx.plugin(RedisRemoteService)
+  ctx.typert.register(TYPERT)
+  const agent = { session: { id: 'fixture-session' } } as unknown as Agent
+  ctx.typert.lookups.register('agent', { parameter: 'agent', wire: 'agentId', hostTypeSymbol: '@deepseek-ai/dsh-agent#Agent', wireTypeSymbol: '@deepseek-ai/dsh-session/types#SessionId', resolve: () => agent })
+  const signal = new AbortController().signal
+  // Exercise the registered wire entry rather than Gateway.invoke(), which
+  // deliberately returns the unencoded business value.
+  const gateway = ctx.typertGateway
+  const call = () => Reflect.apply(Reflect.get(gateway, 'dispatchRpc'), gateway, ['redisViewer/connectionStatus', { args: { agentId: 'fixture-session', request: {} } }, signal, ownerPeer(ctx)])
+  const valid = { id: null, generation: 0, db: 0, target: null, state: 'disconnected', error: null } as const
+  const status = vi.spyOn(RedisConnections.prototype, 'status')
+  try {
+    expect(await call()).toEqual({ ok: true, value: valid })
+    status.mockReturnValueOnce({ ...valid, state: 'connected', error: 'auth' })
+    expect(await call()).toMatchObject({ ok: false, error: { code: 'gateway/internal' } })
+    expect(await call()).toEqual({ ok: true, value: valid })
+  } finally { status.mockRestore(); await ctx.fiber.dispose() }
+})
 
 it('routes an action and its acknowledgement through the real Host Gateway', async () => {
   const ctx = new Context()

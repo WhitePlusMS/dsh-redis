@@ -33,7 +33,7 @@ export async function withRedisFixture(run, { passwordRequired = true, tls = fal
   let certDirectory
   let caPem
   let wrongCaPem
-  const metadata = { image: IMAGE, owner, container: null, redisVersion: null, moduleCommands: [], tls, stopped: false, certificatesRemoved: !tls }
+  const metadata = { image: IMAGE, owner, container: null, redisVersion: null, moduleCommands: [], tls, stopped: false, certificatesRemoved: !tls, fixtureRemoved: false }
   try {
     if (tls) {
       assert(process.env.REDIS_TEST_PYTHON, 'Set REDIS_TEST_PYTHON to a Python runtime with cryptography')
@@ -83,6 +83,7 @@ export async function withRedisFixture(run, { passwordRequired = true, tls = fal
         assert.equal(labels[LABEL], owner, 'Refusing cleanup without our ownership marker')
         await docker('rm', '--force', '--volumes', container)
         metadata.stopped = true
+        metadata.fixtureRemoved = true
       }
     } finally {
       if (certDirectory !== undefined) {

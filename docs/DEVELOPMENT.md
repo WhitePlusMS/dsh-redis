@@ -58,11 +58,13 @@ flowchart LR
 ```
 
 - 这是 DSH 原生插件，未实现 MCP server。当前注册的工具包含读取、最终回答、筛选、诊断、连接、本地资料、界面动作与受控写入，完整目录见 [AI_READ_USAGE.md](AI_READ_USAGE.md)；不另开 MCP 端口，也不要求用户添加 MCP 配置。
-- 当前 RPC 协议版本为 `16`，包含 `23` 个方法（包括 UI 流）；已发布 v0.1.0 的协议版本为 `2`。Host 和 Client 从 `typert.shared.ts` 创建同一组端点与严格解析器，Host 用 Zod 接入 DSH 注册表。生成器 `0.2.2-rc.1` 的普通 Host 参数会接收并剥离额外字段，Redis RPC 继续显式拒绝这些字段。[DSH Typert 生成器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/typert/generator/README.md)
+- 当前 RPC 协议版本为 `16`，包含 `23` 个方法（包括 UI 流）；已发布 v0.1.0 的协议版本为 `2`。Host 和 Client 从 `typert.shared.ts` 创建同一组端点与严格解析器。Host 用 Zod 接入 DSH 注册表，单次 RPC 的 Host Gateway `encode` 和 Client Remote `decode` 复用同一结果校验。生成器 `0.2.2-rc.1` 的普通 Host 参数会接收并剥离额外字段，Redis RPC 继续显式拒绝这些字段。[DSH Typert 生成器说明](https://github.com/deepseek-ai/deepseek-harness/blob/dsh-v0.2.2-rc.1/packages/typert/generator/README.md)
 - 正式 Redis 访问由项目的 `RedisTransport` 通过 `node:net`/`node:tls` 和有预算的 RESP2 解析完成。`redis` npm 包用于测试和辅助脚本。生产传输在解码前限制响应大小和结构深度，按顺序执行命令，保留事务回读和提交结果不明的语义。
 - 工具会话身份来自 DSH 的 `exec.agent.session.id`，不能让模型传入另一个 session 来选连接。未连接时明确拒绝，不替用户选服务器或自动重连。
 - 经 `RedisAiReader.withBudget` 的工具共用会话级额度：每个额度周期最多准入 32 次、累计返回 1 MiB JSON，单次最多 64 KiB；每次准入前预留完整单次上限。准入后的失败或取消仍计次；扫描确认在准入前被拒绝时不计次。不是每条消息重新计数，切库和重连也不重置。耗尽后打开侧栏“插件信息”，待在途请求结束再手动“继续读取”；该动作重置额度，会话释放则清除记录。仅打开面板的 `redis_viewer_show` 不经过此预算。
-- 名称搜索和 Hash 筛选的首批在 DSH `tools/pre-execute` 中确认范围，绑定会话与当前连接/DB。宿主同时要求询问时，DSH 在同一条提示中显示宿主理由和查询范围。续页由既有游标校验条件。拒绝或取消不扫描，确认不可用单独报错。已知对象的直接读取不要求扫描范围确认，其他 DSH 策略仍可独立限制工具。
+- 名称搜索和 Hash 筛选的首批，以及 AI 应用 MATCH 预设，都复用 DSH `tools/pre-execute` 范围确认，绑定会话与当前连接/DB。预设还绑定实际 MATCH 和侧栏选择版本。宿主同时要求询问时，最终提示由 DSH 发出，提示同时显示宿主理由和查询范围，并遵循宿主调用信号。续页由既有游标校验条件。拒绝或取消不扫描，确认不可用单独报错。已知对象的直接读取不要求扫描范围确认，其他 DSH 策略仍可独立限制工具。
+- AI 分页和需交付令牌的结果在 `finalizeContent` 结算。DSH 拦截或取消时释放暂存，Native 策略原样保留结果正文时推进游标，连接或会话已失效时从模型可见内容收回游标。该回调早于 DSH 追加会话结果，只能替换内容。它无法为会话追加失败回滚，也无法改写 PTC 程序的结构化值。
+- 写入以 DSH `agents.turnBoundaryOf` 确定活动轮次。准备结果和执行入参都携带完整提案，DSH 可以把可解码的 Key、字段及前后值保留在会话历史中。Host 内存中的操作查询仍按会话和有效期管理。
 - Client 通过 `tool.call.toolview` 呈现 16 个状态/读取工具的记录和答案证据工具，并在 `conversation.chat.turnTail` 展示本轮证据。证据订阅正式 `session/event`，使用当前轮次、连接代次和 DB 的已完成记录，不使用弃用的会话同步查询接口；最多保留 32 个读取记录，输出最多 64 KiB。它不重新查询 Redis，不校验或改写模型自由文本，也不调用 `concludeTurn()`：卡片准备完成不代表用户的解释性问题已回答，须保留后续原生 assistant 步骤。
 - UI 与 AI 有各自的游标状态，复用同一真实连接。连接替换、断开、切换 DB、会话和插件释放时，一并清理对应 reader、游标、选择和写入开关。
 - Client 只同步选中的原始 Key/字段/成员/下标/Stream 字段序号标识，约 60 ms 合并快速选择并串行发送；工具调用时重读值，不把展示文本当二进制身份。
@@ -125,6 +127,7 @@ pnpm build
 
 - `scripts/redis-fixture.mjs` 默认需要 Docker；TLS 专项还需要有 `cryptography` 的 Python，路径由 `REDIS_TEST_PYTHON` 提供。WSL 模式要求既有 rootfs 准备记录，只清理 owner 匹配的所属实例。
 - `scripts/smoke-dsh.mjs` 是持有临时 DSH/Redis 的夹具，需指定已经核对的 `DSH_CLI_ENTRY`，准备项目 `.scratch/runtime/` 内的独立 profile/home。界面验收通过原生浏览器工具进行；完成后必须调用其控制端 `/stop`，不能仅关闭浏览器。
+- 运行 `node scripts/smoke-release-boundary.mjs <本次夹具的私有 JSON 路径>`，并设置 `REDIS_BROWSER_EXECUTABLE`，可在已启动的独立 DSH Web 上检查共享 React 实例和所有单次 Remote RPC 的异常响应与恢复。脚本结束时调用 `/stop`；停止核验失败时，夹具仍关闭自建 Host 和 Redis，并在报告中分别记录失败与清理状态。双向 UI 流由 `tests/ui-action-gateway.test.ts` 覆盖。
 - 默认夹具阻断真实模型，`REDIS_SMOKE_REAL_MODEL=1` 才允许真实 provider。凭据副本只放忽略的临时目录，验收后删除；未经当前任务授权不改日常模型、代理、路由或真实业务数据。
 - `scripts/verify-release-package.mjs` 必须显式提供 `--archive <tgz>`、`--installed <安装后的 dsh-redis 目录>`、`--output <新的报告路径>`，并设置 `REDIS_TEST_PYTHON` 和 `DSH_CLI_ENTRY`。它核对归档完整文件集、源码/安装字节、manifest、Host SDK 和依赖版本；Host SDK 要与项目 devDependencies 锁定的测试版本一致。不会启动服务，报告已存在时失败，不覆盖旧证据；不再接受旧的隐式归档或 `REDIS_VERIFY_PACKAGE_ROOT` 入口。包内容检查不代替真实模型/界面验收，React 浏览器共享身份仍需原生验证。
 

@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import type { ToolExecution, ToolExecutionResult } from '@deepseek-ai/dsh-tools'
 import { byteIdentity } from './byte-identity.ts'
 import { ConnectionFailure, type RedisConnections } from './connection-service.ts'
 import { RedisKeys } from './key-reader.ts'
@@ -25,7 +26,7 @@ import { RedisAiHashFilter } from './ai-hash-filter.ts'
 import { aiText, aiValue, MAX_AI_VALUE_BYTES } from './ai-value.ts'
 import { RedisReportSamples, memorySamplingNote, memoryScopeNote, overviewFields } from './ai-report-samples.ts'
 import { connectionErrorMessages, keyStateMessages } from '../connection-errors.ts'
-import type { ConnectionErrorCode, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
+import type { ConnectionErrorCode, ConnectionView, DatabaseTarget, RedisSelection, RedisSelectionItem, SetSelectionRequest, SelectionAck } from '../domain.ts'
 import { databaseTargetSchema, scanKeysRequestSchema, stringReadRequestSchema, hashFieldReadRequestSchema, scanHashRequestSchema, listReadRequestSchema, scanSetRequestSchema, setMemberReadRequestSchema, zsetReadRequestSchema, streamReadRequestSchema } from '../typert.shared.ts'
 
 const json = z.json()
@@ -97,13 +98,25 @@ function invalidRange(type: string, args: AiValueRequest): string | null {
   return rejected.length === 0 ? null : `${type} 不支持参数 ${rejected.join('、')}，请按类型重新指定读取范围。`
 }
 
+// DSH captures finalizers before dispatch. The same execution can reach a newly
+// mounted tool body if a Host wrapper suspends execution across a plugin reload.
+const deliveries = new WeakMap<ToolExecution, { readonly text: string; readonly tokens: readonly string[]; finish(delivered: boolean): void }>()
+
+function deliveryTokens(result: AiJson): string[] {
+  if (result === null || typeof result !== 'object' || Array.isArray(result)) return []
+  const value = result.value
+  const nestedCursor = value !== null && typeof value === 'object' && !Array.isArray(value) ? value.cursor : null
+  const profiles = Array.isArray(result.profiles) ? result.profiles : []
+  const snapshots = profiles.map(profile => profile !== null && typeof profile === 'object' && !Array.isArray(profile) ? profile.snapshotToken : null)
+  return [result.cursor, nestedCursor, result.reportSampleId, ...snapshots].filter(token => typeof token === 'string')
+}
+
 /** A separate reader bank shares the real connection, never the UI's cursors. */
 export class RedisAiReader {
   private readonly budget = new RedisAiBudget()
   readonly reportSamples = new RedisReportSamples()
-  private readonly keys: RedisKeys
-  private readonly keyPages: RedisAiKeyPages
-  private readonly hashFilter: RedisAiHashFilter
+  private readonly keyPages: AiPageCoordinator<RedisAiKeyPages>
+  private readonly hashFilter: AiPageCoordinator<RedisAiHashFilter>
   private readonly strings: RedisStrings
   private readonly hashes: RedisHashes
   private readonly hashPages: AiPageCoordinator<RedisAiHashPages>
@@ -115,36 +128,75 @@ export class RedisAiReader {
   private readonly zsetPages: AiPageCoordinator<RedisAiZSetPages>
   private readonly streams: RedisStreams
   private readonly streamPages: AiPageCoordinator<RedisAiStreamPages>
-  private readonly timeSeriesPages = new AiPageStore<TimeSeriesPage, TimeSeriesSample>('ts:')
+  private readonly timeSeriesPages = new AiPageCoordinator([new AiPageStore<TimeSeriesPage, TimeSeriesSample>('ts:'), new AiPageStore<TimeSeriesPage, TimeSeriesSample>('ts:')])
   private readonly selections = new Map<string, { readonly target: DatabaseTarget; readonly selection: RedisSelection; readonly sampledAt: string }>()
   constructor(private readonly connections: RedisConnections, private readonly invalidateUiActions: (sessionId: string) => void, private readonly confirmSelection: (sessionId: string, target: DatabaseTarget, expected: number | null, signal: AbortSignal) => Promise<number>, private readonly isSelectionCurrent: (sessionId: string, revision: number | null) => boolean, private readonly onDatabaseChange: (sessionId: string) => void = sessionId => this.clearTarget(sessionId)) {
-    this.keys = new RedisKeys(connections); this.strings = new RedisStrings(connections, false)
-    this.keyPages = new RedisAiKeyPages(connections, this.keys)
-    this.hashFilter = new RedisAiHashFilter(connections)
+    this.strings = new RedisStrings(connections, false)
+    this.keyPages = new AiPageCoordinator([new RedisAiKeyPages(connections, new RedisKeys(connections)), new RedisAiKeyPages(connections, new RedisKeys(connections))], { replacePending: true, retainUndelivered: true })
+    this.hashFilter = new AiPageCoordinator([new RedisAiHashFilter(connections), new RedisAiHashFilter(connections)], { retainUndelivered: true })
     this.hashes = new RedisHashes(connections, true); this.hashPages = new AiPageCoordinator([new RedisAiHashPages(connections, this.hashes), new RedisAiHashPages(connections, new RedisHashes(connections, true))]); this.lists = new RedisLists(connections)
     this.sets = new RedisSets(connections, true); this.setPages = new AiPageCoordinator([new RedisAiSetPages(connections, this.sets), new RedisAiSetPages(connections, new RedisSets(connections, true))])
     this.zsets = new RedisZSets(connections, true); this.zsetRanks = new RedisZSets(connections); this.zsetPages = new AiPageCoordinator([new RedisAiZSetPages(connections, this.zsets), new RedisAiZSetPages(connections, new RedisZSets(connections, true))])
     this.streams = new RedisStreams(connections, true); this.streamPages = new AiPageCoordinator([new RedisAiStreamPages(connections, this.streams), new RedisAiStreamPages(connections, new RedisStreams(connections, true))])
   }
+  /** Hold cursor and budget until DSH has applied its final result policy. */
+  readonly finalizeDelivery = (exec: Readonly<ToolExecution>, result: Readonly<ToolExecutionResult>) => {
+    const delivery = deliveries.get(exec)
+    if (delivery === undefined) return
+    deliveries.delete(exec)
+    const texts = result.content.flatMap(block => block.type === 'text' ? [block.text] : [])
+    // A nested PTC call receives canonical value; native calls receive content.
+    const delivered = !result.isError && (exec.parent === undefined
+      ? texts.some(text => text.includes(delivery.text))
+      : JSON.stringify(result.value) === delivery.text)
+    try {
+      delivery.finish(delivered)
+      if (delivered || !delivery.tokens.some(token => texts.join('').includes(token))) return
+    } catch {
+      // DSH finalization may replace content only. Never expose a cursor
+      // whose target or lease disappeared while post-execute was pending.
+    }
+    return [{ type: 'text' as const, text: JSON.stringify({ readOnly: true, state: 'failed', error: 'stale', errorMessage: 'Redis 结果已过期，请重新读取。' }) }]
+  }
+
   /** All registered tools share a budget tied to the trusted DSH session. */
-  async withBudget(sessionId: string, signal: AbortSignal, operation: (stage: (page: PreparedAiResult) => void) => AiJson | Promise<AiJson>): Promise<AiJson> {
+  async withBudget(sessionId: string, signal: AbortSignal, operation: (stage: (page: PreparedAiResult) => void) => AiJson | Promise<AiJson>, execution?: ToolExecution): Promise<AiJson> {
     const admission = this.budget.begin(sessionId)
     if (!admission.ok) throw new Error(admission.reason === 'busy' ? '当前对话有读取正在执行，请等待后重试。' : '当前对话的 AI 读取预算已用完。请打开 Redis 侧栏右上角的“插件信息”；如读取正在结束，请刷新状态，然后点击“继续读取”。')
-    let finished = false, committed = false
-    const staged: { page?: PreparedAiResult } = {}
+    let handedOff = false, committed = false
+    let staged: PreparedAiResult | undefined
+    const finish = (delivered: boolean, bytes: number) => {
+      try {
+        if (delivered) {
+          committed = this.budget.finish(admission.lease, bytes, () => staged?.commit())
+          if (!committed) throw new Error('会话已结束，请重新打开 Redis 侧栏。')
+        }
+      } finally {
+        if (!committed) {
+          this.budget.finish(admission.lease, 0)
+          staged?.rollback()
+        }
+      }
+    }
     try {
       signal.throwIfAborted()
-      const result = await operation(page => { staged.page = page })
+      const result = await operation(page => { staged = page })
       signal.throwIfAborted()
-      finished = this.budget.finish(admission.lease, Buffer.byteLength(JSON.stringify(result)), () => staged.page?.commit())
-      if (!finished) throw new Error('会话已结束，请重新打开 Redis 侧栏。')
-      committed = true
+      const text = JSON.stringify(result), bytes = Buffer.byteLength(text)
+      if (bytes > MAX_AI_RESULT_BYTES) throw new Error('Redis 结果超过单次读取预算。')
+      if (execution === undefined) {
+        handedOff = true
+        finish(true, bytes)
+      } else {
+        if (deliveries.has(execution)) throw new Error('Redis 工具已暂存结果。')
+        deliveries.set(execution, { text, tokens: staged === undefined ? [] : deliveryTokens(result), finish: delivered => finish(delivered, bytes) })
+        handedOff = true
+      }
       return result
     } catch (error) {
-      // DSH may abort with an object. Never expose that reason or imply a committed action was undone.
       if (signal.aborted) throw new Error('Redis 调用已停止，结果可能未确认；请先查询当前状态，不要盲目重试。')
       throw error
-    } finally { if (!finished) this.budget.finish(admission.lease, 0); if (!committed) staged.page?.rollback() }
+    } finally { if (!handedOff) finish(false, 0) }
   }
   budgetStatus(sessionId: string) { return this.budget.status(sessionId) }
   resumeBudget(sessionId: string) {
@@ -228,6 +280,8 @@ export class RedisAiReader {
     }
     return result
   }
+  connectionSnapshot(sessionId: string): ConnectionView { return this.connections.status(sessionId) }
+
   status(sessionId: string): AiJson {
     const connection = this.connections.status(sessionId)
     // A stored action may not have reached the client, or its stream may have closed.
@@ -264,7 +318,7 @@ export class RedisAiReader {
     validateMatch(args.match)
     const target = this.target(sessionId)
     const request = scanKeysRequestSchema.parse({ target, pattern: args.match, cursor: args.cursor ?? null })
-    const page = await this.keyPages.prepare(sessionId, target, request.pattern, request.cursor, signal)
+    const page = await this.keyPages.prepare(sessionId, request.cursor, this.keyPages.snapshot(sessionId), slot => slot.prepare(sessionId, target, request.pattern, request.cursor, signal))
     if (stage === undefined) { try { page.commit() } catch (error) { page.rollback(); throw error } }
     else stage(page)
     return page.result
@@ -278,7 +332,7 @@ export class RedisAiReader {
     const fieldBase64 = encodeIdentity(args.field), expectedBase64 = encodeIdentity(args.equals)
     if (Buffer.byteLength(args.field, 'utf8') > 1024 || Buffer.byteLength(args.equals, 'utf8') > MAX_AI_VALUE_BYTES) throw new Error('筛选字段或目标值超过允许的字节数。')
     hashFieldReadRequestSchema.parse({ target, keyBase64: '', fieldBase64 })
-    const page = await this.hashFilter.prepare(sessionId, target, request.pattern, fieldBase64, expectedBase64, args.cursor ?? null, signal)
+    const page = await this.hashFilter.prepare(sessionId, args.cursor ?? null, this.hashFilter.snapshot(sessionId), slot => slot.prepare(sessionId, target, request.pattern, fieldBase64, expectedBase64, args.cursor ?? null, signal))
     try { stage(page); return page.result } catch (error) { page.rollback(); throw error }
   }
   /** Read only type and expiry for one explicit identity; never fetch its value. */
@@ -401,7 +455,7 @@ export class RedisAiReader {
     const target = this.target(sessionId)
     const request = stringReadRequestSchema.parse({ target, keyBase64: args.key === undefined ? args.keyBase64 : encodeIdentity(args.key), offset: '0', count: 1 })
     const binding = JSON.stringify([target.id, target.generation, target.db, request.keyBase64, args.from, args.to, args.count ?? 100])
-    return this.timeSeriesPages.prepare({
+    return this.timeSeriesPages.prepare(sessionId, args.cursor ?? null, this.timeSeriesPages.snapshot(sessionId), slot => slot.prepare({
       sessionId, binding, selection: null, cursor: args.cursor ?? null, signal,
       fetch: async next => {
         const value = await this.timeSeries(sessionId, { keyBase64: request.keyBase64, from: next ?? args.from, to: args.to, ...(args.count === undefined ? {} : { count: args.count }) }, signal)
@@ -412,7 +466,7 @@ export class RedisAiReader {
       output: (page, samples, cursor) => ({ ...page.payload, from: args.from, state: page.state === 'page' ? 'value' : page.state, samples, cursor, complete: page.state === 'page' && cursor === null, retryAdvice: args.cursor !== undefined && page.state !== 'page' ? '本次续读失败，游标已失效；请从原时间范围重新查询。' : null, coverage: '仅包含 TS.RANGE 返回的样本；压缩序列不含最新未闭合桶，已关闭桶可能包含结束时间之后的原始样本。' }),
       validate: error => this.connections.assertReadResult(sessionId, target, error), discard: () => undefined,
       oversize: '时间序列结果超过单次预算，请缩小读取范围。',
-    })
+    }))
   }
   /** One explicit JSONPath; preserve the Redis JSON text instead of rounding numbers. */
   async jsonPath(sessionId: string, args: { readonly key?: string; readonly keyBase64?: string; readonly path: string }, signal: AbortSignal): Promise<AiJson> {
@@ -887,9 +941,11 @@ export class RedisAiReader {
     this.timeSeriesPages.disposeSession(sessionId)
     this.disposeCursors(sessionId)
   }
-  disposeSession(sessionId: string): void { this.clearTarget(sessionId); this.budget.disposeSession(sessionId); this.reportSamples.disposeSession(sessionId) }
-  private disposeCursors(sessionId: string): void {
-    this.keys.disposeSession(sessionId); this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.zsetRanks.disposeSession(sessionId); this.streams.disposeSession(sessionId)
+  disposeSession(sessionId: string): void {
+    this.clearTarget(sessionId); this.budget.disposeSession(sessionId); this.reportSamples.disposeSession(sessionId)
   }
-  dispose(): void { this.selections.clear(); this.budget.dispose(); this.reportSamples.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.timeSeriesPages.dispose(); this.keys.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
+  private disposeCursors(sessionId: string): void {
+    this.hashes.disposeSession(sessionId); this.sets.disposeSession(sessionId); this.zsets.disposeSession(sessionId); this.zsetRanks.disposeSession(sessionId); this.streams.disposeSession(sessionId)
+  }
+  dispose(): void { this.selections.clear(); this.budget.dispose(); this.reportSamples.dispose(); this.keyPages.dispose(); this.hashFilter.dispose(); this.hashPages.dispose(); this.setPages.dispose(); this.zsetPages.dispose(); this.streamPages.dispose(); this.timeSeriesPages.dispose(); this.hashes.dispose(); this.sets.dispose(); this.zsets.dispose(); this.zsetRanks.dispose(); this.streams.dispose() }
 }

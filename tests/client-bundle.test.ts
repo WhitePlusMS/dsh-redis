@@ -140,6 +140,9 @@ it('loads the real browser bundle, retries a failed mount and removes all contri
   if (statusCodec?.mode !== 'strict' || statusCodec.decode === undefined) throw new Error('Missing status decoder')
   const validStatus = { state: 'ready', sidebarReadOnly: true, aiWriteAvailable: true, dshBaseline: DSH_BASELINE, protocolVersion: PROTOCOL_VERSION }
   expect(statusCodec.decode(validStatus)).toEqual(validStatus)
+  const connectionCodec = descriptors?.find(descriptor => descriptor.method === 'connect')?.result
+  if (connectionCodec?.mode !== 'strict' || connectionCodec.decode === undefined) throw new Error('Missing connection decoder')
+  expect(() => connectionCodec.decode?.({ state: 'connected', id: null, generation: 0, db: 0, target: null, error: 'auth' })).toThrow('inconsistent connection identity')
   expect(() => statusCodec.decode?.({ ...validStatus, sidebarReadOnly: false })).toThrow()
   expect(status.mock.calls[0]?.[0]).toBe('trusted-session')
   const other = slot.inject('another-session')

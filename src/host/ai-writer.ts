@@ -1,3 +1,4 @@
+import { decodeWriteBytes } from './write-bytes.ts'
 import type { DatabaseTarget } from '../domain.ts'
 import { RedisConnections } from './connection-service.ts'
 import { RedisWriteHistory } from './write-history.ts'
@@ -13,9 +14,8 @@ export interface RedisWriteInput {
 }
 
 function bytes(value: string): Buffer {
-  if (value.length > Math.ceil(4096 / 3) * 4) throw new Error('Redis 写入数据超过限制。')
-  const result = Buffer.from(value, 'base64')
-  if (result.length > 4096 || result.toString('base64') !== value) throw new Error('Redis 写入数据不是规范 Base64。')
+  const result = decodeWriteBytes(value)
+  if (result === null) throw new Error('Redis 写入数据不是规范 Base64 或超过限制。')
   return result
 }
 

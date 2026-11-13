@@ -1,12 +1,13 @@
 import type { Context } from '@deepseek-ai/cordis'
-import type { Session } from '@deepseek-ai/dsh-session'
+import type {} from '@deepseek-ai/dsh-agent'
 import { defineTool, type ToolRunContext } from '@deepseek-ai/dsh-tools'
 import { z } from 'zod'
 import type { RedisAiReader } from './ai-reader.ts'
 import type { RedisAiWriter } from './ai-writer.ts'
-import type { RedisWriteRecord } from '../domain.ts'
+import { MAX_REDIS_WRITE_BYTES, type RedisWriteRecord } from '../domain.ts'
+import { databaseTargetSchema } from '../typert.shared.ts'
+import { decodeWriteBytes, MAX_WRITE_BASE64 } from './write-bytes.ts'
 
-const MAX_BASE64 = Math.ceil(4096 / 3) * 4
 const nullableString = { oneOf: [{ type: 'string' }, { type: 'null' }] } as const
 const proposalParameter = { type: 'object', required: true, additionalProperties: false, properties: {
   id: { type: 'string', required: true }, expiresAt: { type: 'string', required: true },
@@ -19,10 +20,10 @@ const proposalParameter = { type: 'object', required: true, additionalProperties
 
 const proposalSchema = z.object({
   id: z.string().uuid(), expiresAt: z.string().max(24),
-  target: z.object({ id: z.string().min(1).max(128), generation: z.number().int().positive().safe(), db: z.number().int().min(0).max(65535) }).strict(),
+  target: z.unknown().transform(value => databaseTargetSchema.parse(value)),
   host: z.string().min(1).max(1024), port: z.number().int().min(1).max(65535), type: z.enum(['string', 'hash']),
-  keyTtl: z.literal('none'), fieldTtl: z.literal('none').nullable(), keyBase64: z.string().max(MAX_BASE64), fieldBase64: z.string().max(MAX_BASE64).nullable(),
-  beforeBase64: z.string().max(MAX_BASE64), afterBase64: z.string().max(MAX_BASE64),
+  keyTtl: z.literal('none'), fieldTtl: z.literal('none').nullable(), keyBase64: z.string().max(MAX_WRITE_BASE64), fieldBase64: z.string().max(MAX_WRITE_BASE64).nullable(),
+  beforeBase64: z.string().max(MAX_WRITE_BASE64), afterBase64: z.string().max(MAX_WRITE_BASE64),
 }).strict()
 const output = { schema: { type: 'json' as const }, render: (_args: unknown, value: unknown) => [{ type: 'text' as const, text: JSON.stringify(value) }] }
 const wireRecord = (record: RedisWriteRecord) => ({ ...record, target: { ...record.target }, identity: { ...record.identity } })
@@ -30,37 +31,31 @@ const wireRecord = (record: RedisWriteRecord) => ({ ...record, target: { ...reco
 function identity(text: string | undefined, encoded: string | undefined): string {
   if ((text === undefined) === (encoded === undefined)) throw new Error('文本和 Base64 必须且只能指定一种。')
   if (text !== undefined) {
-    if (text.length > 4096) throw new Error('文本无法无损编码或超过限制。')
+    if (text.length > MAX_REDIS_WRITE_BYTES) throw new Error('文本无法无损编码或超过限制。')
     const bytes = Buffer.from(text, 'utf8')
-    if (bytes.length > 4096 || bytes.toString('utf8') !== text) throw new Error('文本无法无损编码或超过限制。')
+    if (bytes.length > MAX_REDIS_WRITE_BYTES || bytes.toString('utf8') !== text) throw new Error('文本无法无损编码或超过限制。')
     return bytes.toString('base64')
   }
   const value = encoded ?? ''
-  if (value.length > MAX_BASE64) throw new Error('Base64 不规范或超过限制。')
-  const bytes = Buffer.from(value, 'base64')
-  if (bytes.length > 4096 || bytes.toString('base64') !== value) throw new Error('Base64 不规范或超过限制。')
+  if (decodeWriteBytes(value) === null) throw new Error('Base64 不规范或超过限制。')
   return value
 }
 
 /** Use committed native Session events, never a model-supplied session or turn. */
 export function registerRedisWriteTools(ctx: Context, reader: RedisAiReader, writer: RedisAiWriter): void {
-  const turns = new Map<string, { readonly session: Session; readonly turn: number }>()
   ctx.on('session/event', (session, event) => {
-    if (event.type === 'turn/start') turns.set(session.id, { session, turn: event.data.turn })
-    else if (event.type === 'turn/end') {
-      const active = turns.get(session.id)
-      if (active?.session === session && active.turn === event.data.turn) { turns.delete(session.id); writer.endTurn(session.id, String(active.turn)) }
-    }
+    if (event.type === 'turn/end') writer.endTurn(session.id, String(event.data.turn))
   })
-  ctx.on('session/disposed', session => { if (turns.get(session.id)?.session === session) turns.delete(session.id) })
-  ctx.effect(() => () => turns.clear(), 'redis write turns')
   const owner = (exec: ToolRunContext) => {
     exec.signal.throwIfAborted()
     const session = exec.agent?.session
     if (session === undefined) throw new Error('Redis 写入缺少有效的 DSH 对话身份。')
-    const turn = turns.get(session.id)
-    if (turn === undefined || turn.session !== session) throw new Error('Redis 写入需要当前已开始的 DSH 轮次。')
-    return { session: session.id, turn: String(turn.turn), current: () => turns.get(session.id) === turn }
+    const { openTurnStartSeq, lastTurn } = ctx.agents.turnBoundaryOf(session)
+    if (openTurnStartSeq === null) throw new Error('Redis 写入需要当前已开始的 DSH 轮次。')
+    return { session: session.id, turn: String(lastTurn), current: () => {
+      const boundary = ctx.agents.turnBoundaryOf(session)
+      return boundary.openTurnStartSeq === openTurnStartSeq && boundary.lastTurn === lastTurn
+    } }
   }
 
   ctx.tools.register(defineTool({

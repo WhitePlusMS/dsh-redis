@@ -1,3 +1,19 @@
+## 2026-11-14：完成 DSH Redis 架构复扫的九项改进
+
+1. `src/host/ai-reader.ts`、`ai-tools.ts`、`ai-profile-tools.ts`、`ai-key-pages.ts`、`ai-page-coordinator.ts` 将分页、诊断样本和资料令牌结算移到 DSH 原生 `finalizeContent`。拦截、替换或取消时保留上一已交付游标，淘汰的会话或连接不会继续向 Native 模型输出失效令牌。Key 首页保留原先的新查询优先语义。已抓取的 Key 或 Hash 筛选候选可在同条件下重试。
+2. `scripts/native-tool-fixture.mjs` 把 `smoke-ai-{connect-profile,database,explicit-hash,explicit-members,hash-filter,json-path,memory,overview,permissions,report,six-types,slowlog,stream-groups,timeseries}.mjs`、`probe-ai-write-preview.mjs`、`probe-dsh-approval-provenance.mjs` 和 `smoke-redis-write-transaction.mjs` 统一到锁定版 DSH 原生批执行入口。更新 `smoke-release-boundary.mjs` 的当前描述符和实际浏览器入口，`smoke-dsh.mjs` 与 `redis-fixture.mjs` 在停止核验失败时仍报告夹具清理结果。
+3. `src/typert.shared.ts`、`src/typert.host.ts` 在 Host 编码与 Client 解码复用严格 schema，检查连接身份、版本、DB、状态和错误组合。保留 SELECT 拒绝及过时调用的合法回执。
+4. `src/ui-action-selection.ts`、`src/client/ui-actions.ts`、`src/client/ui-pane-presence.ts`、`src/host/ui-action-channel.ts`、`src/remote-service.ts` 和 `tsconfig.client.json` 统一动作到 Redis 选择身份的转换，并复用同会话唯一面板的查找和分发。
+5. `src/domain.ts`、`src/host/write-bytes.ts`、`redis-write-transaction.ts`、`redis-transport.ts`、`ai-writer.ts`、`write-proposals.ts`、`write-history.ts`、`ai-write-tools.ts` 与 Typert 复用字节上限、规范 Base64 和前态/回读检查。事务仍检查版本、类型、Key/字段 TTL 和原值，通过 Redis 并发保护提交后回读。
+6. `README.md`、`README.zh.md`、`docs/AI_READ_USAGE.md`、`docs/DEVELOPMENT.md` 和 `CHANGELOG.md` 更新范围确认和写入留存说明。真实 DSH 会话事件验证了准备结果与执行入参均可保留完整提案，包括可解码的原值和新值。
+7. `src/host/ai-query-scope.ts`、`ai-match-tools.ts` 在 AI 应用 MATCH 预设前展示当前连接、DB、预设和实际 MATCH，确认后核对目标及侧栏版本，再启动扫描。
+8. `src/index.ts`、`src/host/ai-write-tools.ts` 依赖 DSH Agent 轮次投影，移除插件自建轮次缓存，覆盖轮次已开启时加载和等待审批期间跨轮次。
+9. `src/host/ai-reader.ts`、`ai-answer.ts`、`ai-query-scope.ts` 让内部调用直接读取类型化连接快照，与模型可见状态和输出预算分开。
+
+回归增加或更新于 `tests/ai-key-pages.test.ts`、`ai-match-tools.test.ts`、`ai-query-scope.test.ts`、`ai-write-tools.test.ts`、`client-bundle.test.ts`、`host-typert.test.ts`、`match-host-stream-browser.test.ts` 和 `ui-action-gateway.test.ts`。两名无会话上下文的子代理独立审查并复核。严格类型检查、构建、90 个测试文件的 758 项测试通过。Redis 8.2.6 隔离夹具验证了原生工具、并发冲突、TTL、回读、空值及 4096/4097 字节边界。独立 DSH Web 0.2.2-rc.1 安装后确认共享 React 实例、22 个单次 RPC 的异常解码和恢复，以及停止核验成功和故障两条路径的清理。
+
+本轮验收使用独立夹具与工具调用。DSH 宿主原生审批的撤回由宿主调用信号负责。当前 DSH 的 Native 结果结算早于会话事件追加，PTC 程序的结构化返回也不由 `finalizeContent` 修改。
+
 ## 2026-11-11：接入 DSH 原生写入工具
 
 - 新增 `src/host/ai-write-tools.ts`，沿用 `ctx.tools.register(defineTool(...))` 注册提案、执行及状态查询工具；通过 DSH 已提交的会话事件识别当前轮次，不接受模型填写会话或轮次。

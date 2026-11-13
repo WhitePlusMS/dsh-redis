@@ -162,10 +162,9 @@ describe('AI Key page continuation', () => {
     try {
       const first = decode(await f.run({ match: '*' }))
       if (first.cursor === null) throw new Error('Missing cursor')
-      const keyReader = Reflect.get(f.reader, 'keys') as RedisKeys
-      const original = keyReader.scan.bind(keyReader)
-      vi.spyOn(keyReader, 'scan').mockImplementationOnce(async (...args) => {
-        const fetched = await original(...args)
+      const original = RedisKeys.prototype.scan
+      vi.spyOn(RedisKeys.prototype, 'scan').mockImplementationOnce(async function (this: RedisKeys, ...args) {
+        const fetched = await original.apply(this, args)
         controller.abort()
         return fetched
       })

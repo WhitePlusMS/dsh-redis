@@ -1,8 +1,8 @@
+import { decodeWriteBytes } from './write-bytes.ts'
 import { randomUUID } from 'node:crypto'
 import type { DatabaseTarget } from '../domain.ts'
 
 const MAX_SESSIONS = 64
-const MAX_BYTES = 4096
 const LIFETIME_MS = 5 * 60_000
 
 /** Canonical bytes and connection identity returned by the Host's preflight. */
@@ -41,11 +41,6 @@ function sameTarget(a: DatabaseTarget, b: DatabaseTarget): boolean {
 }
 
 /** Reject noncanonical Base64 rather than silently changing byte identity. */
-function validBytes(text: string): boolean {
-  if (text.length > Math.ceil(MAX_BYTES / 3) * 4) return false
-  const bytes = Buffer.from(text, 'base64')
-  return bytes.length <= MAX_BYTES && bytes.toString('base64') === text
-}
 
 function sameProposal(a: RedisWriteProposal, b: RedisWriteProposal): boolean {
   return a.id === b.id && a.expiresAt === b.expiresAt && sameTarget(a.target, b.target)
@@ -120,8 +115,8 @@ export class RedisWriteProposals {
     const turn = this.turns.get(sessionId)
     if (turn?.id !== turnId || turn.token !== token) throw new Error('Redis 写入轮次已结束或变化。')
     if (turnId.length === 0 || turnId.length > 256 || draft.host.length === 0 || draft.host.length > 1024 || !Number.isInteger(draft.port) || draft.port < 1 || draft.port > 65535
-      || draft.keyTtl !== 'none' || !validBytes(draft.keyBase64) || !validBytes(draft.beforeBase64) || !validBytes(draft.afterBase64)
-      || (draft.type === 'string' ? draft.fieldBase64 !== null || draft.fieldTtl !== null : draft.type !== 'hash' || draft.fieldTtl !== 'none' || draft.fieldBase64 === null || !validBytes(draft.fieldBase64))) {
+      || draft.keyTtl !== 'none' || decodeWriteBytes(draft.keyBase64) === null || decodeWriteBytes(draft.beforeBase64) === null || decodeWriteBytes(draft.afterBase64) === null
+      || (draft.type === 'string' ? draft.fieldBase64 !== null || draft.fieldTtl !== null : draft.type !== 'hash' || draft.fieldTtl !== 'none' || draft.fieldBase64 === null || decodeWriteBytes(draft.fieldBase64) === null)) {
       throw new Error('Redis 写入提案无效或超过限制。')
     }
     const proposal: RedisWriteProposal = { ...draft, target: { ...draft.target }, id: randomUUID(), expiresAt: new Date(Date.now() + LIFETIME_MS).toISOString() }

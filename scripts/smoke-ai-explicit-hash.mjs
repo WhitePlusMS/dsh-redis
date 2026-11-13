@@ -1,8 +1,7 @@
 /** Real Redis and DSH ToolRuntime check; fixture setup owns every write. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -27,19 +26,18 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   try {
     const view = await connections.connect('fixture-session', settings, signal)
     assert.equal(view.state, 'connected')
-    await ctx.plugin(SystemPrompt)
-    await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-explicit-hash-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     const read = async arguments_ => {
-      const result = await ctx.tools.execute({ callId: 'fixture-call', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-call', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
       assert.equal(result.isError, false)
       return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
     }
     const typeCount = async () => Number(/^cmdstat_type:calls=(\d+)/mu.exec(await admin.info('commandstats'))?.[1] ?? 0)
     const beforeInvalid = await typeCount()
     for (const arguments_ of [{ key: 'fixture:\ud800' }, { key, match: '\ud800' }]) {
-      const invalid = await ctx.tools.execute({ callId: 'invalid-text', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
+      const invalid = await executeTool(ctx.tools, { callId: 'invalid-text', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
       assert.equal(invalid.isError, true)
     }
     assert.equal(await typeCount(), beforeInvalid)

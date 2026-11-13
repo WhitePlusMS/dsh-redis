@@ -1,13 +1,36 @@
 import type { Context } from '@deepseek-ai/cordis'
-import { defineTool } from '@deepseek-ai/dsh-tools'
+import { defineTool, type ParameterSchemaSpec } from '@deepseek-ai/dsh-tools'
 import type { RedisAiReader } from './ai-reader.ts'
 import { MatchPresetError, type RedisMatchPresets } from './match-preset-store.ts'
-import type { UiAction } from '../domain.ts'
+import type { DatabaseTarget, UiAction } from '../domain.ts'
 import type { UiActionCoordinator } from './ui-action-coordinator.ts'
 import { scanKeysRequestSchema } from '../typert.shared.ts'
+import { parseQueryArgs, registerQueryScope } from './ai-query-scope.ts'
+
+const applyName = 'redis_viewer_apply_match_preset'
+const applyParameters = { id: { type: 'string', required: true } } as const satisfies ParameterSchemaSpec
+
+type PreparedPreset = { readonly outcome: 'stale' } | { readonly outcome: 'missing' } | {
+  readonly outcome: 'ready'
+  readonly target: DatabaseTarget
+  readonly revision: number
+  readonly preset: NonNullable<Awaited<ReturnType<RedisMatchPresets['get']>>>
+  readonly pattern: string
+}
 
 /** The DSH profile owns these immutable names and patterns, not Redis. */
 export function registerRedisMatchTools(ctx: Context, reader: RedisAiReader, presets: RedisMatchPresets, actions: UiActionCoordinator<UiAction>): void {
+  const approvedPreset = registerQueryScope<PreparedPreset>(ctx, reader, name => name === applyName, async (exec, sessionId, signal) => {
+    const { id } = parseQueryArgs(applyParameters, exec.arguments)
+    const target = reader.currentTarget(sessionId), revision = actions.selectionRevision(sessionId)
+    if (revision === null) return { target, conditions: null, data: { outcome: 'stale' as const } }
+    let preset: Awaited<ReturnType<RedisMatchPresets['get']>>
+    try { preset = await presets.get(id, signal) }
+    catch (error) { if (error instanceof MatchPresetError && error.code === 'cancelled') throw error; throw new Error('无法读取该筛选预设，请检查本地资料。') }
+    if (preset === null) return { target, conditions: null, data: { outcome: 'missing' as const } }
+    const pattern = scanKeysRequestSchema.parse({ target, pattern: preset.pattern, cursor: null }).pattern
+    return { target, conditions: { match: pattern, preset: preset.name }, sidebar: true, data: { outcome: 'ready' as const, target, revision, preset, pattern } }
+  })
   ctx.tools.register(defineTool({
     name: 'redis_viewer_match_presets',
     description: '仅在用户明确要求查看已保存的 Redis MATCH 筛选预设时调用。返回名称、ID 和条件，每页最多 10 条；条件按用户保存原样返回，可能包含敏感文本。每页重新读取，分页不是快照；不连接 Redis。',
@@ -33,22 +56,17 @@ export function registerRedisMatchTools(ctx: Context, reader: RedisAiReader, pre
   }))
 
   ctx.tools.register(defineTool({
-    name: 'redis_viewer_apply_match_preset',
-    description: '仅在用户明确要求将唯一确定的已保存 MATCH 预设应用到当前 Redis 面板时调用。先列出预设并提供 id；会清除当前 Key 选择并启动该条件的有界扫描。只有界面确认筛选已设置才返回 applied，扫描可能仍在进行或不完整；取消或回执丢失后检查面板，不能假定操作没有发生。',
-    parameters: { id: { type: 'string', required: true } }, output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
-    async execute(args, exec) {
-      exec.signal.throwIfAborted()
+    name: applyName,
+    description: '仅在用户明确要求将唯一确定的已保存 MATCH 预设应用到当前 Redis 面板时调用。先列出预设并提供 id；范围确认通过后会清除当前 Key 选择并启动该条件的有界扫描。只有界面确认筛选已设置才返回 applied，扫描可能仍在进行或不完整；取消或回执丢失后检查面板，不能假定操作没有发生。',
+    parameters: applyParameters, output: { schema: { type: 'json' }, render: (_args: unknown, value: unknown) => [{ type: 'text', text: JSON.stringify(value) }] }, timeoutMs: 15000,
+    async execute(_args, exec) {
+      const prepared = approvedPreset(exec)
       if (exec.agent === undefined) throw new Error('Redis 工具调用缺少有效的 DSH 对话身份。')
-      if (Object.keys(args).some(key => key !== 'id')) throw new Error('Redis 工具包含不支持的参数。')
       const session = exec.agent.session.id
       return reader.withBudget(session, exec.signal, async () => {
-        const target = reader.currentTarget(session), revision = actions.selectionRevision(session)
-        if (revision === null) return { outcome: 'stale', message: '请打开唯一 Redis 面板并等待选择同步。' }
-        let preset: Awaited<ReturnType<RedisMatchPresets['get']>>
-        try { preset = await presets.get(args.id, exec.signal) }
-        catch (error) { if (error instanceof MatchPresetError && error.code === 'cancelled') throw error; throw new Error('无法读取该筛选预设，请检查本地资料。') }
-        if (preset === null) return { outcome: 'missing', message: '该筛选预设不存在。' }
-        const pattern = scanKeysRequestSchema.parse({ target, pattern: preset.pattern, cursor: null }).pattern
+        if (prepared.outcome === 'stale') return { outcome: 'stale', message: '请打开唯一 Redis 面板并等待选择同步。' }
+        if (prepared.outcome === 'missing') return { outcome: 'missing', message: '该筛选预设不存在。' }
+        const { target, revision, preset, pattern } = prepared
         if (!reader.isCurrentTarget(session, target) || actions.selectionRevision(session) !== revision) return { outcome: 'stale', message: '连接或界面选择已变化，请检查面板。' }
         const result = await actions.dispatch(session, { kind: 'applyMatch', target, pattern }, null, revision, () => reader.isCurrentTarget(session, target), exec.signal)
         const outcome = result === 'applied' && actions.selectionRevision(session) !== revision + 1 ? 'stale' : result

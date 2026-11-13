@@ -1,3 +1,4 @@
+import { selectionForAction } from '../ui-action-selection.ts'
 import { UiActionCoordinator } from './ui-action-coordinator.ts'
 import type { SelectionAck, SetSelectionRequest, UiAction, UiActionAck, UiChannelInput, UiChannelMessage } from '../domain.ts'
 import { uiChannelInputSchema } from '../typert.shared.ts'
@@ -56,17 +57,16 @@ export async function* openUiActionChannel(coordinator: UiActionCoordinator<UiAc
           if (input.kind === 'commitSelection') {
             const current = state.pending, request = current?.request
             const latestSelection = selection as { revision: number; synchronized: boolean } | null
-            const isSelectionAction = request?.action.kind === 'selectKey' || request?.action.kind === 'selectHashField' || request?.action.kind === 'selectListIndex' || request?.action.kind === 'selectSetMember' || request?.action.kind === 'selectZSetMember' || request?.action.kind === 'selectStreamField'
-            const valid = current !== null && request !== undefined && isSelectionAction && request.target !== null && request.requestId === input.requestId && request.selectionRevision === input.revision && latestSelection !== null && latestSelection.revision === input.revision && latestSelection.synchronized && input.nextRevision === input.revision + 1 && !current.signal.aborted && coordinator.canCommit(sessionId, receive, request) && (request.action.kind === 'selectKey' || coordinator.pointSucceeded(sessionId, request))
-            const selected = request?.action.kind === 'selectKey' ? { keyBase64: request.action.key.base64, item: null } : request?.action.kind === 'selectHashField' ? { keyBase64: request.action.keyBase64, item: { kind: 'hash' as const, fieldBase64: request.action.field.base64 } } : request?.action.kind === 'selectListIndex' ? { keyBase64: request.action.keyBase64, item: { kind: 'list' as const, index: request.action.index } } : request?.action.kind === 'selectSetMember' || request?.action.kind === 'selectZSetMember' ? { keyBase64: request.action.keyBase64, item: { kind: request.action.kind === 'selectSetMember' ? 'set' as const : 'zset' as const, memberBase64: request.action.member.base64 } } : request?.action.kind === 'selectStreamField' ? { keyBase64: request.action.keyBase64, item: { kind: 'stream' as const, id: request.action.id, fieldIndex: request.action.fieldIndex, fieldBase64: request.action.fieldBase64 } } : null
+            const selected = request === undefined ? null : selectionForAction(request.action)
+            const valid = current !== null && request !== undefined && selected !== null && request.target !== null && request.requestId === input.requestId && request.selectionRevision === input.revision && latestSelection !== null && latestSelection.revision === input.revision && latestSelection.synchronized && input.nextRevision === input.revision + 1 && !current.signal.aborted && coordinator.canCommit(sessionId, receive, request) && (request.action.kind === 'selectKey' || coordinator.pointSucceeded(sessionId, request))
             // Prepare only. The visible client publishes the matching identity after rendering.
-            const accepted = valid && selected !== null && request.target !== null
+            const accepted = valid
             if (accepted) {
               selection = { revision: input.nextRevision, synchronized: false }
               coordinator.setSelectionState(sessionId, receive, input.nextRevision, false)
               current.prepared = { target: request.target, selection: selected }
               coordinator.markPrepared(sessionId, receive, request)
-            } else if (current !== null && request !== undefined && isSelectionAction && request.requestId === input.requestId) {
+            } else if (current !== null && request !== undefined && selected !== null && request.requestId === input.requestId) {
               // A matching refusal is terminal even if no further client frame arrives.
               if (latestSelection !== null && latestSelection.revision === request.selectionRevision && request.selectionRevision < Number.MAX_SAFE_INTEGER) {
                 selection = { revision: request.selectionRevision + 1, synchronized: false }
@@ -115,7 +115,7 @@ export async function* openUiActionChannel(coordinator: UiActionCoordinator<UiAc
         const current = state.pending
         if (current !== null && input.requestId === current.request.requestId) {
           state.pending = null; current.cleanup()
-          current.resolve((current.request.action.kind === 'selectKey' || current.request.action.kind === 'selectHashField' || current.request.action.kind === 'selectListIndex' || current.request.action.kind === 'selectSetMember' || current.request.action.kind === 'selectZSetMember' || current.request.action.kind === 'selectStreamField') && input.outcome === 'applied' ? { ...input, outcome: 'failed' } : input)
+          current.resolve(selectionForAction(current.request.action) !== null && input.outcome === 'applied' ? { ...input, outcome: 'failed' } : input)
         }
       }
     } catch { /* A broken uplink closes the receiver below. */ }

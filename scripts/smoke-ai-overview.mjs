@@ -1,8 +1,7 @@
 /** Verify fixed server overview fields against an owned real Redis. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -23,18 +22,18 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const ctx = new Context()
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-overview-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     for (const [section, field] of [['server', 'redis_version'], ['memory', 'used_memory'], ['clients', 'connected_clients'], ['stats', 'total_commands_processed']]) {
-      const result = await ctx.tools.execute({ callId: 'fixture-call', name: 'redis_viewer_overview', arguments: { section }, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-call', name: 'redis_viewer_overview', arguments: { section }, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
       const value = JSON.parse(text)
       assert.equal(value.scope, 'server'); assert.equal(value.section, section); assert.notEqual(value.state, 'failed')
       assert.equal(typeof value.fields[field], 'string'); assert(!text.includes('synthetic-value'))
     }
-    const clients = await ctx.tools.execute({ callId: 'clients-call', name: 'redis_viewer_clients', arguments: {}, agent, signal })
+    const clients = await executeTool(ctx.tools, { callId: 'clients-call', name: 'redis_viewer_clients', arguments: {}, agent, signal })
     assert.equal(clients.isError, false)
     const clientText = clients.content.filter(block => block.type === 'text').map(block => block.text).join('')
     const sample = JSON.parse(clientText)
@@ -42,12 +41,12 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert(sample.clients.every(client => Object.keys(client).sort().join(',') === 'ageSeconds,db,flags,id,idleSeconds'))
     assert(!JSON.stringify(sample.clients).includes('127.0.0.1')); assert(!clientText.includes('synthetic-value'))
     for (const [left, right, expected] of [['fixture:key', 'fixture:same', 'equal'], ['fixture:key', 'fixture:large', 'different'], ['fixture:large', 'fixture:large', 'undetermined']]) {
-      const comparison = await ctx.tools.execute({ callId: `compare-${expected}`, name: 'redis_viewer_compare_strings', arguments: { left, right }, agent, signal })
+      const comparison = await executeTool(ctx.tools, { callId: `compare-${expected}`, name: 'redis_viewer_compare_strings', arguments: { left, right }, agent, signal })
       assert.equal(comparison.isError, false)
       const text = comparison.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert.equal(JSON.parse(text).comparison, expected); assert(!text.includes('synthetic-value'))
     }
-    const binaryComparison = await ctx.tools.execute({ callId: 'compare-binary', name: 'redis_viewer_compare_strings', arguments: { leftBase64: binaryKey.toString('base64'), right: 'fixture:key' }, agent, signal })
+    const binaryComparison = await executeTool(ctx.tools, { callId: 'compare-binary', name: 'redis_viewer_compare_strings', arguments: { leftBase64: binaryKey.toString('base64'), right: 'fixture:key' }, agent, signal })
     assert.equal(binaryComparison.isError, false)
     assert.equal(JSON.parse(binaryComparison.content.find(block => block.type === 'text').text).comparison, 'equal')
     assert.deepEqual(await buffers.sendCommand(['DUMP', 'fixture:key']), before)

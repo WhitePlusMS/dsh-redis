@@ -1,7 +1,7 @@
 /** One bounded RESP2 command at a time on an owned TCP/TLS connection. */
 import { createConnection, isIP, type Socket } from 'node:net'
 import { connect as connectTls } from 'node:tls'
-import type { ConnectionRequest } from '../domain.ts'
+import { MAX_REDIS_WRITE_BYTES, type ConnectionRequest } from '../domain.ts'
 import { encodeCommand, RedisFrameError, RedisReplyError, RespDecoder, type RedisArgument, type RedisReply } from './resp.ts'
 import { runRedisReplace, runRedisSample, type RedisReplaceRequest, type RedisSampleRequest, type RedisWriteResult } from './redis-write-transaction.ts'
 
@@ -187,7 +187,7 @@ export class RedisTransport {
 
   /** Preview keeps WATCH and its read-only validation in the same queue slot. */
   sampleExisting(request: RedisSampleRequest, signal: AbortSignal, guard: () => void): Promise<Buffer> {
-    if (!Buffer.isBuffer(request.key) || request.key.length > 4096 || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096)) || (request.type !== 'string' && request.type !== 'hash')) return Promise.reject(new RedisFrameError('protocol'))
+    if (!Buffer.isBuffer(request.key) || request.key.length > MAX_REDIS_WRITE_BYTES || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > MAX_REDIS_WRITE_BYTES)) || (request.type !== 'string' && request.type !== 'hash')) return Promise.reject(new RedisFrameError('protocol'))
     const snapshot: RedisSampleRequest = request.type === 'string' ? { type: 'string', key: Buffer.from(request.key) } : { type: 'hash', key: Buffer.from(request.key), field: Buffer.from(request.field) }
     const deadline = Date.now() + READ_TIMEOUT
     return this.enqueue(signal, deadline, () => runRedisSample(snapshot, (args, beforeDispatch) => this.frame(encodeCommand(args), deadline, beforeDispatch), () => this.fail(new RedisTransportError('network')), signal, guard))
@@ -196,8 +196,8 @@ export class RedisTransport {
   /** One Host-owned transaction occupies the queue until cleanup or readback settles. */
   async replaceExisting(request: RedisReplaceRequest, signal: AbortSignal, guard: (submitted: boolean) => void, submitted: () => void, readback: (sampledAt: string) => void): Promise<RedisWriteResult> {
     if (!Buffer.isBuffer(request.key) || !Buffer.isBuffer(request.before) || !Buffer.isBuffer(request.after)
-      || request.key.length > 4096 || request.before.length > 4096 || request.after.length > 4096
-      || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > 4096))
+      || request.key.length > MAX_REDIS_WRITE_BYTES || request.before.length > MAX_REDIS_WRITE_BYTES || request.after.length > MAX_REDIS_WRITE_BYTES
+      || (request.type === 'hash' && (!Buffer.isBuffer(request.field) || request.field.length > MAX_REDIS_WRITE_BYTES))
       || (request.type !== 'string' && request.type !== 'hash')) return 'not-executed'
     const snapshot: RedisReplaceRequest = request.type === 'string'
       ? { type: 'string', key: Buffer.from(request.key), before: Buffer.from(request.before), after: Buffer.from(request.after) }

@@ -2,13 +2,13 @@ import { ConnectionFailure } from './connection-service.ts'
 import type { PreparedAiPage } from './ai-page-store.ts'
 
 interface Slot { disposeSession(sessionId: string): void; dispose(): void }
-interface Session { revision: bigint; current: 0 | 1 | null; busy: object | null }
+interface Session { revision: bigint; current: 0 | 1 | null; busy: { readonly first: boolean } | null }
 
 /** A candidate first page must commit before it replaces an existing cursor. */
 export class AiPageCoordinator<T extends Slot> {
   private readonly sessions = new Map<string, Session>()
   private revision = 0n
-  constructor(private readonly slots: readonly [T, T]) {}
+  constructor(private readonly slots: readonly [T, T], private readonly firstPage: { readonly replacePending?: true; readonly retainUndelivered?: true } = {}) {}
 
   snapshot(sessionId: string): bigint { return this.sessions.get(sessionId)?.revision ?? 0n }
 
@@ -19,10 +19,13 @@ export class AiPageCoordinator<T extends Slot> {
       state = { revision: 0n, current: null, busy: null }; this.sessions.set(sessionId, state)
     }
     if (cursor === null && state.revision !== snapshot) throw new ConnectionFailure('stale')
-    if (state.busy !== null) throw new Error('该类型的读取正在执行，请等待后重试。')
+    if (state.busy !== null && (!this.firstPage.replacePending || cursor !== null || !state.busy.first)) throw new Error('该类型的读取正在执行，请等待后重试。')
     if (cursor !== null && state.current === null) throw new ConnectionFailure('stale')
     const index: 0 | 1 = cursor === null ? (state.current === 0 ? 1 : 0) : state.current === 1 ? 1 : 0
-    const owner = {}, current = state, slot = this.slots[index]
+    const owner = { first: cursor === null }, current = state, slot = this.slots[index]
+    // A newer first page supersedes the in-flight candidate, leaving the last
+    // delivered slot intact until the new result is accepted.
+    if (current.busy !== null) slot.disposeSession(sessionId)
     current.busy = owner
     const active = () => this.sessions.get(sessionId) === current && current.busy === owner
     const release = (discard: boolean) => {
@@ -49,12 +52,13 @@ export class AiPageCoordinator<T extends Slot> {
         },
         rollback: () => {
           if (finished) return
+          finished = true
           page.rollback()
-          release(true)
+          release(!this.firstPage.retainUndelivered)
         },
       }
     } catch (error) {
-      release(true)
+      release(!this.firstPage.retainUndelivered)
       throw error
     }
   }

@@ -50,6 +50,7 @@ export const MAX_INFO_BYTES = 128 * 1024
 export interface DatabaseTarget extends ConnectionTarget { readonly db: number }
 /** Write permission is scoped to the current session and exact connection. */
 export interface RedisWriteModeRequest { readonly target: DatabaseTarget; readonly enabled: boolean }
+export const MAX_REDIS_WRITE_BYTES = 4096
 export interface RedisWriteModeStatus { readonly connection: ConnectionView; readonly enabled: boolean }
 export interface RedisWriteIdentity { readonly type: 'string' | 'hash'; readonly keyBase64: string; readonly fieldBase64: string | null }
 export interface RedisWriteRecord {

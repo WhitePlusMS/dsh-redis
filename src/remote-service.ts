@@ -1,3 +1,4 @@
+import { selectionForAction } from './ui-action-selection.ts'
 import { RedisDatabases } from './host/database-reader.ts'
 import { UiActionCoordinator } from './host/ui-action-coordinator.ts'
 import { openUiActionChannel } from './host/ui-action-channel.ts'
@@ -25,7 +26,7 @@ import type { StreamReadRequest, StreamReadResult } from './domain.ts'
 import type { ScanSetRequest, ScanSetResult } from './domain.ts'
 import type { ListReadRequest, ListReadResult } from './domain.ts'
 import type { ScanHashRequest, ScanHashResult } from './domain.ts'
-import type { ActionPointReadRequest, ActionPointReadResult, RedisSelectionItem } from './domain.ts'
+import type { ActionPointReadRequest, ActionPointReadResult } from './domain.ts'
 import type { StringReadRequest, StringReadResult } from './domain.ts'
 import type { DatabaseTarget, ScanKeysRequest, ScanKeysResult } from './domain.ts'
 import type { SaveProfileRequest, ProfileId, ProfileCollection, SavedConnection } from './domain.ts'
@@ -113,14 +114,9 @@ export class RedisRemoteService extends TypertRemoteService {
     const stale = () => failed('stale')
     if (signal.aborted) return failed('cancelled')
     if (action === null || action.target === null) return stale()
-    let item: RedisSelectionItem
-    let keyBase64: string
-    if (action.action.kind === 'selectHashField') { keyBase64 = action.action.keyBase64; item = { kind: 'hash', fieldBase64: action.action.field.base64 } }
-    else if (action.action.kind === 'selectListIndex') { keyBase64 = action.action.keyBase64; item = { kind: 'list', index: action.action.index } }
-    else if (action.action.kind === 'selectSetMember') { keyBase64 = action.action.keyBase64; item = { kind: 'set', memberBase64: action.action.member.base64 } }
-    else if (action.action.kind === 'selectZSetMember') { keyBase64 = action.action.keyBase64; item = { kind: 'zset', memberBase64: action.action.member.base64 } }
-    else if (action.action.kind === 'selectStreamField') { keyBase64 = action.action.keyBase64; item = { kind: 'stream', id: action.action.id, fieldIndex: action.action.fieldIndex, fieldBase64: action.action.fieldBase64 } }
-    else return stale()
+    const selection = selectionForAction(action.action)
+    if (selection === null || selection.item === null) return stale()
+    const { keyBase64, item } = selection
     if (!this.uiActions.claimPoint(sessionId, action)) return stale()
     const validate = () => { if (this.uiActions.activeRequest(sessionId, request.requestId) !== action) throw new ConnectionFailure('stale') }
     const reader = new RedisSelectedReader(this.connections)

@@ -1,8 +1,7 @@
 /** Verify bounded filtering against a real, independently owned Redis fixture. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -39,19 +38,19 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   ctx.provide('approval', { request: async () => { prompts++; return approved ? 'allowed-once' : 'rejected' } })
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-hash-filter-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     const scanCount = async () => Number(/^cmdstat_scan:calls=(\d+)/mu.exec(await admin.info('commandstats'))?.[1] ?? 0)
     const scansBefore = await scanCount()
-    const missingScope = await ctx.tools.execute({ callId: 'missing-scope', name: 'redis_viewer_keys', arguments: {}, agent, signal })
+    const missingScope = await executeTool(ctx.tools, { callId: 'missing-scope', name: 'redis_viewer_keys', arguments: {}, agent, signal })
     assert.equal(missingScope.isError, true); assert.equal(await scanCount(), scansBefore)
-    const rejected = await ctx.tools.execute({ callId: 'rejected-scope', name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*' }, agent, signal })
+    const rejected = await executeTool(ctx.tools, { callId: 'rejected-scope', name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*' }, agent, signal })
     assert.equal(rejected.isError, true); assert.equal(await scanCount(), scansBefore)
     approved = true
     const names = new Set(); let namesCursor, nameCalls = 0
     do {
-      const result = await ctx.tools.execute({ callId: 'names-' + nameCalls, name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*', ...(namesCursor === undefined ? {} : { cursor: namesCursor }) }, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'names-' + nameCalls, name: 'redis_viewer_keys', arguments: { match: 'fixture:order:*', ...(namesCursor === undefined ? {} : { cursor: namesCursor }) }, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join(''), page = JSON.parse(text)
       assert.equal(page.pattern, 'fixture:order:*'); assert(!text.includes('synthetic-private-value'))
@@ -62,7 +61,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert.equal(names.size, 28); assert(await scanCount() > scansBefore)
     const found = new Set(); let cursor, calls = 0, checked = 0, missingField = 0, notHash = 0, typeChanged = 0
     do {
-      const result = await ctx.tools.execute({ callId: 'fixture-' + calls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:order:*', field: 'status', equals: 'synthetic-failed', ...(cursor === undefined ? {} : { cursor }) }, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-' + calls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:order:*', field: 'status', equals: 'synthetic-failed', ...(cursor === undefined ? {} : { cursor }) }, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join('')
       assert(!text.includes('synthetic-private-value')); assert(!text.includes('synthetic-ready'))
@@ -78,7 +77,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     assert(checked >= 28); assert(missingField >= 1); assert(notHash >= 1); assert.equal(typeChanged, 0)
     // Full predicates must survive UTF-8 and JSON escaping, not display-label truncation.
     for (const condition of [{ field: '', equals: '' }, { field: '状态', equals: '待处理\u0000\n' }]) {
-      const result = await ctx.tools.execute({ callId: 'predicate-' + condition.field, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:predicate', ...condition }, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'predicate-' + condition.field, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:predicate', ...condition }, agent, signal })
       assert.equal(result.isError, false)
       const page = JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
       assert.deepEqual(page.condition, condition)
@@ -87,7 +86,7 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
     // Escaped conditions consume the same 64 KiB output budget as Key identities.
     const largeFound = new Set(); let largeCursor, largeCalls = 0
     do {
-      const result = await ctx.tools.execute({ callId: 'large-predicate-' + largeCalls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:budget:*', ...largeCondition, ...(largeCursor === undefined ? {} : { cursor: largeCursor }) }, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'large-predicate-' + largeCalls, name: 'redis_viewer_filter_hash', arguments: { match: 'fixture:budget:*', ...largeCondition, ...(largeCursor === undefined ? {} : { cursor: largeCursor }) }, agent, signal })
       assert.equal(result.isError, false)
       const text = result.content.filter(block => block.type === 'text').map(block => block.text).join(''), page = JSON.parse(text)
       assert(Buffer.byteLength(text) <= 65536); assert.deepEqual(page.condition, largeCondition)

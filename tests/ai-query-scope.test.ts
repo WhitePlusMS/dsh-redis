@@ -34,7 +34,7 @@ async function fixture(answer: ((request: ApprovalRequest) => Promise<ApprovalOu
   }
   const settings = { host: '127.0.0.1', port: 6379, username: '', password: 'fixture-secret', tls: null }
   const connections = new RedisConnections(async () => link)
-  const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => false)
+  const reader = new RedisAiReader(connections, () => undefined, async () => 0, () => true)
   const reconnect = (session = 'a') => connections.connect(session, settings, new AbortController().signal)
   await reconnect()
   const ctx = new Context(), ask = vi.fn(answer ?? (async () => 'unavailable' as const))
@@ -222,6 +222,73 @@ describe('Redis first-query scope confirmation', () => {
     expect((await pending).isError).toBe(outcome !== 'granted')
     expect(f.commands).toEqual(outcome === 'granted' ? ['SCAN'] : [])
     expect(decisions).toEqual([outcome === 'unavailable' ? 'unavailable' : outcome === 'cancelled' ? 'cancelled' : 'allowed-once'])
+  })
+
+  it.each(['block', 'replace', 'cancel'] as const)('keeps the previous cursor when DSH does not deliver the staged page: %s', async policy => {
+    const f = await fixture(), controller = new AbortController()
+    const first = page(await f.call('redis_viewer_keys', { match: 'order:*' }))
+    const bytesUsed = f.reader.budgetStatus('a').bytesUsed
+    const release = f.ctx.on('tools/post-execute', async (_exec, _result, next) => {
+      if (policy === 'block') return { kind: 'block', feedback: [{ type: 'text', text: 'fixture blocked' }] }
+      if (policy === 'replace') return { kind: 'accept', content: [{ type: 'text', text: 'fixture replacement' }] }
+      controller.abort()
+      return next()
+    })
+    const args = { match: 'order:*', cursor: first.cursor }
+    const withheld = await f.call('redis_viewer_keys', args, { signal: controller.signal })
+    expect(withheld.isError).toBe(policy !== 'replace')
+    release()
+    expect(f.reader.budgetStatus('a')).toMatchObject({ bytesUsed, callsUsed: 2, inFlight: 0 })
+    expect(page(await f.call('redis_viewer_keys', args)).cursor).toBeNull()
+    expect(f.commands).toEqual(['SCAN', 'SCAN'])
+  })
+
+  it('preserves the previous search when the new first page is blocked', async () => {
+    const f = await fixture()
+    const first = page(await f.call('redis_viewer_keys', { match: 'order:*' }))
+    const release = f.ctx.on('tools/post-execute', async () => ({ kind: 'block', feedback: [{ type: 'text', text: 'fixture blocked' }] }))
+    expect((await f.call('redis_viewer_keys', { match: 'other:*' })).isError).toBe(true)
+    release()
+    expect(page(await f.call('redis_viewer_keys', { match: 'order:*', cursor: first.cursor })).cursor).toBeNull()
+    expect(f.commands).toEqual(['SCAN', 'SCAN', 'SCAN'])
+  })
+
+  it.each(['append', 'wrap'] as const)('commits a delivered page when DSH policies %s its content', async mode => {
+    const f = await fixture()
+    const release = f.ctx.on('tools/post-execute', async (_exec, result) => ({
+      kind: 'accept',
+      content: mode === 'append' ? [...result.content, { type: 'text', text: 'fixture note' }] :
+        result.content.map(block => block.type === 'text' ? { ...block, text: 'Fixture: ' + block.text } : block),
+    }))
+    const first = await f.call('redis_viewer_keys', { match: 'order:*' })
+    const block = first.content[0]
+    if (block?.type !== 'text') throw new Error('Missing page content')
+    const { cursor } = JSON.parse(block.text.replace(/^Fixture: /u, ''))
+    expect(cursor).toEqual(expect.any(String))
+    expect(f.reader.budgetStatus('a').bytesUsed).toBeGreaterThan(0)
+    release()
+    expect(page(await f.call('redis_viewer_keys', { match: 'order:*', cursor })).cursor).toBeNull()
+  })
+
+  it('withholds the staged cursor when the session closes during post-execute', async () => {
+    const f = await fixture()
+    f.ctx.on('tools/post-execute', async (_exec, _result, next) => {
+      f.reader.disposeSession('a')
+      return next()
+    })
+    const result = await f.call('redis_viewer_keys', { match: 'order:*' })
+    expect(result.content).toEqual([{ type: 'text', text: expect.stringContaining('"error":"stale"') }])
+    expect(f.reader.budgetStatus('a')).toMatchObject({ bytesUsed: 0, inFlight: 0 })
+  })
+
+  it('confirms a narrow query independently of the size of the selected Key', async () => {
+    const f = await fixture()
+    const selection = { keyBase64: Buffer.alloc(50_000, 120).toString('base64'), item: null }
+    expect(f.reader.setSelection('a', { target: f.reader.currentTarget('a'), selection })).toEqual({ accepted: true })
+    expect(() => f.reader.status('a')).toThrow('超过对话读取预算')
+    expect(page(await f.call('redis_viewer_keys', { match: 'order:*' })).cursor).not.toBeNull()
+    expect(f.ask).toHaveBeenCalledTimes(1)
+    expect(f.commands).toEqual(['SCAN'])
   })
 
   it('refuses the body if an earlier policy skips the confirmation middleware', async () => {

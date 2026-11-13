@@ -5,7 +5,6 @@
  */
 import assert from 'node:assert/strict'
 import { spawn, execFile } from 'node:child_process'
-import { createHash } from 'node:crypto'
 import { createServer } from 'node:http'
 import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises'
 import { resolve, relative, sep } from 'node:path'
@@ -21,7 +20,7 @@ const artifacts = resolve(process.env.REDIS_SMOKE_ARTIFACTS ?? resolve(root, '.s
 const privateFile = resolve(process.env.REDIS_SMOKE_PRIVATE ?? resolve(runtime, 'slim-native.private.json'))
 const realModel = process.env.REDIS_SMOKE_REAL_MODEL === '1'
 const run = promisify(execFile), cli = process.env.DSH_CLI_ENTRY
-assert(cli, 'Set DSH_CLI_ENTRY to the verified rc.2 lib/bin.js')
+assert(cli, 'Set DSH_CLI_ENTRY to the verified 0.2.2-rc.1 lib/bin.js')
 assert(home.startsWith(runtime + sep) && privateFile.startsWith(runtime + sep), 'Owned runtime paths must stay inside project scratch')
 assert(artifacts.startsWith(resolve(root, '.scratch/artifacts') + sep) || artifacts === resolve(root, '.scratch/artifacts'))
 const report = { startedAt: new Date().toISOString(), passed: false, processStopped: false, fixtureStopped: false }
@@ -40,7 +39,7 @@ async function sameFiles(source, installed) {
 }
 
 try {
-  const checked = await withRedisFixture(async fixture => {
+  await withRedisFixture(async fixture => {
     report.fixture = fixture.metadata
     const { admin } = fixture
     const value = index => JSON.stringify({ id: index, name: 'needle', payload: { rows: Array.from({ length: 20 }, (_, n) => 'payload ' + n) }, tail: Array.from({ length: 32 }, (_, n) => 'line ' + n) })
@@ -112,7 +111,18 @@ try {
           }
           if (path === '/release') {hold?.release();hold = null;response.end('{"released":true}');return}
           if (path === '/verify') {report.readOnly = await verify();response.end(JSON.stringify(report.readOnly));return}
-          if (path === '/stop') {hold?.release();hold = null;report.readOnly = await verify();response.end('{"stopping":true}');stop();return}
+          if (path === '/stop') {
+            hold?.release(); hold = null
+            try {
+              report.readOnly = await verify()
+              response.end('{"stopping":true}')
+              stop(null)
+            } catch (error) {
+              stop(error)
+              throw error
+            }
+            return
+          }
           response.statusCode = 404;response.end('{}')
         } catch (error) {response.statusCode = 400;response.end(JSON.stringify({error:error.message}))}
       })
@@ -121,8 +131,8 @@ try {
       // Private scratch file is never committed or copied into the evidence report.
       await writeFile(privateFile,JSON.stringify({readyUrl,control:'http://127.0.0.1:'+address.port,settings:proxy.settings,keys,owner:fixture.metadata.owner}),{mode:0o600})
       console.log(JSON.stringify({ready:true,controlPort:address.port,dshPid:child.pid,fixtureKeys:keys.length}))
-      await stopped
-      report.passed = true
+      const failure = await Promise.race([stopped, exited.then(code => new Error('Owned DSH exited before verification: ' + code))])
+      if (failure !== null) throw failure
     } finally {
       hold?.release()
       if (server?.listening) await new Promise(done => server.close(done))
@@ -138,10 +148,11 @@ try {
       await writeFile(resolve(artifacts,'slim-native-host.log'),safe)
     }
   })
-  report.fixtureStopped = checked.fixture.stopped && checked.fixture.fixtureRemoved
-  assert(report.fixtureStopped)
+  assert(report.fixture?.stopped && report.fixture.fixtureRemoved && report.fixture.certificatesRemoved, 'Owned Redis fixture did not clean up')
+  report.passed = true
 } catch (error) {report.error = error.stack;process.exitCode = 1;console.error(error.message)}
 finally {
+  report.fixtureStopped = report.fixture?.stopped === true && report.fixture.fixtureRemoved && report.fixture.certificatesRemoved
   report.finishedAt = new Date().toISOString()
   await writeFile(resolve(artifacts,'slim-native-session.json'),JSON.stringify(report,null,2)+'\n')
   console.log(JSON.stringify({passed:report.passed,processStopped:report.processStopped,fixtureStopped:report.fixtureStopped}))

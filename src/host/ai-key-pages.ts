@@ -8,8 +8,8 @@ import { AiPageStore, type PreparedAiPage } from './ai-page-store.ts'
 export class RedisAiKeyPages {
   private readonly pages = new AiPageStore<ScanKeysResult, RedisKey>('')
   constructor(private readonly connections: RedisConnections, private readonly keys: RedisKeys) {}
-  disposeSession(sessionId: string): void { this.pages.disposeSession(sessionId) }
-  dispose(): void { this.pages.dispose() }
+  disposeSession(sessionId: string): void { this.pages.disposeSession(sessionId); this.keys.disposeSession(sessionId) }
+  dispose(): void { this.pages.dispose(); this.keys.dispose() }
 
   prepare(sessionId: string, target: DatabaseTarget, pattern: string, cursor: string | null, signal: AbortSignal): Promise<PreparedAiPage> {
     return this.pages.prepare({

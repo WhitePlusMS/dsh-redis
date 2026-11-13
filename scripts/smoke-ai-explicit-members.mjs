@@ -1,8 +1,7 @@
 /** Real Redis membership checks; only the independently owned fixture is seeded. */
+import { executeTool, installNativeTools } from './native-tool-fixture.mjs'
 import assert from 'node:assert/strict'
 import { Context } from '@deepseek-ai/cordis'
-import SystemPrompt from '@deepseek-ai/dsh-system-prompt'
-import ToolRuntime from '@deepseek-ai/dsh-tools'
 import { RESP_TYPES } from 'redis'
 import { RedisConnections } from '../lib/host/connection-service.js'
 import { RedisAiReader } from '../lib/host/ai-reader.js'
@@ -25,11 +24,11 @@ const { fixture } = await withRedisFixture(async ({ settings, admin }) => {
   const ctx = new Context()
   try {
     assert.equal((await connections.connect('fixture-session', settings, signal)).state, 'connected')
-    await ctx.plugin(SystemPrompt); await ctx.plugin(ToolRuntime)
+    await installNativeTools(ctx)
     await ctx.plugin({ name: 'redis-explicit-member-fixture', inject: ['tools'], apply: scope => registerRedisTools(scope, reader) })
     const agent = { id: 'fixture-agent', ctx, session: { id: 'fixture-session' } }
     const read = async arguments_ => {
-      const result = await ctx.tools.execute({ callId: 'fixture-call', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
+      const result = await executeTool(ctx.tools, { callId: 'fixture-call', name: 'redis_viewer_value', arguments: arguments_, agent, signal })
       assert.equal(result.isError, false)
       return JSON.parse(result.content.filter(block => block.type === 'text').map(block => block.text).join(''))
     }

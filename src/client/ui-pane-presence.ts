@@ -49,117 +49,71 @@ export class UiPanePresence {
 
   count(sessionId: string): number { return this.panes.get(sessionId)?.size ?? 0 }
   registerMatchHandler(sessionId: string, handler: MatchActionHandler): () => void {
-    let handlers = this.matchHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.matchHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.matchHandlers.get(sessionId) === owner) this.matchHandlers.delete(sessionId) }
+    return this.register(this.matchHandlers, sessionId, handler)
   }
   applyMatch(sessionId: string, request: MatchActionRequest, signal: AbortSignal): Promise<UiActionAck['outcome']> {
-    const count = this.count(sessionId), handlers = this.matchHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.matchHandlers, sessionId, request, signal)
   }
   registerFormatHandler(sessionId: string, handler: FormatActionHandler): () => void {
-    let handlers = this.formatHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.formatHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.formatHandlers.get(sessionId) === owner) this.formatHandlers.delete(sessionId) }
+    return this.register(this.formatHandlers, sessionId, handler)
   }
   setFormat(sessionId: string, request: FormatActionRequest, signal: AbortSignal): Promise<UiActionAck['outcome']> {
-    const count = this.count(sessionId), handlers = this.formatHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.formatHandlers, sessionId, request, signal)
   }
   registerRefreshHandler(sessionId: string, handler: RefreshActionHandler): () => void {
-    let handlers = this.refreshHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.refreshHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.refreshHandlers.get(sessionId) === owner) this.refreshHandlers.delete(sessionId) }
+    return this.register(this.refreshHandlers, sessionId, handler)
   }
   refresh(sessionId: string, request: RefreshActionRequest, signal: AbortSignal): Promise<UiActionAck['outcome']> {
-    const count = this.count(sessionId), handlers = this.refreshHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.refreshHandlers, sessionId, request, signal)
   }
   registerKeyHandler(sessionId: string, handler: KeyActionHandler): () => void {
-    let handlers = this.keyHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.keyHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.keyHandlers.get(sessionId) === owner) this.keyHandlers.delete(sessionId) }
+    return this.register(this.keyHandlers, sessionId, handler)
   }
   selectKey(sessionId: string, request: KeyActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.keyHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.keyHandlers, sessionId, request, signal)
   }
   registerHashHandler(sessionId: string, handler: HashActionHandler): () => void {
-    let handlers = this.hashHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.hashHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.hashHandlers.get(sessionId) === owner) this.hashHandlers.delete(sessionId) }
+    return this.register(this.hashHandlers, sessionId, handler)
   }
   selectHashField(sessionId: string, request: HashActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.hashHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.hashHandlers, sessionId, request, signal)
   }
   registerListHandler(sessionId: string, handler: ListActionHandler): () => void {
-    let handlers = this.listHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.listHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.listHandlers.get(sessionId) === owner) this.listHandlers.delete(sessionId) }
+    return this.register(this.listHandlers, sessionId, handler)
   }
   selectListIndex(sessionId: string, request: ListActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.listHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.listHandlers, sessionId, request, signal)
   }
   registerSetHandler(sessionId: string, handler: SetActionHandler): () => void {
-    let handlers = this.setHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.setHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.setHandlers.get(sessionId) === owner) this.setHandlers.delete(sessionId) }
+    return this.register(this.setHandlers, sessionId, handler)
   }
   registerZSetHandler(sessionId: string, handler: ZSetActionHandler): () => void {
-    let handlers = this.zsetHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.zsetHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.zsetHandlers.get(sessionId) === owner) this.zsetHandlers.delete(sessionId) }
+    return this.register(this.zsetHandlers, sessionId, handler)
   }
   selectZSetMember(sessionId: string, request: ZSetActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.zsetHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.zsetHandlers, sessionId, request, signal)
   }
   registerStreamHandler(sessionId: string, handler: StreamActionHandler): () => void {
-    let handlers = this.streamHandlers.get(sessionId)
-    if (handlers === undefined) { handlers = new Set(); this.streamHandlers.set(sessionId, handlers) }
-    const owner = handlers; owner.add(handler)
-    return () => { owner.delete(handler); if (owner.size === 0 && this.streamHandlers.get(sessionId) === owner) this.streamHandlers.delete(sessionId) }
+    return this.register(this.streamHandlers, sessionId, handler)
   }
   selectStreamField(sessionId: string, request: StreamActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.streamHandlers.get(sessionId)
-    if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
-    const handler = handlers?.values().next().value
-    if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
-    return handler(request, signal)
+    return this.dispatch(this.streamHandlers, sessionId, request, signal)
   }
   selectSetMember(sessionId: string, request: SetActionRequest, signal: AbortSignal): Promise<KeyActionResult> {
-    const count = this.count(sessionId), handlers = this.setHandlers.get(sessionId)
+    return this.dispatch(this.setHandlers, sessionId, request, signal)
+  }
+  private register<Handler>(registry: Map<string, Set<Handler>>, sessionId: string, handler: Handler): () => void {
+    let handlers = registry.get(sessionId)
+    if (handlers === undefined) { handlers = new Set(); registry.set(sessionId, handlers) }
+    const owner = handlers
+    owner.add(handler)
+    return () => {
+      owner.delete(handler)
+      if (owner.size === 0 && registry.get(sessionId) === owner) registry.delete(sessionId)
+    }
+  }
+  private dispatch<Request, Result>(registry: Map<string, Set<(request: Request, signal: AbortSignal) => Promise<Result>>>, sessionId: string, request: Request, signal: AbortSignal): Promise<Result | 'ambiguous' | 'stale'> {
+    const count = this.count(sessionId), handlers = registry.get(sessionId)
     if (count > 1 || (handlers?.size ?? 0) > 1) return Promise.resolve('ambiguous')
     const handler = handlers?.values().next().value
     if (signal.aborted || count !== 1 || handler === undefined) return Promise.resolve('stale')
