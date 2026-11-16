@@ -1,0 +1,86 @@
+name: Release package
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing v-prefixed tag matching package.json
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.22.1'
+      - name: Install pinned tools and dependencies
+        run: |
+          npm install --global pnpm@11.22.0 @deepseek-ai/dsh@0.2.2-rc.1
+          pnpm install --frozen-lockfile
+      - name: Build, test and verify installed package
+        env:
+          DSH_HOME: ${{ runner.temp }}/dsh-release-home
+          REDIS_TEST_PYTHON: python3
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          export DSH_CLI_ENTRY="$(readlink -f "$(command -v dsh)")"
+          version="$(node -p "require('./package.json').version")"
+          test "$RELEASE_TAG" = "v$version"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]
+          mkdir -p .release "$DSH_HOME"
+          # prepack runs the existing typecheck, build and complete tests.
+          pnpm pack --pack-destination .release
+          archive="$PWD/.release/dsh-redis-$version.tgz"
+          dsh plugin --profile web add "$archive" --ignore-scripts
+          dsh --profile web --dump-config > "$RUNNER_TEMP/dsh-config.yml"
+          grep -q 'ui-redis' "$RUNNER_TEMP/dsh-config.yml"
+          node scripts/verify-release-package.mjs --archive "$archive" --installed "$DSH_HOME/profiles/web/node_modules/dsh-redis" --output "$RUNNER_TEMP/package-verification.json"
+          stat -c 'Package size: %s bytes' "$archive"
+      - name: Publish and verify assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        run: |
+          set -euo pipefail
+          version="$(node -p "require('./package.json').version")"
+          cd .release
+          asset="dsh-redis-$version.tgz"
+          if [[ "$version" == *-* ]]; then
+            sha256sum "$asset" > SHA256SUMS.txt
+            gh release create "$RELEASE_TAG" "$asset" SHA256SUMS.txt --verify-tag --prerelease --latest=false --generate-notes --repo "$GITHUB_REPOSITORY"
+          else
+            cp "$asset" dsh-redis.tgz
+            cmp "$asset" dsh-redis.tgz
+            sha256sum "$asset" dsh-redis.tgz > SHA256SUMS.txt
+            gh release create "$RELEASE_TAG" "$asset" dsh-redis.tgz SHA256SUMS.txt --verify-tag --latest --generate-notes --repo "$GITHUB_REPOSITORY"
+          fi
+          # Always verify the published bytes via authenticated asset download.
+          mkdir downloaded
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" --dir downloaded
+          (cd downloaded && sha256sum -c SHA256SUMS.txt)
+          cmp "$asset" "downloaded/$asset"
+          if [[ "$version" != *-* ]]; then
+            test "$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .tag_name)" = "$RELEASE_TAG"
+            cmp "$asset" downloaded/dsh-redis.tgz
+            visibility="$(gh api "repos/$GITHUB_REPOSITORY" --jq .visibility)"
+            if [ "$visibility" = public ]; then
+              curl --fail --location --retry 5 --retry-delay 3 --retry-all-errors --output public-download.tgz "https://github.com/$GITHUB_REPOSITORY/releases/latest/download/dsh-redis.tgz"
+              cmp "$asset" public-download.tgz
+              test "$(tar -xOzf public-download.tgz package/package.json | node -p 'JSON.parse(require("fs").readFileSync(0,"utf8")).version')" = "$version"
+              sha256sum public-download.tgz
+            else
+              echo "Repository is $visibility: anonymous market URL cannot be verified."
+            fi
+          fi

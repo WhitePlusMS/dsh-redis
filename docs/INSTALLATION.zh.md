@@ -11,9 +11,16 @@
 - Host 能访问 Redis，构建环境能下载依赖。
 - 下文使用已有 `web` profile；已有源码目录时跳过 clone 和 cd。
 
+## 发布 Release
+
+提交发布变更后，创建并推送与 `package.json` 版本一致的 `v<版本号>` 标签，再在 GitHub Actions 中手动运行 **Release package** 并填写该标签。工作流先执行 `prepack`，在隔离 DSH profile 安装并运行 `scripts/verify-release-package.mjs`，再发布附件。正式版上传两个文件名及校验文件；预发布只上传版本化包，不设为 latest。上传后下载附件校验，仅在公开仓库额外验证匿名固定地址。若发布后检查失败，Release 可能已经创建，应先排查，不要盲目覆盖已有附件。
+
 ## 准备成品包
 
-使用有权限的账号从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 dsh-redis-0.1.2.tgz 和 SHA256SUMS.txt，核对安装包 SHA-256 后放到 DSH Host，将 $packageForInstall 设置为该包的绝对路径，再按下方步骤安装。仓库为私有，Host 安装器不会继承浏览器的 GitHub 登录状态。
+规划中的市场固定地址为 `https://github.com/WhitePlusMS/dsh-redis/releases/latest/download/dsh-redis.tgz`。仓库已公开，但当前 v0.1.2 Release 尚未提供固定附件；须等正式 Release 提供并验证该附件后再向市场登记。固定地址不会自动升级已安装插件；请保留版本化安装包和校验文件以便回退。
+
+
+从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 dsh-redis-0.1.2.tgz 和 SHA256SUMS.txt，核对安装包 SHA-256 后放到 DSH Host，将 $packageForInstall 设置为该包的绝对路径，再按下方步骤安装。
 
 当前版本从源码构建；已有可信成品包时可跳过构建。同版本 SHA 文件名用于本地开发检查点，不替代正式发布版本。
 

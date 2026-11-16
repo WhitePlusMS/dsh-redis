@@ -1,3 +1,25 @@
+## 2026-11-16：调整 Redis 工具定位
+
+- 按用户要求调整 `README.md`、`README.zh.md`：以 DSH Redis 工作区、连接管理、Key 浏览、数据预览和对话操作组织介绍，合并重复的读写表述，精简首页验证内容；在具体操作处保留必要步骤和使用条件。
+- GitHub 仓库简介已更新并回读为 Redis 工作区定位，包含连接管理、数据浏览、搜索和对话工具；保留现有 Topics。
+
+## 2026-11-16：完善 Redis 读写项目介绍
+
+- 调整 `README.md` 和 `README.zh.md` 首屏定位、导航及功能概览，明确侧栏是只读查看器，而插件支持默认关闭的受控 AI 写入。新增中英文读取、查找、诊断和写入示例，以及写入权限、前提、操作结果、隐私边界和工具列表；保留版本兼容、旧截图来源与安装回退说明。
+- 已更新并回读 GitHub 仓库简介，明确可视化浏览、AI 读取及受控写入；新增 Topics：`ai-agent`、`deepseek-harness`、`developer-tools`、`dsh-plugin`、`redis`、`redis-client`。没有移动或修改版本标签。
+- 两份 README 的图片引用和 SVG 基础检查通过；严格类型检查与 Git 差异空白检查通过。README 沿用既有图片，未重新进行界面或 Redis 运行验收。
+
+## 2026-11-16：公开 GitHub 仓库
+
+- 按用户要求将 `WhitePlusMS/dsh-redis` 可见性从 private 改为 public；GitHub 返回 `private: false`。匿名 GitHub API 可读取最新正式 Release `v0.1.2`，该版本目前只有版本化包和 SHA256SUMS，尚无固定附件。
+- 更新中英文 README 和安装指南中关于仓库可见性、安装权限及固定地址的表述，并清理 README 行尾空格。固定地址仍需新的正式 Release 发布并验证后才能用于市场登记。
+
+## 2026-11-16：准备固定 Release 安装地址
+
+- 新增 `.github/workflows/release.yml`，手动指定与 package.json 一致的已有标签，通过实际 CLI 入口解析宿主路径，沿用 prepack 类型检查、构建及完整测试，并在隔离 DSH profile 执行现有包与安装内容核验。正式版发布版本化包、固定包及 SHA256SUMS；预发布仅上传版本化包，明确不设置 latest。发布后认证下载并校验，公开仓库额外检查匿名固定地址、latest、包版本和字节。
+- 更新 `README.md`、`README.zh.md`、`docs/INSTALLATION.md` 和 `docs/INSTALLATION.zh.md`：说明规划固定地址、私有仓库权限、不会自动更新和回退方式。保留随包截图，避免私有仓库图片失效；未设缺乏依据的大小上限。
+- 当前仓库经 GitHub 连接器核实为 private，匿名固定地址返回 404。Node 24.22.1 下最终完整 prepack 和独立类型检查通过，90 个测试文件、758 项测试通过；最终包 541,497 字节，隔离 DSH Web profile 安装成功，归档及安装的 161 个文件、15 个 Host peer 和 2 个依赖由现有脚本核验通过；安装器另有 peer 依赖警告。隔离 Host 日志显示 Redis 已注册，测试宿主已停止。浏览器连接界面超时，界面功能未验收；线上固定地址、市场安装和真实 Redis 读写本轮未通过验证。工作流尚未在 GitHub Actions 执行，不能据此声称正式发布成功。
+
 ## 2026-11-14：完成 DSH Redis 架构复扫的九项改进
 
 1. `src/host/ai-reader.ts`、`ai-tools.ts`、`ai-profile-tools.ts`、`ai-key-pages.ts`、`ai-page-coordinator.ts` 将分页、诊断样本和资料令牌结算移到 DSH 原生 `finalizeContent`。拦截、替换或取消时保留上一已交付游标，淘汰的会话或连接不会继续向 Native 模型输出失效令牌。Key 首页保留原先的新查询优先语义。已抓取的 Key 或 Hash 筛选候选可在同条件下重试。

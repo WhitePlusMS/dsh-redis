@@ -11,9 +11,16 @@ Current source **0.1.2** targets **DSH Web 0.2.2-rc.1**. The older v0.1.0 packag
 - Redis reachable from the Host; dependency download access for building.
 - Examples use an existing `web` profile. Skip clone and cd if you already have the checkout.
 
+## Publishing a Release
+
+After committing the release changes, create and push an existing `v<package.json version>` tag, then run **Release package** from GitHub Actions with that tag. The workflow runs `prepack`, installs the package in an isolated DSH profile and runs `scripts/verify-release-package.mjs` before publishing. Stable versions upload both names and checksums; prerelease versions upload the versioned archive and do not set latest. Published assets are downloaded and checked; anonymous fixed-URL verification runs only for a public repository. A failed post-publication check requires investigation: the Release may already exist and must not be blindly overwritten.
+
 ## Prepare a built package
 
-Download dsh-redis-0.1.2.tgz and SHA256SUMS.txt from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) with an authorized account, compare the archive's SHA-256 to the checksum file, and place it on the DSH Host. Set $packageForInstall to its absolute path before following the installation steps below. The repository is private; the Host installer cannot use the browser's GitHub login.
+The planned stable market URL is `https://github.com/WhitePlusMS/dsh-redis/releases/latest/download/dsh-redis.tgz`. The repository is public, but the current v0.1.2 Release does not yet contain the fixed asset. Register the URL with the market only after a formal Release provides and verifies it. The fixed URL does not automatically update an installed plugin. Keep the versioned archive and checksum for rollback.
+
+
+Download dsh-redis-0.1.2.tgz and SHA256SUMS.txt from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2), compare the archive's SHA-256 to the checksum file, and place it on the DSH Host. Set $packageForInstall to its absolute path before following the installation steps below.
 
 Build the current version from source. Skip building if you already have a trusted built archive. This same-version SHA filename is a development checkpoint, not a replacement for release versions.
 

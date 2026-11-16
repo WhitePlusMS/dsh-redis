@@ -6,32 +6,34 @@
 
 [English](README.md) | 简体中文
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) 是 **DeepSeek Harness（DSH）** 的社区插件。在侧栏查看 Redis 数据，也可以在同一对话中读取指定 Key，并按需启用受控的 AI 写入。工具使用该对话所属的 Redis 连接。
+**DSH Redis 是 DeepSeek Harness（DSH）中的 Redis 工作区。** 连接 Redis、浏览数据库和 Key、查看数据，也可以在同一个对话中处理日常查询与操作。
 
-**侧栏查看 · AI 读写 · 单机 Redis + TLS · Windows / DSH Web（预发布版）**
+**连接管理 · Key 浏览 · 数据预览 · 对话工具 · 诊断信息**
 
 当前源码 **0.1.2** 适配 **DSH Web 0.2.2-rc.1**。按下方步骤构建安装；旧版 v0.1.0 面向 DSH 0.2.0-rc.2，不包含当前新增能力。
 
-[安装](#安装与更新) · [开始使用](#开始使用) · [功能](#功能) · [对话读取](#对话读取) · [使用边界](#数据与边界) · [卸载](#卸载) · [常见问题](#常见问题)
+[安装](#安装与更新) · [开始使用](#开始使用) · [对话中使用](#对话中使用) · [功能](#功能) · [环境要求](#环境要求) · [使用边界](#数据与边界) · [常见问题](#常见问题)
 
 [![Hash 表格与同屏字段、值预览](docs/screenshots/hash-workbench-dark.jpg)](docs/screenshots/hash-workbench-dark.jpg)
 
 *截图记录于 2026-10-19，宿主为 DSH Web `0.2.0-rc.2`，使用隔离测试数据。复用已验收的六类型查看器截图，不冒充本次文档修订重新执行的验收。[截图来源说明](docs/screenshots/README.md)。*
 
-- 浏览 String、Hash、List、Set、ZSet 和 Stream，选中集合中的一行即可在同屏查看详情。
-- 在对话中读取指定 Key、查找名称或筛选 Hash，也可以按需获取慢日志等诊断信息。
-- AI 写入默认关闭，启用后可替换已有 String 的完整值或已有 Hash 字段的完整值，执行遵循 DSH 工具权限策略。
-- 支持单机 Redis 和 TLS；工具参数和结果进入 DSH 对话记录，并可能发送给配置的模型服务。
+- **连接与整理：**连接单机 Redis，支持 ACL、TLS 和命名连接资料。
+- **浏览数据：**通过目录树或列表查看 DB 和 Key，浏览 String、Hash、List、Set、ZSet 和 Stream。
+- **对话中操作：**围绕指定 Key 或当前选中项提问、查找数据、查看诊断信息和执行支持的更新。
+- **适应工作习惯：**在侧栏或展开工作区中操作，切换明暗主题和中英文界面。
 
 ![手动连接 Redis，浏览 DB 和 Key，查看选中行，再在同一 DSH 对话里提问](docs/screenshots/readme-flow.svg)
 
 ## 安装与更新
 
-使用有权限的 GitHub 账号从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 `dsh-redis-0.1.2.tgz` 和 `SHA256SUMS.txt`，核对校验值后，将安装包放到 DSH Host，用 `dsh plugin --profile web add <安装包绝对路径>` 安装。浏览器登录状态不会自动传给 Host 安装器。
+规划中的市场固定地址为 `https://github.com/WhitePlusMS/dsh-redis/releases/latest/download/dsh-redis.tgz`。仓库已公开，但当前 v0.1.2 Release 尚未提供固定附件；须等正式 Release 提供并验证该附件后再向市场登记。固定地址不会自动升级已安装插件；请保留版本化安装包和校验文件以便回退。
+
+从 [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) 下载 `dsh-redis-0.1.2.tgz` 和 `SHA256SUMS.txt`，核对校验值后，将安装包放到 DSH Host，用 `dsh plugin --profile web add <安装包绝对路径>` 安装。
 
 也可以从源码构建：
 
-当前源码版本 `0.1.2` 适配 DSH Web `0.2.2-rc.1`。以下步骤在 DSH Host 的 PowerShell 中从源码构建并安装；需要 Git、Node.js 24.9 及以上版本和 pnpm，私有仓库需先获得访问权限：
+当前源码版本 `0.1.2` 适配 DSH Web `0.2.2-rc.1`。以下步骤在 DSH Host 的 PowerShell 中从源码构建并安装；需要 Git、Node.js 24.9 及以上版本和 pnpm：
 
 ```powershell
 git clone https://github.com/WhitePlusMS/dsh-redis.git
@@ -58,6 +60,17 @@ dsh plugin --profile web list dsh-redis
 
 连接期间编辑或保存资料不会改变实际服务器。开发版支持明确要求 AI 连接唯一确定的已保存资料；需要密码时在本地连接表单填写。
 
+## 对话中使用
+
+在 DSH 对话中连接 Redis 后，可以围绕指定 Key 或当前选中项提问：
+
+- “`order:1001` 的 `status` 字段是什么？”
+- “查找 `order:*` 的 Key。”
+- “最近有没有慢查询？”
+- “把已有的 `order:1001` 的 `status` 字段完整替换为 `shipped`。”
+
+使用更新示例时，在侧栏打开**插件信息 → 开启 AI 写入**并提供完整新值。DSH 会按工具权限策略执行，可以使用操作 ID 查询结果。支持的目标和使用条件见[数据与边界](#数据与边界)。
+
 ## 功能
 
 <details>
@@ -74,7 +87,7 @@ dsh plugin --profile web list dsh-redis
 | 刷新 | 手动刷新，可选 1/5/10/30 秒自动刷新；原内容仍存在时保留选中和查看状态 |
 | DSH 界面 | 原生侧栏、展开工作区、明暗主题、中英文、Lucide 操作图标 |
 | 对话 | DSH 原生工具支持直接读取、有限范围查找与筛选；开发版还包含诊断、连接及按需界面动作 |
-| AI 写入 | 默认关闭；启用后受控替换已有 String 或 Hash 字段，检查前态、并发冲突及回读结果 |
+| 数据更新 | 在对话中替换支持的已有 String 值或 Hash 字段，并查询操作结果 |
 
 | 类型 | 查看方式 |
 | --- | --- |
@@ -102,7 +115,7 @@ dsh plugin --profile web list dsh-redis
 
 Desktop、macOS、Linux 尚未验收。Node.js 声明范围也不等于范围内每个版本都已实际验证。
 
-## 对话读取
+## 对话工具
 
 | 工具 | 用途 |
 | --- | --- |
@@ -110,6 +123,8 @@ Desktop、macOS、Linux 尚未验收。Node.js 声明范围也不等于范围内
 | `redis_viewer_keys` | 有界检索 Key，使用独立分页状态 |
 | `redis_viewer_value` | 读取指定 Key；不传 Key 时读取侧栏当前选择 |
 | `redis_viewer_select_db` | 用户明确要求时切换本对话的 DB，并同步侧栏 |
+| `redis_viewer_prepare_write` / `redis_viewer_execute_write` | 准备并执行已启用的受控 String 或 Hash 字段替换 |
+| `redis_viewer_write_status` | 查询当前对话中仍保留的操作结果 |
 
 开发版还注册了有界 Hash 筛选、内存/慢日志/服务器/客户端/消费组诊断、RedisJSON 路径、TimeSeries 样本、Bitmap 位范围及 GEO 坐标/距离读取，以及连接资料和界面工具。用户明确要求时可在本地保存经过字段限制的诊断采样。读取工具目录、参数与限制见随包的 [AI 读取说明](docs/AI_READ_USAGE.md)；这些新增能力不代表旧版 v0.1.0 Release 已包含。
 
@@ -135,17 +150,11 @@ AI 写入 MVP 要求 Redis 7.4 或以上，目标 Key 和 Hash 字段均不得�
 
 DSH 会话历史可以保留完整提案，包括准备工具结果和执行工具入参中的 Key、可选字段、原值和新值。Base64 保留原始字节，可以解码还原。提案过期和 Host 短期操作记录清除均不会清除这些会话事件。
 
-## 验证与已知问题
+## 验证记录
 
-DSH 0.2.2-rc.1 已在隔离环境验证 Web 侧栏和 Redis 读取；确定性模型测试适配器通过 DSH Agent 执行 String、Hash 写入，并由独立客户端回读。该测试不代表真实大模型对话验收。[验证记录](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md)。
+项目已在独立 DSH profile 和隔离 Redis 环境中验证。测试环境与覆盖范围见 [DSH 验证记录](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md)和[操作测试记录](docs/verification/ai-write-mvp-2026-11-11.md)。
 
-AI 写入已在隔离 Redis 8.2.6 和独立安装的 DSH Web profile 中验证，并由独立 Redis 客户端回读；真实 DSH 网页中的开关与 Agent 工具写入已在同一测试会话贯通，测试适配器收到了提案和结果。[测试适配器记录](docs/verification/ai-write-mvp-2026-11-11.md)描述了上述测试。之后在 DSH 0.2.1-rc.5 上通过真实 bzkj-LLM 写入隔离 String 并由独立客户端回读；该结果在 [0.2.2 验证记录](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md)中单独说明。
-
-2026-11-06 应用源码 `69c63d8` 打包时通过严格类型检查、构建及 **84 个测试文件 / 698 项测试**，143 个日常安装文件与归档一致。真实 DSH 已完成查询/诊断结果传递、认证失败后旧连接读取、两批筛选与累计汇总。该次按工具职责边界收尾；证据和未覆盖范围见[交付状态](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md)及[工具验收标准](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md)。
-
-插件负责工具可调用、返回数据及必要元信息准确，并将结果正确交给模型。模型收到正确结果后的解释、推断、措辞和 think 格式不作为插件缺陷或交付阻塞；工具自身的数据、权限、分页、错误处理及传递问题仍需修复。真实后台/丢回执等未测组合保留为覆盖限制；整个 profile 的跨插件 peers 检查不声明通过。更新文档不会替换已安装归档。
-
-原生联调曾出现一次样式节点缺失、图标放大，刷新浏览器后恢复，根因仍未定位。源码仓库保留历史验收记录，但历史功能不代表都保留在当前精简版中。
+原生联调曾出现一次样式节点缺失、图标放大，刷新后恢复，根因仍未定位。
 
 ## 卸载
 
@@ -161,7 +170,7 @@ dsh plugin --profile web remove dsh-redis
 
 **为什么 Release 地址返回 404？**
 
-先核对 tag、`.tgz` 附件名，以及当前账号是否有仓库访问权限。浏览器登录不会授权另一台 Host 下载；这个私有 Release 采用登录下载后安装本地文件的方式。
+先核对 tag、`.tgz` 附件是否存在，以及 DSH Host 能否访问 GitHub。若直接安装失败，可下载安装包、校验后从 Host 本地路径安装。
 
 **可以安装 GitHub 的 Source code 源码归档吗？**
 

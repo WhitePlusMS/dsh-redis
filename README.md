@@ -6,32 +6,34 @@
 
 English | [简体中文](README.zh.md)
 
-[DSH Redis](https://github.com/WhitePlusMS/dsh-redis) is a community plugin for **DeepSeek Harness (DSH)**. Browse Redis in the sidebar, read named Keys in conversation, and optionally enable controlled AI writes. Tools use the Redis connection owned by that conversation.
+**DSH Redis is a Redis workspace for DeepSeek Harness (DSH).** Connect to Redis, explore databases and Keys, inspect values, and work with your data in the same conversation.
 
-**Sidebar browsing · AI reads and writes · Standalone Redis + TLS · Windows / DSH Web (prerelease)**
+**Connections · Key explorer · Data preview · Conversation tools · Diagnostics**
 
 Current source **0.1.2** targets **DSH Web 0.2.2-rc.1**. Build and install it with the steps below. The older v0.1.0 package targets DSH 0.2.0-rc.2 and does not include the current additions.
 
-[Install](#install-and-update) · [First use](#first-use) · [Features](#features) · [Conversation access](#conversation-access) · [Limits](#data-and-limits) · [Uninstall](#uninstall) · [FAQ](#faq)
+[Install](#install-and-update) · [First use](#first-use) · [Work in conversation](#work-in-conversation) · [Features](#features) · [Requirements](#requirements) · [Limits](#data-and-limits) · [FAQ](#faq)
 
 [![Hash table with same-screen field and value previews](docs/screenshots/hash-workbench-dark.jpg)](docs/screenshots/hash-workbench-dark.jpg)
 
 *Recorded on 2026-10-19 in DSH Web `0.2.0-rc.2`, using isolated fixture data. This is an existing six-type viewer capture, not a new acceptance run for this documentation revision. [Screenshot provenance](docs/screenshots/README.md).*
 
-- Browse String, Hash, List, Set, ZSet and Stream; select a collection row to inspect its details in the same view.
-- Read named Keys, search names or filter Hashes in the conversation, and request diagnostic information such as slow logs.
-- AI writes are off by default. Once enabled, they can replace a complete existing String value or Hash field under the DSH tool permission policy.
-- Supports standalone Redis with TLS. Tool arguments and results enter DSH conversation history and may be sent to the configured model provider.
+- **Connect and organize:** connect to standalone Redis with ACL and TLS, and save named connection profiles.
+- **Explore your data:** navigate DBs and Keys in a tree or list, then inspect String, Hash, List, Set, ZSet and Stream values.
+- **Work in conversation:** ask about a Key or selection, find matching Keys, inspect diagnostics and make supported updates.
+- **Make the workspace yours:** use the sidebar or expanded view, choose a light or dark theme, and switch between English and Chinese.
 
 ![Manually connect Redis, browse DB and Keys, inspect the selected row, then ask in the same DSH conversation](docs/screenshots/readme-flow.svg)
 
 ## Install and update
 
-Download `dsh-redis-0.1.2.tgz` and `SHA256SUMS.txt` from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2) using an authorized GitHub account. Verify the checksum, place the archive on the DSH Host, and run `dsh plugin --profile web add <archive-path>`. The browser login is not shared with the Host installer.
+The planned stable market URL is `https://github.com/WhitePlusMS/dsh-redis/releases/latest/download/dsh-redis.tgz`. The repository is public, but the current v0.1.2 Release does not yet contain the fixed asset. Register the URL with the market only after a formal Release provides and verifies it. The fixed URL does not automatically update an installed plugin. Keep the versioned archive and checksum for rollback.
+
+Download `dsh-redis-0.1.2.tgz` and `SHA256SUMS.txt` from the [v0.1.2 Release](https://github.com/WhitePlusMS/dsh-redis/releases/tag/v0.1.2), verify the checksum, place the archive on the DSH Host, and run `dsh plugin --profile web add <archive-path>`.
 
 Alternatively, build the same version from source:
 
-Version `0.1.2` targets DSH Web `0.2.2-rc.1`. Build and install from source in PowerShell on the DSH Host. Git, Node.js 24.9 or later and pnpm are required; a private repository requires access:
+Version `0.1.2` targets DSH Web `0.2.2-rc.1`. Build and install from source in PowerShell on the DSH Host. Git, Node.js 24.9 or later and pnpm are required:
 
 ```powershell
 git clone https://github.com/WhitePlusMS/dsh-redis.git
@@ -58,6 +60,17 @@ The pack command runs type checking, build and tests. Keep the archive at that p
 
 Editing or saving a profile while connected does not change the active server. In the current version you can explicitly ask AI to connect a uniquely identified saved profile; passwords are entered through the local connection form.
 
+## Work in conversation
+
+Connect to Redis in a DSH conversation, then ask about a specific Key or the current selection:
+
+- “What is the `status` field of `order:1001`?”
+- “Find Keys matching `order:*`.”
+- “Are there recent slow queries?”
+- “Replace the existing `status` field of `order:1001` with `shipped`.”
+
+For the update example, enable **Plugin info → Enable AI writes** and provide the complete new value. DSH applies its tool permission policy, and the operation ID can be used to look up the result. Supported targets and other operating conditions are described in [Data and limits](#data-and-limits).
+
 ## Features
 
 <details>
@@ -74,7 +87,7 @@ Editing or saving a profile while connected does not change the active server. I
 | Refresh | Manual refresh and optional 1/5/10/30-second refresh; selected content and view state are preserved when still present |
 | DSH integration | Native sidebar, expanded workbench, light/dark theme, English/Chinese, Lucide action icons |
 | Conversation | Native DSH tools for explicit Key reads, bounded search and filtering; it also has diagnostic, connection and optional UI actions |
-| AI writes | Off by default; controlled replacement of an existing String or Hash field, with precondition, concurrency and readback checks |
+| Updates | Replace a supported existing String value or Hash field through conversation; inspect the operation result |
 
 | Type | View |
 | --- | --- |
@@ -102,7 +115,7 @@ The compact Stream layout uses the same row-selection workflow:
 
 Desktop, macOS and Linux operation have not been verified. The declared Node.js range is broader than the versions actually tested.
 
-## Conversation access
+## Conversation tools
 
 | Tool | Purpose |
 | --- | --- |
@@ -110,6 +123,8 @@ Desktop, macOS and Linux operation have not been verified. The declared Node.js 
 | `redis_viewer_keys` | Search Keys with bounded, independently paged results |
 | `redis_viewer_value` | Read a named Key or, with no Key argument, the current sidebar selection |
 | `redis_viewer_select_db` | Switch this conversation's DB when explicitly requested and synchronize the sidebar |
+| `redis_viewer_prepare_write` / `redis_viewer_execute_write` | Prepare and execute an enabled, controlled String or Hash-field replacement |
+| `redis_viewer_write_status` | Look up a retained operation result in the same conversation |
 
 The plugin also registers bounded Hash filtering, memory/slow-log/server/client/consumer-group diagnostics, RedisJSON paths, TimeSeries samples, Bitmap ranges and GEO coordinates/distances, plus saved-profile and UI tools. On explicit request it can save a diagnostic sample with restricted fields locally. See the packaged [AI read guide](docs/AI_READ_USAGE.md) for read-tool parameters and limitations. These additions are not part of the historical v0.1.0 Release claim.
 
@@ -135,17 +150,11 @@ DSH session history can retain the full proposal in the prepare tool's result an
 
 Not included: a free-form command console, direct RDB/AOF loading, snapshots, dedicated special-type views, charts, URI import, profile import/export, Cluster, Sentinel, built-in SSH tunnels or client-certificate authentication. Diagnostics are bounded samples, not a full server snapshot. JSON in a normal String can still be formatted.
 
-## Verification and known issue
+## Verification
 
-For DSH 0.2.2-rc.1, the isolated Web sidebar and Redis read passed; a deterministic model adapter exercised String and Hash writes through the DSH Agent and confirmed them with an independent client. This is not a real-model conversation test. [Verification record](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md).
+DSH Web `0.2.2-rc.1` has been exercised with an isolated Redis instance and a separate DSH profile. See the [DSH verification record](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md) and [operation test record](docs/verification/ai-write-mvp-2026-11-11.md) for the tested environment and coverage.
 
-AI writes have been exercised with isolated Redis 8.2.6 and an independently installed DSH Web profile, with readback from an independent Redis client. In one test session, the actual DSH Web switch enabled an Agent tool write, and a controlled test adapter received the proposal and result. The [controlled-adapter record](docs/verification/ai-write-mvp-2026-11-11.md) describes that test. A real bzkj-LLM conversation later wrote an isolated String and an independent client verified it on DSH 0.2.1-rc.5; this is noted separately in the [0.2.2 validation record](docs/verification/dsh-0.2.2-rc.1-2026-11-12.md).
-
-On 2026-11-06, application source `69c63d8` passed strict type checks, build and **84 test files / 698 tests** during packaging; 143 files in the daily installation matched the archive. Native DSH runs covered query/diagnostic result delivery, reads on the original connection after candidate authentication failed, and two filter batches with cumulative counts. This local delivery is closed within the plugin's tool responsibilities; no new Release was published. See [delivery status](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DELIVERY_STATUS.md) and [tool acceptance criteria](https://github.com/WhitePlusMS/dsh-redis/blob/main/docs/DSH_AI_READONLY_TASKS.md) for evidence and coverage limits.
-
-The plugin is responsible for callable tools, accurate data and required metadata, and correct delivery of results to the model. Interpretation, inference, wording and think formatting after correct results arrive are not plugin defects or delivery blockers. Tool data, permissions, paging, error handling and delivery defects remain in scope. Untested background-page and lost-receipt combinations remain coverage limits; the profile-wide peers check is not claimed to pass. Updating documentation does not replace an installed archive.
-
-A missing style node and oversized icons were observed once during native testing. Reloading the browser restored styling; the root cause remains unresolved. Historical verification records are in the source checkout; they do not imply every previous feature remains in the slim viewer.
+A missing style node and oversized icons were observed once during native testing; reloading restored styling. The root cause remains unresolved.
 
 ## Uninstall
 
@@ -161,7 +170,7 @@ Reload/restart that same profile when required. Uninstalling retains saved conne
 
 **Why does the Release URL return 404?**
 
-Check the exact tag and `.tgz` filename, and confirm that your account has repository access. Signing into GitHub in a browser does not authenticate a separate Host download; use the downloaded-file route for this private Release.
+Check that the tag and `.tgz` asset exist, and that the DSH Host can reach GitHub. If direct installation fails, download the archive, verify its checksum and install it from a Host path.
 
 **Can I install GitHub's Source code archive instead?**
 
